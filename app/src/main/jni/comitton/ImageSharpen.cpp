@@ -118,7 +118,7 @@ void *ImageSharpen_ThreadFunc(void *param)
 int ImageSharpen(int index, int Page, int Sharpen, int Half, int Count, int OrgWidth, int OrgHeight)
 {
 //#ifdef DEBUG
-	LOGD("ImageSharpen : index=%d, Page=%d, Sharpen=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", index, Page, Sharpen, Half, Count, OrgWidth, OrgHeight);
+//	LOGD("ImageSharpen : index=%d, Page=%d, Sharpen=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", index, Page, Sharpen, Half, Count, OrgWidth, OrgHeight);
 //#endif
 
 	int ret = 0;
