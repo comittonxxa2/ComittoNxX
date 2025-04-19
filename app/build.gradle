@@ -10,6 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 8
+def revision = "A"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -31,7 +32,8 @@ android {
         minSdk 21 // Android 5.0("Lollipop")
 
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
-        versionName "${versionMajor}.${versionMinor}.${versionPatch}"
+        versionName "${versionMajor}.${versionMinor}.${versionPatch}.${revision}"
+
 
         ndk {
             externalNativeBuild {
@@ -72,7 +74,7 @@ android {
     buildTypes {
         release {
             ndk {
-                abiFilters "arm64-v8a", "armeabi-v7a", "x86_64", "x86"
+                abiFilters "arm64-v8a", "armeabi-v7a"//, "x86_64", "x86"
             }
             resValue("string", "app_name", applicationName)
             resValue("string", "app_launch_name", applicationName)
