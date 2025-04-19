@@ -1,4 +1,4 @@
-# ComittoNxX
+# ComittoNxX修正版
 
 <img src="app/src/main/res/drawable-hdpi/comittonxx.png" width="100" align="right" alt="logo">
 
@@ -56,7 +56,7 @@ ComittoNxX はオープンソースの画像ビュワーです.
 
 ## ダウンロード
 
-[Releases](https://github.com/ComittoNxA/ComittoNxX/releases) よりご利用ください.
+[Releases](https://github.com/comittonxxa2/ComittoNxX/releases) よりご利用ください.
 
 #### [NxD](https://github.com/Kdroidwin/cnxd/tree/cnxd) からの修正点
 
