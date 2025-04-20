@@ -633,6 +633,7 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public boolean sendProgress(int type, int count) {
 		// 10ファイル単位で通知
+		/*
 		//if (count % 10 == 0) {
 			if (!mRunningFlag) {
 				return false;
@@ -643,6 +644,7 @@ public class ImageManager extends InputStream implements Runnable {
 			message.arg2 = type;
 			mHandler.sendMessage(message);
 		//}
+		*/
 		return true;
 	}
 
