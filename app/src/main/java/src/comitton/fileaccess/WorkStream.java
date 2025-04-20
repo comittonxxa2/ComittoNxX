@@ -42,7 +42,7 @@ public class WorkStream extends InputStream {
 	private void Open() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. uri=" + mURI + ", user=" + mUser + ", pass=" + mPass);
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "OPEN");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "OPEN");
 
 		try {
 			mFileAccess = new FileAccess(mActivity, mURI, mUser, mPass, null);
@@ -51,7 +51,7 @@ public class WorkStream extends InputStream {
 			DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 			throw new IOException(TAG + ": Open: " + e.getLocalizedMessage());
 		}
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 	}
 
 	private void reOpen() {
@@ -72,12 +72,12 @@ public class WorkStream extends InputStream {
 	public void close() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "CLOSE");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "CLOSE");
 		if (mFileAccess != null) {
 			mFileAccess.close();
 			mFileAccess = null;
 		}
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 	}
 
 	@Override
@@ -89,7 +89,7 @@ public class WorkStream extends InputStream {
 	public int read(byte[] b, int off, int size) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, off={1}, size={2}, pos+off+size={3}, length={4}", new Object[]{mPos, off, size, mPos+off+size, length()}));
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "READ");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "READ");
 
 		mPos += off;
 		int ret = 0;
@@ -108,14 +108,14 @@ public class WorkStream extends InputStream {
 			}
 		}
 		Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{ret, off, mPos, length()}));
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 		return ret;
 	}
 
 	public void seek(long pos) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}", new Object[]{pos}));
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "SEEK");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "SEEK");
 		try {
 			mFileAccess.seek(pos);
 		}
@@ -123,14 +123,14 @@ public class WorkStream extends InputStream {
 			Logcat.e(logLevel, MessageFormat.format("Catch Exception. pos={0} {1}", new Object[]{pos, e.toString()}));
 		}
 		mPos = pos;
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 	}
 
 
 	public long getFilePointer() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "GET_FILEPOINTER");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "GET_FILEPOINTER");
 
 		long result = 0L;
 		try {
@@ -141,14 +141,14 @@ public class WorkStream extends InputStream {
 			reOpen();
 			result = mFileAccess.getFilePointer();
 		}
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 		return result;
 	}
 
 	public long length() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, " 開始します.");
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "LENGTH");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "LENGTH");
 
 		long length = 0;
 		try {
@@ -161,7 +161,7 @@ public class WorkStream extends InputStream {
 			length = mFileAccess.length();
 		}
 		Logcat.d(logLevel, MessageFormat.format("終了します. length={0}", new Object[]{length}));
-		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
+//		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 		return length;
 	}
 }
