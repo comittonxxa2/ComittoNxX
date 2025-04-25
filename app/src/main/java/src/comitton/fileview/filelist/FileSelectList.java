@@ -7,15 +7,11 @@ import java.util.Comparator;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
-import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.dialog.LoadingDialog;
 import src.comitton.imageview.ImageManager;
 import src.comitton.textview.TextManager;
-import src.comitton.config.SetTextActivity;
-
-import android.graphics.Point;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
@@ -36,7 +32,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static final String mStaticRootDir = Environment.getExternalStorageDirectory().getAbsolutePath() +"/";
 
 	private ArrayList<FileData> mFileList = null;
-	private ArrayList<FileData> m2FileList = null;
+	private ArrayList<FileData> mFileList2 = null;
 
 	private String mURI;
 	private String mPath;
@@ -227,7 +223,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		String currentPath = DEF.relativePath(mActivity, mURI, mPath);
 
 		try {
-			if	(mCacheFile == false)	{
+			if (!mCacheFile) {
 				fileList = FileAccess.listFiles(mActivity, currentPath, mUser, mPass, mHandler);
 
 				if (thread.isInterrupted()) {
@@ -270,53 +266,50 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					mFileList = fileList;
 					return;
 				}
+
 				String uri = FileAccess.parent(mActivity, mPath);
 				if (!uri.isEmpty() && mParentMove) {
 					FileData fileData = new FileData(mActivity, "..", DEF.PAGENUMBER_NONE);
 					fileList.add(0, fileData);
 				}
-				m2FileList = fileList;
+				mFileList2 = fileList;
 				mCacheFile = true;
 
 				mFileList = fileList;
 				updateListView(thread);
+
+			} else {
+				fileList = mFileList2;
 			}
-			else	{
-				fileList = m2FileList;
-			}
 
+			String uri = FileAccess.parent(mActivity, mPath);
+			mFileList = fileList;
 
-			{
+			Logcat.v(logLevel, "updateListView 開始します. ");
+			Logcat.v(logLevel, "ArrayList 開始します. ");
 
-				String uri = FileAccess.parent(mActivity, mPath);
-				mFileList = fileList;
+			for (int i = mFileList.size() - 1; i >= 0; i--) {
 
-		Logcat.d(2, "updateListView 開始します. ");
+				String name = mFileList.get(i).getName();
+				uri = FileAccess.parent(mActivity, mPath);
 
-		Logcat.d(2, "ArrayList 開始します. ");
-
-				for (int i = mFileList.size() - 1; i >= 0; i--) {
-
-					String name = mFileList.get(i).getName();
-					uri = FileAccess.parent(mActivity, mPath);
-
-					if (mFileList.get(i).getType() == FileData.FILETYPE_NONE) {
+				if (mFileList.get(i).getType() == FileData.FILETYPE_NONE) {
+					mFileList.remove(i);
+					continue;
+				}
+				if (mFileList.get(i).getType() == FileData.FILETYPE_EPUB_SUB) {
+					mFileList.remove(i);
+					continue;
+				}
+				if (mFileList.get(i).getType() != FileData.FILETYPE_DIR && mFileList.get(i).getType() != FileData.FILETYPE_PARENT) {
+					// 通常のファイル
+					if (hidden && DEF.checkHiddenFile(name)) {
 						mFileList.remove(i);
 						continue;
-					}
-					if (mFileList.get(i).getType() == FileData.FILETYPE_EPUB_SUB) {
-						mFileList.remove(i);
-						continue;
-					}
-					if (mFileList.get(i).getType() != FileData.FILETYPE_DIR && mFileList.get(i).getType() != FileData.FILETYPE_PARENT) {
-						// 通常のファイル
-						if (hidden && DEF.checkHiddenFile(name)) {
-							mFileList.remove(i);
-							continue;
-						}
 					}
 				}
 			}
+
 		}
 		catch (Exception e) {
 			Logcat.e(logLevel, "", e);
