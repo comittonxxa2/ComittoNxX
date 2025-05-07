@@ -687,8 +687,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// 権限の永続化
 						Intent intent = getIntent();
 						final int takeFlags =
-								intent.getFlags()
-										& (Intent.FLAG_GRANT_READ_URI_PERMISSION
+								(Intent.FLAG_GRANT_READ_URI_PERMISSION
 										| Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 						// Check for the freshest data.
 						getContentResolver().takePersistableUriPermission(uri, takeFlags);
@@ -718,8 +717,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// 権限の永続化
 						Intent intent = getIntent();
 						final int takeFlags =
-								intent.getFlags()
-										& (Intent.FLAG_GRANT_READ_URI_PERMISSION
+								(Intent.FLAG_GRANT_READ_URI_PERMISSION
 										| Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 						// Check for the freshest data.
 						getContentResolver().takePersistableUriPermission(uri, takeFlags);
@@ -3198,19 +3196,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * リストをソート
 	 */
 	private void sortList(int listtype) {
+
 		if (listtype == RecordList.TYPE_FILELIST) {
-			if (mFileList == null || mFileList.getFileList(mMarker, mFilter, mApplyDir) == null) {
+
+			Editor ed = mSharedPreferences.edit();
+			ed.putString(DEF.KEY_LISTSORT, Integer.toString(mSortMode));
+			ed.apply();
+
+			if (mFileList == null) {
+				return;
+			}
+
+			ArrayList<FileData> files = mFileList.getFileList(mMarker, mFilter, mApplyDir);
+			if (files == null) {
 				return;
 			}
 
 			// リストにソートを反映
 			mFileList.setMode(mSortMode);
 			mListScreenView.setListSortType(listtype, mSortMode); // タイトル更新
-			mListScreenView.notifyUpdate(listtype);
-
-			Editor ed = mSharedPreferences.edit();
-			ed.putString(DEF.KEY_LISTSORT, Integer.toString(mSortMode));
-			ed.apply();
+			updateListView();
 
 			// サムネイル読み直し
 			loadThumbnail(true);
@@ -3310,14 +3315,22 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * パスの移動
 	 */
 	private boolean moveFileSelectFromServer(int svrindex, String path) {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
+		int logLevel = Logcat.LOG_LEVEL_VERBOSE;
 		Logcat.d(logLevel, "svrindex=" + svrindex  + ", path=" + path);
 		ServerSelect server = new ServerSelect(mSharedPreferences, this);
 		if (svrindex != DEF.INDEX_LOCAL) {
 			server.select(svrindex);
 		}
 		String uri = server.getURI();
-
+		Logcat.v(logLevel, "uri=" + uri);
+		if (server.getAccesType() == DEF.ACCESS_TYPE_SMB && uri.equalsIgnoreCase("smb://")) {
+			Logcat.v(logLevel, "return false");
+			return false;
+		}
+		if (server.getAccesType() == DEF.ACCESS_TYPE_SAF && uri.isEmpty()) {
+			Logcat.v(logLevel, "return false");
+			return false;
+		}
 		// 移動
 		moveFileSelectProc(uri, path, true);
 
@@ -3759,7 +3772,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 			ArrayList<FileData> files = mFileList.getFileList(mMarker, mFilter, mApplyDir);
 			if (files != null) {
-				mFileStatusLoader = new FileStatusLoader(mActivity, mURI, mPath, user, pass, mHandler, mFileList.getFileList(mMarker, mFilter, mApplyDir), mHidden, mEpubViewer);
+				mFileStatusLoader = new FileStatusLoader(mActivity, mURI, mPath, user, pass, mHandler, files, mHidden, mEpubViewer);
 				//mListScreenView.mFileListArea.sendDispRange();
 				mFileStatusLoader.setDispRange(mFileFirstIndex, mFileLastIndex);
 			}
@@ -3801,7 +3814,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 			ArrayList<FileData> files = mFileList.getFileList(mMarker, mFilter, mApplyDir);
 			if (files != null) {
-				mThumbnailLoader = new FileThumbnailLoader(this, mURI, mPath, user, pass, mHandler, mThumbID, mFileList.getFileList(mMarker, mFilter, mApplyDir), mThumbSizeW, mThumbSizeH, mThumbNum, filesort, mHidden, mThumbSort, mThumbCrop, mThumbMargin, mEpubThumb, mEpubViewer);
+				mThumbnailLoader = new FileThumbnailLoader(this, mURI, mPath, user, pass, mHandler, mThumbID, files, mThumbSizeW, mThumbSizeH, mThumbNum, filesort, mHidden, mThumbSort, mThumbCrop, mThumbMargin, mEpubThumb, mEpubViewer);
 				mListScreenView.mFileListArea.sendDispRange();
 				//mThumbnailLoader.setDispRange(mFileFirstIndex, mFileLastIndex);
 				// 現在時をIDに設定
