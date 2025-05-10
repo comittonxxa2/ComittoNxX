@@ -473,6 +473,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 	private float mEffectRate = 0;
 	private long mEffectStart = 0;
+	private long mEffectOld = 0;
 	private int mEffectTime;
 	private boolean mImmEnable;
 	private boolean mBottomFile;
@@ -2646,7 +2647,14 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mOperation = TOUCH_NONE;
 				break;
 		}
-		return true;
+		// チャタリング防止
+		long mEffectNow = SystemClock.uptimeMillis();
+		if	((mEffectNow - mEffectOld) >= 50)	{
+			// 50ミリ秒以上になれば有効にする
+			mEffectOld = mEffectNow;
+			return	true;
+		}
+		return false;
 	}
 
 	// タップが前/次どちらか判定
