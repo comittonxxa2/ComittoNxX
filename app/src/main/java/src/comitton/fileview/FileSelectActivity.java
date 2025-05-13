@@ -1426,6 +1426,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									// 削除できていたら画面から消す
 									Logcat.d(logLevel, "ファイルを削除できました。");
 									int topindex = mListScreenView.mFileListArea.getTopIndex();
+									// ファイルリストをフラッシュ
+									mFileList.FlushFileList();
 									loadListView(topindex);
 									String file = DEF.createUrl(uri, user, pass);
 									Editor ed = mSharedPreferences.edit();
