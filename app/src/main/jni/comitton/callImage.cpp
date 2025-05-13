@@ -266,14 +266,22 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_ImageInitialize (JNI
 
     // 空いているキャッシュindexを取得する
     int index;
+    static int old_index = 0;
     for (index = 0; index < MAX_BUFFER_INDEX; ++index) {
         if (gIsInit[index] == false) {
             break;
         }
     }
     if (index == MAX_BUFFER_INDEX) {
-        // キャッシュインデックスに空きがなければエラー終了
-        return ERROR_CODE_CACHE_COUNT_LIMIT_EXCEEDED;
+        // キャッシュインデックスに空きがなければ古いキャッシュをクリア
+		index = old_index;
+		MemFree(index);
+		// 次のインデックスを頭出し
+		old_index++;
+		// 一周したら先頭へ戻す
+		if	(old_index == MAX_BUFFER_INDEX)	{
+			old_index = 0;
+		}
     }
 
     // 読み込み用領域確保
