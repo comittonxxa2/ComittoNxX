@@ -1522,6 +1522,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// shortcutIntent.putExtra("Server", mServer.getCode());
 						shortcutIntent.putExtra("ServerSelect", mServer.getSelect());
 						shortcutIntent.putExtra("File", "");
+						// 強制的にショートカットの設定を読みこませる
+						mClearTop = SetFileListActivity.getCrearTop(mSharedPreferences);
 						if (mClearTop) {
 							shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
 						}
