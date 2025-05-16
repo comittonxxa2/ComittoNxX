@@ -206,6 +206,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	@Override
 	public void run() {
+		// 描画スレッド起動時にカンストして動作しない場合があるためスレッドのループ待ちカウンタのリセットを入れる
+		mThreadWaitLoop = 0;
 		// リスト描画処理監視
 		while (true) {
 			// リストの描画が必要な時にtrue復帰

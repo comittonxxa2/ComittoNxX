@@ -1410,7 +1410,9 @@ public class ImageManager extends InputStream implements Runnable {
 	// 画像の並びを逆にする
 	public void reverseOrder() {
 		mCacheBreak = true;
-		CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		synchronized (mLock) {
+			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		}
 		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
@@ -1442,7 +1444,9 @@ public class ImageManager extends InputStream implements Runnable {
 	// キャッシュをクリアする
 	public void clearMemCache() {
 		mCacheBreak = true;
-		CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		synchronized (mLock) {
+			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		}
 		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
@@ -2052,7 +2056,9 @@ public class ImageManager extends InputStream implements Runnable {
 
 		ImageData id = null;
 		mCacheBreak = true;
-		CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		synchronized (mLock) {
+			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		}
 		synchronized (mLock) {
 			if (!mCloseFlag) {
 				mCacheBreak = false;
@@ -4083,7 +4089,9 @@ public class ImageManager extends InputStream implements Runnable {
 
 	private void freeScaleCache() {
 		mCacheBreak = true;
-		CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		synchronized (mLock) {
+			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		}
 		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
@@ -4108,7 +4116,9 @@ public class ImageManager extends InputStream implements Runnable {
 	public boolean ImageScalingSync(int page1, int page2, int half1, int half2, ImageData img1, ImageData img2) {
 		boolean ret = false;
 		mCacheBreak = true;
-		CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		synchronized (mLock) {
+			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		}
 		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
@@ -4728,7 +4738,9 @@ public class ImageManager extends InputStream implements Runnable {
 
 		String resultPath = null;
 		mCacheBreak = true;
-		CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		synchronized (mLock) {
+			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+		}
 		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
