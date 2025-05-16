@@ -175,6 +175,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	private Handler mHandler;
 	private Object mLock = new Object();
 	private boolean mDrawBreak;
+	private int mThreadWaitLoop = 0;
 
 	Message mEventPageMsg;
 
@@ -304,7 +305,10 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	}
 
 	private boolean mDrawLock;
-	public void lockDraw() { mDrawLock = true; }
+	public void lockDraw() {
+		mThreadWaitLoop = 0;
+		mDrawLock = true;
+	}
 
 	public void unlockDraw() { mDrawLock = false; }
 
@@ -2791,19 +2795,27 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 
 	@Override
 	public void run() {
+		mThreadWaitLoop = 0;
 		// リスト描画処理監視
 		while (true) {
 			// リストの描画が必要な時にtrue復帰
 			try {
 				Thread.sleep(1000);
-				update(false);
+//				update(false);
 			} catch (InterruptedException e) {
 				// 描画発生による割り込み
 				if (!mIsRunning) {
 					break;
 				}
 				else {
-					update(false);
+					if	(mThreadWaitLoop < 1000)	{
+						mThreadWaitLoop++;
+						update(false);
+					}
+					else
+					{
+						mThreadWaitLoop = 0;
+					}
 				}
 			}
 		}
