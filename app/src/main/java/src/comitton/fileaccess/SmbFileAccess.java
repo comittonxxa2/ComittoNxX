@@ -480,6 +480,10 @@ public class SmbFileAccess {
 				}
 			} catch (SmbException e) {
 				Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+				if	(e.getLocalizedMessage().indexOf("directory") != -1)	{
+					// カスタムURLスキームのfileopen時にエラーになるので暫定的にToast処理を中断して戻る
+					return fileList;
+				}
 				DEF.sendMessage(activity.getString(R.string.SmbAccessError) + ":\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG, handler);
 				return fileList;
 			}
