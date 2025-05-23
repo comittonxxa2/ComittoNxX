@@ -401,11 +401,76 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			Logcat.e(logLevel, "Intent解析中にエラーが発生しました.", e);
 		}
 
+		PackageManager packageManager = this.getPackageManager();
+		String verName = null;
+		PackageInfo packageInfo;
+		try {
+			packageInfo = packageManager.getPackageInfo(this.getPackageName(), PackageManager.GET_ACTIVITIES);
+			verName = packageInfo.versionName;
+		} catch (NameNotFoundException e) {
+			// 取得不可エラー
+		}
+
+		String hostname = null;
+		String targetpath = null;
+		String serverselect = null;
+		String accesskey = null;
+		Logcat.d(logLevel, "カスタムURLスキームのチェック.");
+		if (intent.ACTION_VIEW.equals(intent.getAction())) {
+			Uri uri = intent.getData();
+			if	(uri != null)	{
+				hostname = uri.getHost();
+				targetpath = uri.getQueryParameter("path");
+				serverselect = uri.getQueryParameter("server_select");
+				accesskey = uri.getQueryParameter("key");
+			}
+		}
+
 		String path = "";
 		String server = "";
-		int serverSelect;
+		int serverSelect = 0;
 		// ローカルパス取得
-		if (savedInstanceState != null) {
+		if (hostname != null && hostname.equals("fileselect") && accesskey != null && accesskey.equals(this.getPackageName()))	{
+			// ディレクトリパスのみの場合
+			path = targetpath;
+			if (serverselect == null || serverselect.isEmpty()) {
+				// サーバー選択なし
+				serverSelect = -1;
+			}
+			else {
+				// サーバー選択あり
+				serverSelect = Integer.parseInt(serverselect);
+			}
+			Logcat.d(logLevel, "fileselect カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
+		}
+		else if (hostname != null && hostname.equals("fileopen") && accesskey != null && accesskey.equals(this.getPackageName()))	{
+			// ファイルを開く場合
+			path = targetpath;
+			if (serverselect == null || serverselect.isEmpty()) {
+				// サーバー選択なし
+				serverSelect = -1;
+				mServer.select(DEF.INDEX_LOCAL);
+			}
+			else {
+				// サーバー選択あり
+				serverSelect = Integer.parseInt(serverselect);
+				mServer.select(serverSelect);
+			}
+			Logcat.d(logLevel, "fileopen カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
+			if (path == null || path.isEmpty()) {
+				mServer.select(DEF.INDEX_LOCAL);
+				mURI = mServer.getURI();
+				mPath = mServer.getPath();
+			}
+			else	{
+				mURI = mServer.getURI();
+				mPath = path.substring(0, path.lastIndexOf('/') + 1);
+				FileData fileData = new FileData(mActivity, path.substring(path.lastIndexOf('/') + 1));
+				Logcat.d(logLevel, "Intent解析中. mURI=" + mURI + ", mPath=" + mPath + ", name=" + fileData.getName());
+				openFile(fileData, "");
+			}
+		}
+		else if (savedInstanceState != null) {
 			// レジュームから復帰
 			path = savedInstanceState.getString("Path");
 			server = savedInstanceState.getString("Server");
@@ -502,15 +567,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			loadListView(topindex);
 		}
 
-		PackageManager packageManager = this.getPackageManager();
-		String verName = null;
-		PackageInfo packageInfo;
-		try {
-			packageInfo = packageManager.getPackageInfo(this.getPackageName(), PackageManager.GET_ACTIVITIES);
-			verName = packageInfo.versionName;
-		} catch (NameNotFoundException e) {
-			// 取得不可エラー
-		}
 
 		ArrayList<String> permissions = new ArrayList<String>(0);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
