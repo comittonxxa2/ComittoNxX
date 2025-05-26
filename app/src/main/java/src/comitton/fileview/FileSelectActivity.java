@@ -178,6 +178,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int mBefColor;
 	private int mNowColor;
 	private int mAftColor;
+	private int mRrbColor;
 	private int mImgColor;
 	private int mTxtColor;
 	private int mInfColor;
@@ -330,7 +331,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		mListScreenView.mToolbarArea.setDisplay(mToolbarShow, mToolbarSize, mToolbarLabel, mTldColor, mTlbColor);
 
-		mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor);
+		mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor);
 		mListScreenView.setDrawInfo(mFontTile, mFontMain, mFontSub, mItemMargin, mShowExt, mSplitFilename, mMaxLines);
 		mListScreenView.setListType(mListType);
 		mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode); // ソート状態を設定
@@ -1006,6 +1007,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mBefColor = SetFileColorActivity.getBefColor(mSharedPreferences);
 		mNowColor = SetFileColorActivity.getNowColor(mSharedPreferences);
 		mAftColor = SetFileColorActivity.getAftColor(mSharedPreferences);
+		mRrbColor = SetFileColorActivity.getRrbColor(mSharedPreferences);
 		mImgColor = SetFileColorActivity.getImgColor(mSharedPreferences);
 		mTxtColor = SetFileColorActivity.getTxtColor(mSharedPreferences);
 		mInfColor = SetFileColorActivity.getInfColor(mSharedPreferences);
@@ -1100,6 +1102,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			return true;
 		}
 		if (mAftColor != SetFileColorActivity.getAftColor(mSharedPreferences)) {
+			return true;
+		}
+		if (mRrbColor != SetFileColorActivity.getRrbColor(mSharedPreferences)) {
 			return true;
 		}
 		if (mImgColor != SetFileColorActivity.getImgColor(mSharedPreferences)) {
