@@ -51,6 +51,13 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Read Color" />
+        <src.comitton.config.color.ColorRrbSetting
+            android:dialogMessage="Please Select Color."
+            android:dialogTitle="Reading Rate Back Color"
+            android:key="RrbRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Reading Rate Back Color" />
         <src.comitton.config.color.ColorImgSetting
             android:dialogMessage="Please Select Color."
             android:dialogTitle="Image File Color"
