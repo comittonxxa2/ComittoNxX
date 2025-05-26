@@ -51,6 +51,13 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="既読ファイルの色" />
+        <src.comitton.config.color.ColorRrbSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="読書率の背景色"
+            android:key="RrbRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="読書率の背景色" />
         <src.comitton.config.color.ColorImgSetting
             android:dialogMessage="色を設定してください。"
             android:dialogTitle="イメージファイルの色"
