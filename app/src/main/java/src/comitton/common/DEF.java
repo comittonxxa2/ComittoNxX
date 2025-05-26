@@ -357,6 +357,7 @@ public class DEF {
 	public static final String KEY_BEFCOLOR = "BefColor";
 	public static final String KEY_NOWCOLOR = "NowColor";
 	public static final String KEY_AFTCOLOR = "AftColor";
+	public static final String KEY_RRBCOLOR = "RrbColor";
 	public static final String KEY_IMGCOLOR = "ImgColor";
 	public static final String KEY_INFCOLOR = "InfColor";
 	public static final String KEY_BAKCOLOR = "BakColor";
@@ -366,6 +367,7 @@ public class DEF {
 	public static final String KEY_BEFRGB = "BefRGB";
 	public static final String KEY_NOWRGB = "NowRGB";
 	public static final String KEY_AFTRGB = "AftRGB";
+	public static final String KEY_RRBRGB = "RrbRGB";
 	public static final String KEY_IMGRGB = "ImgRGB";
 	public static final String KEY_INFRGB = "InfRGB";
 	public static final String KEY_MRKRGB = "MrkRGB";
@@ -803,7 +805,8 @@ public class DEF {
 			, Color.rgb(0, 97, 0) // 19
 			, Color.rgb(97, 97, 0) // 20
 			, Color.rgb(0, 97, 97) // 21
-			, Color.rgb(97, 97, 97)}; // 22
+			, Color.rgb(97, 97, 97) // 22
+			, Color.rgb(128, 128, 128)}; // 23
 	public static final int[] GuideList = {0x80000000 // 0 : 黒
 			, 0x80000070 // 1 : 青
 			, 0x80700000 // 2 : 赤
