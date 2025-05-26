@@ -623,8 +623,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		return -1;
 	}
 
-	public void setDrawColor(int clr_dir, int clr_img, int clr_bef, int clr_now, int clr_aft, int clr_bak, int clr_cur, int clr_mrk, int clr_frm, int clr_txt, int clr_inf) {
-		mFileListArea.setDrawColor(clr_dir, clr_img, clr_bef, clr_now, clr_aft, clr_bak, clr_cur, clr_mrk, clr_frm, clr_inf);
+	public void setDrawColor(int clr_dir, int clr_img, int clr_bef, int clr_now, int clr_aft, int clr_bak, int clr_cur, int clr_mrk, int clr_frm, int clr_txt, int clr_inf, int clr_rrb) {
+		mFileListArea.setDrawColor(clr_dir, clr_img, clr_bef, clr_now, clr_aft, clr_bak, clr_cur, clr_mrk, clr_frm, clr_inf, clr_rrb);
 		mDirListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
 		mServerListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
 		mFavoListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);

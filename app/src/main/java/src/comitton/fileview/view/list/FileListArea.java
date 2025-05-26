@@ -71,6 +71,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private int mBefColor;
 	private int mAftColor;
 	private int mNowColor;
+	private int mRrbColor;
 	private int mBakColor;
 	private int mCurColor;
 	private int mMrkColor;
@@ -772,13 +773,13 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						canvas.drawArc(centerX - radiud1, centerY - radiud1, centerX + radiud1,centerY + radiud1, -90F, rate * 360, true, paint);
 
 						//グラデーション円(中サイズ)を描画
-						paint.setColor(Color.LTGRAY);
-						Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, Color.LTGRAY, Color.GRAY, Shader.TileMode.CLAMP);
+						paint.setColor(getDrawArcBackColor());
+						Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, getDrawArcBackColor(), mRrbColor, Shader.TileMode.CLAMP);
 						paint.setShader(s);
 						canvas.drawOval(new RectF(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2), paint);
 
 						//グラデーション円(小サイズ)を描画
-						s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, Color.GRAY, Color.LTGRAY, Shader.TileMode.CLAMP);
+						s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, mRrbColor, getDrawArcBackColor(), Shader.TileMode.CLAMP);
 						paint.setShader(s);
 						canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
 
@@ -864,13 +865,13 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			canvas.drawArc(centerX - radiud1, centerY - radiud1, centerX + radiud1,centerY + radiud1, -90F, rate * 360, true, paint);
 
 			//グラデーション円(中サイズ)を描画
-			paint.setColor(Color.LTGRAY);
-			Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, Color.LTGRAY, Color.GRAY, Shader.TileMode.CLAMP);
+			paint.setColor(getDrawArcBackColor());
+			Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, getDrawArcBackColor(), mRrbColor, Shader.TileMode.CLAMP);
 			paint.setShader(s);
 			canvas.drawOval(new RectF(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2), paint);
 
 			//グラデーション円(小サイズ)を描画
-			s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, Color.GRAY, Color.LTGRAY, Shader.TileMode.CLAMP);
+			s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, mRrbColor, getDrawArcBackColor(), Shader.TileMode.CLAMP);
 			paint.setShader(s);
 			canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
 
@@ -915,14 +916,40 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	public void setThumbnailId(long mThumbID) {
 		mThumbnailId = mThumbID;
 	}
+	// グラデーション円の色を計算
+	private int getDrawArcBackColor()	{
+		// 読書率の背景色からRGBを取り出す
+		int	red = (mRrbColor >> 16) & 0xFF;
+		int	green = (mRrbColor >> 8) & 0xFF;
+		int	blue = mRrbColor & 0xFF;
+		// グラデーションを付けるため76を加算(元のColor.LTGRAYとColor.GRAYの差分=76)
+		// 値が255を超えた場合はリミッタを入れる
+		red += 76;
+		if	(red > 255)	{
+			red = 255;
+		}
+		green += 76;
+		if	(green > 255)	{
+			green = 255;
+		}
+		blue += 76;
+		if	(blue > 255)	{
+			blue = 255;
+		}
+		// グラデーション円の色を組み立て
+		int	backcolor = 0xFF000000 | (red << 16) | (green << 8) | blue;
+		// グラデーション円の色を返して戻る
+		return	backcolor;
+	}
 
 	// 描画設定
-	public void setDrawColor(int clr_dir, int clr_img, int clr_bef, int clr_now, int clr_aft, int clr_bak, int clr_cur, int clr_mrk, int clr_bdr, int clr_inf) {
+	public void setDrawColor(int clr_dir, int clr_img, int clr_bef, int clr_now, int clr_aft, int clr_bak, int clr_cur, int clr_mrk, int clr_bdr, int clr_inf, int clr_rrb) {
 		mDirColor = clr_dir;
 		mImgColor = clr_img;
 		mBefColor = clr_bef;
 		mNowColor = clr_now;
 		mAftColor = clr_aft;
+		mRrbColor = clr_rrb;
 		mBakColor = clr_bak;
 		mCurColor = clr_cur;
 		mMrkColor = clr_mrk;
