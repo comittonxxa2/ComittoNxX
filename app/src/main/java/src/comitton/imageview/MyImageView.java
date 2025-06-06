@@ -217,6 +217,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			} catch (InterruptedException e) {
 				// 描画発生による割り込み
 				if (!mIsRunning) {
+					// スレッドのループ待ちカウンタのリセットを入れる
+					mThreadWaitLoop = 0;
 					break;
 				}
 				else {
