@@ -2795,6 +2795,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 
 	@Override
 	public void run() {
+		// 描画スレッド起動時にカンストして動作しない場合があるためスレッドのループ待ちカウンタのリセットを入れる
 		mThreadWaitLoop = 0;
 		// リスト描画処理監視
 		while (true) {
@@ -2805,6 +2806,8 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 			} catch (InterruptedException e) {
 				// 描画発生による割り込み
 				if (!mIsRunning) {
+					// スレッドのループ待ちカウンタのリセットを入れる
+					mThreadWaitLoop = 0;
 					break;
 				}
 				else {
