@@ -477,6 +477,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private boolean mImmEnable;
 	private boolean mBottomFile;
 	private boolean mPinchEnable;
+	private long mActionMoveSkipStartTime;
 
 	private ImageActivity mActivity;
 	private SharedPreferences mSharedPreferences;
@@ -776,6 +777,8 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			mNoiseSwitch.recordPause(false);
 		}
 		if (mImageView != null) {
+			// スレッドのループ待ちカウンタのリセットを入れる
+			mImageView.lockDraw();
 			mImageView.update(true);
 		}
 
@@ -2149,15 +2152,22 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				this.mTouchFirst = true;	// 押してから移動してないフラグ
 				this.mTouchBeginX = x;	// 最初の位置
 				this.mTouchBeginY = y;
+				// タップによるアクション操作の様子見時間の開始ミリ秒を取得
+				mActionMoveSkipStartTime = SystemClock.uptimeMillis();
 				break;
 
 			case MotionEvent.ACTION_MOVE:
 				Logcat.v(logLevel, "ACTION_MOVE");
 				// Logcat.d(logLevel, "x=" + x + ", y=" + y);
-				// 移動位置設定
-				mGuideView.eventTouchMove((int)x, (int)y);
-
-				if (mOperation == TOUCH_COMMAND) {
+				// タップによるアクション操作の様子見時間の経過ミリ秒を取得
+				long nowactiontime = SystemClock.uptimeMillis();
+				int t = (int) (nowactiontime - mActionMoveSkipStartTime);
+				if (t < 100) {
+					// タップによるページめくりとスクロールを優先させるため100ミリ秒未満はアクション操作をスキップさせる
+				}
+				else if (mOperation == TOUCH_COMMAND) {
+					// 移動位置設定
+					mGuideView.eventTouchMove((int)x, (int)y);
 					if (mPageMode && mPageSelect == PAGE_SLIDE) {
 						// スライドページ選択中
 						int sel = GuideView.GUIDE_NOSEL;
@@ -2227,6 +2237,8 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					}
 				}
 				else if (mOperation == TOUCH_OPERATION) {
+					// 移動位置設定
+					mGuideView.eventTouchMove((int)x, (int)y);
 					if (mLongTouchMode) {
 						// ズーム表示
 						callZoomAreaDraw(x, y);
