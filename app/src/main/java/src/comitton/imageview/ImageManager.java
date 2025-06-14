@@ -4,9 +4,14 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -18,6 +23,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
+import java.nio.ByteBuffer;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -213,6 +221,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mMaxCmpLength;
 	private int mMaxOrgLength;
 	private boolean mLoadImage = false;
+	private int mTimestamp = 0;
 
 	private PdfRenderer mPdfRenderer = null;
 	private RarInputStream mRarStream = null;
@@ -243,6 +252,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mFileSort = sort;
 		mHidden = hidden;
 		mOpenMode = openmode;
+		mTimestamp = (int)FileAccess.date(mActivity, mFilePath, mUser, mPass);//(int)timestamp;
 
  		// スレッド数
  		mMaxThreadNum = maxthread;
@@ -372,73 +382,172 @@ public class ImageManager extends InputStream implements Runnable {
 		int count = 0;
 		int maxcmplen = 0;
 		int maxorglen = 0;
+		int timestamp = 0;
+		boolean cachecheck = false;
 		List<FileListItem> list = new ArrayList<FileListItem>();
 		byte [] cdhBuf = null;
 		long fileLength = cmpDirectLength();
 		long cdhLength = 0;		//central directory header length
 
 		boolean rar5 = false;
+		boolean stop = false;
 
 		sendProgress(0, count);
 
-		// ZIPかRARか判定
-		Logcat.d(logLevel, "読み込みます.");
-		cmpDirectRead(buf, 0, SIZE_BUFFER);
-		if (buf[0] == 'P' && buf[1] == 'K'){
-			mFileType = FILETYPE_ZIP;
-			Logcat.d(logLevel, "ZIPファイルです.");
-		}
-		else if (buf[0] == 'R' && buf[1] == 'a' && buf[2] == 'r') {
-			mFileType = FILETYPE_RAR;
-			if (mOpenMode == OPENMODE_THUMBSORT) {
-				// RARファイルかつソートありのサムネイル取得であればソート条件を取得
-				SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
-				thumbSortType = SetFileListActivity.getThumbSortType(sp);
-				Logcat.d(logLevel, "thumbSortType=" + thumbSortType);
-			}
-			Logcat.d(logLevel, "RARファイルです.");
-		}
-		else {
-			DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
-			mFileList = new FileListItem[0];
-			return;
-		}
-		cmpDirectSeek(0);
+		Logcat.d(logLevel, "mFilePath:" + mFilePath);
+		String name = mFilePath;
+		// 区切りをアンダーバーへ変換
+		name = name.replace("\\", "_");
+		name = name.replace("/", "_");
+		// ファイル名をMD5のハッシュ値へ変換
+		String pathcode = DEF.makeCode(name, 0, 0);
+		String file = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+		Logcat.d(logLevel, "file:" + file);
+		// ファイルリストを格納するディレクトリを作成する
+		new File(DEF.getBaseDirectory() + "filelist/").mkdirs();
 
-		if (mFileType == FILETYPE_ZIP) {
-			// 圧縮されたファイル情報取得
-			headpos = zipSearchCentral();
-			Logcat.d(logLevel, MessageFormat.format("ZIPセントラルディレクトリヘッダ位置: fileLength={0}, headpos={1}", new Object[]{fileLength, headpos}));
-			if (headpos == 0) {
-				cmpDirectSeek(0);
-			} else {
-				//central directory headerが見つかった場合、一括でバッファに読み込む
-				// ZIPはファイル情報が1か所にまとめて格納されている
-				cdhLength = fileLength - headpos;
-				cdhBuf = new byte[(int) cdhLength];
-				cmpDirectRead(cdhBuf, 0, (int) cdhLength);
-				cmpDirectSeek(headpos);
-				Logcat.d(logLevel, MessageFormat.format("セントラルディレクトリヘッダをバッファに読み込みます: cdhLength={0}", new Object[]{cdhLength}));
+		byte[] readData = new byte[1024 * 1024 * 16];
+		int	readbytes;
+		ZipInputStream zin = null;
+		ZipEntry zipEntry = null;
+		byte[] zbuff = new byte[14];
+		byte[] lbuff = new byte[4];
+		byte[] bbuff = new byte[2];
+
+        try {
+			// ZIP形式の圧縮ファイルを展開する
+			zin = new ZipInputStream(new FileInputStream(file));
+			// 最初のエントリを得る
+			zipEntry = zin.getNextEntry();
+			File entryfile = new File(zipEntry.getName());
+			Logcat.d(logLevel, "file:" + entryfile);
+			byte[] buffer = new byte[1024];
+			int	readcount = 0;
+			// エントリの内容を読み込む
+			while ((readbytes = zin.read(buffer)) != -1) {
+				for	(int i = 0; i < readbytes; i++)	{
+					readData[readcount] = buffer[i];
+					readcount++;
+				}
 			}
+			Logcat.d(logLevel, "readbytes=" + readcount);
+            // エントリをクローズする
+            zin.closeEntry();
+			// 次のエントリを得る
+			zipEntry = zin.getNextEntry();
+			File nextfile = new File(zipEntry.getName());
+			Logcat.d(logLevel, "file:" + nextfile);
+			// エントリの内容を読み込む
+            readbytes = zin.read(zbuff);
+			Logcat.d(logLevel, "readbytes=" + readbytes);
+            // エントリをクローズする
+            zin.closeEntry();
+        } catch (Exception e) {
+			// ファイルの読み込みに失敗した場合は素通りしてファイルリストを再取得させる
+			Logcat.e(logLevel, "ZipInputStream error.", e);
+        }
+
+		try {
+			// シリアライズされたファイルリストを元に戻す
+		    ByteArrayInputStream bais = new ByteArrayInputStream(readData);  
+		    ObjectInputStream ois = new ObjectInputStream(bais);  
+		    mFileList = (FileListItem[])ois.readObject();
+		    // ファイルリストへの変換に成功したと判断
+		    cachecheck = true;
+		} catch (Exception e) {
+			// ファイルリストへの変換に失敗した場合は素通りしてファイルリストを再取得させる
+			Logcat.e(logLevel, "Deserializable error.", e);
 		}
 
-		// 簡易的なRAR5判定
-		if (mFileType == FILETYPE_RAR) {
-			byte[] sigbuff = new byte[8];
-			cmpDirectRead( sigbuff, 0, 8 );
-			if( sigbuff[0] == 0x52 && sigbuff[1] == 0x61 && sigbuff[2] == 0x72 && sigbuff[3] == 0x21 &&
-				sigbuff[4] == 0x1a && sigbuff[5] == 0x07 && sigbuff[6] == 0x01 && sigbuff[7] == 0x00 ){
-				rar5 = true;
-				Logcat.d(logLevel, "RAR5です.");
+		// RARのメモリ確保時のパラメータを読み込む
+		for	(int i = 0; i < 4; i++)	{
+			lbuff[i] = zbuff[i];
+		}
+        maxcmplen = ByteBuffer.wrap(lbuff).getInt();
+		// RARのメモリ確保時のパラメータを読み込む
+		for	(int i = 0; i < 4; i++)	{
+			lbuff[i] = zbuff[i + 4];
+		}
+        maxorglen = ByteBuffer.wrap(lbuff).getInt();
+        // タイムスタンプを読み込む
+		for	(int i = 0; i < 4; i++)	{
+			lbuff[i] = zbuff[i + 8];
+		}
+		// ファイルのタイプを読み込む
+        timestamp = ByteBuffer.wrap(lbuff).getInt();
+		for	(int i = 0; i < 2; i++)	{
+			bbuff[i] = zbuff[i + 12];
+		}
+        mFileType = ByteBuffer.wrap(bbuff).getShort();
+        if	(mTimestamp == 0)	{
+			// イメージビューアからの呼び出し以外でファイルのタイムスタンプが取得できない場合は保存していたタイムスタンプと同じにする
+			mTimestamp = timestamp;
+		}
+        if	(timestamp == mTimestamp && cachecheck == true)	{
+			// ファイルリストの読み込みとタイムスタンプが同じだった場合はファイルリストの取得をキャンセルさせる
+			Logcat.d(logLevel, "stop.");
+		    stop = true;
+		}
+
+		if	(!stop)	{
+			// ZIPかRARか判定
+			Logcat.d(logLevel, "読み込みます.");
+			cmpDirectRead(buf, 0, SIZE_BUFFER);
+			if (buf[0] == 'P' && buf[1] == 'K'){
+				mFileType = FILETYPE_ZIP;
+				Logcat.d(logLevel, "ZIPファイルです.");
+			}
+			else if (buf[0] == 'R' && buf[1] == 'a' && buf[2] == 'r') {
+				mFileType = FILETYPE_RAR;
+				if (mOpenMode == OPENMODE_THUMBSORT) {
+					// RARファイルかつソートありのサムネイル取得であればソート条件を取得
+					SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+					thumbSortType = SetFileListActivity.getThumbSortType(sp);
+					Logcat.d(logLevel, "thumbSortType=" + thumbSortType);
+				}
+				Logcat.d(logLevel, "RARファイルです.");
 			}
 			else {
-				Logcat.d(logLevel, "RAR5ではありません.");
+				DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
+				mFileList = new FileListItem[0];
+				return;
 			}
 			cmpDirectSeek(0);
+
+			if (mFileType == FILETYPE_ZIP) {
+				// 圧縮されたファイル情報取得
+				headpos = zipSearchCentral();
+				Logcat.d(logLevel, MessageFormat.format("ZIPセントラルディレクトリヘッダ位置: fileLength={0}, headpos={1}", new Object[]{fileLength, headpos}));
+				if (headpos == 0) {
+					cmpDirectSeek(0);
+				} else {
+					//central directory headerが見つかった場合、一括でバッファに読み込む
+					// ZIPはファイル情報が1か所にまとめて格納されている
+					cdhLength = fileLength - headpos;
+					cdhBuf = new byte[(int) cdhLength];
+					cmpDirectRead(cdhBuf, 0, (int) cdhLength);
+					cmpDirectSeek(headpos);
+					Logcat.d(logLevel, MessageFormat.format("セントラルディレクトリヘッダをバッファに読み込みます: cdhLength={0}", new Object[]{cdhLength}));
+				}
+			}
+
+			// 簡易的なRAR5判定
+			if (mFileType == FILETYPE_RAR) {
+				byte[] sigbuff = new byte[8];
+				cmpDirectRead( sigbuff, 0, 8 );
+				if( sigbuff[0] == 0x52 && sigbuff[1] == 0x61 && sigbuff[2] == 0x72 && sigbuff[3] == 0x21 &&
+					sigbuff[4] == 0x1a && sigbuff[5] == 0x07 && sigbuff[6] == 0x01 && sigbuff[7] == 0x00 ){
+					rar5 = true;
+					Logcat.d(logLevel, "RAR5です.");
+				}
+				else {
+					Logcat.d(logLevel, "RAR5ではありません.");
+				}
+				cmpDirectSeek(0);
+			}
 		}
 
 		FileListItem fl = null;
-		boolean stop = false;
 		try {
 			while (!stop) {
 
@@ -616,8 +725,95 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 		}
 
-		sort(list);
-		mFileList = list.toArray(new FileListItem[0]);
+		if	(!stop)	{
+			sort(list);
+			mFileList = list.toArray(new FileListItem[0]);
+
+			byte retObject[] = null;
+			try {
+				// ファイルリストをシリアライズする
+				ByteArrayOutputStream byteos = new ByteArrayOutputStream();
+				ObjectOutputStream objos = new ObjectOutputStream(byteos);
+				objos.writeObject(mFileList);
+				objos.close();
+				byteos.close();
+				retObject = byteos.toByteArray();
+			} catch (Exception e) {
+				// シリアライズに失敗した場合は戻る
+				Logcat.e(logLevel, "Serializable error.", e);
+				return;
+			}
+
+			// RARのメモリ確保時のパラメータを書き出す
+			lbuff = ByteBuffer.allocate(4).putInt(maxcmplen).array();
+			for (int i = 0; i < 4; i++)	{
+				zbuff[i] = lbuff[i];
+			}
+			// RARのメモリ確保時のパラメータを書き出す
+			lbuff = ByteBuffer.allocate(4).putInt(maxorglen).array();
+			for (int i = 0; i < 4; i++)	{
+				zbuff[i + 4] = lbuff[i];
+			}
+			// タイムスタンプを書き出す(イメージビューアからの呼び出しがあることを想定しているため中身が0でもそのまま書き込む)
+			lbuff = ByteBuffer.allocate(4).putInt(mTimestamp).array();
+			for (int i = 0; i < 4; i++)	{
+				zbuff[i + 8] = lbuff[i];
+			}
+			// ファイルのタイプを書きだす
+			bbuff = ByteBuffer.allocate(2).putShort(mFileType).array();
+			for (int i = 0; i < 2; i++)	{
+				zbuff[i + 12] = bbuff[i];
+			}
+
+			try {
+				// あらかじめZIPファイルを削除
+				new File(file).delete();
+			} catch (Exception e) {
+				// ファイルが存在しなかった場合は素通り
+				Logcat.e(logLevel, "Delete error.", e);
+			}
+		    // ZIP形式の出力ストリーム
+		    ZipOutputStream zos = null;
+			try {
+				// ZipOutputStreamオブジェクトの作成
+				zos = new ZipOutputStream(new FileOutputStream(file));
+			} catch (Exception e) {
+				// オブジェクトの作成に失敗した場合は戻る
+				Logcat.e(logLevel, "ZipOutputStream error.", e);
+				return;
+			}
+			// ファイル名の格納用
+			String filename;
+			try {
+				// エントリのファイル名を設定
+				filename = String.format("mFileList.bin");
+	            // 最初のZIPエントリを作成
+	            ZipEntry ze1 = new ZipEntry(filename);
+	            // 作成したZIPエントリを登録
+	            zos.putNextEntry(ze1);
+	            // バッファからZIP形式の出力ストリームへ書き出す
+				zos.write(retObject);
+	            // エントリをクローズする
+				zos.closeEntry();
+				// 次のエントリのファイル名を設定
+				filename = String.format("setting.bin");
+	            // 次のZIPエントリを作成
+	            ZipEntry ze2 = new ZipEntry(filename);
+	            // 作成したZIPエントリを登録
+	            zos.putNextEntry(ze2);
+	            // バッファからからZIP形式の出力ストリームへ書き出す
+				zos.write(zbuff);
+	            // エントリをクローズする
+				zos.closeEntry();
+				// 出力ストリームを閉じる
+				zos.flush();
+				zos.close();
+			} catch (Exception e) {
+				// ZIPファイルへの書き込みが失敗した場合は戻る
+				Logcat.e(logLevel, "Write error.", e);
+				return;
+			}
+		}
 		// RARであればメモリ確保
 		if (mFileType == FILETYPE_RAR) {
 			int ret = CallJniLibrary.rarAlloc(maxcmplen, maxorglen);
@@ -633,8 +829,7 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public boolean sendProgress(int type, int count) {
 		// 10ファイル単位で通知
-		/*
-		//if (count % 10 == 0) {
+		if (count % 10 == 0 && count != 0) {
 			if (!mRunningFlag) {
 				return false;
 			}
@@ -643,8 +838,7 @@ public class ImageManager extends InputStream implements Runnable {
 			message.arg1 = count;
 			message.arg2 = type;
 			mHandler.sendMessage(message);
-		//}
-		*/
+		}
 		return true;
 	}
 

@@ -638,8 +638,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		mReadBreak = false;
 
 		mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-//		mReadDialog.setMessage(mReadingMsg[0] + " (0)");
-		mReadDialog.setMessage(mReadingMsg[0]);
+		mReadDialog.setMessage(mReadingMsg[0] + " (0)");
 		mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 		mReadDialog.setCancelable(true);
 		mReadDialog.setOnShowListener(new DialogInterface.OnShowListener() {
@@ -1073,7 +1072,6 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 			case DEF.HMSG_PROGRESS:
 				// 読込中の表示
-				/*
 				synchronized (this) {
 					if (!isFinishing() && mReadDialog != null) {
 						// ページ読み込み中
@@ -1087,7 +1085,6 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
 					}
 				}
-				*/
 				return true;
 
 			case DEF.HMSG_EPUB_PARSE:
