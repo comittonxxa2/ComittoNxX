@@ -1,6 +1,8 @@
 package src.comitton.fileview.data;
 
-public class FileListItem {
+import java.io.Serializable;
+
+public class FileListItem implements Serializable{
 	public String name;
 	public short type;
 	public short exttype;
