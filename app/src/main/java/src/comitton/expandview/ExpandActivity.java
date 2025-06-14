@@ -913,7 +913,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		switch (msg.what) {
 			case DEF.HMSG_PROGRESS:
 				// 読込中の表示
-				/*
 				synchronized (this) {
 					if (mReadDialog != null) {
 						// ページ読み込み中
@@ -927,7 +926,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
 					}
 				}
-				*/
 				return true;
 
 			case DEF.HMSG_ERROR: {
@@ -1052,8 +1050,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 
 		// プログレスダイアログ準備
 		mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-//		mReadDialog.setMessage(mReadingMsg[0] + " (0)");
-		mReadDialog.setMessage(mReadingMsg[0]);
+		mReadDialog.setMessage(mReadingMsg[0] + " (0)");
 		mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 		mReadDialog.setCancelable(true);
 		mReadDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
