@@ -785,7 +785,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			// なぜか固まることがあるので暫定で実施
 			long now = SystemClock.uptimeMillis();
 			int t = (int) (now - mEffectStart);
-			if (t >= mEffectTime) {
+			if (mEffect != 0 && t >= mEffectTime) {
 				// エフェクト中でない場合は mBitmapLoading を終了させる
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
@@ -1211,6 +1211,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					startViewTimer(DEF.HMSG_EVENT_SCROLL_NEXT);
 				}
 				else {
+					// エフェクト無しのときはそのまま修了
+					mLoadingNext = true;
+					mBitmapLoading = false;
 					mScrolling = false;
 					if (mAutoPlay) {
 						startViewTimer(DEF.HMSG_EVENT_AUTOPLAY);
@@ -1221,7 +1224,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			case DEF.HMSG_EVENT_LOADING:
 			case DEF.HMSG_EVENT_LOADING_NEXT:
 				// イメージをローディング中
-				if (mBitmapLoading && t > mEffectTime) {
+				if (mEffect != 0 && mBitmapLoading && t > mEffectTime) {
 					mGuideView.countLoading(true);
 					startViewTimer(DEF.HMSG_EVENT_LOADING_NEXT);
 				}
@@ -1887,7 +1890,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 			long now = SystemClock.uptimeMillis();
 			int t = (int) (now - mEffectStart);
-			if (t >= mEffectTime) {
+			if (mEffect != 0 && t >= mEffectTime) {
 				// なぜか固まることがあるので暫定で実施
 				// エフェクト中でない場合は mBitmapLoading を終了させる
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
@@ -3267,7 +3270,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 			long now = SystemClock.uptimeMillis();
 			int t = (int) (now - mEffectStart);
-			if (t >= mEffectTime) {
+			if (mEffect != 0 && t >= mEffectTime) {
 				// なぜか固まることがあるので暫定で実施
 				// エフェクト中でない場合は mBitmapLoading を終了させる
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
