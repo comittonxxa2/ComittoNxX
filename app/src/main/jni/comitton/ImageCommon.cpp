@@ -374,12 +374,13 @@ int MemAlloc(int index, int buffsize)
             gBuffMng[index][i].Buff = (LONG *) malloc(BLOCKSIZE * sizeof(LONG));
             if (gBuffMng[index][i].Buff == nullptr) {
                 LOGE("MemAlloc: malloc error.(Buff / index=%d)", i);
-                ret = ERROR_CODE_MALLOC_FAILURE;
-                goto ERROREND;
+                // 確保に失敗した場合は戻らずに途中でループ終了させる
+                break;
             }
             gBuffMng[index][i].Page = -1;
-            gBuffNum[index] = i;
         }
+        // 確保した数だけ保存
+        gBuffNum[index] = i;
 
         // 拡大縮小画像領域確保
         gSclBuffMng[index] = (BUFFMNG *) malloc(sizeof(BUFFMNG) * SCLBUFFNUM);
