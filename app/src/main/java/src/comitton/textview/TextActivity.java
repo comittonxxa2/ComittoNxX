@@ -1550,6 +1550,27 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 						else {
 							// ページ選択方法がスライダー表示かサムネイルのとき
 
+							if (result == 0x4003) {
+								// 左側ボタン
+								int leftpage = mPageWay == DEF.PAGEWAY_RIGHT ? mTextMgr.length() - 1 : 0;
+								if (mSelectPage != leftpage) {
+									mSelectPage = leftpage;
+								}
+							} else {
+								// 右側ボタン
+								int rightpage = mPageWay == DEF.PAGEWAY_RIGHT ? 0 : mTextMgr.length() - 1;
+								if (mSelectPage != rightpage) {
+									mSelectPage = rightpage;
+								}
+							}
+							// ページ選択確定
+							if (mSelectPage != mCurrentPage) {
+								// ページ変更時に振動
+								startVibrate();
+								mCurrentPage = mSelectPage;
+								setPage(false);
+							}
+							/*
 							AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this, R.style.MyDialog);
 							if ((result == 0x4002 && mPageWay == DEF.PAGEWAY_RIGHT) || (result == 0x4003 && mPageWay != DEF.PAGEWAY_RIGHT)) {
 								dialogBuilder.setTitle(R.string.pageTop);
@@ -1595,6 +1616,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 									mActivity.getWindow().getDecorView().getSystemUiVisibility());
 							dialog.show();
 							dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+							*/
 						}
 					}
 					else {
