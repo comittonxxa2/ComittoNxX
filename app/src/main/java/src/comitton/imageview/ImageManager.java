@@ -25,8 +25,6 @@ import java.util.concurrent.Executors;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.Enumeration;
 import java.nio.ByteBuffer;
 
 import android.app.Activity;
@@ -421,26 +419,22 @@ public class ImageManager extends InputStream implements Runnable {
 
 		synchronized (mLock) {
 	        try {
-				// エントリの内容を読み込む
-				ZipFile zip = new ZipFile(file);
-				Enumeration<? extends ZipEntry> entries = zip.entries();
-				ZipEntry entry = entries.nextElement();
-				// ファイルサイズを取得して領域確保
-				readData = new byte[(int)entry.getSize()];
+				// ZIP形式の圧縮ファイルを展開する
 				zin = new ZipInputStream(new FileInputStream(file));
 				// 最初のエントリを得る
 				zipEntry = zin.getNextEntry();
 				File entryfile = new File(zipEntry.getName());
 				Logcat.d(logLevel, "file:" + entryfile);
-				// ZIP形式の圧縮ファイルを展開する
-				int	readcount = 0;
+				// ZIP形式の圧縮ファイルをメモリー上に展開する
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				while ((readbytes = zin.read(buffer)) != -1) {
-					for	(int i = 0; i < readbytes; i++)	{
-						readData[readcount] = buffer[i];
-						readcount++;
-					}
+					baos.write(buffer, 0, readbytes);
 				}
-				Logcat.d(logLevel, "readbytes=" + readcount);
+				// 展開したデータを格納
+				readData = baos.toByteArray();
+	            // 出力ストリームを閉じる
+				baos.close();
+				Logcat.d(logLevel, "readbytes=" + readbytes);
 	            // エントリをクローズする
 	            zin.closeEntry();
 				// 次のエントリを得る
@@ -452,6 +446,8 @@ public class ImageManager extends InputStream implements Runnable {
 				Logcat.d(logLevel, "readbytes=" + readbytes);
 	            // エントリをクローズする
 	            zin.closeEntry();
+	            // 入力ストリームを閉じる
+				zin.close();
 	        } catch (Exception e) {
 				// ファイルの読み込みに失敗した場合は素通りしてファイルリストを再取得させる
 				Logcat.e(logLevel, "ZipInputStream error.", e);
@@ -748,9 +744,9 @@ public class ImageManager extends InputStream implements Runnable {
 					ByteArrayOutputStream byteos = new ByteArrayOutputStream();
 					ObjectOutputStream objos = new ObjectOutputStream(byteos);
 					objos.writeObject(mFileList);
+					retObject = byteos.toByteArray();
 					objos.close();
 					byteos.close();
-					retObject = byteos.toByteArray();
 				} catch (Exception e) {
 					// シリアライズに失敗した場合は戻る
 					Logcat.e(logLevel, "Serializable error.", e);
