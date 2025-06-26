@@ -36,6 +36,7 @@ import src.comitton.dialog.TabDialogFragment;
 import src.comitton.dialog.TextConfigDialog;
 import src.comitton.dialog.TextConfigDialog.TextConfigListenerInterface;
 import src.comitton.fileview.filelist.RecordList;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.imageview.PageSelectListener;
 import src.comitton.noise.NoiseSwitch;
 import src.comitton.imageview.ImageManager;
@@ -357,6 +358,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
 		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 6);
 		mIsConfSave = true;
+		mNoiseSwitch = new NoiseSwitch(mHandler);
 
 		// 慣性スクロール用領域初期化
 		mTouchPointNum = 0;
@@ -390,6 +392,11 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		if (mNoSleep) {
 	        // スリープしない
 	        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		}
+
+		if (FileSelectActivity.GetRecordSw()) {
+			// マイク開始
+			mNoiseSwitch.recordStart();
 		}
 
 		mTextView = new MyTextView(this);
@@ -598,7 +605,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 			Logcat.d(logLevel, "mUriPath=" + mUriPath + ", mFileName=" + mFileName + ", mTextName=" + mTextName);
 			mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, ImageManager.FILESORT_NAME_UP, handler, true, ImageManager.OPENMODE_TEXTVIEW, 1);
 			//mImageMgr.LoadImageList(mMemSize, mMemNext, mMemPrev);
-			mImageMgr.LoadImageList(0, 0, 0);
+			mImageMgr.LoadImageList(0, 0, 0, 0);
 			mTextMgr = new TextManager(mImageMgr, mTextName, mUser, mPass, handler, mActivity, mFileType);
 			//mTextMgr.LoadTextFile();
 			mTextMgr.formatTextFile(mTextWidth, mTextHeight, mHeadSize, mBodySize, mRubiSize, mSpaceW, mSpaceH, mMarginW, mMarginH, mPicSize, mFontFile, mAscMode);
@@ -641,11 +648,6 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	// 終了処理
 	protected void onDestroy() {
 		super.onDestroy();
-
-		if (mNoiseSwitch != null) {
-			mNoiseSwitch.recordStop();
-			mNoiseSwitch = null;
-		}
 
 		if (mTextView != null) {
 			mTextView.setTextBuffer(null, null, null);
@@ -980,7 +982,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 			case DEF.HMSG_NOISESTATE:
 				// 状態表示
-				if (mNoiseSwitch != null) {
+				if (FileSelectActivity.GetRecordSw()) {
 					mGuideView.setNoiseState(msg.arg1, mNoiseLevel ? msg.arg2 : -1);
 				}
 				return true;
@@ -2042,7 +2044,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 //		// ページ選択
 //		mMenuDialog.addItem(DEF.MENU_PAGESEL, res.getString(R.string.pageselMenu));
 		// 音操作
-		mMenuDialog.addItem(DEF.MENU_NOISE, res.getString(R.string.noiseMenu), mNoiseSwitch != null);
+		mMenuDialog.addItem(DEF.MENU_NOISE, res.getString(R.string.noiseMenu), FileSelectActivity.GetRecordSw());
 		// 画面回転
 		if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
 			mMenuDialog.addItem(DEF.MENU_ROTATE, res.getString(R.string.rotateMenu));
@@ -2273,16 +2275,16 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 			}
 			case DEF.MENU_NOISE: {
 				// マイク開始
-				if (mNoiseSwitch == null) {
-					mNoiseSwitch = new NoiseSwitch(mHandler);
+				if (!FileSelectActivity.GetRecordSw()) {
 					mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
 					mNoiseSwitch.recordStart();
+					FileSelectActivity.SetRecordSw(true);
 					// 画面をスリープ無効
 					getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 				}
 				else {
 					mNoiseSwitch.recordStop();
-					mNoiseSwitch = null;
+					FileSelectActivity.SetRecordSw(false);
 					mGuideView.setNoiseState(0, 0);
 					// 画面をスリープ有効
 					getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -2748,9 +2750,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mNoiseOver = DEF.calcNoiseLevel(SetNoiseActivity.getNoiseOver(sharedPreferences));
 		mNoiseLevel = SetNoiseActivity.getNoiseLevel(sharedPreferences);
 		mNoiseDec = SetNoiseActivity.getNoiseDec(sharedPreferences);
-		if (mNoiseSwitch != null) {
-			mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
-		}
+		mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
 
 		mMgnColor = SetImageTextColorActivity.getTxtMgnColor(sharedPreferences);
 		mCenColor = SetImageTextColorActivity.getTxtCntColor(sharedPreferences);
