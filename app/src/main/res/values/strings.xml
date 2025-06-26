@@ -452,6 +452,16 @@
     <string name="maxthread06">6 threads</string>
     <string name="maxthread07">7 threads</string>
     <string name="maxthread08">8 threads</string>
+    <string name="memcache00">System Settings</string>
+    <string name="memcache01">Under 90%%</string>
+    <string name="memcache02">Under 80%%</string>
+    <string name="memcache03">Under 70%%</string>
+    <string name="memcache04">Under 60%%</string>
+    <string name="memcache05">Under 50%%</string>
+    <string name="memcache06">Under 40%%</string>
+    <string name="memcache07">Under 30%%</string>
+    <string name="memcache08">Under 20%%</string>
+    <string name="memcache09">Under 10%%</string>
     <string name="Cancel">Cancel</string>
     <string name="desc"></string>
     <string name="none">None</string>
