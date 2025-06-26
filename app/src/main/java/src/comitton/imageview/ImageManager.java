@@ -269,12 +269,13 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "終了します.");
 	}
 
-	public void LoadImageList(int memsize, int memnext, int memprev) {
+	public void LoadImageList(int memsize, int memnext, int memprev, int memcache) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. memsize=" + memsize + ", memnext=" + memnext + ", memprev=" + memprev);
 		mMemSize = memsize;
 		mMemNextPages = memnext;
 		mMemPrevPages = memprev;
+		mMemCacheThreshold = memcache;
 
 		try {
 
@@ -1682,8 +1683,12 @@ public class ImageManager extends InputStream implements Runnable {
 		boolean fMemCacheExec = false;
 		int prevReadPage = -1;
 		int sleepTimer;
+		boolean mInitCacheFlag = false;
+		int mDiffPage = 0;
 
 		sleepTimer = 1000;
+		// ページキャッシュ開始の閾値
+		double mThreshold = (10 - mMemCacheThreshold) * 0.1;
 
 		// キャッシュ読込
 		while (mRunningFlag && !isError) {
@@ -1761,18 +1766,35 @@ public class ImageManager extends InputStream implements Runnable {
 
 							// 範囲内の時だけチェック
 							if (!mMemCacheFlag[chkPage].fSource) {
-								if (prevReadPage != chkPage && memWriteLock(chkPage, 0, false)) {
+								// ページキャッシュ開始のしきい値
+								int mDiffPageMax = (int)(mDiffPage * mThreshold);
+								// ページの差分
+								int mDiffPageAbs = Math.abs(chkPage - mCurrentPage);
+								boolean mSkipFreeMemory = false;
+								if ((mInitCacheFlag == true) && ((mDiffPageMax <= mDiffPageAbs - 1) || (mDiffPageMax <= mDiffPageAbs + 1)) && (mMemCacheThreshold != 0)) {
+									// ページキャッシュ開始のしきい値に達しない場合はキャッシュの開放をスキップさせる
+									mSkipFreeMemory = true;
+								}
+								if (prevReadPage != chkPage && memWriteLock(chkPage, 0, false, mSkipFreeMemory)) {
 									// メモリキャッシュ確保OK
 									// Logcat.d(logLevel, "current" + mCurrentPage + ", chkPage" + chkPage + ", prevPage=" + prevReadPage);
 									page = chkPage;
 									prevReadPage = chkPage;
 									fMemCacheWrite = true;
 									fContinue = false;
+									// ページの差分を計算させるため初回時に戻す
+									mInitCacheFlag = false;
 								}
 								else {
 									// メモリがなくなったら終了
 									// Logcat.d(logLevel, "chkPage" + chkPage + ", prevReadPage=" + prevReadPage);
 									fMemCacheExec = false;
+									if (mInitCacheFlag == false && mMemCacheThreshold != 0) {
+										// 初回時のみ
+										mInitCacheFlag = true;
+										// ページの差分を計算(これが最大のページ格納サイズになる)
+										mDiffPage = Math.abs(chkPage - mCurrentPage);
+									}
 								}
 								// ロックしてみたら結果によらずこれ以上探さない
 								break;
@@ -2941,6 +2963,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mMemSize = 0;
 	private int mMemPrevPages = 0;
 	private int mMemNextPages = 0;
+	private int mMemCacheThreshold = 0;
 	private MemCacheFlag[] mMemCacheFlag;
 	private int[] mMemPriority;
 
@@ -3047,7 +3070,11 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	// キャッシュ書き込みするページを指定
-	public boolean memWriteLock(int page, int half, boolean sclMode) {
+	public boolean memWriteLock(int page, int half, boolean sclMode, boolean skipMode) {
+		if (skipMode) {
+			// ページキャッシュ開始しきい値が有効の場合は何もしない
+			return false;
+		}
 		if (!sclMode && mMemCacheFlag[page].fSource) {
 			// 元画像読み込みなのに未キャッシュじゃない場合
 			return false;
@@ -3614,7 +3641,7 @@ public class ImageManager extends InputStream implements Runnable {
 			SizeCheckImage(page);
 		}
 
-		if (!memWriteLock(page, 0, false)) {
+		if (!memWriteLock(page, 0, false, false)) {
 			// throw new IOException("Memory Lock Error.");
 			return null;
 		}
@@ -3853,7 +3880,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mEpubOrder = true;
 		mEpubMode = TextManager.EPUB_MODE_COVER;
 
-		LoadImageList(0, 0, 0);
+		LoadImageList(0, 0, 0, 0);
 
 		if (mFileList != null || mFileList.length != 0) {
 			Logcat.d(logLevel, "mFileList[0].name=" + mFileList[0].name);
@@ -3868,7 +3895,7 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "開始します. page=" + page + ", width=" + width + ", height=" + height);
 
 		if (mFileList == null || mFileList.length == 0) {
-			LoadImageList(0, 0, 0);
+			LoadImageList(0, 0, 0, 0);
 		}
 
 		if (mFileList == null || mFileList.length == 0) {
@@ -4852,7 +4879,7 @@ public class ImageManager extends InputStream implements Runnable {
 				Logcat.v(logLevel, "Page=" + page1 + ", Half=" + half1 + ", 画像作成開始");
 				mFileList[page1].swidth[half1] = width[0];
 				mFileList[page1].sheight[half1] = height[0];
-				if (memWriteLock(page1, half1, true)) {
+				if (memWriteLock(page1, half1, true, false)) {
 					// スケール作成
 					sendMessage(mHandler, DEF.HMSG_CACHE, 0, 2, null);
 //					long sttime = SystemClock.uptimeMillis();
@@ -4896,7 +4923,7 @@ public class ImageManager extends InputStream implements Runnable {
 			else {
 				mFileList[page2].swidth[half2] = width[1];
 				mFileList[page2].sheight[half2] = height[1];
-				if (memWriteLock(page2, half2, true)) {
+				if (memWriteLock(page2, half2, true, false)) {
 					// スケール作成
 					sendMessage(mHandler, DEF.HMSG_CACHE, 0, 2, null);
 //					long sttime = SystemClock.uptimeMillis();
