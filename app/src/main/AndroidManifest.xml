@@ -167,6 +167,12 @@
             android:launchMode="singleTop"
             android:resizeableActivity="true" >
         </activity>
+        <activity
+            android:name="src.comitton.config.SetCustomUrlSchemeActivity"
+            android:theme="@style/MyTheme"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true" >
+        </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
