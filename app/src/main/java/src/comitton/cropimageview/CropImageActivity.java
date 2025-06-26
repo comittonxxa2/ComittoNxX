@@ -144,7 +144,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
         ImageManager imageMgr = null;
         if(mCropPath == null) {
             imageMgr = new ImageManager(this, mPath, mFile, mUser, mPass, ImageManager.FILESORT_NAME_UP, handler,true, ImageManager.OPENMODE_THUMBSORT, 1);
-            imageMgr.LoadImageList(0, 0, 0);
+            imageMgr.LoadImageList(0, 0, 0, 0);
             mCropPath = imageMgr.decompFile(mPage, null);
         }
         if(mCropPath != null) {
