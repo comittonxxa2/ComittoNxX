@@ -41,6 +41,7 @@ import src.comitton.dialog.MenuDialog.MenuSelectListener;
 import src.comitton.dialog.ImageConfigDialog.ImageConfigListenerInterface;
 import src.comitton.dialog.TabDialogFragment;
 import src.comitton.fileview.filelist.RecordList;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.noise.NoiseSwitch;
 import src.comitton.common.GuideView;
 
@@ -262,6 +263,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private int mMemSize;
 	private int mMemNext;
 	private int mMemPrev;
+	private int mMemCache;
 	private int mVolKeyMode;
 	private int mViewRota;
 	private int mRotateBtn;
@@ -526,6 +528,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		mActivity = this;
 		mNextPage = -1;
 		mIsConfSave = true;
+		mNoiseSwitch = new NoiseSwitch(mHandler);
 
 		// ダイアログは初期化
 		PageThumbnail.mIsOpened = false;
@@ -557,6 +560,11 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		if (mNoSleep) {
 			// スリープしない
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		}
+
+		if (FileSelectActivity.GetRecordSw()) {
+			// マイク開始
+			mNoiseSwitch.recordStart();
 		}
 
 		Resources res = getResources();
@@ -716,11 +724,6 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.i(logLevel, "開始します.");
 
-		if (mNoiseSwitch != null) {
-			mNoiseSwitch.recordStop();
-			mNoiseSwitch = null;
-		}
-
 		if (mSourceImage[0] != null) {
 			mSourceImage[0] = null;
 		}
@@ -811,7 +814,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, mFileSort, handler, mHidden, ImageManager.OPENMODE_VIEW, mMaxThread);
 			Logcat.v(logLevel, "メモリ利用状況.\n" + DEF.getMemoryString(mActivity));
 			setMgrConfig(true);
-			mImageMgr.LoadImageList(mMemSize, mMemNext, mMemPrev);
+			mImageMgr.LoadImageList(mMemSize, mMemNext, mMemPrev, mMemCache);
 			Logcat.v(logLevel, "メモリ利用状況.(2回目)\n" + DEF.getMemoryString(mActivity));
 			mImageMgr.setViewSize(mViewWidth, mViewHeight);
 			mImageView.setImageManager(mImageMgr);
@@ -1350,7 +1353,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 			case DEF.HMSG_NOISESTATE:
 				// 状態表示
-				if (mNoiseSwitch != null) {
+				if (FileSelectActivity.GetRecordSw()) {
 					mGuideView.setNoiseState(msg.arg1, mNoiseLevel ? msg.arg2 : -1);
 				}
 				return true;
@@ -3348,7 +3351,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		// mMenuDialog.addItem(DEF.MENU_PAGESEL,
 		// res.getString(R.string.pageselMenu));
 		// 音操作
-		mMenuDialog.addItem(DEF.MENU_NOISE, res.getString(R.string.noiseMenu), mNoiseSwitch != null);
+		mMenuDialog.addItem(DEF.MENU_NOISE, res.getString(R.string.noiseMenu), FileSelectActivity.GetRecordSw());
 		// 自動再生
 		mMenuDialog.addItem(DEF.MENU_AUTOPLAY, res.getString(R.string.playMenu));
 		// 画面回転
@@ -3637,16 +3640,16 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			}
 			case DEF.MENU_NOISE: {
 				// マイク開始
-				if (mNoiseSwitch == null) {
-					mNoiseSwitch = new NoiseSwitch(mHandler);
+				if (!FileSelectActivity.GetRecordSw()) {
 					mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
 					mNoiseSwitch.recordStart();
+					FileSelectActivity.SetRecordSw(true);
 					// 画面をスリープ無効
 					getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 				}
 				else {
 					mNoiseSwitch.recordStop();
-					mNoiseSwitch = null;
+					FileSelectActivity.SetRecordSw(false);
 					mGuideView.setNoiseState(0, 0);
 					// 画面をスリープ有効
 					getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -4223,9 +4226,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			mNoiseOver = DEF.calcNoiseLevel(SetNoiseActivity.getNoiseOver(sharedPreferences));
 			mNoiseLevel = SetNoiseActivity.getNoiseLevel(sharedPreferences);
 			mNoiseDec = SetNoiseActivity.getNoiseDec(sharedPreferences);
-			if (mNoiseSwitch != null) {
-				mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
-			}
+			mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
 
 			mMgnColor = SetImageTextColorActivity.getMgnColor(sharedPreferences);
 			mCenColor = SetImageTextColorActivity.getCntColor(sharedPreferences);
@@ -4294,6 +4295,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			mMemSize = DEF.calcMemSize(SetCacheActivity.getMemSize(sharedPreferences));
 			mMemNext = DEF.calcMemPage(SetCacheActivity.getMemNext(sharedPreferences));
 			mMemPrev = DEF.calcMemPage(SetCacheActivity.getMemPrev(sharedPreferences));
+			mMemCache = SetCacheActivity.getMemCache(sharedPreferences);
 
 			mScrlNext = SetImageActivity.getScrlNext(sharedPreferences); // スクロールで次のページへ移動
 			mViewNext = SetImageActivity.getViewNext(sharedPreferences); // 次のページを表示
