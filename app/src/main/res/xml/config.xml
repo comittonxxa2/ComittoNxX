@@ -104,6 +104,14 @@
                 android:targetClass="src.comitton.config.SetCacheActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="CustomUrlScheme"
+            android:title="Setting for custom URL scheme"
+            android:summary="Set parameters for custom URL scheme." >
+            <intent
+                android:targetClass="src.comitton.config.SetCustomUrlSchemeActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Save settings to file" >
         <src.comitton.config.ExportSettingPreference
