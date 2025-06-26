@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
@@ -20,6 +21,19 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 	private MemSizeSeekbar mMemSize;
 	private MemNextSeekbar mMemNext;
 	private MemPrevSeekbar mMemPrev;
+	private ListPreference mMemCacheStartThreshold;
+
+	public static final int[] MemCache =
+		{ R.string.memcache00		// 自動
+		, R.string.memcache01		// 10%
+		, R.string.memcache02		// 20%
+		, R.string.memcache03		// 30%
+		, R.string.memcache04		// 40%
+		, R.string.memcache05		// 50%
+		, R.string.memcache06		// 60%
+		, R.string.memcache07		// 70%
+		, R.string.memcache08		// 80%
+		, R.string.memcache09 };	// 90%
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -27,9 +41,12 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 
 		addPreferencesFromResource(R.xml.cache);
 
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+
 		mMemSize  = (MemSizeSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MEMSIZE);
 		mMemNext  = (MemNextSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MEMNEXT);
 		mMemPrev  = (MemPrevSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MEMPREV);
+		mMemCacheStartThreshold = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_MEMCACHESTARTTHRESHOLD);
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_CACHEHELP);
@@ -59,6 +76,7 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 		mMemSize.setSummary(getMemSizeSummary(sharedPreferences));	// 使用メモリサイズ
 		mMemNext.setSummary(getMemNextSummary(sharedPreferences));	// 次ページ数
 		mMemPrev.setSummary(getMemPrevSummary(sharedPreferences));	// 前ページ数
+		mMemCacheStartThreshold.setSummary(getMemCacheSummary(sharedPreferences));
 	}
 
 	@Override
@@ -82,6 +100,9 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 			// 前ページ数
 			mMemPrev.setSummary(getMemPrevSummary(sharedPreferences));
 		}
+		else if(key.equals(DEF.KEY_MEMCACHESTARTTHRESHOLD)){
+			mMemCacheStartThreshold.setSummary(getMemCacheSummary(sharedPreferences));
+		}
 	}
 
 	// 設定の読込
@@ -97,6 +118,11 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 
 	public static int getMemPrev(SharedPreferences sharedPreferences){
 		int num =  DEF.getInt(sharedPreferences, DEF.KEY_MEMPREV, DEF.DEFAULT_MEMPREV);
+		return num;
+	}
+
+	public static int getMemCache(SharedPreferences sharedPreferences){
+		int num =  DEF.getInt(sharedPreferences, DEF.KEY_MEMCACHESTARTTHRESHOLD, DEF.DEFAULT_MEMCACHE);
 		return num;
 	}
 
@@ -123,5 +149,11 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 		String summ1 = res.getString(R.string.mPageSumm1);
 
 		return	DEF.getMemPageStr(val, summ1);
+	}
+
+	private String getMemCacheSummary(SharedPreferences sharedPreferences){
+		int val = getMemCache(sharedPreferences);
+		Resources res = getResources();
+		return	res.getString(MemCache[val]);
 	}
 }
