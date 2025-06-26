@@ -416,6 +416,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String targetpath = null;
 		String serverselect = null;
 		String accesskey = null;
+		String readkey = null;
 		Logcat.d(logLevel, "カスタムURLスキームのチェック.");
 		if (intent.ACTION_VIEW.equals(intent.getAction())) {
 			Uri uri = intent.getData();
@@ -426,49 +427,59 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				accesskey = uri.getQueryParameter("key");
 			}
 		}
+		// 認証キーを読み込む(設定なしの場合はパッケージ名を入れる)
+		readkey = mSharedPreferences.getString(DEF.KEY_CUSTOM_URL_SCHEME_KEY, this.getPackageName());
 
 		String path = "";
 		String server = "";
 		int serverSelect = 0;
 		// ローカルパス取得
-		if (hostname != null && hostname.equals("fileselect") && accesskey != null && accesskey.equals(this.getPackageName()))	{
+		if (hostname != null && accesskey != null)	{
 			// ディレクトリパスのみの場合
-			path = targetpath;
-			if (serverselect == null || serverselect.isEmpty()) {
-				// サーバー選択なし
-				serverSelect = -1;
+			if (hostname.equals("fileselect") && accesskey.equals(readkey)) {
+				// キーが一致した場合
+				path = targetpath;
+				if (serverselect == null || serverselect.isEmpty()) {
+					// サーバー選択なし
+					serverSelect = -1;
+				}
+				else {
+					// サーバー選択あり
+					serverSelect = Integer.parseInt(serverselect);
+				}
+				Logcat.d(logLevel, "fileselect カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
 			}
-			else {
-				// サーバー選択あり
-				serverSelect = Integer.parseInt(serverselect);
-			}
-			Logcat.d(logLevel, "fileselect カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
-		}
-		else if (hostname != null && hostname.equals("fileopen") && accesskey != null && accesskey.equals(this.getPackageName()))	{
 			// ファイルを開く場合
-			path = targetpath;
-			if (serverselect == null || serverselect.isEmpty()) {
-				// サーバー選択なし
-				serverSelect = -1;
-				mServer.select(DEF.INDEX_LOCAL);
+			else if (hostname.equals("fileopen") && accesskey.equals(readkey))	{
+				// キーが一致した場合
+				path = targetpath;
+				if (serverselect == null || serverselect.isEmpty()) {
+					// サーバー選択なし
+					serverSelect = -1;
+					mServer.select(DEF.INDEX_LOCAL);
+				}
+				else {
+					// サーバー選択あり
+					serverSelect = Integer.parseInt(serverselect);
+					mServer.select(serverSelect);
+				}
+				Logcat.d(logLevel, "fileopen カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
+				if (path == null || path.isEmpty()) {
+					mServer.select(DEF.INDEX_LOCAL);
+					mURI = mServer.getURI();
+					mPath = mServer.getPath();
+				}
+				else	{
+					mURI = mServer.getURI();
+					mPath = path.substring(0, path.lastIndexOf('/') + 1);
+					FileData fileData = new FileData(mActivity, path.substring(path.lastIndexOf('/') + 1));
+					Logcat.d(logLevel, "Intent解析中. mURI=" + mURI + ", mPath=" + mPath + ", name=" + fileData.getName());
+					openFile(fileData, "");
+				}
 			}
 			else {
-				// サーバー選択あり
-				serverSelect = Integer.parseInt(serverselect);
-				mServer.select(serverSelect);
-			}
-			Logcat.d(logLevel, "fileopen カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
-			if (path == null || path.isEmpty()) {
-				mServer.select(DEF.INDEX_LOCAL);
-				mURI = mServer.getURI();
-				mPath = mServer.getPath();
-			}
-			else	{
-				mURI = mServer.getURI();
-				mPath = path.substring(0, path.lastIndexOf('/') + 1);
-				FileData fileData = new FileData(mActivity, path.substring(path.lastIndexOf('/') + 1));
-				Logcat.d(logLevel, "Intent解析中. mURI=" + mURI + ", mPath=" + mPath + ", name=" + fileData.getName());
-				openFile(fileData, "");
+				// キーが一致しなかった場合はアクティビティを終了させる
+				finish();
 			}
 		}
 		else if (savedInstanceState != null) {
@@ -4405,5 +4416,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 			mListScreenView.notifyUpdate(listtype);
 		}
+	}
+
+	private static boolean mRecordSwitch = false;
+	// 音操作のスイッチを設定(設定保存しないのでFileSelectActivityに間借りする)
+	public static void SetRecordSw(boolean sw) {
+		mRecordSwitch = sw;
+	}
+	public static boolean GetRecordSw() {
+		return mRecordSwitch;
 	}
 }

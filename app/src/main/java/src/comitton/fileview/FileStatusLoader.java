@@ -307,7 +307,7 @@ public class FileStatusLoader extends ThumbnailLoader implements Runnable {
                     if (openmode == ImageManager.OPENMODE_VIEW) {
                         mImageMgr.setEpubOrder(mEpubOrder);
                     }
-                    mImageMgr.LoadImageList(0, 0, 0);
+                    mImageMgr.LoadImageList(0, 0, 0, 0);
                     Logcat.v(logLevel, "new ImageManager() cacheIndex=" + mImageMgr.getCacheIndex());
 
                     if (openmode == ImageManager.OPENMODE_TEXTVIEW) {
