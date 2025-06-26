@@ -552,6 +552,7 @@ public class DEF {
 	public static final String KEY_MEMSIZE = "MemSize";
 	public static final String KEY_MEMNEXT = "MemNext";
 	public static final String KEY_MEMPREV = "MemPrev";
+	public static final String KEY_MEMCACHESTARTTHRESHOLD = "MemCacheStartThreshold";
 
 	public static final String KEY_PinchScale = "PinchScale";
 	public static final String KEY_PinchScaleText = "PinchScaleText";
@@ -561,6 +562,8 @@ public class DEF {
 	public static final String KEY_LAST_VERSION = "LastVer";
 	public static final String KEY_CHECK_RELEASE = "CheckRelease";
 	public static final String KEY_TIME_CHECK_RELEASE = "TimeCheckRelease";
+
+	public static final String KEY_CUSTOM_URL_SCHEME_KEY = "CustomUrlSchemeAuthenticationKey";
 
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
@@ -586,6 +589,7 @@ public class DEF {
 	public static final int DEFAULT_MEMSIZE = 18; // キャッシュサイズ:200MByte
 	public static final int DEFAULT_MEMNEXT = 16; // キャッシュ前方:32ページ
 	public static final int DEFAULT_MEMPREV = 8; // キャッシュ後方:16ページ
+	public static final String DEFAULT_MEMCACHE = "0"; // 自動
 	public static final int DEFAULT_NOISESCRL = 1; // 20ドット
 	public static final int DEFAULT_NOISEUNDER = 8; // 800
 	public static final int DEFAULT_NOISEOVER = 15; // 1500
