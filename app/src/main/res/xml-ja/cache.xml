@@ -22,6 +22,14 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="現ページ以前のキャッシュページ数" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="ページキャッシュ開始しきい値"
+            android:entries="@array/memcachestart_name_list"
+            android:entryValues="@array/memcachestart_value_list"
+            android:key="MemCacheStartThreshold"
+            android:summary="dummy"
+            android:title="ページキャッシュ開始しきい値" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
