@@ -452,6 +452,16 @@
     <string name="maxthread06">6 スレッド</string>
     <string name="maxthread07">7 スレッド</string>
     <string name="maxthread08">8 スレッド</string>
+    <string name="memcache00">システム設定</string>
+    <string name="memcache01">90%%以下</string>
+    <string name="memcache02">80%%以下</string>
+    <string name="memcache03">70%%以下</string>
+    <string name="memcache04">60%%以下</string>
+    <string name="memcache05">50%%以下</string>
+    <string name="memcache06">40%%以下</string>
+    <string name="memcache07">30%%以下</string>
+    <string name="memcache08">20%%以下</string>
+    <string name="memcache09">10%%以下</string>
     <string name="Cancel">キャンセル</string>
     <string name="desc"></string>
     <string name="none">なし</string>

@@ -610,5 +610,29 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="memcachestart_name_list">
+        <item>システム設定</item>
+        <item>90%以下</item>
+        <item>80%以下</item>
+        <item>70%以下</item>
+        <item>60%以下</item>
+        <item>50%以下</item>
+        <item>40%以下</item>
+        <item>30%以下</item>
+        <item>20%以下</item>
+        <item>10%以下</item>
+    </string-array>
+    <string-array name="memcachestart_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+    </string-array>
 
 </resources>
