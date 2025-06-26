@@ -22,6 +22,14 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Cache Pages (Prev)" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="The page cache start threshold"
+            android:entries="@array/memcachestart_name_list"
+            android:entryValues="@array/memcachestart_value_list"
+            android:key="MemCacheStartThreshold"
+            android:summary="dummy"
+            android:title="The page cache start threshold" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
