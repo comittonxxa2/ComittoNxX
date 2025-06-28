@@ -55,6 +55,7 @@ import src.comitton.fileview.view.list.ListNoticeListener;
 import src.comitton.fileview.view.list.ListScreenView;
 import src.comitton.fileview.view.list.RecordListArea;
 import src.comitton.fileview.view.list.TitleArea;
+import src.comitton.webview.WebViewActivity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -2679,7 +2680,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		else {
 			int state = mFileData.getState();
 			int itemnum = 0;
-			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_EPUB) {
+			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_EPUB && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// zip/rar/pdfファイルを展開
 				itemnum++;
 			}
@@ -2721,13 +2722,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				 // ディレクトリ削除あり
 				itemnum++;
 			}
-			if (mFileData.getType() != FileData.FILETYPE_TXT) {
+			if (mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// サムネイルキャッシュ削除
 				itemnum++;
 				// 親ディレクトリのサムネイルとして設定
 				itemnum++;
 			}
-			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT) {
+			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// 先頭ページを範囲選択してサムネイルに設定
 				itemnum++;
 			}
@@ -2735,7 +2736,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// ここから設定
 			items = new String[itemnum];
 
-			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_EPUB) {
+			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_EPUB && mFileData.getType() != FileData.FILETYPE_WEB) {
 				if (mTapExpand) {
 					// zip/rar/pdfファイルを開く
 					items[i] = ope7;
@@ -2817,19 +2818,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
     			mOperate[i] = OPERATE_DEL;
     			i++;
 			}
-			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT) {
+			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// 先頭ページを範囲選択してサムネイルに設定
 				items[i] = ope101;
 				mOperate[i] = OPERATE_SETTHUMBCROPPED;
 				i++;
 			}
-			if (mFileData.getType() != FileData.FILETYPE_TXT) {
+			if (mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// 親ディレクトリのサムネイルに設定
 				items[i] = ope100;
 				mOperate[i] = OPERATE_SETTHUMBASDIR;
 				i++;
 			}
-			if (mFileData.getType() != FileData.FILETYPE_TXT) {
+			if (mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// サムネイルキャッシュ削除
 				items[i] = ope9;
 				mOperate[i] = OPERATE_DELCACHE;
@@ -3559,6 +3560,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						}
 					}
 					break;
+				case FileData.FILETYPE_WEB:
+					Logcat.d(logLevel, "FILETYPE_WEB: mPath=" + mPath + ", name=" + fd.getName());
+					openWebFile("", fd.getName());
+					break;
 			}
 		}
 		return true;
@@ -3664,6 +3669,31 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("File", "");					// ZIPファイル名
 		intent.putExtra("Image", name); 					// 中身の画像ファイル名
 		startActivityForResult(intent, DEF.REQUEST_IMAGE);
+	}
+
+	/**
+	 * ローカルWebファイルオープン
+	 */
+	private void openWebFile(String file, String name) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します. file=" + file + ", name=" + name);
+
+		Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+
+		// 描画停止
+		setDrawEnable();
+
+		Intent intent;
+		intent = new Intent(FileSelectActivity.this, WebViewActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
+		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
+		intent.putExtra("User", mServer.getUser());		// SMB認証用
+		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
+		intent.putExtra("File", file);					// ZIPファイル名
+		intent.putExtra("Text", name); 					// 中身のテキストファイル名
+		startActivityForResult(intent, DEF.REQUEST_TEXT);
 	}
 
 	/**
