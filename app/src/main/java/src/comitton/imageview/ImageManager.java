@@ -283,7 +283,7 @@ public class ImageManager extends InputStream implements Runnable {
 			mFileType = FileData.getType(mActivity, mFilePath);
 			Logcat.d(logLevel, "mHostType=" + mHostType + ", mFileType=" + mFileType);
 
-			if (mFileType != FileData.FILETYPE_DIR && mFileType != FileData.FILETYPE_IMG && mFileType != FileData.FILETYPE_PDF && mFileType != FileData.FILETYPE_ARC && mFileType != FileData.FILETYPE_EPUB) {
+			if (mFileType != FileData.FILETYPE_DIR && mFileType != FileData.FILETYPE_IMG && mFileType != FileData.FILETYPE_PDF && mFileType != FileData.FILETYPE_ARC && mFileType != FileData.FILETYPE_EPUB && mFileType != FileData.FILETYPE_WEB) {
 				// ファイルタイプが不正な場合
 				if (mOpenMode == OPENMODE_TEXTVIEW) {
 					// テキストビュワーから呼ばれたなら、FILETYPE_IMGに偽装する
@@ -309,6 +309,9 @@ public class ImageManager extends InputStream implements Runnable {
 			else if (mEpubOrder && mFileType == FileData.FILETYPE_EPUB) {
 				fileAccessInit(mFilePath);
 				epubFileList();
+			}
+			else if (mFileType == FileData.FILETYPE_WEB) {
+				return;
 			}
 			else {
 				fileAccessInit(mFilePath);
