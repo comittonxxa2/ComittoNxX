@@ -37,7 +37,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 	private final int[] ICON_ID =
 	{
-		R.drawable.thumb_parent, R.drawable.txt, R.drawable.pdf
+		R.drawable.thumb_parent, R.drawable.txt, R.drawable.pdf, R.drawable.html
 	};
 	private final int[] FILEMARK_ID =
 	{
@@ -50,6 +50,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private final int ICON_PARENT = 0;
 	private final int ICON_TEXT = 1;
 	private final int ICON_PDF = 2;
+	private final int ICON_WEB = 3;
 
 	private final int FILEMARK_DIR = 0;
 	private final int FILEMARK_PDF = 1;
@@ -271,6 +272,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				else if (type == FileData.FILETYPE_IMG) {
 					color = mImgColor;
 				}
+				else if (type == FileData.FILETYPE_WEB) {
+					color = mBefColor;
+				}
 				else {
 					switch (fd.getState()) {
 						case DEF.PAGENUMBER_UNREAD:
@@ -382,15 +386,20 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							}
 						}
 					}
-					else if (type == FileData.FILETYPE_PARENT || type == FileData.FILETYPE_TXT) {
+					else if (type == FileData.FILETYPE_PARENT || type == FileData.FILETYPE_TXT || type == FileData.FILETYPE_WEB) {
 						Bitmap bm =null;
 						int iconWidth = mIconWidth;
 						int	iconHeight = mIconHeight;
 						if (type == FileData.FILETYPE_PARENT) {
 							bm = mIcon[ICON_PARENT];
 						}
-						else if (type == FileData.FILETYPE_TXT) {
-							bm = mIcon[ICON_TEXT];
+						else if (type == FileData.FILETYPE_TXT || type == FileData.FILETYPE_WEB) {
+							if (type == FileData.FILETYPE_TXT) {
+								bm = mIcon[ICON_TEXT];
+							}
+							else {
+								bm = mIcon[ICON_WEB];
+							}
 							// 未読・既読で色を変える
 							bm = ImageAccess.setColor(bm, mLinePaint.getColor());
 							canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
@@ -598,6 +607,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			else if (type == FileData.FILETYPE_IMG) {
 				color = mImgColor;
 			}
+			else if (type == FileData.FILETYPE_WEB) {
+				color = mBefColor;
+			}
 			else {
 				switch (fd.getState()) {
 					case DEF.PAGENUMBER_UNREAD:
@@ -714,13 +726,18 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 					}
 				}
-				else if (type == FileData.FILETYPE_PARENT || type == FileData.FILETYPE_TXT) {
+				else if (type == FileData.FILETYPE_PARENT || type == FileData.FILETYPE_TXT || type == FileData.FILETYPE_WEB) {
 					Bitmap bm =null;
 					if (type == FileData.FILETYPE_PARENT) {
 						bm = mIcon[ICON_PARENT];
 					}
-					else if (type == FileData.FILETYPE_TXT) {
-						bm = mIcon[ICON_TEXT];
+					else if (type == FileData.FILETYPE_TXT || type == FileData.FILETYPE_WEB) {
+						if (type == FileData.FILETYPE_TXT) {
+							bm = mIcon[ICON_TEXT];
+						}
+						else {
+							bm = mIcon[ICON_WEB];
+						}
 						// 未読・既読で色を変える
 						bm = ImageAccess.setColor(bm, mLinePaint.getColor());
 						canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
