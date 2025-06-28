@@ -25,6 +25,7 @@ public class FileData {
 	public static final short FILETYPE_EPUB = 6;
 	public static final short FILETYPE_EPUB_SUB = 7;
 	public static final short FILETYPE_NONE = 8;
+	public static final short FILETYPE_WEB = 9;
 
 	public static final short EXTTYPE_NONE = 0;
 	public static final short EXTTYPE_ZIP = 1;
@@ -34,6 +35,7 @@ public class FileData {
 	public static final short EXTTYPE_PNG = 5;
 	public static final short EXTTYPE_GIF = 6;
 	public static final short EXTTYPE_TXT = 7;
+	public static final short EXTTYPE_WEB = 8;
 	public static final short EXTTYPE_WEBP = 51;
 	public static final short EXTTYPE_AVIF = 52;
 	public static final short EXTTYPE_HEIF = 53;
@@ -156,6 +158,9 @@ public class FileData {
 		if (isEpubSub(filename)) {
 			return FILETYPE_EPUB_SUB;
 		}
+		if (isWeb(filename)) {
+			return FILETYPE_WEB;
+		}
 		return FILETYPE_NONE;
 	}
 
@@ -174,8 +179,11 @@ public class FileData {
 		if (filename.endsWith(".pdf")) {
 			return EXTTYPE_PDF;
 		}
-		if (filename.endsWith(".txt") || filename.endsWith(".xhtml") || filename.endsWith(".html")) {
+		if (filename.endsWith(".txt") || filename.endsWith(".xhtml")) {
 			return EXTTYPE_TXT;
+		}
+		if (filename.endsWith(".html") || filename.endsWith(".htm")) {
+			return EXTTYPE_WEB;
 		}
 		if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
 			return EXTTYPE_JPG;
@@ -315,7 +323,11 @@ public class FileData {
 	}
 	public static boolean isText(String filepath) {
 		String filename = filepath.toLowerCase();
-		return filename.endsWith(".txt") || filename.endsWith(".xhtml") || filename.endsWith(".html");
+		return filename.endsWith(".txt") || filename.endsWith(".xhtml");
+	}
+	public static boolean isWeb(String filepath) {
+		String filename = filepath.toLowerCase();
+		return filename.endsWith(".html") || filename.endsWith(".htm");
 	}
 
 	public static String getMimeType(Context context, String filepath) {
@@ -339,7 +351,12 @@ public class FileData {
 				return "text/plain";
 			} else if (filepath.toLowerCase().endsWith(".xhtml")) {
 				return "application/xhtml+xml";
-			} else if (filepath.toLowerCase().endsWith(".html")) {
+			}
+		}
+		if (extType == FileData.EXTTYPE_WEB) {
+			if (filepath.toLowerCase().endsWith(".html")) {
+				return "application/html";
+			} else if (filepath.toLowerCase().endsWith(".htm")) {
 				return "application/html";
 			}
 		}
