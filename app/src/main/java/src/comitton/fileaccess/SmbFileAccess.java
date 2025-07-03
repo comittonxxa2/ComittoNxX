@@ -25,15 +25,19 @@ import jcifs.CIFSContext;
 import jcifs.CIFSException;
 import jcifs.context.SingletonContext;
 import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbFileInputStream;
 import jcifs.smb.SmbFileOutputStream;
 import jcifs.smb.SmbRandomAccessFile;
+import jcifs.config.PropertyConfiguration;
+import jcifs.context.BaseContext;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.fileview.data.FileData;
+import src.comitton.fileview.FileSelectActivity;
 
 public class SmbFileAccess {
 	private static final String TAG = "SmbFileAccess";
@@ -113,13 +117,22 @@ public class SmbFileAccess {
 		SmbFile sfile = null;
 		NtlmPasswordAuthenticator smbAuth;
 		CIFSContext context;
+		BaseContext baseContext;
+		boolean smb_mode = FileSelectActivity.getSmbMode();
 
 		// SMBの基本設定
 		Properties prop = new Properties();
 
 		// SMB1, SMB202, SMB210, SMB300, SMB302, SMB311
-		prop.setProperty("jcifs.smb.client.minVersion", "SMB1");
-		prop.setProperty("jcifs.smb.client.maxVersion", "SMB311");
+		if (smb_mode) {
+			// ComittoN 互換モードはSMB1決め打ちなのでSMB1に特化する
+			prop.setProperty("jcifs.smb.client.minVersion", "SMB1");
+			prop.setProperty("jcifs.smb.client.maxVersion", "SMB1");
+		}
+		else {
+			prop.setProperty("jcifs.smb.client.minVersion", "SMB1");
+			prop.setProperty("jcifs.smb.client.maxVersion", "SMB311");
+		}
 
 		// https://github.com/AgNO3/jcifs-ng/issues/171
 		prop.setProperty("jcifs.traceResources", "false");
@@ -152,25 +165,40 @@ public class SmbFileAccess {
 		String domain = userData[0];
 		String real_user = userData[1];
 
-		if (domain != null && !domain.isEmpty()) {
-			smbAuth = new NtlmPasswordAuthenticator(domain, real_user, pass);
-			context = SingletonContext.getInstance().withCredentials(smbAuth);
-
-		} else if (real_user != null && !real_user.isEmpty() && !(real_user.equalsIgnoreCase("guest") && pass.isEmpty())) {
-			smbAuth = new NtlmPasswordAuthenticator(real_user, pass);
-			context = SingletonContext.getInstance().withCredentials(smbAuth);
-
-		} else if (real_user.equalsIgnoreCase("guest") && pass.isEmpty()) {
-			// Guest認証を期待するWindows共有の接続向け
-			context = SingletonContext.getInstance().withGuestCrendentials();
-		} else {
-			// Connect with anonymous mode
-			context = SingletonContext.getInstance().withAnonymousCredentials();
-		}
-
-        try {
-            sfile = new SmbFile(uri, context);
-        } catch (MalformedURLException e) {
+		try {
+			if (domain != null && !domain.isEmpty() && !smb_mode) {
+				//接続コンテキストを作成する
+				smbAuth = new NtlmPasswordAuthenticator(domain, real_user, pass);
+				context = SingletonContext.getInstance().withCredentials(smbAuth);
+			} else if (real_user != null && !real_user.isEmpty() && !(real_user.equalsIgnoreCase("guest") && pass.isEmpty())) {
+				//接続コンテキストを作成する
+				if (smb_mode) {
+					// ComittoN 互換モードでアクセスする
+					baseContext = new BaseContext(new PropertyConfiguration(prop));
+					// 旧式の関数NtlmPasswordAuthenticationを使用する
+					smbAuth = new NtlmPasswordAuthentication(baseContext, "", real_user, pass);
+					context = baseContext.withCredentials(smbAuth);
+				}
+				else {
+					smbAuth = new NtlmPasswordAuthenticator(real_user, pass);
+					context = SingletonContext.getInstance().withCredentials(smbAuth);
+				}
+			} else if (real_user.equalsIgnoreCase("guest") && pass.isEmpty()) {
+				// Guest認証を期待するWindows共有の接続向け
+				//接続コンテキストを作成する
+				context = SingletonContext.getInstance().withGuestCrendentials();
+			} else {
+				// Connect with anonymous mode
+				//接続コンテキストを作成する
+				context = SingletonContext.getInstance().withAnonymousCredentials();
+			}
+		    try {
+		        sfile = new SmbFile(uri, context);
+		    } catch (MalformedURLException e) {
+				// 認証できない
+				Logcat.e(logLevel, "", e);
+		    }
+		} catch (CIFSException e) {
 			// 認証できない
 			Logcat.e(logLevel, "", e);
         }
