@@ -536,6 +536,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return num;
 	}
 
+	public static boolean GetFileListCacheOff(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FILELISTCACHEOFF, false);
+		return flag;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
