@@ -2625,15 +2625,15 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 							// 普通のタッチでページ遷移
 							if (next) {
 								// 次ページへ
-//								if (mScrlNext) {
-//									mImageView.scrollReset();
-//								}
+								if (mScrlNext) {
+									mImageView.scrollReset();
+								}
 								nextPage();
 							} else {
 								// 前ページへ
-//								if (mScrlNext) {
-//									mImageView.scrollReset();
-//								}
+								if (mScrlNext) {
+									mImageView.scrollReset();
+								}
 								prevPage();
 							}
 						}
@@ -4563,9 +4563,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		if (!mListLoading && !mBitmapLoading && !mScrolling) {
 			if (!mImageView.setViewPosScroll(move)) {
 				// スクロールする余地がなければ次ページ
-//				if (mScrlNext) {
-//					mImageView.scrollReset();
-//				}
+				if (mScrlNext) {
+					mImageView.scrollReset();
+				}
 				changePage(move);
 			}
 			else {

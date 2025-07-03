@@ -225,6 +225,7 @@ public class ImageManager extends InputStream implements Runnable {
 
 	private PdfRenderer mPdfRenderer = null;
 	private RarInputStream mRarStream = null;
+	private boolean mFileListCacheOff = false;
 
 	private final int mMaxThreadNum;
 	private final String mRarCharset;
@@ -256,6 +257,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mHidden = hidden;
 		mOpenMode = openmode;
 		mTimestamp = (int)FileAccess.date(mActivity, mFilePath, mUser, mPass);//(int)timestamp;
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		mFileListCacheOff = SetFileListActivity.GetFileListCacheOff(sp);
 
  		// スレッド数
  		mMaxThreadNum = maxthread;
@@ -421,83 +424,86 @@ public class ImageManager extends InputStream implements Runnable {
 		byte[] bbuff = new byte[2];
 		buffer = new byte[1024];
 
-		synchronized (mLock) {
-	        try {
-				// ZIP形式の圧縮ファイルを展開する
-				zin = new ZipInputStream(new FileInputStream(file));
-				// 最初のエントリを得る
-				zipEntry = zin.getNextEntry();
-				File entryfile = new File(zipEntry.getName());
-				Logcat.d(logLevel, "file:" + entryfile);
-				// ZIP形式の圧縮ファイルをメモリー上に展開する
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				while ((readbytes = zin.read(buffer)) != -1) {
-					baos.write(buffer, 0, readbytes);
+		if (!mFileListCacheOff) {
+			// ファイルリストのキャッシュが有効の場合
+			synchronized (mLock) {
+		        try {
+					// ZIP形式の圧縮ファイルを展開する
+					zin = new ZipInputStream(new FileInputStream(file));
+					// 最初のエントリを得る
+					zipEntry = zin.getNextEntry();
+					File entryfile = new File(zipEntry.getName());
+					Logcat.d(logLevel, "file:" + entryfile);
+					// ZIP形式の圧縮ファイルをメモリー上に展開する
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					while ((readbytes = zin.read(buffer)) != -1) {
+						baos.write(buffer, 0, readbytes);
+					}
+					// 展開したデータを格納
+					readData = baos.toByteArray();
+		            // 出力ストリームを閉じる
+					baos.close();
+					Logcat.d(logLevel, "readbytes=" + readbytes);
+		            // エントリをクローズする
+		            zin.closeEntry();
+					// 次のエントリを得る
+					zipEntry = zin.getNextEntry();
+					File nextfile = new File(zipEntry.getName());
+					Logcat.d(logLevel, "file:" + nextfile);
+					// ZIP形式の圧縮ファイルを展開する
+		            readbytes = zin.read(zbuff);
+					Logcat.d(logLevel, "readbytes=" + readbytes);
+		            // エントリをクローズする
+		            zin.closeEntry();
+		            // 入力ストリームを閉じる
+					zin.close();
+		        } catch (Exception e) {
+					// ファイルの読み込みに失敗した場合は素通りしてファイルリストを再取得させる
+					Logcat.e(logLevel, "ZipInputStream error.", e);
+		        }
+
+				try {
+					// シリアライズされたファイルリストを元に戻す
+				    ByteArrayInputStream bais = new ByteArrayInputStream(readData);  
+				    ObjectInputStream ois = new ObjectInputStream(bais);  
+				    mFileList = (FileListItem[])ois.readObject();
+				    // ファイルリストへの変換に成功したと判断
+				    cachecheck = true;
+				} catch (Exception e) {
+					// ファイルリストへの変換に失敗した場合は素通りしてファイルリストを再取得させる
+					mFileList = null;
+					Logcat.e(logLevel, "Deserializable error.", e);
 				}
-				// 展開したデータを格納
-				readData = baos.toByteArray();
-	            // 出力ストリームを閉じる
-				baos.close();
-				Logcat.d(logLevel, "readbytes=" + readbytes);
-	            // エントリをクローズする
-	            zin.closeEntry();
-				// 次のエントリを得る
-				zipEntry = zin.getNextEntry();
-				File nextfile = new File(zipEntry.getName());
-				Logcat.d(logLevel, "file:" + nextfile);
-				// ZIP形式の圧縮ファイルを展開する
-	            readbytes = zin.read(zbuff);
-				Logcat.d(logLevel, "readbytes=" + readbytes);
-	            // エントリをクローズする
-	            zin.closeEntry();
-	            // 入力ストリームを閉じる
-				zin.close();
-	        } catch (Exception e) {
-				// ファイルの読み込みに失敗した場合は素通りしてファイルリストを再取得させる
-				Logcat.e(logLevel, "ZipInputStream error.", e);
-	        }
 
-			try {
-				// シリアライズされたファイルリストを元に戻す
-			    ByteArrayInputStream bais = new ByteArrayInputStream(readData);  
-			    ObjectInputStream ois = new ObjectInputStream(bais);  
-			    mFileList = (FileListItem[])ois.readObject();
-			    // ファイルリストへの変換に成功したと判断
-			    cachecheck = true;
-			} catch (Exception e) {
-				// ファイルリストへの変換に失敗した場合は素通りしてファイルリストを再取得させる
-				mFileList = null;
-				Logcat.e(logLevel, "Deserializable error.", e);
-			}
-
-			// RARのメモリ確保時のパラメータを読み込む
-			for	(int i = 0; i < 4; i++)	{
-				lbuff[i] = zbuff[i];
-			}
-	        maxcmplen = ByteBuffer.wrap(lbuff).getInt();
-			// RARのメモリ確保時のパラメータを読み込む
-			for	(int i = 0; i < 4; i++)	{
-				lbuff[i] = zbuff[i + 4];
-			}
-	        maxorglen = ByteBuffer.wrap(lbuff).getInt();
-	        // タイムスタンプを読み込む
-			for	(int i = 0; i < 4; i++)	{
-				lbuff[i] = zbuff[i + 8];
-			}
-			// ファイルのタイプを読み込む
-	        timestamp = ByteBuffer.wrap(lbuff).getInt();
-			for	(int i = 0; i < 2; i++)	{
-				bbuff[i] = zbuff[i + 12];
-			}
-	        mFileType = ByteBuffer.wrap(bbuff).getShort();
-	        if	(mTimestamp == 0)	{
-				// イメージビューアからの呼び出し以外でファイルのタイムスタンプが取得できない場合は保存していたタイムスタンプと同じにする
-				mTimestamp = timestamp;
-			}
-	        if	(timestamp == mTimestamp && cachecheck == true)	{
-				// ファイルリストの読み込みとタイムスタンプが同じだった場合はファイルリストの取得をキャンセルさせる
-				Logcat.d(logLevel, "stop.");
-			    stop = true;
+				// RARのメモリ確保時のパラメータを読み込む
+				for	(int i = 0; i < 4; i++)	{
+					lbuff[i] = zbuff[i];
+				}
+		        maxcmplen = ByteBuffer.wrap(lbuff).getInt();
+				// RARのメモリ確保時のパラメータを読み込む
+				for	(int i = 0; i < 4; i++)	{
+					lbuff[i] = zbuff[i + 4];
+				}
+		        maxorglen = ByteBuffer.wrap(lbuff).getInt();
+		        // タイムスタンプを読み込む
+				for	(int i = 0; i < 4; i++)	{
+					lbuff[i] = zbuff[i + 8];
+				}
+				// ファイルのタイプを読み込む
+		        timestamp = ByteBuffer.wrap(lbuff).getInt();
+				for	(int i = 0; i < 2; i++)	{
+					bbuff[i] = zbuff[i + 12];
+				}
+		        mFileType = ByteBuffer.wrap(bbuff).getShort();
+		        if	(mTimestamp == 0)	{
+					// イメージビューアからの呼び出し以外でファイルのタイムスタンプが取得できない場合は保存していたタイムスタンプと同じにする
+					mTimestamp = timestamp;
+				}
+		        if	(timestamp == mTimestamp && cachecheck == true)	{
+					// ファイルリストの読み込みとタイムスタンプが同じだった場合はファイルリストの取得をキャンセルさせる
+					Logcat.d(logLevel, "stop.");
+				    stop = true;
+				}
 			}
 		}
 
@@ -741,90 +747,93 @@ public class ImageManager extends InputStream implements Runnable {
 			sort(list);
 			mFileList = list.toArray(new FileListItem[0]);
 
-			synchronized (mLock) {
-				retObject = null;
-				try {
-					// ファイルリストをシリアライズする
-					ByteArrayOutputStream byteos = new ByteArrayOutputStream();
-					ObjectOutputStream objos = new ObjectOutputStream(byteos);
-					objos.writeObject(mFileList);
-					retObject = byteos.toByteArray();
-					objos.close();
-					byteos.close();
-				} catch (Exception e) {
-					// シリアライズに失敗した場合は戻る
-					Logcat.e(logLevel, "Serializable error.", e);
-					return;
-				}
+			if (!mFileListCacheOff) {
+				// ファイルリストのキャッシュが有効の場合
+				synchronized (mLock) {
+					retObject = null;
+					try {
+						// ファイルリストをシリアライズする
+						ByteArrayOutputStream byteos = new ByteArrayOutputStream();
+						ObjectOutputStream objos = new ObjectOutputStream(byteos);
+						objos.writeObject(mFileList);
+						retObject = byteos.toByteArray();
+						objos.close();
+						byteos.close();
+					} catch (Exception e) {
+						// シリアライズに失敗した場合は戻る
+						Logcat.e(logLevel, "Serializable error.", e);
+						return;
+					}
 
-				// RARのメモリ確保時のパラメータを書き出す
-				lbuff = ByteBuffer.allocate(4).putInt(maxcmplen).array();
-				for (int i = 0; i < 4; i++)	{
-					zbuff[i] = lbuff[i];
-				}
-				// RARのメモリ確保時のパラメータを書き出す
-				lbuff = ByteBuffer.allocate(4).putInt(maxorglen).array();
-				for (int i = 0; i < 4; i++)	{
-					zbuff[i + 4] = lbuff[i];
-				}
-				// タイムスタンプを書き出す(イメージビューアからの呼び出しがあることを想定しているため中身が0でもそのまま書き込む)
-				lbuff = ByteBuffer.allocate(4).putInt(mTimestamp).array();
-				for (int i = 0; i < 4; i++)	{
-					zbuff[i + 8] = lbuff[i];
-				}
-				// ファイルのタイプを書きだす
-				bbuff = ByteBuffer.allocate(2).putShort(mFileType).array();
-				for (int i = 0; i < 2; i++)	{
-					zbuff[i + 12] = bbuff[i];
-				}
+					// RARのメモリ確保時のパラメータを書き出す
+					lbuff = ByteBuffer.allocate(4).putInt(maxcmplen).array();
+					for (int i = 0; i < 4; i++)	{
+						zbuff[i] = lbuff[i];
+					}
+					// RARのメモリ確保時のパラメータを書き出す
+					lbuff = ByteBuffer.allocate(4).putInt(maxorglen).array();
+					for (int i = 0; i < 4; i++)	{
+						zbuff[i + 4] = lbuff[i];
+					}
+					// タイムスタンプを書き出す(イメージビューアからの呼び出しがあることを想定しているため中身が0でもそのまま書き込む)
+					lbuff = ByteBuffer.allocate(4).putInt(mTimestamp).array();
+					for (int i = 0; i < 4; i++)	{
+						zbuff[i + 8] = lbuff[i];
+					}
+					// ファイルのタイプを書きだす
+					bbuff = ByteBuffer.allocate(2).putShort(mFileType).array();
+					for (int i = 0; i < 2; i++)	{
+						zbuff[i + 12] = bbuff[i];
+					}
 
-				try {
-					// あらかじめZIPファイルを削除
-					new File(file).delete();
-				} catch (Exception e) {
-					// ファイルが存在しなかった場合は素通り
-					Logcat.e(logLevel, "Delete error.", e);
-				}
-			    // ZIP形式の出力ストリーム
-			    ZipOutputStream zos = null;
-				try {
-					// ZipOutputStreamオブジェクトの作成
-					zos = new ZipOutputStream(new FileOutputStream(file));
-				} catch (Exception e) {
-					// オブジェクトの作成に失敗した場合は戻る
-					Logcat.e(logLevel, "ZipOutputStream error.", e);
-					return;
-				}
-				// ファイル名の格納用
-				String filename;
-				try {
-					// エントリのファイル名を設定
-					filename = String.format("mFileList.bin");
-		            // 最初のZIPエントリを作成
-		            ZipEntry ze1 = new ZipEntry(filename);
-		            // 作成したZIPエントリを登録
-		            zos.putNextEntry(ze1);
-		            // バッファからZIP形式の出力ストリームへ書き出す
-					zos.write(retObject);
-		            // エントリをクローズする
-					zos.closeEntry();
-					// 次のエントリのファイル名を設定
-					filename = String.format("setting.bin");
-		            // 次のZIPエントリを作成
-		            ZipEntry ze2 = new ZipEntry(filename);
-		            // 作成したZIPエントリを登録
-		            zos.putNextEntry(ze2);
-		            // バッファからからZIP形式の出力ストリームへ書き出す
-					zos.write(zbuff);
-		            // エントリをクローズする
-					zos.closeEntry();
-					// 出力ストリームを閉じる
-					zos.flush();
-					zos.close();
-				} catch (Exception e) {
-					// ZIPファイルへの書き込みが失敗した場合は戻る
-					Logcat.e(logLevel, "Write error.", e);
-					return;
+					try {
+						// あらかじめZIPファイルを削除
+						new File(file).delete();
+					} catch (Exception e) {
+						// ファイルが存在しなかった場合は素通り
+						Logcat.e(logLevel, "Delete error.", e);
+					}
+				    // ZIP形式の出力ストリーム
+				    ZipOutputStream zos = null;
+					try {
+						// ZipOutputStreamオブジェクトの作成
+						zos = new ZipOutputStream(new FileOutputStream(file));
+					} catch (Exception e) {
+						// オブジェクトの作成に失敗した場合は戻る
+						Logcat.e(logLevel, "ZipOutputStream error.", e);
+						return;
+					}
+					// ファイル名の格納用
+					String filename;
+					try {
+						// エントリのファイル名を設定
+						filename = String.format("mFileList.bin");
+			            // 最初のZIPエントリを作成
+			            ZipEntry ze1 = new ZipEntry(filename);
+			            // 作成したZIPエントリを登録
+			            zos.putNextEntry(ze1);
+			            // バッファからZIP形式の出力ストリームへ書き出す
+						zos.write(retObject);
+			            // エントリをクローズする
+						zos.closeEntry();
+						// 次のエントリのファイル名を設定
+						filename = String.format("setting.bin");
+			            // 次のZIPエントリを作成
+			            ZipEntry ze2 = new ZipEntry(filename);
+			            // 作成したZIPエントリを登録
+			            zos.putNextEntry(ze2);
+			            // バッファからからZIP形式の出力ストリームへ書き出す
+						zos.write(zbuff);
+			            // エントリをクローズする
+						zos.closeEntry();
+						// 出力ストリームを閉じる
+						zos.flush();
+						zos.close();
+					} catch (Exception e) {
+						// ZIPファイルへの書き込みが失敗した場合は戻る
+						Logcat.e(logLevel, "Write error.", e);
+						return;
+					}
 				}
 			}
 		}
@@ -1620,8 +1629,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-		}
-		synchronized (mLock) {
+//		}
+//		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				if (mFileList != null) {
@@ -1654,8 +1663,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-		}
-		synchronized (mLock) {
+//		}
+//		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				CallImgLibrary.ImageScaleFree(mActivity, mHandler, mCacheIndex, -1, -1);
@@ -2287,8 +2296,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-		}
-		synchronized (mLock) {
+//		}
+//		synchronized (mLock) {
 			if (!mCloseFlag) {
 				mCacheBreak = false;
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
@@ -4325,8 +4334,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-		}
-		synchronized (mLock) {
+//		}
+//		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				CallImgLibrary.ImageScaleFree(mActivity, mHandler, mCacheIndex, -1, -1);
@@ -4352,8 +4361,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-		}
-		synchronized (mLock) {
+//		}
+//		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				ret = ImageScaling(page1, page2, half1, half2, img1, img2);
@@ -4974,8 +4983,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-		}
-		synchronized (mLock) {
+//		}
+//		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 
