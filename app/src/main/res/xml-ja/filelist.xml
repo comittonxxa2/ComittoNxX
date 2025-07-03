@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
     <PreferenceCategory android:title="ファイル選択画面設定" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="FileListCacheOff"
+            android:summary="ファイルリストのキャッシュが破損等でアクセスに失敗する場合にチェックを入れる"
+            android:title="ファイルリストのキャッシュを参照しない" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="表示方向"
