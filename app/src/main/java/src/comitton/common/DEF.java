@@ -506,6 +506,7 @@ public class DEF {
 	public static final String KEY_VIEWNEXT = "ViewNextPage";
 	public static final String KEY_NEXTFILTER = "NextPageFilter";
 	public static final String KEY_CHGPAGEKEY = "ChgPageKey";
+	public static final String KEY_FILELISTCACHEOFF = "FileListCacheOff";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
@@ -564,6 +565,7 @@ public class DEF {
 	public static final String KEY_TIME_CHECK_RELEASE = "TimeCheckRelease";
 
 	public static final String KEY_CUSTOM_URL_SCHEME_KEY = "CustomUrlSchemeAuthenticationKey";
+	public static final String KEY_SMB_MODE = "ComittoNMode";
 
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
