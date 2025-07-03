@@ -56,6 +56,7 @@ import src.comitton.fileview.view.list.ListScreenView;
 import src.comitton.fileview.view.list.RecordListArea;
 import src.comitton.fileview.view.list.TitleArea;
 import src.comitton.webview.WebViewActivity;
+import src.comitton.config.SetServerMessageBlockActivity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -244,7 +245,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mLocalSave;
 	private boolean mSambaSave;
 
-	private SharedPreferences mSharedPreferences;
+	private static SharedPreferences mSharedPreferences;
 	private FileSelectActivity mActivity;
 
 	private PathHistory mPathHistory;
@@ -4455,5 +4456,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 	public static boolean GetRecordSw() {
 		return mRecordSwitch;
+	}
+	public static boolean getSmbMode() {
+		boolean sw = SetServerMessageBlockActivity.getSmbMode(mSharedPreferences);
+		return sw;
 	}
 }
