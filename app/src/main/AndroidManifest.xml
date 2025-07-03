@@ -182,6 +182,12 @@
             android:launchMode="singleTop"
             android:resizeableActivity="true" >
         </activity>
+        <activity
+            android:name="src.comitton.config.SetServerMessageBlockActivity"
+            android:theme="@style/MyTheme"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true" >
+        </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
