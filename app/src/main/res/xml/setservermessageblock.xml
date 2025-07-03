@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Setting for SMB(Server Message Block)" >
+       <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ComittoNMode"
+            android:summary="Access in ComittoN compatibility mode."
+            android:title="ComittoN compatibility mode" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -112,6 +112,14 @@
                 android:targetClass="src.comitton.config.SetCustomUrlSchemeActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="SMBSet"
+            android:title="Setting for SMB(Server Message Block)"
+            android:summary="Set parameters for SMB(Server Message Block)." >
+            <intent
+                android:targetClass="src.comitton.config.SetServerMessageBlockActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Save settings to file" >
         <src.comitton.config.ExportSettingPreference
