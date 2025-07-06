@@ -5,7 +5,12 @@
             android:defaultValue="false"
             android:key="FileListCacheOff"
             android:summary="ファイルリストのキャッシュが破損等でアクセスに失敗する場合にチェックを入れる"
-            android:title="ファイルリストのキャッシュを参照しない" />
+            android:title="ファイルリストのキャッシュファイルを参照しない" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="FileListFastReadOff"
+            android:summary="更新ボタンを押さないと既読に反映されない場合にチェックを入れる"
+            android:title="リスト表示に戻る際の時間短縮を使用しない" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="表示方向"
