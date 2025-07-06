@@ -305,6 +305,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private boolean mChgFlick = false;
 	// private boolean mTwice = false;
 	// private boolean mResumeOpen;
+	private boolean mReturnListView;
 	private boolean mConfirmBack;
 	private boolean mFitDual = true;
 	private boolean mCMargin = false;
@@ -794,6 +795,15 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			}
 		}
 		Logcat.v(logLevel, "終了します.");
+	}
+
+	@Override
+	protected void onUserLeaveHint(){
+		super.onUserLeaveHint();
+		if (mReturnListView) {
+			// 画面が裏に入った場合にリスト一覧へ戻す(Android13の一部の機種でフリーズしてしまうための対策)
+			finish();
+		}
 	}
 
 	public class ZipLoad implements Runnable {
@@ -4289,6 +4299,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			}
 			mConfirmBack = SetImageText.getConfirmBack(sharedPreferences); // 戻るキーで確認メッセージ
 			// mResumeOpen = false;
+			mReturnListView = SetImageText.getReturnListView(sharedPreferences); // 画面が裏に入った場合にリスト一覧へ戻る
 
 			mHidden = SetCommonActivity.getHiddenFile(sharedPreferences);
 
