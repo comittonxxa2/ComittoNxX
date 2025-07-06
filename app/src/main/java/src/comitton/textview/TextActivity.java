@@ -193,6 +193,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	private boolean mChgPage;
 	private boolean mChgPageKey;
 	private boolean mChgFlick;
+	private boolean mReturnListView;
 	private boolean mConfirmBack;
 	private boolean mCMargin;
 	private boolean mCShadow;
@@ -581,6 +582,15 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 			getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
+	}
+
+	@Override
+	protected void onUserLeaveHint(){
+		super.onUserLeaveHint();
+		if (mReturnListView) {
+			// 画面が裏に入った場合にリスト一覧へ戻す(Android13の一部の機種でフリーズしてしまうための対策)
+			finish();
 		}
 	}
 
@@ -2779,6 +2789,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mRotateBtn = DEF.RotateBtnList[SetCommonActivity.getRotateBtn(sharedPreferences)];
 
 		mConfirmBack = SetImageText.getConfirmBack(sharedPreferences);	// 戻るキーで確認メッセージ
+		mReturnListView = SetImageText.getReturnListView(sharedPreferences); // 画面が裏に入った場合にリスト一覧へ戻る
 
 		mPaperSel = SetTextActivity.getPaper(sharedPreferences); // 用紙サイズ
 		if (mPaperSel == DEF.PAPERSEL_SCREEN) {
