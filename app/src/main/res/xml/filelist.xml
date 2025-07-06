@@ -6,6 +6,11 @@
             android:key="FileListCacheOff"
             android:summary="Check this box if the file list cache is corrupted and access fails."
             android:title="Do not refer to file list cache" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="FileListFastReadOff"
+            android:summary="Check this box if the read status is not reflected unless the update button is pressed."
+            android:title="Do not use time reduction when returning to the list view" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Screen Orientation"
