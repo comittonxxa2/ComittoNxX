@@ -12,6 +12,7 @@ import src.comitton.fileview.data.FileData;
 import src.comitton.dialog.LoadingDialog;
 import src.comitton.imageview.ImageManager;
 import src.comitton.textview.TextManager;
+import src.comitton.config.SetFileListActivity;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
@@ -84,6 +85,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static int mAscMode;	// 半角の表示方法
 	private static String mFontFile;
 	private static boolean mCacheFile = false;
+	private boolean mFileListFastReadOff = false;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
@@ -221,9 +223,11 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mFileList = null;
 
 		String currentPath = DEF.relativePath(mActivity, mURI, mPath);
+		// ファイルリストのキャッシュを参照しない場合はtrue
+		mFileListFastReadOff = SetFileListActivity.GetFileListFastReadOff(mSp);
 
 		try {
-			if (!mCacheFile) {
+			if (!mCacheFile || mFileListFastReadOff) {
 				fileList = FileAccess.listFiles(mActivity, currentPath, mUser, mPass, mHandler);
 
 				if (thread.isInterrupted()) {
