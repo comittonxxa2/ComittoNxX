@@ -481,6 +481,7 @@ public class DEF {
 	public static final String KEY_TAPRATE = "TapRate";
 	public static final String KEY_OLDPAGESEL = "OldPageSel";
 	public static final String KEY_RESUMEOPEN = "ResumeOpen";
+	public static final String KEY_RETURNKLISTVIEW = "ReturnListView";
 	public static final String KEY_CONFIRMBACK = "ConfirmBack";
 	public static final String KEY_CLEARTOP = "ClearTop";
 	public static final String KEY_HISTNUM = "RLSave3";
@@ -507,6 +508,7 @@ public class DEF {
 	public static final String KEY_NEXTFILTER = "NextPageFilter";
 	public static final String KEY_CHGPAGEKEY = "ChgPageKey";
 	public static final String KEY_FILELISTCACHEOFF = "FileListCacheOff";
+	public static final String KEY_FILELISTFASTREADOFF = "FileListFastReadOff";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
