@@ -136,6 +136,12 @@ public class SetImageText {
 		return flag;
 	}
 
+	public static boolean getReturnListView(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_RETURNKLISTVIEW, true);
+		return flag;
+	}
+
 	public static boolean getSavePage(SharedPreferences sharedPreferences){
 		boolean flag = DEF.getBoolean(sharedPreferences, DEF.KEY_SAVEPAGE, DEF.DEF_SAVEPAGE);
 		return flag;
