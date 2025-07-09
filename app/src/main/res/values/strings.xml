@@ -143,6 +143,15 @@
     <string name="mgnCutColorMenu">Color to remove margin</string>
     <string name="imgRotaMenu">Image Rotate</string>
     <string name="imgConfMenu">Image Config</string>
+    <string name="Profile1">Profile1</string>
+    <string name="Profile2">Profile2</string>
+    <string name="Profile3">Profile3</string>
+    <string name="Profile4">Profile4</string>
+    <string name="Profile5">Profile5</string>
+    <string name="SetProfileMenu">Register Profile</string>
+    <string name="DelProfileMenu">Delete Profile</string>
+    <string name="DelProfileName">Delete %s</string>
+    <string name="undefineprofile"> : Undefined</string>
     <string name="txtConfMenu">Text Config</string>
     <string name="algoriMenu">Interpolation</string>
     <string name="picSize">Illustrations Size</string>
@@ -165,6 +174,8 @@
     <string name="downErrorMsg">The file could not be downloaded.</string>
     <string name="scTitle">Create Shortcut</string>
     <string name="scMsg">Create a shortcut on the home screen\nEnter shortcut name</string>
+    <string name="pfMsg">Set the title for this profile.\nEnter this title to display.</string>
+    <string name="delPfMsg">Are you sure to delete?</string>
     <string name="mkTitle">Set Marker</string>
     <string name="mkMsg">To coloring the items that contain the input string in the file name.</string>
     <string name="renTitle">Rename</string>
