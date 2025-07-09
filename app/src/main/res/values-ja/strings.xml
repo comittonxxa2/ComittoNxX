@@ -143,6 +143,15 @@
     <string name="mgnCutColorMenu">余白削除の色</string>
     <string name="imgRotaMenu">画像の回転</string>
     <string name="imgConfMenu">画像表示設定</string>
+    <string name="Profile1">プロファイル1</string>
+    <string name="Profile2">プロファイル2</string>
+    <string name="Profile3">プロファイル3</string>
+    <string name="Profile4">プロファイル4</string>
+    <string name="Profile5">プロファイル5</string>
+    <string name="SetProfileMenu">プロファイルの登録</string>
+    <string name="DelProfileMenu">プロファイルの削除</string>
+    <string name="DelProfileName">%sの削除</string>
+    <string name="undefineprofile"> : 未定義</string>
     <string name="txtConfMenu">テキスト表示設定</string>
     <string name="algoriMenu">画像補間方式</string>
     <string name="picSize">挿絵サイズ</string>
@@ -165,6 +174,8 @@
     <string name="downErrorMsg">ダウンロードできませんでした。</string>
     <string name="scTitle">ショートカットの作成</string>
     <string name="scMsg">ホーム画面にこのディレクトリへのショートカットを作成します。\n表示するショートカット名を入力してください。</string>
+    <string name="pfMsg">プロファイルにタイトルを付けます。\n表示するタイトルを入力してください。</string>
+    <string name="delPfMsg">削除してよろしいですか？</string>
     <string name="mkTitle">マーカー設定</string>
     <string name="mkMsg">入力した文字列をファイル名に含む項目を色分けします。</string>
     <string name="renTitle">名称変更</string>
