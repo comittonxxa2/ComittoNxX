@@ -40,6 +40,7 @@ import src.comitton.dialog.ListDialog.ListSelectListener;
 import src.comitton.dialog.MenuDialog.MenuSelectListener;
 import src.comitton.dialog.ImageConfigDialog.ImageConfigListenerInterface;
 import src.comitton.dialog.TabDialogFragment;
+import src.comitton.dialog.TextInputDialog;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.noise.NoiseSwitch;
@@ -79,6 +80,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+import android.widget.LinearLayout;
 
 import src.comitton.common.ImageAccess;
 import src.comitton.config.SetFileListActivity;
@@ -126,6 +128,12 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private static final int LONGTAP_TIMER_UI = 400;
 	private static final int LONGTAP_TIMER_BTM = 400;
 
+	private static final int LIST_PROFILE1 = 26;
+	private static final int LIST_PROFILE2 = 27;
+	private static final int LIST_PROFILE3 = 28;
+	private static final int LIST_PROFILE4 = 29;
+	private static final int LIST_PROFILE5 = 30;
+
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	// 古い設定ファイルとの互換性維持のための番号
@@ -157,7 +165,12 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			17,	// 上部メニュー設定
 			18,	// 設定
 			19,	// 中央余白表示
-			20	// 中央影表示
+			20,	// 中央影表示,
+			LIST_PROFILE1,	// プロファイル1
+			LIST_PROFILE2,	// プロファイル2
+			LIST_PROFILE3,	// プロファイル3
+			LIST_PROFILE4,	// プロファイル4
+			LIST_PROFILE5	// プロファイル5
 	};
 
 	private final int[] COMMAND_ID =
@@ -187,7 +200,12 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		DEF.MENU_TOP_SETTING,// 上部メニュー設定
 		DEF.MENU_SETTING,	// 設定
 		DEF.MENU_CMARGIN,	// 中央余白表示
-		DEF.MENU_CSHADOW	// 中央影表示
+		DEF.MENU_CSHADOW,	// 中央影表示
+		DEF.MENU_PROFILE1,	// プロファイル1
+		DEF.MENU_PROFILE2,	// プロファイル2
+		DEF.MENU_PROFILE3,	// プロファイル3
+		DEF.MENU_PROFILE4,	// プロファイル4
+		DEF.MENU_PROFILE5	// プロファイル5
 	};
 	private final int[] COMMAND_RES =
 	{
@@ -216,10 +234,16 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		R.string.setTopMenu,	// 上部メニュー設定
 		R.string.setMenu,		// 設定
 		R.string.cMargin,		// 中央余白表示
-		R.string.cShadow		// 中央影表示
+		R.string.cShadow,		// 中央影表示
+		R.string.Profile1,		// プロファイル1
+		R.string.Profile2,		// プロファイル2
+		R.string.Profile3,		// プロファイル3
+		R.string.Profile4,		// プロファイル4
+		R.string.Profile5		// プロファイル5
 	};
 	private int[] mCommandId;
 	private String[] mCommandStr;
+	private String[] mProfileWord;
 
 	private int RANGE_FLICK;
 
@@ -234,6 +258,8 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private final int SELLIST_MARGIN_CUT = 4;
 	private final int SELLIST_MARGIN_CUTCOLOR = 5;
 	private final int SELLIST_SCR_ROTATE = 6;
+	private final int SELLIST_SETPROFILE = 7;
+	private final int SELLIST_DELPROFILE = 8;
 
 	private final int TOUCH_NONE      = 0;
 	private final int TOUCH_COMMAND   = 1;
@@ -289,6 +315,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private boolean mDelShare;
 	private boolean mFlickPage;
 	private boolean mReverseOrder;
+	private boolean mReverseOrderProfile;
 
 	private int mNoiseScrl;
 	private int mNoiseUnder;
@@ -302,6 +329,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private boolean mNotice = false;
 	private boolean mNoSleep = false;
 	private boolean mChgPage = false;
+	private boolean mChgPageProfile = false;
 	private boolean mChgFlick = false;
 	// private boolean mTwice = false;
 	// private boolean mResumeOpen;
@@ -493,6 +521,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private ListDialog mListDialog;
 	private CheckDialog mCheckDialog;
 	private TabDialogFragment mMenuDialog;
+	private TextInputDialog mTextInputDialog;
 
 	private PageSelectDialog mPageDlg = null;
 	private PageThumbnail mThumbDlg = null;
@@ -587,6 +616,15 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		// 色とサイズを指定
 		mGuideView.setColor(mTopColor1, mTopColor2, mMgnColor);
 		mGuideView.setGuideSize(mClickArea, mTapPattern, mTapRate, mChgPage, mOldMenu);
+
+		mProfileWord = new String[5];
+
+		// 初期値を読み出す
+		mProfileWord[0] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_01, "");
+		mProfileWord[1] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_02, "");
+		mProfileWord[2] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_03, "");
+		mProfileWord[3] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_04, "");
+		mProfileWord[4] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_05, "");
 
 		// 上部メニューの設定を読み込み
 		loadTopMenuState();
@@ -2831,6 +2869,41 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					items[i] = res.getString(SetImageActivity.RotateName[i + 1]);
 				}
 				break;
+			case SELLIST_SETPROFILE:
+				// プロファイル登録
+				title = res.getString(R.string.SetProfileMenu);
+				// カーソルに色を付けない
+				selIndex = 5;
+				nItem = SetImageActivity.SetProfileName.length;
+				items = new String[nItem];
+				for (int i = 0; i < nItem; i++) {
+					if (mProfileWord[i].equals("")) {
+						// 中身が未定義ならデフォルト設定のみ
+						items[i] = res.getString(SetImageActivity.SetProfileName[i]);
+					}
+					else {
+						// 後半に中身を追加
+						items[i] = res.getString(SetImageActivity.SetProfileName[i]) + " : " + mProfileWord[i];
+					}
+				}
+				break;
+			case SELLIST_DELPROFILE:
+				// プロファイル削除
+				title = res.getString(R.string.DelProfileMenu);
+				// カーソルに色を付けない
+				selIndex = 5;
+				nItem = SetImageActivity.SetProfileName.length;
+				items = new String[nItem];
+				for (int i = 0; i < nItem; i++) {
+					if (mProfileWord[i].equals("")) {
+						// 中身が未定義なら登録しない
+					}
+					else {
+						// 後半に中身を追加
+						items[i] = res.getString(SetImageActivity.SetProfileName[i]) + " : " + mProfileWord[i];
+					}
+				}
+				break;
 			default:
 				return;
 		}
@@ -2838,6 +2911,76 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			@Override
 			public void onSelectItem(int index) {
 				switch (mSelectMode) {
+					case SELLIST_SETPROFILE:
+						String title = res.getString(SetImageActivity.SetProfileName[index]);
+						String message = res.getString(R.string.pfMsg);
+						String profilename = mProfileWord[index];
+						mTextInputDialog = new TextInputDialog(mActivity, R.style.MyDialog, title, null, message, profilename, new TextInputDialog.SearchListener() {
+							@Override
+							public void onSearch(String text) {
+								if (text != null && text.length() > 0) {
+									// テキストが有効だった場合は値を更新
+									mProfileWord[index] = text;
+									// プロファイルを保存
+									SaveProfile(index);
+									boolean[] states = loadTopMenuState();
+									// 上部メニューの設定を保存
+									saveTopMenuState(states);
+									// 読み込みなおし
+									loadTopMenuState();
+									if (mGuideView != null) {
+										// 上部メニューの文字列情報をガイドに設定
+										mGuideView.setTopCommandStr(mCommandStr);
+									}
+								}
+							}
+							@Override
+							public void onCancel() {
+								// キャンセル処理
+							}
+							@Override
+							public void onClose() {
+								// 終了
+								mTextInputDialog = null;
+							}
+						});
+						mTextInputDialog.show();
+						break;
+					case SELLIST_DELPROFILE:
+						if (mProfileWord[index].equals("")) {
+							// 登録されていなければ戻る
+							return;
+						}
+						Dialog dialog = null;
+						AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(mActivity, R.style.MyDialog);
+						dialogBuilder.setTitle(getString(R.string.DelProfileName, mProfileWord[index]));
+						dialogBuilder.setMessage(R.string.delPfMsg);
+						dialogBuilder.setPositiveButton(R.string.btnOK, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int whichButton) {
+								// プロファイルの削除
+								DeleteProfile(index);
+								boolean[] states = loadTopMenuState();
+								// 上部メニューの設定を保存
+								saveTopMenuState(states);
+								// 読み込みなおし
+								loadTopMenuState();
+								if (mGuideView != null) {
+									// 上部メニューの文字列情報をガイドに設定
+									mGuideView.setTopCommandStr(mCommandStr);
+								}
+								dialog.dismiss();
+							}
+						});
+						dialogBuilder.setNegativeButton(R.string.btnCancel, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int whichButton) {
+								// キャンセル時は何もしない
+								dialog.dismiss();
+							}
+						});
+						// ダイアログの表示
+						dialog = dialogBuilder.create();
+						dialog.show();
+						break;
 					case SELLIST_ALGORITHM:
 						// 画像補間法
 						if (mAlgoMode != index) {
@@ -3062,7 +3205,20 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		nItem = COMMAND_ID.length;
 		items = new String[nItem];
 		for (int i = 0; i < nItem; i++) {
-			items[i] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+			if (COMMAND_INDEX[i] >= LIST_PROFILE1 && COMMAND_INDEX[i] <= LIST_PROFILE5) {
+				// プロファイルの場合は個別対応
+				if (mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1].equals("")) {
+					// 中身が未定義ならデフォルト設定
+					Logcat.d(logLevel, "中身が未定義ならデフォルト設定");
+					items[i] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+				}
+				else {
+					items[i] = mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1];
+				}
+			}
+			else {
+				items[i] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+			}
 		}
 
 		boolean[] states = loadTopMenuState();
@@ -3125,7 +3281,20 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					if (states[i]) {
 						// 表示するコマンドを設定
 						mCommandId[count] = COMMAND_ID[i];
-						mCommandStr[count] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+						if (COMMAND_INDEX[i] >= LIST_PROFILE1 && COMMAND_INDEX[i] <= LIST_PROFILE5) {
+							// プロファイルの場合は個別対応
+							if (mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1].equals("")) {
+								// 中身が未定義ならデフォルト設定
+								Logcat.d(logLevel, "中身が未定義ならデフォルト設定");
+								mCommandStr[count] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+							}
+							else {
+								mCommandStr[count] = mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1];
+							}
+						}
+						else {
+							mCommandStr[count] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+						}
 						count++;
 					}
 				}
@@ -3413,6 +3582,44 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		mMenuDialog.addItem(DEF.MENU_PAGEWAY, res.getString(R.string.pageWayMenu), res.getString(R.string.pageWayMenuSub1), res.getString(R.string.pageWayMenuSub2), mPageWay == DEF.PAGEWAY_RIGHT ? 0 : 1);
 		// スクロール方向入れ替え
 		mMenuDialog.addItem(DEF.MENU_SCRLWAY, res.getString(R.string.scrlWayMenu), res.getString(R.string.scrlWayMenuSub1), res.getString(R.string.scrlWayMenuSub2), mScrlWay == DEF.SCRLWAY_H ? 0 : 1);
+
+		mMenuDialog.addItem(DEF.MENU_SETPROFILE, res.getString(R.string.SetProfileMenu));
+		mMenuDialog.addItem(DEF.MENU_DELPROFILE, res.getString(R.string.DelProfileMenu));
+		if (mProfileWord[0].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE1, res.getString(R.string.Profile1) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE1, mProfileWord[0]);
+		}
+		if (mProfileWord[1].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE2, res.getString(R.string.Profile2) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE2, mProfileWord[1]);
+		}
+		if (mProfileWord[2].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE3, res.getString(R.string.Profile3) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE3, mProfileWord[2]);
+		}
+		if (mProfileWord[3].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE4, res.getString(R.string.Profile4) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE4, mProfileWord[3]);
+		}
+		if (mProfileWord[4].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE5, res.getString(R.string.Profile5) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE5, mProfileWord[4]);
+		}
 
 		// 一時設定
 		mMenuDialog.addSection(res.getString(R.string.otherSec));
@@ -3806,6 +4013,39 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				dialog.show();
 				break;
 			}
+			
+			case DEF.MENU_SETPROFILE: {
+				// プロファイルの登録
+				showSelectList(SELLIST_SETPROFILE);
+				break;
+			}
+			case DEF.MENU_DELPROFILE: {
+				// プロファイルの削除
+				showSelectList(SELLIST_DELPROFILE);
+				break;
+			}
+
+			case DEF.MENU_PROFILE1: {
+				LoadProfile(0);
+				break;
+			}
+			case DEF.MENU_PROFILE2: {
+				LoadProfile(1);
+				break;
+			}
+			case DEF.MENU_PROFILE3: {
+				LoadProfile(2);
+				break;
+			}
+			case DEF.MENU_PROFILE4: {
+				LoadProfile(3);
+				break;
+			}
+			case DEF.MENU_PROFILE5: {
+				LoadProfile(4);
+				break;
+			}
+			
 			default: {
 				if (id >= DEF.MENU_DIR_TREE) {
 					onSelectPage(id - DEF.MENU_DIR_TREE);
@@ -4971,6 +5211,446 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 						, mImageMgr.mFileList[mCurrentPage].name, mCurrentPage, null);
 			}
 		}
+	}
+
+	// プロファイルの保存
+	private void SaveProfile(int index) {
+		Editor ed = mSharedPreferences.edit();
+		switch (index) {
+			case 0:
+				ed.putString(DEF.KEY_PROFILE_WORD_01, mProfileWord[0]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_01, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_01, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_01, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_01, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_01, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_01, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_01, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_01, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_01, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_01, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_01, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_01, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_01, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_01, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_01, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_01, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_01, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_01, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
+				break;
+			case 1:
+				ed.putString(DEF.KEY_PROFILE_WORD_02, mProfileWord[1]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_02, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_02, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_02, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_02, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_02, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_02, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_02, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_02, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_02, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_02, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_02, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_02, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_02, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_02, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_02, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_02, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_02, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_02, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
+				break;
+			case 2:
+				ed.putString(DEF.KEY_PROFILE_WORD_03, mProfileWord[2]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_03, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_03, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_03, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_03, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_03, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_03, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_03, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_03, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_03, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_03, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_03, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_03, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_03, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_03, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_03, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_03, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_03, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_03, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
+				break;
+			case 3:
+				ed.putString(DEF.KEY_PROFILE_WORD_04, mProfileWord[3]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_04, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_04, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_04, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_04, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_04, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_04, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_04, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_04, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_04, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_04, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_04, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_04, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_04, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_04, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_04, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_04, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_04, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_04, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
+				break;
+			case 4:
+				ed.putString(DEF.KEY_PROFILE_WORD_05, mProfileWord[4]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_05, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_05, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_05, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_05, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_05, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_05, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_05, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_05, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_05, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_05, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_05, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_05, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_05, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_05, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_05, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_05, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_05, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_05, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
+				break;
+		}
+		ed.apply();
+	}
+
+	// プロファイルのロード
+	private void LoadProfile(int index) {
+		switch (index) {
+			case 0:
+				if (mProfileWord[0].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_01, mGray);
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_01, mInvert);
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_01, mMoire);
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_01, mSharpen);
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_01, mBright);
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_01, mGamma);
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_01, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_01, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_01, mChgPage);
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_01, mPageWay);
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_01, mScrlWay);
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_01, mTopSingle);
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_01, mBkLight);
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_01, mAlgoMode);
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_01, mDispMode);
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_01, mScaleMode);
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_01, mMgnCut);
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_01, mMgnCutColor);
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
+				break;
+			case 1:
+				if (mProfileWord[1].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_02, mGray);
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_02, mInvert);
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_02, mMoire);
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_02, mSharpen);
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_02, mBright);
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_02, mGamma);
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_02, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_02, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_02, mChgPage);
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_02, mPageWay);
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_02, mScrlWay);
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_02, mTopSingle);
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_02, mBkLight);
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_02, mAlgoMode);
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_02, mDispMode);
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_02, mScaleMode);
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_02, mMgnCut);
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_02, mMgnCutColor);
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
+				break;
+			case 2:
+				if (mProfileWord[2].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_03, mGray);
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_03, mInvert);
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_03, mMoire);
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_03, mSharpen);
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_03, mBright);
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_03, mGamma);
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_03, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_03, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_03, mChgPage);
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_03, mPageWay);
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_03, mScrlWay);
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_03, mTopSingle);
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_03, mBkLight);
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_03, mAlgoMode);
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_03, mDispMode);
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_03, mScaleMode);
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_03, mMgnCut);
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_03, mMgnCutColor);
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
+				break;
+			case 3:
+				if (mProfileWord[3].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_04, mGray);
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_04, mInvert);
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_04, mMoire);
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_04, mSharpen);
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_04, mBright);
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_04, mGamma);
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_04, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_04, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_04, mChgPage);
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_04, mPageWay);
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_04, mScrlWay);
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_04, mTopSingle);
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_04, mBkLight);
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_04, mAlgoMode);
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_04, mDispMode);
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_04, mScaleMode);
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_04, mMgnCut);
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_04, mMgnCutColor);
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
+				break;
+			case 4:
+				if (mProfileWord[4].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_05, mGray);
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_05, mInvert);
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_05, mMoire);
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_05, mSharpen);
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_05, mBright);
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_05, mGamma);
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_05, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_05, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_05, mChgPage);
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_05, mPageWay);
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_05, mScrlWay);
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_05, mTopSingle);
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_05, mBkLight);
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_05, mAlgoMode);
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_05, mDispMode);
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_05, mScaleMode);
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_05, mMgnCut);
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_05, mMgnCutColor);
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
+				break;
+		}
+		if (mReverseOrder != mReverseOrderProfile) {
+			// ページ逆順
+			mReverseOrder = !mReverseOrder;
+			mImageMgr.reverseOrder();
+		}
+		if (mChgPage != mChgPageProfile) {
+			// 操作方向の入れ替え
+			mChgPage = !mChgPage;
+			mGuideView.setGuideSize(mClickArea, mTapPattern, mTapRate, mChgPage, mOldMenu);
+		}
+		mPinchScaleSel = mPinchScale;
+		// 画面回転
+		mImageView.setRotate(mRotate);
+		// 画像と表示領域を比較してはみ出る量を算出
+		setImageConfig();
+		// ビットマップの読み込み
+		setBitmapImage();
+		// 表示のコンフィグレーション
+		setViewConfig();
+		// 画面サイズの更新
+		mImageView.updateScreenSize();
+
+		// 描画スレッド停止
+		mImageView.lockDraw();
+		synchronized (mImageView) {
+			// スケーリング変更
+			mImageMgr.setImageScale(mPinchScale);
+			// イメージ拡大縮小
+			ImageScaling();
+		}
+		// ビットマップを調整
+		this.updateOverSize(true);
+		// 描画スレッド開始
+		mImageView.update(true);
+
+		// バックライト設定
+		float l = -1;
+		if (mBkLight <= 10) {
+			l = (float)mBkLight / 10;
+		}
+		WindowManager.LayoutParams lp = getWindow().getAttributes();
+		lp.screenBrightness = l;
+		getWindow().setAttributes(lp);
+	}
+
+	// プロファイルの削除
+	private void DeleteProfile(int index) {
+		Editor ed = mSharedPreferences.edit();
+		switch (index) {
+			case 0:
+				if (mProfileWord[0].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[0] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_01);
+				ed.remove(DEF.KEY_PROFILE_GRAY_01);
+				ed.remove(DEF.KEY_PROFILE_INVERT_01);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_01);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_01);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_01);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_01);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_01);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_01);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_01);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_01);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_01);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_01);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_01);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_01);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_01);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_01);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_01);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_01);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_01);
+				break;
+			case 1:
+				if (mProfileWord[1].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[1] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_02);
+				ed.remove(DEF.KEY_PROFILE_GRAY_02);
+				ed.remove(DEF.KEY_PROFILE_INVERT_02);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_02);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_02);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_02);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_02);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_02);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_02);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_02);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_02);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_02);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_02);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_02);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_02);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_02);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_02);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_02);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_02);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_02);
+				break;
+			case 2:
+				if (mProfileWord[2].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[2] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_03);
+				ed.remove(DEF.KEY_PROFILE_GRAY_03);
+				ed.remove(DEF.KEY_PROFILE_INVERT_03);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_03);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_03);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_03);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_03);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_03);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_03);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_03);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_03);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_03);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_03);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_03);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_03);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_03);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_03);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_03);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_03);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_03);
+				break;
+			case 3:
+				if (mProfileWord[3].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[3] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_04);
+				ed.remove(DEF.KEY_PROFILE_GRAY_04);
+				ed.remove(DEF.KEY_PROFILE_INVERT_04);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_04);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_04);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_04);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_04);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_04);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_04);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_04);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_04);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_04);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_04);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_04);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_04);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_04);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_04);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_04);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_04);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_04);
+				break;
+			case 4:
+				if (mProfileWord[4].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[4] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_05);
+				ed.remove(DEF.KEY_PROFILE_GRAY_05);
+				ed.remove(DEF.KEY_PROFILE_INVERT_05);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_05);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_05);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_05);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_05);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_05);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_05);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_05);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_05);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_05);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_05);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_05);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_05);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_05);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_05);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_05);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_05);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_05);
+				break;
+		}
+		ed.apply();
 	}
 
 }
