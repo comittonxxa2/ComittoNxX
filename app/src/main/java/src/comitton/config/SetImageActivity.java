@@ -131,6 +131,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		, R.string.timeformat03		// 24:00
 		, R.string.timeformat04		// 24:00 [100%]
 		, R.string.timeformat05 };	// 24:00 [100%] [AC]
+	public static final int[] SetProfileName =
+		{ R.string.Profile1
+		, R.string.Profile2
+		, R.string.Profile3
+		, R.string.Profile4
+		, R.string.Profile5 };
 
 	Resources mResources;
 
