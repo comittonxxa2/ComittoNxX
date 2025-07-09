@@ -182,6 +182,13 @@ public class DEF {
 	public static final int MENU_SEL_DIR_TREE = Menu.FIRST + 51;
 	public static final int MENU_EDIT_TOOLBAR = Menu.FIRST + 52;
 	public static final int MENU_DOWLOAD_COUNT = Menu.FIRST + 53;
+	public static final int MENU_SETPROFILE = Menu.FIRST + 54;
+	public static final int MENU_DELPROFILE = Menu.FIRST + 55;
+	public static final int MENU_PROFILE1 = Menu.FIRST + 56;
+	public static final int MENU_PROFILE2 = Menu.FIRST + 57;
+	public static final int MENU_PROFILE3 = Menu.FIRST + 58;
+	public static final int MENU_PROFILE4 = Menu.FIRST + 59;
+	public static final int MENU_PROFILE5 = Menu.FIRST + 60;
 	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
@@ -568,6 +575,127 @@ public class DEF {
 
 	public static final String KEY_CUSTOM_URL_SCHEME_KEY = "CustomUrlSchemeAuthenticationKey";
 	public static final String KEY_SMB_MODE = "ComittoNMode";
+
+	// プロファイル設定
+	public static final String KEY_PROFILE_WORD_01 = "Profile1";
+	public static final String KEY_PROFILE_WORD_02 = "Profile2";
+	public static final String KEY_PROFILE_WORD_03 = "Profile3";
+	public static final String KEY_PROFILE_WORD_04 = "Profile4";
+	public static final String KEY_PROFILE_WORD_05 = "Profile5";
+
+	public static final String KEY_PROFILE_GRAY_01 = "ProfileGray1";
+	public static final String KEY_PROFILE_GRAY_02 = "ProfileGray2";
+	public static final String KEY_PROFILE_GRAY_03 = "ProfileGray3";
+	public static final String KEY_PROFILE_GRAY_04 = "ProfileGray4";
+	public static final String KEY_PROFILE_GRAY_05 = "ProfileGray5";
+
+	public static final String KEY_PROFILE_INVERT_01 = "ProfileInvert1";
+	public static final String KEY_PROFILE_INVERT_02 = "ProfileInvert2";
+	public static final String KEY_PROFILE_INVERT_03 = "ProfileInvert3";
+	public static final String KEY_PROFILE_INVERT_04 = "ProfileInvert4";
+	public static final String KEY_PROFILE_INVERT_05 = "ProfileInvert5";
+
+	public static final String KEY_PROFILE_MOIRE_01 = "ProfileMoire1";
+	public static final String KEY_PROFILE_MOIRE_02 = "ProfileMoire2";
+	public static final String KEY_PROFILE_MOIRE_03 = "ProfileMoire3";
+	public static final String KEY_PROFILE_MOIRE_04 = "ProfileMoire4";
+	public static final String KEY_PROFILE_MOIRE_05 = "ProfileMoire5";
+
+	public static final String KEY_PROFILE_SHARPEN_01 = "ProfileSharpen1";
+	public static final String KEY_PROFILE_SHARPEN_02 = "ProfileSharpen2";
+	public static final String KEY_PROFILE_SHARPEN_03 = "ProfileSharpen3";
+	public static final String KEY_PROFILE_SHARPEN_04 = "ProfileSharpen4";
+	public static final String KEY_PROFILE_SHARPEN_05 = "ProfileSharpen5";
+
+	public static final String KEY_PROFILE_BRIGHT_01 = "ProfileBright1";
+	public static final String KEY_PROFILE_BRIGHT_02 = "ProfileBright2";
+	public static final String KEY_PROFILE_BRIGHT_03 = "ProfileBright3";
+	public static final String KEY_PROFILE_BRIGHT_04 = "ProfileBright4";
+	public static final String KEY_PROFILE_BRIGHT_05 = "ProfileBright5";
+
+	public static final String KEY_PROFILE_GAMMA_01 = "ProfileGamma1";
+	public static final String KEY_PROFILE_GAMMA_02 = "ProfileGamma2";
+	public static final String KEY_PROFILE_GAMMA_03 = "ProfileGamma3";
+	public static final String KEY_PROFILE_GAMMA_04 = "ProfileGamma4";
+	public static final String KEY_PROFILE_GAMMA_05 = "ProfileGamma5";
+
+	public static final String KEY_PROFILE_ROTATE_01 = "ProfileRotate1";
+	public static final String KEY_PROFILE_ROTATE_02 = "ProfileRotate2";
+	public static final String KEY_PROFILE_ROTATE_03 = "ProfileRotate3";
+	public static final String KEY_PROFILE_ROTATE_04 = "ProfileRotate4";
+	public static final String KEY_PROFILE_ROTATE_05 = "ProfileRotate5";
+
+	public static final String KEY_PROFILE_REVERSE_01 = "ProfileReverse1";
+	public static final String KEY_PROFILE_REVERSE_02 = "ProfileReverse2";
+	public static final String KEY_PROFILE_REVERSE_03 = "ProfileReverse3";
+	public static final String KEY_PROFILE_REVERSE_04 = "ProfileReverse4";
+	public static final String KEY_PROFILE_REVERSE_05 = "ProfileReverse5";
+
+	public static final String KEY_PROFILE_CHGPAGE_01 = "ProfileChgPage1";
+	public static final String KEY_PROFILE_CHGPAGE_02 = "ProfileChgPage2";
+	public static final String KEY_PROFILE_CHGPAGE_03 = "ProfileChgPage3";
+	public static final String KEY_PROFILE_CHGPAGE_04 = "ProfileChgPage4";
+	public static final String KEY_PROFILE_CHGPAGE_05 = "ProfileChgPage5";
+
+	public static final String KEY_PROFILE_PAGEWAY_01 = "ProfilePageWay1";
+	public static final String KEY_PROFILE_PAGEWAY_02 = "ProfilePageWay2";
+	public static final String KEY_PROFILE_PAGEWAY_03 = "ProfilePageWay3";
+	public static final String KEY_PROFILE_PAGEWAY_04 = "ProfilePageWay4";
+	public static final String KEY_PROFILE_PAGEWAY_05 = "ProfilePageWay5";
+
+	public static final String KEY_PROFILE_SCRLWAY_01 = "ProfileScrlWay1";
+	public static final String KEY_PROFILE_SCRLWAY_02 = "ProfileScrlWay2";
+	public static final String KEY_PROFILE_SCRLWAY_03 = "ProfileScrlWay3";
+	public static final String KEY_PROFILE_SCRLWAY_04 = "ProfileScrlWay4";
+	public static final String KEY_PROFILE_SCRLWAY_05 = "ProfileScrlWay5";
+
+	public static final String KEY_PROFILE_TOPSINGLE_01 = "ProfileTopSingle1";
+	public static final String KEY_PROFILE_TOPSINGLE_02 = "ProfileTopSingle2";
+	public static final String KEY_PROFILE_TOPSINGLE_03 = "ProfileTopSingle3";
+	public static final String KEY_PROFILE_TOPSINGLE_04 = "ProfileTopSingle4";
+	public static final String KEY_PROFILE_TOPSINGLE_05 = "ProfileTopSingle5";
+
+	public static final String KEY_PROFILE_BKLIGHT_01 = "ProfileBkLight1";
+	public static final String KEY_PROFILE_BKLIGHT_02 = "ProfileBkLight2";
+	public static final String KEY_PROFILE_BKLIGHT_03 = "ProfileBkLight3";
+	public static final String KEY_PROFILE_BKLIGHT_04 = "ProfileBkLight4";
+	public static final String KEY_PROFILE_BKLIGHT_05 = "ProfileBkLight5";
+
+	public static final String KEY_PROFILE_ALGOMODE_01 = "ProfileAlgoMode1";
+	public static final String KEY_PROFILE_ALGOMODE_02 = "ProfileAlgoMode2";
+	public static final String KEY_PROFILE_ALGOMODE_03 = "ProfileAlgoMode3";
+	public static final String KEY_PROFILE_ALGOMODE_04 = "ProfileAlgoMode4";
+	public static final String KEY_PROFILE_ALGOMODE_05 = "ProfileAlgoMode5";
+
+	public static final String KEY_PROFILE_DISPMODE_01 = "ProfileDispMode1";
+	public static final String KEY_PROFILE_DISPMODE_02 = "ProfileDispMode2";
+	public static final String KEY_PROFILE_DISPMODE_03 = "ProfileDispMode3";
+	public static final String KEY_PROFILE_DISPMODE_04 = "ProfileDispMode4";
+	public static final String KEY_PROFILE_DISPMODE_05 = "ProfileDispMode5";
+
+	public static final String KEY_PROFILE_SCALEMODE_01 = "ProfileScaleMode1";
+	public static final String KEY_PROFILE_SCALEMODE_02 = "ProfileScaleMode2";
+	public static final String KEY_PROFILE_SCALEMODE_03 = "ProfileScaleMode3";
+	public static final String KEY_PROFILE_SCALEMODE_04 = "ProfileScaleMode4";
+	public static final String KEY_PROFILE_SCALEMODE_05 = "ProfileScaleMode5";
+
+	public static final String KEY_PROFILE_MGNCUT_01 = "ProfileMgnCut1";
+	public static final String KEY_PROFILE_MGNCUT_02 = "ProfileMgnCut2";
+	public static final String KEY_PROFILE_MGNCUT_03 = "ProfileMgnCut3";
+	public static final String KEY_PROFILE_MGNCUT_04 = "ProfileMgnCut4";
+	public static final String KEY_PROFILE_MGNCUT_05 = "ProfileMgnCut5";
+
+	public static final String KEY_PROFILE_MGNCUTCOLOR_01 = "ProfileMgnCutColor1";
+	public static final String KEY_PROFILE_MGNCUTCOLOR_02 = "ProfileMgnCutColor2";
+	public static final String KEY_PROFILE_MGNCUTCOLOR_03 = "ProfileMgnCutColor3";
+	public static final String KEY_PROFILE_MGNCUTCOLOR_04 = "ProfileMgnCutColor4";
+	public static final String KEY_PROFILE_MGNCUTCOLOR_05 = "ProfileMgnCutColor5";
+
+	public static final String KEY_PROFILE_PINCHSCALE_01 = "ProfilePinchScale1";
+	public static final String KEY_PROFILE_PINCHSCALE_02 = "ProfilePinchScale2";
+	public static final String KEY_PROFILE_PINCHSCALE_03 = "ProfilePinchScale3";
+	public static final String KEY_PROFILE_PINCHSCALE_04 = "ProfilePinchScale4";
+	public static final String KEY_PROFILE_PINCHSCALE_05 = "ProfilePinchScale5";
 
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
