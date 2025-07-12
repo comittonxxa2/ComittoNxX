@@ -166,6 +166,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			18,	// 設定
 			19,	// 中央余白表示
 			20,	// 中央影表示,
+			31,
 			LIST_PROFILE1,	// プロファイル1
 			LIST_PROFILE2,	// プロファイル2
 			LIST_PROFILE3,	// プロファイル3
@@ -201,6 +202,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		DEF.MENU_SETTING,	// 設定
 		DEF.MENU_CMARGIN,	// 中央余白表示
 		DEF.MENU_CSHADOW,	// 中央影表示
+		DEF.MENU_DISPLAY_POSITION,	// 画面の表示位置
 		DEF.MENU_PROFILE1,	// プロファイル1
 		DEF.MENU_PROFILE2,	// プロファイル2
 		DEF.MENU_PROFILE3,	// プロファイル3
@@ -235,6 +237,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		R.string.setMenu,		// 設定
 		R.string.cMargin,		// 中央余白表示
 		R.string.cShadow,		// 中央影表示
+		R.string.DisplayPositionMenu,		// 画面の表示位置
 		R.string.Profile1,		// プロファイル1
 		R.string.Profile2,		// プロファイル2
 		R.string.Profile3,		// プロファイル3
@@ -260,6 +263,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private final int SELLIST_SCR_ROTATE = 6;
 	private final int SELLIST_SETPROFILE = 7;
 	private final int SELLIST_DELPROFILE = 8;
+	private final int SELLIST_DISPLAY_POSITION = 9;
 
 	private final int TOUCH_NONE      = 0;
 	private final int TOUCH_COMMAND   = 1;
@@ -299,6 +303,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private int mScrlRngH;
 	private int mMgnCut;
 	private int mMgnCutColor;
+	private int mDisplayPosition;
 	private int mEffect;
 	private int mLastMsg;
 	private int mPageSelect;
@@ -1889,7 +1894,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 		if (mImageView != null) {
 			mImageView.setConfig(this, mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mZoomType, mPageWay, mScrlWay, mScrlRngW, mScrlRngH, mPrevRev, mNoExpand, mFitDual,
-					mCMargin, mCShadow, mPseLand, mEffect, mScrlNext, mViewNext, mNextFilter);
+					mCMargin, mCShadow, mPseLand, mEffect, mScrlNext, mViewNext, mNextFilter, mDisplayPosition);
 			mImageView.setLoupeConfig(mLoupeSize);	// ルーペサイズの設定
 		}
 		if (mGuideView != null) {
@@ -2859,6 +2864,17 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					items[i] = res.getString(SetImageActivity.MgnCutColorName[i]);
 				}
 				break;
+			case SELLIST_DISPLAY_POSITION:
+				// 画面の表示位置
+				Logcat.d(2, "SELLIST_DISPLAY_POSITION");
+				title = res.getString(R.string.DisplayPositionMenu);
+				selIndex = mDisplayPosition;
+				nItem = SetImageActivity.DisplayPositionName.length;
+				items = new String[nItem];
+				for (int i = 0; i < nItem; i++) {
+					items[i] = res.getString(SetImageActivity.DisplayPositionName[i]);
+				}
+				break;
 			case SELLIST_SCR_ROTATE:
 				// 画面方向
 				title = res.getString(R.string.rotateMenu);
@@ -3030,6 +3046,17 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 							setBitmapImage();
 						}
 						break;
+					case SELLIST_DISPLAY_POSITION:
+						// 画面の表示位置
+						if (mDisplayPosition != index) {
+							mDisplayPosition = index;
+							// 表示のコンフィグレーション
+							setViewConfig();
+							// 表示を更新
+							setImageConfig();
+							setBitmapImage();
+						}
+						break;
 					case SELLIST_SCR_ROTATE:
 						// 画面方向
 						if (mViewRota != index + 1) {
@@ -3099,14 +3126,14 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				break;
 			}
 		}
-		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave);
+		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor) {
+				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition) {
 					ischange = true;
 				}
 				mGray = gray;
@@ -3120,7 +3147,18 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mMgnCut = mgncut;
 				mMgnCutColor = mgncutcolor;
 				mIsConfSave = issave;
-
+				if (mDisplayPosition != displayposition) {
+					mDisplayPosition = displayposition;
+					// 画面の表示位置
+					// 表示のコンフィグレーション
+					setViewConfig();
+					// 表示を更新
+					setImageConfig();
+					setBitmapImage();
+					// イメージ拡大縮小
+					ImageScaling();
+					updateOverSize(false);
+				}
 				if (mScaleMode != SCALENAME_ORDER[scalemode]) {
 					// 画像拡大率の変更
 					mImageView.lockDraw();
@@ -3171,6 +3209,8 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					ed.putString(DEF.KEY_MARGINCUT, Integer.toString(mMgnCut));
 					ed.putString(DEF.KEY_MARGINCUTCOLOR, Integer.toString(mMgnCutColor));
 					ed.putString(DEF.KEY_INISCALE, Integer.toString(mScaleMode));
+					ed.putString(DEF.KEY_DISPLAYPOSITION, Integer.toString(mDisplayPosition));
+					
 					ed.apply();
 				}
 			}
@@ -3777,6 +3817,11 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			case DEF.MENU_MGNCUTCOLOR: {
 				// 余白削除
 				showSelectList(SELLIST_MARGIN_CUTCOLOR);
+				break;
+			}
+			case DEF.MENU_DISPLAY_POSITION: {
+				// 画面の表示位置
+				showSelectList(SELLIST_DISPLAY_POSITION);
 				break;
 			}
 			case DEF.MENU_ROTATE: {
@@ -4434,6 +4479,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 			mMgnCut = SetImageActivity.getMgnCut(sharedPreferences);
 			mMgnCutColor = SetImageActivity.getMgnCutColor(sharedPreferences);
+			mDisplayPosition = SetImageActivity.getDisplayPosition(sharedPreferences);
 			mBright = SetImageActivity.getBright(sharedPreferences);
 			mGamma = SetImageActivity.getGamma(sharedPreferences);
 			mBkLight = SetImageActivity.getBkLight(sharedPreferences);
@@ -5238,6 +5284,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_MGNCUT_01, mMgnCut);
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_01, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_01, mDisplayPosition);
 				break;
 			case 1:
 				ed.putString(DEF.KEY_PROFILE_WORD_02, mProfileWord[1]);
@@ -5260,6 +5307,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_MGNCUT_02, mMgnCut);
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_02, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_02, mDisplayPosition);
 				break;
 			case 2:
 				ed.putString(DEF.KEY_PROFILE_WORD_03, mProfileWord[2]);
@@ -5282,6 +5330,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_MGNCUT_03, mMgnCut);
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_03, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_03, mDisplayPosition);
 				break;
 			case 3:
 				ed.putString(DEF.KEY_PROFILE_WORD_04, mProfileWord[3]);
@@ -5304,6 +5353,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_MGNCUT_04, mMgnCut);
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_04, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_04, mDisplayPosition);
 				break;
 			case 4:
 				ed.putString(DEF.KEY_PROFILE_WORD_05, mProfileWord[4]);
@@ -5326,6 +5376,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_MGNCUT_05, mMgnCut);
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_05, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_05, mDisplayPosition);
 				break;
 		}
 		ed.apply();
@@ -5359,6 +5410,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_01, mMgnCut);
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_01, mMgnCutColor);
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_01, mDisplayPosition);
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -5385,6 +5437,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_02, mMgnCut);
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_02, mMgnCutColor);
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_02, mDisplayPosition);
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -5411,6 +5464,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_03, mMgnCut);
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_03, mMgnCutColor);
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_03, mDisplayPosition);
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -5437,6 +5491,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_04, mMgnCut);
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_04, mMgnCutColor);
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_04, mDisplayPosition);
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -5463,6 +5518,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_05, mMgnCut);
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_05, mMgnCutColor);
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_05, mDisplayPosition);
 				break;
 		}
 		if (mReverseOrder != mReverseOrderProfile) {
@@ -5540,6 +5596,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_MGNCUT_01);
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_01);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_01);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_01);
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -5567,6 +5624,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_MGNCUT_02);
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_02);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_02);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_02);
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -5594,6 +5652,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_MGNCUT_03);
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_03);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_03);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_03);
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -5621,6 +5680,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_MGNCUT_04);
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_04);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_04);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_04);
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -5648,6 +5708,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_MGNCUT_05);
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_05);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_05);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_05);
 				break;
 		}
 		ed.apply();

@@ -50,6 +50,15 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private final int ATTENUATE_TERM = 10;
 	private final int MOMENTIUM_TERM = 10;
 
+	private final int POS_TOP = 1;
+	private final int POS_BOTTOM = 2;
+	private final int POS_LEFT = 3;
+	private final int POS_RIGHT = 4;
+	private final int POS_TOP_LEFT = 5;
+	private final int POS_TOP_RIGHT = 6;
+	private final int POS_BOTTOM_LEFT = 7;
+	private final int POS_BOTTOM_RIGHT = 8;
+
 	private int mMgnColor;
 	private int mCenColor;
 	private int mGuiColor;
@@ -64,6 +73,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private int mScrlRangeW;
 	private int mScrlRangeH;
 	private int mEffect;
+	private int mDisplayPosition;
 	private boolean mPrevRev  = false;
 	private boolean mIsMargin = false;	// 中央のすき間あり
 	private boolean mIsShadow = false;
@@ -1021,7 +1031,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	}
 
 	// 余白色を設定
-	public void setConfig(ImageActivity parent, int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int zom, int way, int sway, int srngw, int srngh, boolean pr, boolean ne, boolean fit, boolean cmgn, boolean csdw, boolean psel, int effect, boolean scrlNext, boolean viewNext, boolean nextFilter){
+	public void setConfig(ImageActivity parent, int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int zom, int way, int sway, int srngw, int srngh, boolean pr, boolean ne, boolean fit, boolean cmgn, boolean csdw, boolean psel, int effect, boolean scrlNext, boolean viewNext, boolean nextFilter, int displayposition){
 		mParentAct = parent;
 		mMgnColor  = mclr;
 		mCenColor  = cclr;
@@ -1055,6 +1065,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mScrlNext = scrlNext;
 		mViewNext = viewNext;
 		mNextFilter = nextFilter;
+		mDisplayPosition = displayposition;
 	}
 
 	public void setLoupeConfig(int size) {
@@ -1299,6 +1310,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if (drawTop > mMgnTop) {
 				drawTop = mMgnTop;
 			}
+			// 画面の表示位置が設定されていればマージンを無視して画面端に設定する
+			if ((mDisplayPosition == POS_TOP || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_TOP_RIGHT) && (mMgnTop > 0)) {
+				drawTop = 0;
+			}
+			if ((mDisplayPosition == POS_BOTTOM || mDisplayPosition == POS_BOTTOM_LEFT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnBottom > 0)) {
+				drawTop = mDispHeight - mDrawHeightMax;
+			}
+			if ((mDisplayPosition == POS_LEFT || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_BOTTOM_LEFT) && (mMgnLeft > 0)) {
+				drawLeft = 0;
+			}
+			if ((mDisplayPosition == POS_RIGHT || mDisplayPosition == POS_TOP_RIGHT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnRight > 0)) {
+   				drawLeft = mDispWidth - mDrawWidthSum;
+			}
 		}
 		else {
     		if (mViewPoint == DEF.VIEWPT_CENTER) {
@@ -1344,6 +1368,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     				drawTop  = disp_y - view_y - mMgnBottom;
     			}
     		}
+			// 画面の表示位置が設定されていればマージンを無視して画面端に設定する
+			if ((mDisplayPosition == POS_TOP || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_TOP_RIGHT) && (mMgnTop > 0)) {
+				drawTop = 0;
+			}
+			if ((mDisplayPosition == POS_BOTTOM || mDisplayPosition == POS_BOTTOM_LEFT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnBottom > 0)) {
+				drawTop = disp_y - view_y;
+			}
+			if ((mDisplayPosition == POS_LEFT || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_BOTTOM_LEFT) && (mMgnLeft > 0)) {
+				drawLeft = 0;
+			}
+			if ((mDisplayPosition == POS_RIGHT || mDisplayPosition == POS_TOP_RIGHT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnRight > 0)) {
+   				drawLeft = disp_x - view_x;
+			}
 		}
 		mDrawLeft = drawLeft;
 		mDrawTop = drawTop;
@@ -1490,6 +1527,20 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			top = mMgnTop;
 		}
 
+		// 画面の表示位置が設定されていればマージンを無視して画面端に設定する
+		if ((mDisplayPosition == POS_TOP || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_TOP_RIGHT) && (mMgnTop > 0)) {
+			top = 0;
+		}
+		if ((mDisplayPosition == POS_BOTTOM || mDisplayPosition == POS_BOTTOM_LEFT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnBottom > 0)) {
+			top = mDispHeight - mDrawHeightMax;
+		}
+		if ((mDisplayPosition == POS_LEFT || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_BOTTOM_LEFT) && (mMgnLeft > 0)) {
+			left = 0;
+		}
+		if ((mDisplayPosition == POS_RIGHT || mDisplayPosition == POS_TOP_RIGHT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnRight > 0)) {
+			left = mDispWidth - mDrawWidthSum;
+		}
+
 		if (left != mDrawLeft || top != mDrawTop) {
 //			synchronized (mDrawParams) {
 				mDrawLeft = left;
@@ -1541,12 +1592,41 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		int max_scroll_x = mDispWidth * mScrlRangeW / 100;
 		int max_scroll_y = mDispHeight * mScrlRangeH / 100;
 
+		boolean y_top_stop = false;
+		boolean y_bottom_stop = false;
+		boolean x_left_stop = false;
+		boolean x_right_stop = false;
+
+		// 画面の表示位置が設定されていればマージンを無視して画面端に設定する
+		if ((mDisplayPosition == POS_TOP || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_TOP_RIGHT) && (mMgnTop > 0)) {
+			y_top_stop = true;
+		}
+		if ((mDisplayPosition == POS_BOTTOM || mDisplayPosition == POS_BOTTOM_LEFT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnBottom > 0)) {
+			y_bottom_stop = true;
+		}
+		if ((mDisplayPosition == POS_LEFT || mDisplayPosition == POS_TOP_LEFT || mDisplayPosition == POS_BOTTOM_LEFT) && (mMgnLeft > 0)) {
+			x_left_stop = true;
+		}
+		if ((mDisplayPosition == POS_RIGHT || mDisplayPosition == POS_TOP_RIGHT || mDisplayPosition == POS_BOTTOM_RIGHT) && (mMgnRight > 0)) {
+			x_right_stop = true;
+		}
+
 		if (mDrawWidthSum <= mDispWidth) {
 			// 画面幅より大
 			x_cnt = 1;
 			x_pos = new int [1][];
 			x_pos[0] = new int[1];
-			x_pos[0][0] = (mDispWidth - mDrawWidthSum) / 2 * -1;
+			if (x_left_stop) {
+				// 画面左端で停止
+				x_pos[0][0] = 0;
+			}
+			else if (x_right_stop) {
+				// 画面右端で停止
+				x_pos[0][0] = - mMgnLeft * 2;
+			}
+			else {
+				x_pos[0][0] = (mDispWidth - mDrawWidthSum) / 2 * -1;
+			}
 		}
 		else if (mDrawWidthSum > mDrawHeightMax) {
 			// 見開き表示のとき
@@ -1613,7 +1693,17 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			// 画面幅より大
 			y_cnt = 1;
 			y_pos = new int[y_cnt];
-			y_pos[0] = (mDispHeight - mDrawHeightMax) / 2 * -1;
+			if (y_top_stop) {
+				// 画面上で停止
+				y_pos[0] = 0;
+			}
+			else if (y_bottom_stop) {
+				// 画面下で停止
+				y_pos[0] = - mMgnTop * 2;
+			}
+			else {
+				y_pos[0] = (mDispHeight - mDrawHeightMax) / 2 * -1;
+			}
 		}
 		else {
 			// 画像幅全体を均等スクロール
@@ -1754,7 +1844,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 		}
 		//Logcat.d(logLevel, "index=" + index + ", min_x=" + min_x  + ", min_y=" + min_y );
-		if (mScrollPos[index].x == (int)(mDrawLeft + mOverScrollX) && mScrollPos[index].y == (int)mDrawTop) {
+		if ((mScrollPos[index].x == (int)(mDrawLeft + mOverScrollX) || min_x != 0) && ((mScrollPos[index].y == (int)mDrawTop) || min_y != 0)) {
 			// 丁度その位置なら次へ
 			index += move >= 0 ? 1 : -1;
 			if (index < 0 || index >= mScrollPos.length) {
