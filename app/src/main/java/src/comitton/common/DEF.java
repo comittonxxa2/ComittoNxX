@@ -189,6 +189,7 @@ public class DEF {
 	public static final int MENU_PROFILE3 = Menu.FIRST + 58;
 	public static final int MENU_PROFILE4 = Menu.FIRST + 59;
 	public static final int MENU_PROFILE5 = Menu.FIRST + 60;
+	public static final int MENU_DISPLAY_POSITION = Menu.FIRST + 61;
 	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
@@ -481,6 +482,7 @@ public class DEF {
 	public static final String KEY_ACCESSLAMP = "AccessLamp";
 	public static final String KEY_MARGINCUT = "MarginCut";
 	public static final String KEY_MARGINCUTCOLOR = "MarginCutColor";
+	public static final String KEY_DISPLAYPOSITION = "DisplayPosition";
 	public static final String KEY_TAPEXPAND = "TapExpand";
 	public static final String KEY_TAPPATTERN = "TapPattern";
 	public static final String KEY_PAGENUMBER = "PageNumber";
@@ -696,6 +698,11 @@ public class DEF {
 	public static final String KEY_PROFILE_PINCHSCALE_03 = "ProfilePinchScale3";
 	public static final String KEY_PROFILE_PINCHSCALE_04 = "ProfilePinchScale4";
 	public static final String KEY_PROFILE_PINCHSCALE_05 = "ProfilePinchScale5";
+	public static final String KEY_PROFILE_DISPLAYPOSITION_01 = "ProfileDisplayPosition1";
+	public static final String KEY_PROFILE_DISPLAYPOSITION_02 = "ProfileDisplayPosition2";
+	public static final String KEY_PROFILE_DISPLAYPOSITION_03 = "ProfileDisplayPosition3";
+	public static final String KEY_PROFILE_DISPLAYPOSITION_04 = "ProfileDisplayPosition4";
+	public static final String KEY_PROFILE_DISPLAYPOSITION_05 = "ProfileDisplayPosition5";
 
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
