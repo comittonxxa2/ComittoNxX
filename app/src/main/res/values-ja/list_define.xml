@@ -326,6 +326,28 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+    <string-array name="display_position_name_list">
+        <item>中心</item>
+        <item>上</item>
+        <item>下</item>
+        <item>左</item>
+        <item>右</item>
+        <item>左上</item>
+        <item>右上</item>
+        <item>左下</item>
+        <item>右下</item>
+    </string-array>
+    <string-array name="display_position_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
     <string-array name="txscale_name_list">
         <item>元のサイズで表示</item>
         <item>幅に合わせて表示</item>

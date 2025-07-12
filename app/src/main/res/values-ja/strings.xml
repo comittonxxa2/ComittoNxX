@@ -141,6 +141,7 @@
     <string name="bklightMenu">バックライト(%)</string>
     <string name="mgnCutMenu">余白削除</string>
     <string name="mgnCutColorMenu">余白削除の色</string>
+    <string name="DisplayPositionMenu">画面の表示位置</string>
     <string name="imgRotaMenu">画像の回転</string>
     <string name="imgConfMenu">画像表示設定</string>
     <string name="Profile1">プロファイル1</string>
@@ -401,6 +402,15 @@
     <string name="mgncut06">縦横比無視</string>
     <string name="mgncutcolor00">白と黒</string>
     <string name="mgncutcolor01">全ての色</string>
+    <string name="displayposition00">中心</string>
+    <string name="displayposition01">上</string>
+    <string name="displayposition02">下</string>
+    <string name="displayposition03">左</string>
+    <string name="displayposition04">右</string>
+    <string name="displayposition05">左上</string>
+    <string name="displayposition06">右上</string>
+    <string name="displayposition07">左下</string>
+    <string name="displayposition08">右下</string>
     <string name="effect00">なし</string>
     <string name="effect01">フリップ</string>
     <string name="effect02">フェードイン</string>
