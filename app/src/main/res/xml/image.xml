@@ -41,6 +41,14 @@
             android:key="MarginCutColor"
             android:summary="dummy"
             android:title="Color to remove margin" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Display position on screen"
+            android:entries="@array/display_position_name_list"
+            android:entryValues="@array/display_position_value_list"
+            android:key="DisplayPosition"
+            android:summary="dummy"
+            android:title="Display position on screen" />
 <!--
         <CheckBoxPreference
             android:defaultValue="false"
