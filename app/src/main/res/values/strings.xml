@@ -141,6 +141,7 @@
     <string name="bklightMenu">Backlight(%)</string>
     <string name="mgnCutMenu">Remove white margin</string>
     <string name="mgnCutColorMenu">Color to remove margin</string>
+    <string name="DisplayPositionMenu">Display position on screen</string>
     <string name="imgRotaMenu">Image Rotate</string>
     <string name="imgConfMenu">Image Config</string>
     <string name="Profile1">Profile1</string>
@@ -401,6 +402,15 @@
     <string name="mgncut06">Ignore Aspect Ratio</string>
     <string name="mgncutcolor00">Black and White</string>
     <string name="mgncutcolor01">All colors</string>
+    <string name="displayposition00">Center</string>
+    <string name="displayposition01">Top</string>
+    <string name="displayposition02">Bottom</string>
+    <string name="displayposition03">Left</string>
+    <string name="displayposition04">Right</string>
+    <string name="displayposition05">Top left</string>
+    <string name="displayposition06">Top right</string>
+    <string name="displayposition07">Bottom left</string>
+    <string name="displayposition08">Bottom right</string>
     <string name="effect00">None</string>
     <string name="effect01">Flip</string>
     <string name="effect02">Fade In</string>

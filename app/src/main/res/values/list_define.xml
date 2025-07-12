@@ -326,6 +326,28 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+    <string-array name="display_position_name_list">
+        <item>Center</item>
+        <item>Top</item>
+        <item>Bottom</item>
+        <item>Left</item>
+        <item>Right</item>
+        <item>Top left</item>
+        <item>Top right</item>
+        <item>Bottom left</item>
+        <item>Bottom right</item>
+    </string-array>
+    <string-array name="display_position_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
     <string-array name="txscale_name_list">
         <item>Original Size</item>
         <item>Fit Width</item>
