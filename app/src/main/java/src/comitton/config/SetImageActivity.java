@@ -26,6 +26,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference mScrlWay;
 	private ListPreference mMgnCut;
 	private ListPreference mMgnCutColor;
+	private ListPreference mDisplayPosition;
 	private ListPreference mEffect;
 	private ListPreference mViewPt;
 	private ListPreference mVolKey;
@@ -106,6 +107,16 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	public static final int[] MgnCutColorName =
 			{ R.string.mgncutcolor00		// 白と黒
 			, R.string.mgncutcolor01 };		// 全ての色
+	public static final int[] DisplayPositionName =
+			{ R.string.displayposition00	//	中心
+			, R.string.displayposition01	// 上
+			, R.string.displayposition02	// 下
+			, R.string.displayposition03	// 左
+			, R.string.displayposition04	// 右
+			, R.string.displayposition05	// 左上
+			, R.string.displayposition06	// 右上
+			, R.string.displayposition07	// 左下
+			, R.string.displayposition08 };	// 右下
 	public static final int[] EffectName =
 		{ R.string.effect00		// なし
 		, R.string.effect01		// フリップ
@@ -160,6 +171,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		mMgnCut     = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_MARGINCUT);
 		mMgnCutColor = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_MARGINCUTCOLOR);
 		mEffect     = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_EFFECTLIST);
+		mDisplayPosition = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_DISPLAYPOSITION);
 
 		mTapPattern = (OperationPreference)getPreferenceScreen().findPreference(DEF.KEY_TAPPATTERN);
 		mPageNumber = (PageNumberPreference)getPreferenceScreen().findPreference(DEF.KEY_PAGENUMBER);
@@ -217,6 +229,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		mMgnCut.setSummary(getMgnCutSummary(sharedPreferences));		// 余白削除
 		mMgnCutColor.setSummary(getMgnCutColorSummary(sharedPreferences));		// 余白削除の色
 		mEffect.setSummary(getEffectSummary(sharedPreferences));		// エフェクト
+		mDisplayPosition.setSummary(getDisplayPositionSummary(sharedPreferences));
 
 		mTapPattern.setSummary(SetImageText.getTapPatternSummary(mResources, sharedPreferences));	// 操作パターン
 		mPageNumber.setSummary(getPageNumberSummary(sharedPreferences));	// ページ表示
@@ -276,6 +289,9 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		else if(key.equals(DEF.KEY_MARGINCUTCOLOR)){
 			//
 			mMgnCutColor.setSummary(getMgnCutColorSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_DISPLAYPOSITION)){
+			mDisplayPosition.setSummary(getDisplayPositionSummary(sharedPreferences));
 		}
 		else if(key.equals(DEF.KEY_EFFECTLIST)){
 			//
@@ -403,6 +419,14 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	public static int getMgnCutColor(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_MARGINCUTCOLOR, "0");
 		if (val < 0 || val >= MgnCutColorName.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static int getDisplayPosition(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_DISPLAYPOSITION, "0");
+		if (val < 0 || val >= DisplayPositionName.length){
 			val = 0;
 		}
 		return val;
@@ -647,6 +671,13 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		int val = getMgnCutColor(sharedPreferences);
 		Resources res = getResources();
 		String ret = res.getString(MgnCutColorName[val]);
+		return ret;
+	}
+
+	private String getDisplayPositionSummary(SharedPreferences sharedPreferences){
+		int val = getDisplayPosition(sharedPreferences);
+		Resources res = getResources();
+		String ret = res.getString(DisplayPositionName[val]);
 		return ret;
 	}
 
