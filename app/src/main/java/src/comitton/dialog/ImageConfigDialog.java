@@ -40,6 +40,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private final int SELLIST_SCALE_MODE = 2;
 	private final int SELLIST_MARGIN_CUT = 3;
 	private final int SELLIST_MARGIN_CUTCOLOR = 4;
+	private final int SELLIST_DISPLAY_POSITION = 5;
 
 	private final int[] SCALENAME_ORDER = { 0, 1, 6, 2, 3, 7, 4, 5 };
 
@@ -60,6 +61,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private int mScaleMode;
 	private int mMgnCut;
 	private int mMgnCutColor;
+	private int mDisplayPosition;
 	private boolean mIsSave;
 
 	private int mAlgoModeTemp;
@@ -67,6 +69,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private int mScaleModeTemp;
 	private int mMgnCutTemp;
 	private int mMgnCutColorTemp;
+	private int mDisplayPositionTemp;
 
 	private Button mBtnRevert;
 	private Button mBtnApply;
@@ -89,17 +92,20 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private TextView mTxtScaleMode;
 	private TextView mTxtMgncut;
 	private TextView mTxtMgncutColor;
+	private TextView mTxtDisplayPosition;
 	private Button mBtnAlgoMode;
 	private Button mBtnDispMode;
 	private Button mBtnScaleMode;
 	private Button mBtnMgncut;
 	private Button mBtnMgncutColor;
+	private Button mBtnDisplayPosition;
 
 	private String mAlgoModeTitle;
 	private String mDispModeTitle;
 	private String mScaleModeTitle;
 	private String mMgnCutTitle;
 	private String mMgnCutColorTitle;
+	private String mDisplayOpsitionTitle;
 
 	private String mSharpenStr;
 	private String mBrightStr;
@@ -114,6 +120,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private String[] mScaleModeItems;
 	private String[] mMgnCutItems;
 	private String[] mMgnCutColorItems;
+	private String[] mDisplayPositionItems;
 
 	private int mSelectMode;
 	private int mCommandId;
@@ -169,6 +176,14 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mMgnCutColorItems[i] = res.getString(SetImageActivity.MgnCutColorName[i]);
 		}
 
+		// 画面の表示位置
+		mDisplayOpsitionTitle = res.getString(R.string.DisplayPositionMenu);
+		nItem = SetImageActivity.DisplayPositionName.length;
+		mDisplayPositionItems = new String[nItem];
+		for (int i = 0; i < nItem; i++) {
+			mDisplayPositionItems[i] = res.getString(SetImageActivity.DisplayPositionName[i]);
+		}
+
 		LayoutInflater inflater = LayoutInflater.from(mActivity);
 
 		addSection(res.getString(R.string.imgConfFilter));
@@ -180,7 +195,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		addItem(inflater.inflate(R.layout.imageconfig_other, null, false));
 	}
 
-	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave) {
+	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition) {
 		mGray = gray;
 		mInvert = invert;
 		mMoire = moire;
@@ -194,6 +209,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mScaleModeTemp = mScaleMode = scalemode;
 		mMgnCutTemp    = mMgnCut    = mgncut;
 		mMgnCutColorTemp    = mMgnCutColor    = mgncutcolor;
+		mDisplayPositionTemp = mDisplayPosition = displayposition;
 
 		mIsSave = issave;
 	}
@@ -234,12 +250,15 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtScaleMode = mTxtScaleMode != null ? mTxtScaleMode : (TextView) mViewArray.get(i).findViewById(R.id.label_scale);
 			mTxtMgncut = mTxtMgncut != null ? mTxtMgncut : (TextView) mViewArray.get(i).findViewById(R.id.label_mgncut);
 			mTxtMgncutColor = mTxtMgncutColor != null ? mTxtMgncutColor : (TextView) mViewArray.get(i).findViewById(R.id.label_mgncutcolor);
+			mTxtDisplayPosition = mTxtDisplayPosition != null ? mTxtDisplayPosition : (TextView) mViewArray.get(i).findViewById(R.id.label_displayposition);
 
 			mBtnAlgoMode = mBtnAlgoMode != null ? mBtnAlgoMode : (Button) mViewArray.get(i).findViewById(R.id.btn_algomode);
 			mBtnDispMode = mBtnDispMode != null ? mBtnDispMode : (Button) mViewArray.get(i).findViewById(R.id.btn_spread);
 			mBtnScaleMode = mBtnScaleMode != null ? mBtnScaleMode : (Button) mViewArray.get(i).findViewById(R.id.btn_scale);
 			mBtnMgncut = mBtnMgncut != null ? mBtnMgncut : (Button) mViewArray.get(i).findViewById(R.id.btn_mgncut);
 			mBtnMgncutColor = mBtnMgncutColor != null ? mBtnMgncutColor : (Button) mViewArray.get(i).findViewById(R.id.btn_mgncutcolor);
+			mBtnDisplayPosition = mBtnDisplayPosition != null ? mBtnDisplayPosition : (Button) mViewArray.get(i).findViewById(R.id.btn_displayposition);
+
 		}
 
 
@@ -255,12 +274,14 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtScaleMode.setVisibility(View.GONE);
 			mTxtMgncut.setVisibility(View.GONE);
 			mTxtMgncutColor.setVisibility(View.GONE);
+			mTxtDisplayPosition.setVisibility(View.GONE);
 
 			mBtnAlgoMode.setVisibility(View.GONE);
 			mBtnDispMode.setVisibility(View.GONE);
 			mBtnScaleMode.setVisibility(View.GONE);
 			mBtnMgncut.setVisibility(View.GONE);
 			mBtnMgncutColor.setVisibility(View.GONE);
+			mBtnDisplayPosition.setVisibility(View.GONE);
 
 		}
 		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_SHARPEN) {
@@ -315,12 +336,14 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mBtnScaleMode != null) mBtnScaleMode.setText(mScaleModeItems[mScaleMode]);
 		if (mBtnMgncut != null) mBtnMgncut.setText(mMgnCutItems[mMgnCut]);
 		if (mBtnMgncutColor != null) mBtnMgncutColor.setText(mMgnCutColorItems[mMgnCutColor]);
+		if (mBtnDisplayPosition != null) mBtnDisplayPosition.setText(mDisplayPositionItems[mDisplayPosition]);
 
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setOnClickListener(this);
 		if (mBtnDispMode != null) mBtnDispMode.setOnClickListener(this);
 		if (mBtnScaleMode != null) mBtnScaleMode.setOnClickListener(this);
 		if (mBtnMgncut != null) mBtnMgncut.setOnClickListener(this);
 		if (mBtnMgncutColor != null) mBtnMgncutColor.setOnClickListener(this);
+		if (mBtnDisplayPosition != null) mBtnDisplayPosition.setOnClickListener(this);
 
 		mBtnOK = (Button) mView.findViewById(R.id.btn_ok);
 		mBtnApply = (Button) mView.findViewById(R.id.btn_apply);
@@ -340,7 +363,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public interface ImageConfigListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave);
+	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition);
 	    public void onClose();
 	}
 
@@ -388,6 +411,12 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 				items = mMgnCutColorItems;
 				selIndex = mMgnCutColorTemp;
 				break;
+			case SELLIST_DISPLAY_POSITION:
+				// 画面の表示位置
+				title = mDisplayOpsitionTitle;
+				items = mDisplayPositionItems;
+				selIndex = mDisplayPositionTemp;
+				break;
 			default:
 				return;
 		}
@@ -420,6 +449,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 						// 余白削除
 						mMgnCutColorTemp = index;
 						mBtnMgncutColor.setText(mMgnCutColorItems[index]);
+						break;
+					case SELLIST_DISPLAY_POSITION:
+						// 画面の表示位置
+						mDisplayPositionTemp = index;
+						mBtnDisplayPosition.setText(mDisplayPositionItems[index]);
 						break;
 				}
 			}
@@ -461,6 +495,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			showSelectList(SELLIST_MARGIN_CUTCOLOR);
 			return;
 		}
+		if (mBtnDisplayPosition == v) {
+			// 画面の表示位置
+			showSelectList(SELLIST_DISPLAY_POSITION);
+			return;
+		}
 
 		int select = CLICK_REVERT;
 
@@ -474,7 +513,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 		if (select == CLICK_REVERT) {
 			// 戻すは元の値を通知
-			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave);
+			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition);
 		}
 		else {
 			// OK/適用は設定された値を通知
@@ -488,7 +527,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			int gamma = mSkbGamma.getProgress() - 5;
 			int bklight = mSkbBkLight.getProgress();
 
-			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave);
+			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp);
 		}
 
 		if (select != CLICK_APPLY) {
