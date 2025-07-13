@@ -127,6 +127,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static final int OPERATE_DELCACHE = 7;
 	private static final int OPERATE_FIRST = 8;
 	private static final int OPERATE_EPUB = 9;
+	private static final int OPERATE_DELFILELISTCACHE = 10;
+	private static final int OPERATE_REGENERATEFILECACHE = 11;
 	private static final int OPERATE_SETTHUMBASDIR = 100;
 	private static final int OPERATE_SETTHUMBCROPPED = 101;
 
@@ -163,7 +165,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private FileData mFileData = null;
 	private RecordItem mSelectRecord = null;
 	private int mSelectPos;
-	private final int[] mOperate = {-1, -1, -1, -1, -1, -1, -1, -1,-1,-1,-1};
+	private final int[] mOperate = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 	private String mURI = "";
 	private String mPath = "";
@@ -2631,6 +2633,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String ope100 = res.getString(R.string.ope100);;// 親ディレクトリのサムネイルに設定
 		String ope101 = res.getString(R.string.ope101);;// 1枚目を切り抜いてサムネイルに設定
 		String ope10 = res.getString(R.string.ope10); // 先頭から読む
+		String ope12 = res.getString(R.string.ope12); // ファイルキャッシュ削除
+		String ope13 = res.getString(R.string.ope13); // ファイルリストを再生成して開く
 
 		boolean delmenu = false;
 		boolean renmenu = false;
@@ -2683,6 +2687,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			int itemnum = 0;
 			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_EPUB && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// zip/rar/pdfファイルを展開
+				itemnum++;
+			}
+			if (mFileData.getType() == FileData.FILETYPE_ARC) {
+				// ファイルリストのキャッシュ削除
+				itemnum++;
+				// ファイルリストを再生成して開く
 				itemnum++;
 			}
 			if (mFileData.getType() == FileData.FILETYPE_EPUB) {
@@ -2837,6 +2847,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mOperate[i] = OPERATE_DELCACHE;
 				i++;
 			}
+			if (mFileData.getType() == FileData.FILETYPE_ARC) {
+				// ファイルリストのキャッシュ削除
+				items[i] = ope12;
+				mOperate[i] = OPERATE_DELFILELISTCACHE;
+				i++;
+			}
+			if (mFileData.getType() == FileData.FILETYPE_ARC) {
+				// ファイルリストを再生成して開く
+				items[i] = ope13;
+				mOperate[i] = OPERATE_REGENERATEFILECACHE;
+				i++;
+			}
 		}
 		mListDialog = new ListDialog(this, R.style.MyDialog, title, items, -1, new ListSelectListener() {
 			@SuppressWarnings("deprecation")
@@ -2964,6 +2986,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// サムネイル解放
 						releaseThumbnail();
 						startActivityForResult(intent, DEF.REQUEST_CROP);
+						break;
+					case OPERATE_DELFILELISTCACHE: // ファイルリストのキャッシュ削除
+						// ファイルリストのキャッシュ削除
+						DeleteFileListCache(DEF.relativePath(mActivity, mURI, mPath), mFileData.getName());
+						break;
+					case OPERATE_REGENERATEFILECACHE: // ファイルリストを再生成して開く
+						// ファイルリストのキャッシュ削除
+						DeleteFileListCache(DEF.relativePath(mActivity, mURI, mPath), mFileData.getName());
+						// サムネイル解放
+						releaseThumbnail();
+						// ファイルオープン
+						openFile(mFileData, "");
 						break;
 
 				}
@@ -4446,6 +4480,24 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				RecordList.update(recordList, listtype);
 			}
 			mListScreenView.notifyUpdate(listtype);
+		}
+	}
+
+	// ファイルリストのキャッシュ削除
+	private void DeleteFileListCache(String path, String filename) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		String name = DEF.relativePath(mActivity, path, filename);
+		// 区切りをアンダーバーへ変換
+		name = name.replace("\\", "_");
+		name = name.replace("/", "_");
+		// ファイル名をMD5のハッシュ値へ変換
+		String pathcode = DEF.makeCode(name, 0, 0);
+		String file = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+		try {
+			// ファイルを削除
+			new File(file).delete();
+		} catch (Exception e) {
+			Logcat.e(logLevel, "Delete error.", e);
 		}
 	}
 
