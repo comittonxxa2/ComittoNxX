@@ -1622,7 +1622,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 			else if (x_right_stop) {
 				// 画面右端で停止
-				x_pos[0][0] = - mMgnLeft * 2;
+				x_pos[0][0] = - (mMgnLeft + mMgnRight);
 			}
 			else {
 				x_pos[0][0] = (mDispWidth - mDrawWidthSum) / 2 * -1;
@@ -1699,7 +1699,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 			else if (y_bottom_stop) {
 				// 画面下で停止
-				y_pos[0] = - mMgnTop * 2;
+				y_pos[0] = - (mMgnTop + mMgnBottom);
 			}
 			else {
 				y_pos[0] = (mDispHeight - mDrawHeightMax) / 2 * -1;
