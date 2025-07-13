@@ -265,6 +265,8 @@
     <string name="ope09">Delete thumbnail cache</string>
     <string name="ope10">Open first page</string>
     <string name="ope11">Show Text viewer</string>
+    <string name="ope12">Delete file list cache</string>
+    <string name="ope13">Regenerate and open the file list</string>
     <string name="lmTitle">List Mode</string>
     <string name="listmode00">List View (Thumbnail ON)</string>
     <string name="listmode01">List View (Thumbnail OFF)</string>
