@@ -265,6 +265,8 @@
     <string name="ope09">サムネイルキャッシュ削除</string>
     <string name="ope10">先頭ページを開く</string>
     <string name="ope11">テキストビュワーで表示</string>
+    <string name="ope12">ファイルリストのキャッシュ削除</string>
+    <string name="ope13">ファイルリストを再生成して開く</string>
     <string name="lmTitle">表示モード</string>
     <string name="listmode00">リスト表示 (サムネイルON)</string>
     <string name="listmode01">リスト表示 (サムネイルOFF)</string>
