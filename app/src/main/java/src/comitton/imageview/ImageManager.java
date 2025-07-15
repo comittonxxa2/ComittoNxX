@@ -668,6 +668,8 @@ public class ImageManager extends InputStream implements Runnable {
 									// 最大サイズを求める
 									maxorglen = fl.orglen;
 								}
+								// 先頭5ファイルしか取得できなくなるのでコメントアウトにした
+								/*
 								if (mFileType == FILETYPE_RAR) {
 									// RARファイルの時
 									if (mOpenMode == OPENMODE_THUMBNAIL && list.size() >= 5) {
@@ -705,6 +707,7 @@ public class ImageManager extends InputStream implements Runnable {
 										}
 									}
 								}
+								*/
 							}
 						}
 					}
