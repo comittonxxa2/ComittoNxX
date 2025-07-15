@@ -4332,7 +4332,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				else if (listtype == RecordList.TYPE_SERVER) {
 					Logcat.d(logLevel, "サーバ一覧.");
-					if (!rd.getServerName().isEmpty()) {
+					if (!rd.getServerName().isEmpty() || !rd.getDispName().isEmpty()) {
 						if (rd.getAccessType() == DEF.ACCESS_TYPE_PICKER) {
 							Logcat.d(logLevel, "ファイルピッカー.");
 							mLoadListNextOpen = CloseDialog.CLICK_NONE;
