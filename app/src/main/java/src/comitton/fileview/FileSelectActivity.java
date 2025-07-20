@@ -45,6 +45,7 @@ import src.comitton.dialog.BookmarkDialog.BookmarkListenerInterface;
 import src.comitton.dialog.ListDialog.ListSelectListener;
 import src.comitton.dialog.TextInputDialog;
 import src.comitton.fileaccess.FileAccessException;
+import src.comitton.fileaccess.SafFileAccess;
 import src.comitton.fileview.filelist.FileSelectList;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.filelist.ServerSelect;
@@ -574,6 +575,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mFileList = new FileSelectList(mHandler, this, mSharedPreferences);
 		mFileList.setMode(mSortMode);
 
+		SafFileAccess.InitRelativePath();
 		mFileList.FlushFileList();
 		// 回転前にリストがなければ再読込
 		if (cursor != null) {
@@ -1503,6 +1505,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									Logcat.d(logLevel, "ファイルを削除できました。");
 									int topindex = mListScreenView.mFileListArea.getTopIndex();
 									// ファイルリストをフラッシュ
+									SafFileAccess.InitRelativePath();
 									mFileList.FlushFileList();
 									loadListView(topindex);
 									String file = DEF.createUrl(uri, user, pass);
@@ -2099,6 +2102,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		else if (id == DEF.MENU_REFRESH) {
 			// リストを更新
+			SafFileAccess.InitRelativePath();
 			mFileList.FlushFileList();
 			loadListView();
 		}
@@ -2437,6 +2441,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						break;
 					case DEF.TOOLBAR_REFRESH:
 						// リストを更新
+						SafFileAccess.InitRelativePath();
 						mFileList.FlushFileList();
 						loadListView();
 						break;
@@ -3469,6 +3474,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		if	(!uri.equals(mURI) || !path.equals(mPath))	{
 			// パスが更新された場合はファイルリストをフラッシュ
+			SafFileAccess.InitRelativePath();
 			mFileList.FlushFileList();
 		}
 
