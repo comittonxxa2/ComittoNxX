@@ -43,6 +43,9 @@ public class FileData {
 	public static final short EXTTYPE_EPUB = 55;
 
 	private String name;
+	private String path;
+	private String mime;
+	private boolean isdir;
 	private short type;		// ファイルタイプ
 	private short exttype;	// 拡張子タイプ
 	private int state;		// 読書状態
@@ -58,6 +61,15 @@ public class FileData {
 
 	public FileData (Context context, String name) {
 		setName(context, name);
+	}
+
+	public FileData (Context context, String name, String path, String mime, long date, long size, boolean isdir) {
+		setName(context, name);
+		this.path = path;
+		this.mime = mime;
+		this.date = date;
+		this.size = size;
+		this.isdir = isdir;
 	}
 
 	public FileData (Context context, String name, long size, long date) {
@@ -78,6 +90,15 @@ public class FileData {
 
 	public String getName() {
 		return name;
+	}
+	public String getPath() {
+		return path;
+	}
+	public String getMime() {
+		return mime;
+	}
+	public boolean getIsdir() {
+		return isdir;
 	}
 	public static String getName(String filepath) {
 		return filepath.substring(filepath.lastIndexOf("/") + 1);
