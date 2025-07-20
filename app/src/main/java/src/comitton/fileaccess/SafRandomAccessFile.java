@@ -39,6 +39,11 @@ public class SafRandomAccessFile {
     private void Open() throws FileAccessException {
         int logLevel = Logcat.LOG_LEVEL_WARN;
         try {
+            if (pfd != null) {
+                // クローズ忘れ対策
+                pfd.close();
+                pfd = null;
+            }
             pfd = SafFileAccess.openParcelFileDescriptor(mContext, mURI);
             if (pfd == null) {
                 Logcat.e(logLevel, "エラーが発生しました. ParcelFileDescriptor == null");

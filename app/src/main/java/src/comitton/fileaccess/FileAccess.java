@@ -57,7 +57,8 @@ public class FileAccess {
 	private RandomAccessFile mRandomAccessFile;
 	private SmbRandomAccessFile mSmbRandomAccessFile;
 	private SafRandomAccessFile mSafRandomAccessFile;
-
+	private static Object mLock1 = new Object();
+	private static Object mLock2 = new Object();
 
 	public FileAccess (@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @Nullable Handler handler) {
 		mActivity = activity;
@@ -142,7 +143,10 @@ public class FileAccess {
 				break;
 			}
 			case DEF.ACCESS_TYPE_SAF: {
-				result = SafFileAccess.relativePath(context, base, target);
+				// SAFの処理が重いので排他処理を行う
+				synchronized(mLock1) {
+					result = SafFileAccess.relativePath(context, base, target);
+				}
 				break;
 			}
 		}
@@ -655,7 +659,10 @@ public class FileAccess {
 				break;
 			}
 			case DEF.ACCESS_TYPE_SAF: {
-				result = SafFileAccess.listFiles(activity, uri, handler);
+				// SAFの処理が重いので排他処理を行う
+				synchronized(mLock2) {
+					result = SafFileAccess.listFiles(activity, uri, handler);
+				}
 				break;
 			}
 		}

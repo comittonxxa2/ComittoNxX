@@ -65,6 +65,15 @@ public class SafFileAccess {
 		return "";
 	}
 
+	public static void InitRelativePath() {
+		// DocumentsProviderのキャッシュをクリアさせる
+		old_uri = null;
+	}
+
+	private static ArrayList<FileData> mRelativePathData = null;
+	private static Uri old_uri = null;
+	private static boolean CacheOn = false;
+
 	public static String relativePath(@NonNull final Context context, @NonNull final String base, @NonNull final String target) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. base=" + base + ", target=" + target);
@@ -79,20 +88,13 @@ public class SafFileAccess {
 			Logcat.d(logLevel, "target が content:// で始まっています. result=" + result);
 		}
 		else {
-			Cursor cursor = null;
 			try {
 				String[] targetArray = target.split("/");
 				String docId;
 				String name;
 				String mime;
-
-				final ContentResolver contentResolver = context.getContentResolver();
-
-				ContentProviderClient contentProviderClient = contentResolver.acquireContentProviderClient(Uri.parse(result));
-				if (contentProviderClient == null) {
-					Logcat.e(logLevel, context.getString(R.string.noResponseProvider) + ", base=" + base + ", target=" + target);
-					return result;
-				}
+				long date;
+				long size;
 
 				Uri uri;
 				for (int i = 0; i < targetArray.length; ++i) {
@@ -110,38 +112,80 @@ public class SafFileAccess {
 					} else {
 						// 文字列が『..』以外なら子を探す
 						uri = Uri.parse(result);
-						String documentId = getDocumentId(context, uri);
-						Uri childTree = DocumentsContractCompat.buildChildDocumentsUriUsingTree(uri, documentId);
+						// URIが変化していればDocumentsProviderのデータを取ってくる
+						if (old_uri == null || !old_uri.equals(uri)) {
+							old_uri = uri;
+							// キャッシュ無しの状態にする
+							CacheOn = false;
+							Logcat.d(logLevel, "Cursor操作");
 
-						cursor = contentResolver.query(childTree,
+							final ContentResolver contentResolver = context.getContentResolver();
+
+							ContentProviderClient contentProviderClient = contentResolver.acquireContentProviderClient(Uri.parse(result));
+							if (contentProviderClient == null) {
+								Logcat.e(logLevel, context.getString(R.string.noResponseProvider) + ", base=" + base + ", target=" + target);
+								return result;
+							}
+							// クローズ忘れがあったので追加
+							contentProviderClient.close();
+
+							String documentId = getDocumentId(context, uri);
+							Uri childTree = DocumentsContractCompat.buildChildDocumentsUriUsingTree(uri, documentId);
+
+							Cursor cursor = null;
+							cursor = contentResolver.query(childTree,
 								new String[]{
-										DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-										DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-										DocumentsContract.Document.COLUMN_MIME_TYPE
-								},
-								// フィルタを設定しても全件返される
-								DocumentsContract.Document.COLUMN_DISPLAY_NAME + "=?",
-								new String[]{targetArray[i]},
-								null
-						);
+									DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+									DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+									DocumentsContract.Document.COLUMN_MIME_TYPE,
+									DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+									DocumentsContract.Document.COLUMN_SIZE
+								},null,null,null
+							);
+							// DocumentsProviderのデータをArrayListへ格納する
+							mRelativePathData = new ArrayList<FileData>();
+							while (cursor.moveToNext()) {
+								docId = cursor.getString(0);
+								name = cursor.getString(1);
+								mime = cursor.getString(2);
+								date = cursor.getLong(3);
+								size = cursor.getLong(4);
+								result = DocumentsContractCompat.buildDocumentUriUsingTree(Uri.parse(result), docId).toString();
+								Logcat.d(logLevel, "子要素の名前. name=" + name + ", mime=" + mime + ", date=" + date + ", size=" + size + ", result=" + result);
+								boolean isdir = false;
+								if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+									// ディレクトリの場合
+									result += "/";
+									isdir = true;
+								}
+								// ArrayListへ格納する
+								mRelativePathData.add(new FileData(context, name, result, mime, date, size, isdir));
+							}
+							if (cursor != null) {
+								try {
+									cursor.close();
+								} catch (RuntimeException re) {
+									throw re;
+								} catch (Exception ignore) {
+									// ignore exception
+								}
+							}
+							// キャッシュ有の状態にする
+							CacheOn = true;
+						}
 
 						Logcat.d(logLevel, "子要素を検索します. targetArray[" + i + "]=" + targetArray[i]);
-						boolean find = false;
-						while (cursor.moveToNext()) {
-							docId = cursor.getString(0);
-							name = cursor.getString(1);
-							mime = cursor.getString(2);
-							Logcat.d(logLevel, "子要素の名前. name=" + name);
 
+						boolean find = false;
+						for (int list = mRelativePathData.size() - 1; list >= 0; list--) {
+							// ArrayListから取り出して比較する
+							name = mRelativePathData.get(list).getName();
+							Logcat.d(logLevel, "子要素 = " + name + ", list=" + list + ", targetArray[i]=" + targetArray[i]);
 							if (targetArray[i].equals(name)) {
 								// ファイル名が一致するなら
 								find = true;
-								result = DocumentsContractCompat.buildDocumentUriUsingTree(Uri.parse(result), docId).toString();
-								if (i == targetArray.length - 1 && DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
-									// 最後の回でディレクトリの場合
-									result += "/";
-								}
-								Logcat.d(logLevel, "子要素を取得しました. i=" + i + ", targetArray[index]=" + targetArray[i] + ", result=" + result);
+								result = mRelativePathData.get(list).getPath();
+								Logcat.d(logLevel, "子要素を取得しました. name=" + name + ", i=" + i + ", targetArray[index]=" + targetArray[i] + ", result=" + result);
 								break;
 							}
 						}
@@ -155,16 +199,6 @@ public class SafFileAccess {
 			} catch (Exception e) {
 				result = "";
 				Logcat.e(logLevel, "エラーが発生しました. base=" + base + ", target=" + target, e);
-			} finally {
-				if (cursor != null) {
-					try {
-						cursor.close();
-					} catch (RuntimeException re) {
-						throw re;
-					} catch (Exception ignore) {
-						// ignore exception
-					}
-				}
 			}
 		}
 
@@ -301,13 +335,28 @@ public class SafFileAccess {
 		String rootUri = uri.replaceFirst("/*$", "");
 
 		boolean result = false;
-		try {
-			result = DocumentsContract.Document.MIME_TYPE_DIR.equals(getMimeType(context, rootUri));
-			Logcat.d(logLevel, "MIME_TYPE_DIR: result=" + result);
+		// キャッシュされたDocumentsProviderデータを参照する方式へ変更した
+		if (CacheOn) {
+			String path;
+			for (int list = mRelativePathData.size() - 1; list >= 0; list--) {
+				path = mRelativePathData.get(list).getPath();
+				if (path.equals(uri)) {
+					// ファイル名が一致するなら
+					return mRelativePathData.get(list).getIsdir();
+				}
+			}
+			return false;
 		}
-		catch (Exception e) {
-			result = false;
-			Logcat.e(logLevel, "エラーが発生しました. uri=" + uri);
+		else {
+			// キャッシュされていなかった場合は従来の方式
+			try {
+				result = DocumentsContract.Document.MIME_TYPE_DIR.equals(getMimeType(context, rootUri));
+				Logcat.d(logLevel, "MIME_TYPE_DIR: result=" + result);
+			}
+			catch (Exception e) {
+				result = false;
+				Logcat.e(logLevel, "エラーが発生しました. uri=" + uri);
+			}
 		}
 
 		Logcat.d(logLevel, "終了します. result=" + result);
@@ -339,6 +388,8 @@ public class SafFileAccess {
 			DEF.sendMessage(activity, R.string.noResponseProvider, Toast.LENGTH_LONG, handler);
 			return fileList;
 		}
+		// クローズ忘れがあったので追加
+		contentProviderClient.close();
 
 		Cursor cursor = null;
 		try {
@@ -574,40 +625,95 @@ public class SafFileAccess {
 
 	public static long length(@NonNull final Context context, @NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		try {
-			return getLongValue(context, uri, DocumentsContract.Document.COLUMN_SIZE);
-		} catch (Exception e) {
-			Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+		// キャッシュされたDocumentsProviderデータを参照する方式へ変更した
+		if (CacheOn) {
+			String path;
+			for (int list = mRelativePathData.size() - 1; list >= 0; list--) {
+				path = mRelativePathData.get(list).getPath();
+				if (path.equals(uri)) {
+					// ファイル名が一致するなら
+					return mRelativePathData.get(list).getSize();
+				}
+			}
+		}
+		else {
+			// キャッシュされていなかった場合は従来の方式
+			try {
+				return getLongValue(context, uri, DocumentsContract.Document.COLUMN_SIZE);
+			} catch (Exception e) {
+				Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+			}
 		}
 		return 0L;
 	}
 
 	public static long getDate(@NonNull final Context context, @NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		try {
-			return getLongValue(context, uri, DocumentsContract.Document.COLUMN_LAST_MODIFIED);
-		} catch (Exception e) {
-			Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+		// キャッシュされたDocumentsProviderデータを参照する方式へ変更した
+		if (CacheOn) {
+			String path;
+			for (int list = mRelativePathData.size() - 1; list >= 0; list--) {
+				path = mRelativePathData.get(list).getPath();
+				if (path.equals(uri)) {
+					// ファイル名が一致するなら
+					return mRelativePathData.get(list).getDate();
+				}
+			}
+		}
+		else {
+			try {
+				return getLongValue(context, uri, DocumentsContract.Document.COLUMN_LAST_MODIFIED);
+			} catch (Exception e) {
+				Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+			}
 		}
 		return 0L;
 	}
 
 	public static String getName(@NonNull final Context context, @NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		try {
-			return getStringValue(context, uri, DocumentsContract.Document.COLUMN_DISPLAY_NAME);
-		} catch (Exception e) {
-			Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+		// キャッシュされたDocumentsProviderデータを参照する方式へ変更した
+		if (CacheOn) {
+			String path;
+			for (int list = mRelativePathData.size() - 1; list >= 0; list--) {
+				path = mRelativePathData.get(list).getPath();
+				if (path.equals(uri)) {
+					// ファイル名が一致するなら
+					return mRelativePathData.get(list).getName();
+				}
+			}
+		}
+		else {
+			// キャッシュされていなかった場合は従来の方式
+			try {
+				return getStringValue(context, uri, DocumentsContract.Document.COLUMN_DISPLAY_NAME);
+			} catch (Exception e) {
+				Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+			}
 		}
 		return "";
 	}
 
 	public static String getMimeType(@NonNull final Context context, @NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		try {
-			return getStringValue(context, uri, DocumentsContract.Document.COLUMN_MIME_TYPE);
-		} catch (Exception e) {
-			Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+		// キャッシュされたDocumentsProviderデータを参照する方式へ変更した
+		if (CacheOn) {
+			String path;
+			for (int list = mRelativePathData.size() - 1; list >= 0; list--) {
+				path = mRelativePathData.get(list).getPath();
+				if (path.equals(uri)) {
+					// ファイル名が一致するなら
+					return mRelativePathData.get(list).getMime();
+				}
+			}
+		}
+		else {
+			// キャッシュされていなかった場合は従来の方式
+			try {
+				return getStringValue(context, uri, DocumentsContract.Document.COLUMN_MIME_TYPE);
+			} catch (Exception e) {
+				Logcat.e(logLevel, "エラーが発生しました. uri=" + uri, e);
+			}
 		}
 		return "";
 	}
