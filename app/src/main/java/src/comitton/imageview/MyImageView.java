@@ -21,6 +21,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.GradientDrawable.Orientation;
 import android.graphics.drawable.PaintDrawable;
+import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Message;
@@ -172,6 +173,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 		requestFocus();
 		mHolder = getHolder();
+		// デフォルト設定が有効になってしまう(RGB565になる)可能性があるためRGBA_8888を設定する
+		mHolder.setFormat(PixelFormat.RGBA_8888);
 		mHolder.addCallback(this);
 	}
 
