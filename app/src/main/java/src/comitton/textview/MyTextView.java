@@ -33,6 +33,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.GradientDrawable.Orientation;
+import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
@@ -176,6 +177,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	private Object mLock = new Object();
 	private boolean mDrawBreak;
 	private int mThreadWaitLoop = 0;
+	private final SurfaceHolder mHolder;
 
 	Message mEventPageMsg;
 
@@ -201,7 +203,10 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		super(activity);
 
 		mActivity = activity;
-		getHolder().addCallback(this);
+		mHolder = getHolder();
+		// デフォルト設定が有効になってしまう(RGB565になる)可能性があるためRGBA_8888を設定する
+		mHolder.setFormat(PixelFormat.RGBA_8888);
+		mHolder.addCallback(this);
 		// SurfaceHolder.Callbackを継承したSurfaceCallback()です。
 
 		// この3つを書いてフォーカスを当てないとSurfaceViewが動かないみたい
