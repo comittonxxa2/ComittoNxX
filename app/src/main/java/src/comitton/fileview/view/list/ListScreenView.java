@@ -22,6 +22,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
+import android.graphics.PixelFormat;
 import androidx.preference.PreferenceManager;
 //import android.util.Log;
 import android.os.Handler;
@@ -126,6 +127,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 
 		// コールバックの登録
 		mHolder = getHolder();
+		// デフォルト設定が有効になってしまう(RGB565になる)可能性があるためRGBA_8888を設定する
+		mHolder.setFormat(PixelFormat.RGBA_8888);
 		mHolder.addCallback(this);
 		mListSwitcher = new ListSwitcher(this);
 
