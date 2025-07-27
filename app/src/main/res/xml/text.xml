@@ -104,6 +104,11 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="Operation Settings(* is common to the image setting)" >
         <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReturnListView"
+            android:summary="Check this box if the viewer freezes when closing the screen with the home button or returning from standby mode."
+            android:title="Return to list view when the screen is turned to the back＊" />
+        <CheckBoxPreference
             android:defaultValue="true"
             android:key="ConfirmBack"
             android:summary="Display a confirmation message when you exit via the back button."
