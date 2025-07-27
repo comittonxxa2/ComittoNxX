@@ -153,6 +153,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			8,	// シャープ化
 			23,	// 明るさ補正
 			24,	// ガンマ補正
+			32,
+			33,
+			34,
 			25,	// バックライト
 			9,	// 白黒反転
 			10,	// グレースケール
@@ -189,6 +192,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		DEF.MENU_SHARPEN,	// シャープ化
 		DEF.MENU_BRIGHT,	// 明るさ補正
 		DEF.MENU_GAMMA,		// ガンマ補正
+		DEF.MENU_CONTRAST,	// コントラスト
+		DEF.MENU_HUE,		// 色相
+		DEF.MENU_SATURATION,	// 彩度
 		DEF.MENU_BKLIGHT,	// バックライト
 		DEF.MENU_INVERT,	// 白黒反転
 		DEF.MENU_GRAY,		// グレースケール
@@ -224,6 +230,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		R.string.sharpenMenu,	// シャープ化
 		R.string.brightMenu,	// 明るさ補正
 		R.string.gammaMenu,		// ガンマ補正
+		R.string.contrastMenu,	// コントラスト
+		R.string.hueMenu,		// 色相
+		R.string.saturationMenu,	// 彩度
 		R.string.bklightMenu,	// バックライト
 		R.string.invertMenu,	// 白黒反転
 		R.string.grayMenu,		// グレースケール
@@ -312,6 +321,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private int mBright;
 	private int mGamma;
 	private int mBkLight;
+	private int mContrast;
+	private int mHue;
+	private int mSaturation;
 	private int mMaxThread;
 	private boolean mOldMenu;
 	private int mLoupeSize;
@@ -1874,7 +1886,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 		if (mImageMgr != null) {
 			mImageMgr.setConfig(mScaleMode, mCenter, mFitDual, mDispMode, mNoExpand, mAlgoMode, mRotate, mWAdjust
-					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType);
+					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation);
 		}
 		// モードが変わればスケールは初期化
 		if (scaleinit) {
@@ -3126,14 +3138,14 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				break;
 			}
 		}
-		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition);
+		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition) {
+				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation) {
 					ischange = true;
 				}
 				mGray = gray;
@@ -3143,6 +3155,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mSharpen = sharpen;
 				mBright = bright;
 				mGamma = gamma;
+				mContrast = contrast;
+				mHue = hue;
+				mSaturation = saturation;
 				mAlgoMode = algomode;
 				mMgnCut = mgncut;
 				mMgnCutColor = mgncutcolor;
@@ -3204,6 +3219,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					ed.putString(DEF.KEY_BRIGHT, Integer.toString(mBright));
 					ed.putString(DEF.KEY_GAMMA, Integer.toString(mGamma));
 					ed.putString(DEF.KEY_BKLIGHT, Integer.toString(mBkLight));
+					ed.putString(DEF.KEY_CONTRAST, Integer.toString(mContrast));
+					ed.putString(DEF.KEY_HUE, Integer.toString(mHue));
+					ed.putString(DEF.KEY_SATURATION, Integer.toString(mSaturation));
 					ed.putString(DEF.KEY_ALGOMODE, Integer.toString(mAlgoMode));
 					ed.putString(DEF.KEY_INITVIEW, Integer.toString(mDispMode));
 					ed.putString(DEF.KEY_MARGINCUT, Integer.toString(mMgnCut));
@@ -3842,6 +3860,21 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			case DEF.MENU_GAMMA: {
 				// ガンマ補正
 				showImageConfigDialog(DEF.MENU_GAMMA);
+				break;
+			}
+			case DEF.MENU_CONTRAST: {
+				// コントラスト
+				showImageConfigDialog(DEF.MENU_CONTRAST);
+				break;
+			}
+			case DEF.MENU_HUE: {
+				// 色相
+				showImageConfigDialog(DEF.MENU_HUE);
+				break;
+			}
+			case DEF.MENU_SATURATION: {
+				// 彩度
+				showImageConfigDialog(DEF.MENU_SATURATION);
 				break;
 			}
 			case DEF.MENU_BKLIGHT: {
@@ -4483,6 +4516,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			mBright = SetImageActivity.getBright(sharedPreferences);
 			mGamma = SetImageActivity.getGamma(sharedPreferences);
 			mBkLight = SetImageActivity.getBkLight(sharedPreferences);
+			mContrast = SetImageActivity.getContrast(sharedPreferences);
+			mHue = SetImageActivity.getHue(sharedPreferences);
+			mSaturation = SetImageActivity.getSaturation(sharedPreferences);
 			mSharpen = SetImageActivity.getSharpen(sharedPreferences);
 			mInvert = SetImageActivity.getInvert(sharedPreferences);
 			mGray = SetImageActivity.getGray(sharedPreferences);
@@ -5271,6 +5307,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_SHARPEN_01, mSharpen);
 				ed.putInt(DEF.KEY_PROFILE_BRIGHT_01, mBright);
 				ed.putInt(DEF.KEY_PROFILE_GAMMA_01, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_01, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_01, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_01, mSaturation);
 				ed.putInt(DEF.KEY_PROFILE_ROTATE_01, mRotate);
 				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_01, mReverseOrder);
 				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_01, mChgPage);
@@ -5294,6 +5333,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_SHARPEN_02, mSharpen);
 				ed.putInt(DEF.KEY_PROFILE_BRIGHT_02, mBright);
 				ed.putInt(DEF.KEY_PROFILE_GAMMA_02, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_02, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_02, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_02, mSaturation);
 				ed.putInt(DEF.KEY_PROFILE_ROTATE_02, mRotate);
 				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_02, mReverseOrder);
 				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_02, mChgPage);
@@ -5317,6 +5359,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_SHARPEN_03, mSharpen);
 				ed.putInt(DEF.KEY_PROFILE_BRIGHT_03, mBright);
 				ed.putInt(DEF.KEY_PROFILE_GAMMA_03, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_03, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_03, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_03, mSaturation);
 				ed.putInt(DEF.KEY_PROFILE_ROTATE_03, mRotate);
 				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_03, mReverseOrder);
 				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_03, mChgPage);
@@ -5340,6 +5385,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_SHARPEN_04, mSharpen);
 				ed.putInt(DEF.KEY_PROFILE_BRIGHT_04, mBright);
 				ed.putInt(DEF.KEY_PROFILE_GAMMA_04, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_04, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_04, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_04, mSaturation);
 				ed.putInt(DEF.KEY_PROFILE_ROTATE_04, mRotate);
 				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_04, mReverseOrder);
 				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_04, mChgPage);
@@ -5363,6 +5411,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.putInt(DEF.KEY_PROFILE_SHARPEN_05, mSharpen);
 				ed.putInt(DEF.KEY_PROFILE_BRIGHT_05, mBright);
 				ed.putInt(DEF.KEY_PROFILE_GAMMA_05, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_05, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_05, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_05, mSaturation);
 				ed.putInt(DEF.KEY_PROFILE_ROTATE_05, mRotate);
 				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_05, mReverseOrder);
 				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_05, mChgPage);
@@ -5391,26 +5442,29 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					return;
 				}
 				// ロードに失敗した場合は元の値を入れる
-				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_01, mGray);
-				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_01, mInvert);
-				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_01, mMoire);
-				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_01, mSharpen);
-				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_01, mBright);
-				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_01, mGamma);
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_01, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_01, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_01, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_01, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_01, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_01, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_01, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_01, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_01, SetImageActivity.getSaturation(mSharedPreferences));
 				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_01, mRotate);
 				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_01, mReverseOrder);
-				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_01, mChgPage);
-				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_01, mPageWay);
-				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_01, mScrlWay);
-				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_01, mTopSingle);
-				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_01, mBkLight);
-				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_01, mAlgoMode);
-				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_01, mDispMode);
-				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_01, mScaleMode);
-				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_01, mMgnCut);
-				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_01, mMgnCutColor);
-				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
-				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_01, mDisplayPosition);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_01, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_01, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_01, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_01, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_01, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_01, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_01, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_01, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_01, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_01, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_01, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_01, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -5418,26 +5472,29 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					return;
 				}
 				// ロードに失敗した場合は元の値を入れる
-				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_02, mGray);
-				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_02, mInvert);
-				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_02, mMoire);
-				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_02, mSharpen);
-				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_02, mBright);
-				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_02, mGamma);
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_02, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_02, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_02, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_02, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_02, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_02, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_02, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_02, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_02, SetImageActivity.getSaturation(mSharedPreferences));
 				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_02, mRotate);
 				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_02, mReverseOrder);
-				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_02, mChgPage);
-				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_02, mPageWay);
-				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_02, mScrlWay);
-				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_02, mTopSingle);
-				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_02, mBkLight);
-				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_02, mAlgoMode);
-				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_02, mDispMode);
-				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_02, mScaleMode);
-				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_02, mMgnCut);
-				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_02, mMgnCutColor);
-				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
-				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_02, mDisplayPosition);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_02, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_02, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_02, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_02, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_02, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_02, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_02, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_02, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_02, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_02, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_02, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_02, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -5445,26 +5502,29 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					return;
 				}
 				// ロードに失敗した場合は元の値を入れる
-				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_03, mGray);
-				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_03, mInvert);
-				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_03, mMoire);
-				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_03, mSharpen);
-				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_03, mBright);
-				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_03, mGamma);
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_03, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_03, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_03, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_03, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_03, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_03, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_03, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_03, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_03, SetImageActivity.getSaturation(mSharedPreferences));
 				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_03, mRotate);
 				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_03, mReverseOrder);
-				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_03, mChgPage);
-				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_03, mPageWay);
-				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_03, mScrlWay);
-				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_03, mTopSingle);
-				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_03, mBkLight);
-				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_03, mAlgoMode);
-				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_03, mDispMode);
-				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_03, mScaleMode);
-				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_03, mMgnCut);
-				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_03, mMgnCutColor);
-				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
-				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_03, mDisplayPosition);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_03, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_03, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_03, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_03, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_03, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_03, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_03, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_03, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_03, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_03, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_03, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_03, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -5472,26 +5532,29 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					return;
 				}
 				// ロードに失敗した場合は元の値を入れる
-				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_04, mGray);
-				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_04, mInvert);
-				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_04, mMoire);
-				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_04, mSharpen);
-				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_04, mBright);
-				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_04, mGamma);
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_04, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_04, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_04, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_04, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_04, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_04, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_04, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_04, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_04, SetImageActivity.getSaturation(mSharedPreferences));
 				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_04, mRotate);
 				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_04, mReverseOrder);
-				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_04, mChgPage);
-				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_04, mPageWay);
-				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_04, mScrlWay);
-				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_04, mTopSingle);
-				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_04, mBkLight);
-				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_04, mAlgoMode);
-				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_04, mDispMode);
-				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_04, mScaleMode);
-				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_04, mMgnCut);
-				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_04, mMgnCutColor);
-				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
-				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_04, mDisplayPosition);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_04, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_04, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_04, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_04, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_04, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_04, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_04, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_04, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_04, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_04, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_04, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_04, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -5499,26 +5562,29 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 					return;
 				}
 				// ロードに失敗した場合は元の値を入れる
-				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_05, mGray);
-				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_05, mInvert);
-				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_05, mMoire);
-				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_05, mSharpen);
-				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_05, mBright);
-				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_05, mGamma);
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_05, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_05, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_05, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_05, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_05, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_05, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_05, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_05, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_05, SetImageActivity.getSaturation(mSharedPreferences));
 				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_05, mRotate);
 				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_05, mReverseOrder);
-				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_05, mChgPage);
-				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_05, mPageWay);
-				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_05, mScrlWay);
-				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_05, mTopSingle);
-				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_05, mBkLight);
-				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_05, mAlgoMode);
-				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_05, mDispMode);
-				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_05, mScaleMode);
-				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_05, mMgnCut);
-				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_05, mMgnCutColor);
-				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
-				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_05, mDisplayPosition);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_05, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_05, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_05, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_05, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_05, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_05, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_05, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_05, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_05, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_05, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_05, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				break;
 		}
 		if (mReverseOrder != mReverseOrderProfile) {
@@ -5583,6 +5649,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_SHARPEN_01);
 				ed.remove(DEF.KEY_PROFILE_BRIGHT_01);
 				ed.remove(DEF.KEY_PROFILE_GAMMA_01);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_01);
+				ed.remove(DEF.KEY_PROFILE_HUE_01);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_01);
 				ed.remove(DEF.KEY_PROFILE_ROTATE_01);
 				ed.remove(DEF.KEY_PROFILE_REVERSE_01);
 				ed.remove(DEF.KEY_PROFILE_CHGPAGE_01);
@@ -5611,6 +5680,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_SHARPEN_02);
 				ed.remove(DEF.KEY_PROFILE_BRIGHT_02);
 				ed.remove(DEF.KEY_PROFILE_GAMMA_02);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_02);
+				ed.remove(DEF.KEY_PROFILE_HUE_02);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_02);
 				ed.remove(DEF.KEY_PROFILE_ROTATE_02);
 				ed.remove(DEF.KEY_PROFILE_REVERSE_02);
 				ed.remove(DEF.KEY_PROFILE_CHGPAGE_02);
@@ -5639,6 +5711,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_SHARPEN_03);
 				ed.remove(DEF.KEY_PROFILE_BRIGHT_03);
 				ed.remove(DEF.KEY_PROFILE_GAMMA_03);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_03);
+				ed.remove(DEF.KEY_PROFILE_HUE_03);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_03);
 				ed.remove(DEF.KEY_PROFILE_ROTATE_03);
 				ed.remove(DEF.KEY_PROFILE_REVERSE_03);
 				ed.remove(DEF.KEY_PROFILE_CHGPAGE_03);
@@ -5667,6 +5742,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_SHARPEN_04);
 				ed.remove(DEF.KEY_PROFILE_BRIGHT_04);
 				ed.remove(DEF.KEY_PROFILE_GAMMA_04);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_04);
+				ed.remove(DEF.KEY_PROFILE_HUE_04);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_04);
 				ed.remove(DEF.KEY_PROFILE_ROTATE_04);
 				ed.remove(DEF.KEY_PROFILE_REVERSE_04);
 				ed.remove(DEF.KEY_PROFILE_CHGPAGE_04);
@@ -5695,6 +5773,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				ed.remove(DEF.KEY_PROFILE_SHARPEN_05);
 				ed.remove(DEF.KEY_PROFILE_BRIGHT_05);
 				ed.remove(DEF.KEY_PROFILE_GAMMA_05);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_05);
+				ed.remove(DEF.KEY_PROFILE_HUE_05);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_05);
 				ed.remove(DEF.KEY_PROFILE_ROTATE_05);
 				ed.remove(DEF.KEY_PROFILE_REVERSE_05);
 				ed.remove(DEF.KEY_PROFILE_CHGPAGE_05);

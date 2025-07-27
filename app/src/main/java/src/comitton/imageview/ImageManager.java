@@ -36,6 +36,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.pdf.PdfRenderer;
+import android.graphics.ColorMatrix;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -4262,6 +4263,10 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mTopSingle;	// 先頭単ページ
 	private int mGamma;		// ガンマ補正
 	private int mBright;	// 明るさ
+	private int mContrast;
+	private int mHue;
+	private int mSaturation;
+	private float[] mColorMatrix;
 
 	private boolean mScrFitDual;
 	private boolean mScrNoExpand;
@@ -4290,8 +4295,56 @@ public class ImageManager extends InputStream implements Runnable {
 		mEpubOrder = epubOrder;
 	}
 
+	// フィルター設定
+	private void SetColorEffect() {
+		float cont = (float)mContrast * 0.02f;
+		float hue = (float)mHue;
+		float sat = (float)mSaturation * 0.01f;
+		float[] defaultValues = {
+			1, 0, 0, 0, 0,
+			0, 1, 0, 0, 0,
+			0, 0, 1, 0, 0,
+			0, 0, 0, 1, 0
+		};
+		float[] values = defaultValues;
+		// コントラストを変更
+		float translate = (0.5f - 0.5f * cont) * 255.f;
+		values[0] = cont;
+		values[6] = values[0];
+		values[12] = values[0];
+		values[4] = translate;
+		values[9] = values[4];
+		values[14] = values[4];
+		ColorMatrix cm = new ColorMatrix(values);
+		// 彩度を変更
+		ColorMatrix saturationCM = new ColorMatrix();
+		saturationCM.setSaturation(sat);
+		// 連結する
+		cm.postConcat(saturationCM);
+		// 色相を変更
+		float a = Math.max(0, (float) Math.cos(hue / 360 * 2 * Math.PI));
+		float b = Math.max(0, (float) Math.cos((hue - 120) / 360 * 2 * Math.PI));
+		float c = Math.max(0, (float) Math.cos((hue - 240) / 360 * 2 * Math.PI));
+		float sum = a + b + c;
+		values = defaultValues;
+		values[0] = a / sum;
+		values[6] = values[0];
+		values[12] = values[0];
+		values[1] = b / sum;
+		values[7] = values[1];
+		values[10] = values[1];
+		values[2] = c / sum;
+		values[5] = values[2];
+		values[11] = values[2];
+		ColorMatrix hueCM = new ColorMatrix(values);
+		// 連結する
+		cm.postConcat(hueCM);
+		// マトリックスを取り出す
+		mColorMatrix = cm.getArray();
+	}
+
 	// 設定変更
-	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype) {
+	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "wscale=" + wscale + ", scale=" + scale);
 		mScrScaleMode = mode;
@@ -4321,6 +4374,12 @@ public class ImageManager extends InputStream implements Runnable {
 		mTopSingle = topsingle ? 1 : 0;
 		mEpubOrder = epubOrder;
 		mZoomType = zoomtype;
+		mContrast  = contrast;
+		mHue = hue;
+		mSaturation = saturation;
+
+		// フィルター設定
+		SetColorEffect();
 
 		if (mCacheIndex >= 0) {
 			freeScaleCache();
@@ -4899,7 +4958,7 @@ public class ImageManager extends InputStream implements Runnable {
 					sendMessage(mHandler, DEF.HMSG_CACHE, 0, 2, null);
 //					long sttime = SystemClock.uptimeMillis();
 					int param = CallImgLibrary.ImageScaleParam(mInvert, mGray, 0, mMoire, pseland);
-					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page1, half1, width[0], height[0], left[0], right[0], top[0], bottom[0], mScrAlgoMode, mScrRotate, mMarginCut, mMarginCutColor, mSharpen, mBright, mGamma, param, size) >= 0) {
+					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page1, half1, width[0], height[0], left[0], right[0], top[0], bottom[0], mScrAlgoMode, mScrRotate, mMarginCut, mMarginCutColor, mSharpen, mBright, mGamma, param, size, mColorMatrix) >= 0) {
 						Logcat.v(logLevel, "Page=" + page1 + ", Half=" + half1 + ", 完成サイズP1 size_w=" + size[0] + ", size_h=" + size[1]);
 						mMemCacheFlag[page1].fScale[half1] = true;
 						if (img1 != null) {
@@ -4943,7 +5002,7 @@ public class ImageManager extends InputStream implements Runnable {
 					sendMessage(mHandler, DEF.HMSG_CACHE, 0, 2, null);
 //					long sttime = SystemClock.uptimeMillis();
 					int param = CallImgLibrary.ImageScaleParam(mInvert, mGray, 0, mMoire, pseland);
-					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page2, half2, width[1], height[1], left[1], right[1], top[1], bottom[1], mScrAlgoMode, mScrRotate, mMarginCut, mMarginCutColor, mSharpen, mBright, mGamma, param, size) >= 0) {
+					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page2, half2, width[1], height[1], left[1], right[1], top[1], bottom[1], mScrAlgoMode, mScrRotate, mMarginCut, mMarginCutColor, mSharpen, mBright, mGamma, param, size, mColorMatrix) >= 0) {
 						Logcat.d(logLevel, "Page=" + page2 + ", Half=" + half2 + ", 完成サイズP2 size_w=" + size[0] + ", size_h=" + size[1]);
 						mMemCacheFlag[page2].fScale[half2] = true;
 						if (img2 != null) {
