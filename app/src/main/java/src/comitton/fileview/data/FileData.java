@@ -45,6 +45,8 @@ public class FileData {
 	private String name;
 	private String path;
 	private String mime;
+	private String result;
+	private Uri uri;
 	private boolean isdir;
 	private short type;		// ファイルタイプ
 	private short exttype;	// 拡張子タイプ
@@ -63,13 +65,15 @@ public class FileData {
 		setName(context, name);
 	}
 
-	public FileData (Context context, String name, String path, String mime, long date, long size, boolean isdir) {
+	public FileData (Context context, String name, String path, String mime, long date, long size, boolean isdir, Uri uri, String result) {
 		setName(context, name);
 		this.path = path;
 		this.mime = mime;
 		this.date = date;
 		this.size = size;
 		this.isdir = isdir;
+		this.uri = uri;
+		this.result = result;
 	}
 
 	public FileData (Context context, String name, long size, long date) {
@@ -97,8 +101,14 @@ public class FileData {
 	public String getMime() {
 		return mime;
 	}
+	public String getResult() {
+		return result;
+	}
 	public boolean getIsdir() {
 		return isdir;
+	}
+	public Uri geturi() {
+		return uri;
 	}
 	public static String getName(String filepath) {
 		return filepath.substring(filepath.lastIndexOf("/") + 1);
