@@ -190,6 +190,9 @@ public class DEF {
 	public static final int MENU_PROFILE4 = Menu.FIRST + 59;
 	public static final int MENU_PROFILE5 = Menu.FIRST + 60;
 	public static final int MENU_DISPLAY_POSITION = Menu.FIRST + 61;
+	public static final int MENU_CONTRAST = Menu.FIRST + 62;
+	public static final int MENU_HUE = Menu.FIRST + 63;
+	public static final int MENU_SATURATION = Menu.FIRST + 64;
 	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
@@ -504,6 +507,9 @@ public class DEF {
 	public static final String KEY_BRIGHT = "Bright";
 	public static final String KEY_GAMMA = "Gamma";
 	public static final String KEY_BKLIGHT = "BkLight";
+	public static final String KEY_CONTRAST = "Contrast";
+	public static final String KEY_HUE = "Hue";
+	public static final String KEY_SATURATION = "Saturation";
 	public static final String KEY_MOIRE = "Moire";
 	public static final String KEY_GRAY = "Gray";
 	public static final String KEY_INVERT = "Invert";
@@ -620,6 +626,24 @@ public class DEF {
 	public static final String KEY_PROFILE_GAMMA_03 = "ProfileGamma3";
 	public static final String KEY_PROFILE_GAMMA_04 = "ProfileGamma4";
 	public static final String KEY_PROFILE_GAMMA_05 = "ProfileGamma5";
+
+	public static final String KEY_PROFILE_CONTRAST_01 = "ProfileContrast1";
+	public static final String KEY_PROFILE_CONTRAST_02 = "ProfileContrast2";
+	public static final String KEY_PROFILE_CONTRAST_03 = "ProfileContrast3";
+	public static final String KEY_PROFILE_CONTRAST_04 = "ProfileContrast4";
+	public static final String KEY_PROFILE_CONTRAST_05 = "ProfileContrast5";
+
+	public static final String KEY_PROFILE_HUE_01 = "ProfileHue1";
+	public static final String KEY_PROFILE_HUE_02 = "ProfileHue2";
+	public static final String KEY_PROFILE_HUE_03 = "ProfileHue3";
+	public static final String KEY_PROFILE_HUE_04 = "ProfileHue4";
+	public static final String KEY_PROFILE_HUE_05 = "ProfileHue5";
+
+	public static final String KEY_PROFILE_SATURATION_01 = "ProfileSaturation1";
+	public static final String KEY_PROFILE_SATURATION_02 = "ProfileSaturation2";
+	public static final String KEY_PROFILE_SATURATION_03 = "ProfileSaturation3";
+	public static final String KEY_PROFILE_SATURATION_04 = "ProfileSaturation4";
+	public static final String KEY_PROFILE_SATURATION_05 = "ProfileSaturation5";
 
 	public static final String KEY_PROFILE_ROTATE_01 = "ProfileRotate1";
 	public static final String KEY_PROFILE_ROTATE_02 = "ProfileRotate2";
