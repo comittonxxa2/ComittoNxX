@@ -28,6 +28,7 @@ set(
   comitton/ImageInvert.cpp
   comitton/ImageGray.cpp
   comitton/ImageHalf.cpp
+  comitton/ImageColorMatrix.cpp
   comitton/callImage.cpp
   comitton/TextCommon.cpp
   comitton/callText.cpp
