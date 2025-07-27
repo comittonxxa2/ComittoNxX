@@ -3699,6 +3699,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 描画停止
 		setDrawEnable();
 
+		String filename = "";
+		if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+			// SAFのみファイル名称を追加(暫定措置)
+			filename = FileAccess.filename(mActivity, name);
+		}
+
 		Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
@@ -3706,7 +3712,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
-		intent.putExtra("File", FileAccess.filename(mActivity, name));					// ファイル名称を追加(これが無いとSAFでエラーが出る)
+		intent.putExtra("File", filename);					// ファイル名称を追加(これが無いとSAFでエラーが出る)
 		intent.putExtra("Image", name); 					// 中身の画像ファイル名
 		startActivityForResult(intent, DEF.REQUEST_IMAGE);
 	}
