@@ -138,6 +138,9 @@
     <string name="topsingleMenu">Single show the first page</string>
     <string name="brightMenu">Brightness(%)</string>
     <string name="gammaMenu">Gamma compensation(%)</string>
+    <string name="contrastMenu">Contrast(%)</string>
+    <string name="hueMenu">Hue(%)</string>
+    <string name="saturationMenu">Saturation(%)</string>
     <string name="bklightMenu">Backlight(%)</string>
     <string name="mgnCutMenu">Remove white margin</string>
     <string name="mgnCutColorMenu">Color to remove margin</string>
@@ -489,6 +492,7 @@
     <string name="desc"></string>
     <string name="none">None</string>
     <string name="auto">Default</string>
+    <string name="degree">degrees</string>
     <string name="selectFile">Select File.</string>
     <string name="selectOrEnterFile">Select or enter a file.</string>
     <string name="SaveConfig">Save settings to file.</string>
