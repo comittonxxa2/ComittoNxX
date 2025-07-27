@@ -104,6 +104,11 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="操作関連の設定(＊はイメージと共通)" >
         <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReturnListView"
+            android:summary="ホームボタンで画面を閉じたりスタンバイ状態から復帰するときにビューアが固まる場合にチェックを入れる"
+            android:title="画面が裏に入った場合にリスト一覧へ戻る＊" />
+        <CheckBoxPreference
             android:defaultValue="true"
             android:key="ConfirmBack"
             android:summary="戻るボタンで画面を閉じるときに確認メッセージを表示する"
