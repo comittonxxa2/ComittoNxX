@@ -94,6 +94,60 @@
 				android:paddingLeft="4sp"
 				android:paddingRight="4sp" />
 
+			<TextView
+				android:id="@+id/label_contrast"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="8sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/contrastMenu" />
+	
+			<SeekBar
+				android:id="@+id/seek_contrast"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_hue"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="8sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/hueMenu" />
+	
+			<SeekBar
+				android:id="@+id/seek_hue"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_saturation"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="8sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/saturationMenu" />
+	
+			<SeekBar
+				android:id="@+id/seek_saturation"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
 		</LinearLayout>
 	</ScrollView>
 				
