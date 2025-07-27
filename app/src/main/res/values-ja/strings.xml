@@ -138,6 +138,9 @@
     <string name="topsingleMenu">先頭ページを単独表示</string>
     <string name="brightMenu">明るさ補正(%)</string>
     <string name="gammaMenu">ガンマ補正(%)</string>
+    <string name="contrastMenu">コントラスト(%)</string>
+    <string name="hueMenu">色相(%)</string>
+    <string name="saturationMenu">彩度(%)</string>
     <string name="bklightMenu">バックライト(%)</string>
     <string name="mgnCutMenu">余白削除</string>
     <string name="mgnCutColorMenu">余白削除の色</string>
@@ -489,6 +492,7 @@
     <string name="desc"></string>
     <string name="none">なし</string>
     <string name="auto">既定</string>
+    <string name="degree">度</string>
     <string name="selectFile">ファイルを選択してください.</string>
     <string name="selectOrEnterFile">ファイルを選択または入力してください.</string>
     <string name="SaveConfig">設定を保存しました.</string>
