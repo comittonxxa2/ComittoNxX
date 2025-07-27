@@ -56,6 +56,9 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private int mBright;
 	private int mGamma;
 	private int mBkLight;
+	private int mContrast;
+	private int mHue;
+	private int mSaturation;
 	private int mAlgoMode;
 	private int mDispMode;
 	private int mScaleMode;
@@ -83,10 +86,16 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private TextView mTxtBright;
 	private TextView mTxtGamma;
 	private TextView mTxtBkLight;
+	private TextView mTxtContrast;
+	private TextView mTxtHue;
+	private TextView mTxtSaturation;
 	private SeekBar mSkbSharpen;
 	private SeekBar mSkbBright;
 	private SeekBar mSkbGamma;
 	private SeekBar mSkbBkLight;
+	private SeekBar mSkbContrast;
+	private SeekBar mSkbHue;
+	private SeekBar mSkbSaturation;
 	private TextView mTxtAlgoMode;
 	private TextView mTxtDispMode;
 	private TextView mTxtScaleMode;
@@ -111,9 +120,13 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private String mBrightStr;
 	private String mGammaStr;
 	private String mBkLightStr;
+	private String mContrastStr;
+	private String mHueStr;
+	private String mSaturationStr;
 
 	private String mAutoStr;
 	private String mNoneStr;
+	private String mDegreeStr;
 
 	private String[] mAlgoModeItems;
 	private String[] mDispModeItems;
@@ -131,6 +144,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		Resources res = activity.getResources();
 		mAutoStr = res.getString(R.string.auto);
 		mNoneStr = res.getString(R.string.none);
+		mDegreeStr = res.getString(R.string.degree);
 
 		mCommandId = command_id;
 
@@ -195,7 +209,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		addItem(inflater.inflate(R.layout.imageconfig_other, null, false));
 	}
 
-	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition) {
+	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation) {
 		mGray = gray;
 		mInvert = invert;
 		mMoire = moire;
@@ -204,6 +218,9 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mBright = bright;
 		mGamma = gamma;
 		mBkLight = bklight;
+		mContrast = contrast;
+		mHue = hue;
+		mSaturation = saturation;
 		mAlgoModeTemp  = mAlgoMode  = algomode;
 		mDispModeTemp  = mDispMode  = dispmode;
 		mScaleModeTemp = mScaleMode = scalemode;
@@ -238,11 +255,17 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtSharpen = mTxtSharpen != null ? mTxtSharpen : (TextView) mViewArray.get(i).findViewById(R.id.label_sharpen);
 			mTxtBright = mTxtBright != null ? mTxtBright : (TextView) mViewArray.get(i).findViewById(R.id.label_bright);
 			mTxtGamma = mTxtGamma != null ? mTxtGamma : (TextView) mViewArray.get(i).findViewById(R.id.label_gamma);
+			mTxtContrast = mTxtContrast != null ? mTxtContrast : (TextView) mViewArray.get(i).findViewById(R.id.label_contrast);
+			mTxtHue = mTxtHue != null ? mTxtHue : (TextView) mViewArray.get(i).findViewById(R.id.label_hue);
+			mTxtSaturation = mTxtSaturation != null ? mTxtSaturation : (TextView) mViewArray.get(i).findViewById(R.id.label_saturation);
 			mTxtBkLight = mTxtBkLight != null ? mTxtBkLight : (TextView) mViewArray.get(i).findViewById(R.id.label_bklight);
 
 			mSkbSharpen = mSkbSharpen != null ? mSkbSharpen : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_sharpen);
 			mSkbBright = mSkbBright != null ? mSkbBright : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bright);
 			mSkbGamma = mSkbGamma != null ? mSkbGamma : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_gamma);
+			mSkbContrast = mSkbContrast != null ? mSkbContrast : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_contrast);
+			mSkbHue = mSkbHue != null ? mSkbHue : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_hue);
+			mSkbSaturation = mSkbSaturation != null ? mSkbSaturation : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_saturation);
 			mSkbBkLight = mSkbBkLight != null ? mSkbBkLight : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bklight);
 
 			mTxtAlgoMode = mTxtAlgoMode != null ? mTxtAlgoMode : (TextView) mViewArray.get(i).findViewById(R.id.label_algomode);
@@ -300,6 +323,18 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtBkLight.setVisibility(View.GONE);
 			mSkbBkLight.setVisibility(View.GONE);
 		}
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_CONTRAST) {
+			mTxtContrast.setVisibility(View.GONE);
+			mSkbContrast.setVisibility(View.GONE);
+		}
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_HUE) {
+			mTxtHue.setVisibility(View.GONE);
+			mSkbHue.setVisibility(View.GONE);
+		}
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_SATURATION) {
+			mTxtSaturation.setVisibility(View.GONE);
+			mSkbSaturation.setVisibility(View.GONE);
+		}
 
 		if (mChkGray != null) mChkGray.setChecked(mGray);
 		if (mChkInvert != null) mChkInvert.setChecked(mInvert);
@@ -311,11 +346,17 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mTxtBright != null) mBrightStr = mTxtBright.getText().toString();
 		if (mTxtGamma != null) mGammaStr = mTxtGamma.getText().toString();
 		if (mTxtBkLight != null) mBkLightStr = mTxtBkLight.getText().toString();
+		if (mTxtContrast != null) mContrastStr = mTxtContrast.getText().toString();
+		if (mTxtHue != null) mHueStr = mTxtHue.getText().toString();
+		if (mTxtSaturation != null) mSaturationStr = mTxtSaturation.getText().toString();
 
 		if (mTxtSharpen != null && mTxtSharpen != null) mTxtSharpen.setText(mSharpenStr.replaceAll("%", getSharpenStr(mSharpen)));
 		if (mTxtBright != null && mTxtBright != null) mTxtBright.setText(mBrightStr.replaceAll("%", getBrightGammaStr(mBright)));
 		if (mTxtGamma != null && mTxtGamma != null) mTxtGamma.setText(mGammaStr.replaceAll("%", getBrightGammaStr(mGamma)));
 		if (mTxtBkLight != null && mTxtBkLight != null) mTxtBkLight.setText(mBkLightStr.replaceAll("%", getBkLight(mBkLight)));
+		if (mTxtContrast != null && mTxtContrast != null) mTxtContrast.setText(mContrastStr.replaceAll("%", getBrightGammaStr(mContrast)));
+		if (mTxtHue != null && mTxtHue != null) mTxtHue.setText(mHueStr.replaceAll("%", getBrightGammaStr(mHue)));
+		if (mTxtSaturation != null && mTxtSaturation != null) mTxtSaturation.setText(mSaturationStr.replaceAll("%", getBrightGammaStr(mSaturation)));
 
 		if (mSkbSharpen != null) mSkbSharpen.setMax(32);
 		if (mSkbSharpen != null) mSkbSharpen.setOnSeekBarChangeListener(this);
@@ -325,11 +366,20 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbGamma != null) mSkbGamma.setOnSeekBarChangeListener(this);
 		if (mSkbBkLight != null) mSkbBkLight.setMax(11);
 		if (mSkbBkLight != null) mSkbBkLight.setOnSeekBarChangeListener(this);
+		if (mSkbContrast != null) mSkbContrast.setMax(20);
+		if (mSkbContrast != null) mSkbContrast.setOnSeekBarChangeListener(this);
+		if (mSkbHue != null) mSkbHue.setMax(40);
+		if (mSkbHue != null) mSkbHue.setOnSeekBarChangeListener(this);
+		if (mSkbSaturation != null) mSkbSaturation.setMax(80);
+		if (mSkbSaturation != null) mSkbSaturation.setOnSeekBarChangeListener(this);
 
 		if (mSkbSharpen != null) mSkbSharpen.setProgress(mSharpen);
 		if (mSkbBright != null) mSkbBright.setProgress(mBright + 5);
 		if (mSkbGamma != null) mSkbGamma.setProgress(mGamma + 5);
 		if (mSkbBkLight != null) mSkbBkLight.setProgress(mBkLight);
+		if (mSkbContrast != null) mSkbContrast.setProgress(mContrast / 5);
+		if (mSkbHue != null) mSkbHue.setProgress(mHue / 5 + 20);
+		if (mSkbSaturation != null) mSkbSaturation.setProgress(mSaturation / 5);
 
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setText(mAlgoModeItems[mAlgoMode]);
 		if (mBtnDispMode != null) mBtnDispMode.setText(mDispModeItems[mDispMode]);
@@ -363,7 +413,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public interface ImageConfigListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition);
+	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation);
 	    public void onClose();
 	}
 
@@ -513,7 +563,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 		if (select == CLICK_REVERT) {
 			// 戻すは元の値を通知
-			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition);
+			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation);
 		}
 		else {
 			// OK/適用は設定された値を通知
@@ -526,8 +576,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			int bright = mSkbBright.getProgress() - 5;
 			int gamma = mSkbGamma.getProgress() - 5;
 			int bklight = mSkbBkLight.getProgress();
+			int contrast = mSkbContrast.getProgress() * 5;
+			int hue = (mSkbHue.getProgress() - 20) * 5;
+			int saturation = mSkbSaturation.getProgress() * 5;
 
-			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp);
+			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation);
 		}
 
 		if (select != CLICK_APPLY) {
@@ -553,14 +606,27 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			String str = getBkLight(progress);
 			mTxtBkLight.setText(mBkLightStr.replaceAll("%", str));
 		}
-		else {
+		else if (seekBar == mSkbBright) {
 			String str = getBrightGammaStr(progress);
-			if (seekBar == mSkbBright) {
-				mTxtBright.setText(mBrightStr.replaceAll("%", str));
-			}
-			else {
-				mTxtGamma.setText(mGammaStr.replaceAll("%", str));
-			}
+			mTxtBright.setText(mBrightStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbGamma) {
+			String str = getBrightGammaStr(progress);
+			mTxtGamma.setText(mGammaStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbContrast) {
+			String str = getContrastStr(progress);
+			mTxtContrast.setText(mContrastStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbHue) {
+			String str = getHueStr(progress);
+			mTxtHue.setText(mHueStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbSaturation) {
+			String str = getSaturationStr(progress);
+			mTxtSaturation.setText(mSaturationStr.replaceAll("%", str));
+		}
+		else {
 		}
 	}
 
@@ -603,6 +669,24 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		else {
 			str = "+" + String.valueOf(progress - 5);
 		}
+		return str;
+	}
+
+	private String getContrastStr(int progress) {
+		String str;
+		str = String.valueOf(progress * 5) + "%";
+		return str;
+	}
+
+	private String getHueStr(int progress) {
+		String str;
+		str = String.valueOf((progress - 20) * 5) + mDegreeStr;
+		return str;
+	}
+
+	private String getSaturationStr(int progress) {
+		String str;
+		str = String.valueOf(progress * 5) + "%";
 		return str;
 	}
 
