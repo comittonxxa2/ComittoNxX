@@ -442,6 +442,21 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		return val;
 	}
 
+	public static int getContrast(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_CONTRAST, "50");
+		return val;
+	}
+
+	public static int getHue(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_HUE, "0");
+		return val;
+	}
+
+	public static int getSaturation(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_SATURATION, "100");
+		return val;
+	}
+
 	public static int getBkLight(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_BKLIGHT, "11");
 		return val;
