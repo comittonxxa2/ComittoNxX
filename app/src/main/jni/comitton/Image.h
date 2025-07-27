@@ -158,7 +158,7 @@ int ScaleMemAlloc(int, int, int);
 int DrawScaleBitmap(int, int, int, int, int, int, int, int, int, int, int, void *, int, int, int, int, IMAGEDATA *, int, int, int, int);
 int DrawBitmap(int, int, int half, int x, int y, void *, int, int, int, IMAGEDATA *);
 
-int CreateScale(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, jint*);
+int CreateScale(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, jint*, jfloat*);
 
 int SetLinesPtr(int, int, int, int, int, int);
 int NextSclBuff(int, int, int, int, int*, int*, int);
@@ -175,6 +175,7 @@ int ImageBlur(int, int, int, int, int, int, int);
 int ImageInvert(int, int, int, int, int, int);
 int ImageGray(int, int, int, int, int, int);
 int ImageBright(int, int, int, int, int, int, int, int);
+int ImageColorMatrix(int, int, int, int, int, int, jfloat*);
 
 int CreateScaleNear(int, int, int, int, int, int, int, int);
 int CreateScaleLinear(int, int, int, int, int, int, int, int);

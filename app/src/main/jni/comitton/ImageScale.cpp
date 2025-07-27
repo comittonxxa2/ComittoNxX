@@ -28,7 +28,7 @@ extern int			gCancel[];
 // RetSize 返却用ポインタ
 // RetSize[0] 完成サイズ(幅)
 // RetSize[1] 完成サイズ(高さ)
-int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int left, int right, int top, int bottom, int algorithm, int Rotate, int Margin, int MarginColor, int Sharpen, int Bright, int Gamma, int Param, jint *RetSize)
+int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int left, int right, int top, int bottom, int algorithm, int Rotate, int Margin, int MarginColor, int Sharpen, int Bright, int Gamma, int Param, jint *RetSize, jfloat *colormatrix)
 {
 //#define DEBUG_CREATESCALE
     int Invert   = (Param & PARAM_INVERT) != 0 ? 1 : 0;;
@@ -382,6 +382,21 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
         LOGD("CreateScale: Bright || Gamma   END: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
 #endif
 	}
+
+	// 元データ配列化
+	ret = SetLinesPtr(index, Page, Half, Count, scl_w, scl_h);
+	if (ret < 0) {
+		return ret;
+	}
+
+	// カラーマトリックス
+	ret = ImageColorMatrix(index, Page, Half, Count, scl_w, scl_h, colormatrix);
+	if (ret < 0) {
+		return ret;
+	}
+    // 古いワークデータは削除
+    EraseSclBuffMng(index, Count);
+    Count ++;
 
 	CopySclBuffMngToBuffMng(index);
 	pData->SclFlag[Half] = 1;
