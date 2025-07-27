@@ -3474,7 +3474,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		if	(!uri.equals(mURI) || !path.equals(mPath))	{
 			// パスが更新された場合はファイルリストをフラッシュ
-			SafFileAccess.InitRelativePath();
 			mFileList.FlushFileList();
 		}
 
@@ -3707,7 +3706,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
-		intent.putExtra("File", "");					// ZIPファイル名
+		intent.putExtra("File", FileAccess.filename(mActivity, name));					// ファイル名称を追加(これが無いとSAFでエラーが出る)
 		intent.putExtra("Image", name); 					// 中身の画像ファイル名
 		startActivityForResult(intent, DEF.REQUEST_IMAGE);
 	}
