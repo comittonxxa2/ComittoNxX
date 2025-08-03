@@ -60,7 +60,7 @@ void *ImageSharpen_ThreadFunc(void *param)
 
 		yd3 = gDitherY_3bit[yy & 0x07];
 		yd2 = gDitherY_2bit[yy & 0x03];
-		for (xx =  0 ; xx < OrgWidth + HOKAN_DOTS ; xx++) {
+		for (xx =  0 ; xx < OrgWidth + HOKAN_DOTS - 1 ; xx++) {
 			// 
             rr -= RGB888_RED(orgbuff1[xx - 1]) * mAmount;
             rr -= RGB888_RED(orgbuff1[xx + 0]) * mAmount * 2;
