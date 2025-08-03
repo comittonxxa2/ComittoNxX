@@ -1482,12 +1482,12 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				// intentから取り出した画像ファイル名からページ番号を決定するとバグが発生するため反映しない
 				// バックグラウンドでの実行を許可すると復帰時にonCreate()が呼ばれる
 				// ビュワーを開いた後でintentにページ位置を上書きしても効果がない
-				//if (mImageName != null && !mImageName.isEmpty()) {
-				//	int page = mImageMgr.search(mImageName);
-				//	if (page != -1) {
-				//		mCurrentPage = page;
-				//	}
-				//}
+				if (mImageName != null && !mImageName.isEmpty()) {
+					int page = mImageMgr.search(mImageName);
+					if (page != -1) {
+						mCurrentPage = page;
+					}
+				}
 
 				// 既読の場合は最終ページ
 				if (mImageMgr.length() == 0) {
