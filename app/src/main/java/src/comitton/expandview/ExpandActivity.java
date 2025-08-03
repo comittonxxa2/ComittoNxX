@@ -27,8 +27,11 @@ import src.comitton.fileview.filelist.FileSelectList;
 import src.comitton.imageview.ImageManager;
 import src.comitton.textview.TextActivity;
 import src.comitton.textview.TextManager;
+import src.comitton.expandview.ListItemView;
 import src.comitton.fileview.view.TitleView;
 
+
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -38,6 +41,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -74,8 +78,9 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private ListView mListView;
 
 	private ImageManager mImageMgr = null;
+	private ImageManager mImageMgr2 = null;
+	private TextManager mTextMgr;
 	private ExpandThumbnailLoader mThumbnailLoader;
-	private ExpandFileStatusLoader mFileStatusLoader;
 
 	private float mDensity;
 
@@ -98,7 +103,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private int mTibColor;
 	private int mTlbColor;
 	private int mListRota;
-	private boolean mTextPageDual;
 
 	private int mServer;
 	private String mURI;
@@ -107,6 +111,8 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private String mPass;
 	private String mFileName;
 	private String mText;
+	private int mPage;
+	private float mPageRate;
 	private int mCurrentPage;
 
 	private ProgressDialog mReadDialog;
@@ -117,6 +123,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private Thread mZipThread;
 
 	private boolean mTerminate;
+	private boolean mEpubViewer;
 
 	private ArrayList<FileData> mFileList;
 	private int mSelectIndex;
@@ -186,13 +193,13 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		mItemMargin = DEF.calcSpToPix(SetFileListActivity.getItemMargin(mSharedPreferences), mDensity);
 		mListRota = SetFileListActivity.getListRota(mSharedPreferences);
 
-		int textDispMode = SetTextActivity.getInitView(mSharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
-		if (textDispMode == DEF.DISPMODE_TX_DUAL) {
-			mTextPageDual = true;
-		}
-		else {
-			mTextPageDual = false;
-		}
+//		int textDispMode = SetTextActivity.getInitView(mSharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
+//		if (textDispMode == DEF.DISPMODE_TX_DUAL) {
+//			mTextPageDual = true;
+//		}
+//		else {
+//			mTextPageDual = false;
+//		}
 
 		DEF.setRotation(this, mListRota);
 
@@ -208,9 +215,12 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			mPass = intent.getStringExtra("Pass");
 			mFileName = intent.getStringExtra("File"); 		// ZIP指定時
 			mText = intent.getStringExtra("Text"); 			// Textファイル
-			Logcat.d(logLevel, "mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
+			mPage = intent.getIntExtra("Page", DEF.PAGENUMBER_UNREAD);					// 既読ページ
+			mPageRate = intent.getFloatExtra("PageRate", (float)DEF.PAGENUMBER_UNREAD);	// 既読ページ％
+			Logcat.d(logLevel, "onCreate: mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
 					+ ", mUser=" + mUser + ", mPass=" + mPass
-					+ ", mFileName=" + mFileName + ", mText=" + mText);
+					+ ", mFileName=" + mFileName + ", mText=" + mText
+			+ ", mPage=" + mPage + ", mPageRate=" + mPageRate);
 		}
 
 		setContentView(R.layout.serverview);
@@ -346,12 +356,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			mThumbnailLoader = null;
 		}
 
-		// 既読情報スレッド終了
-		if (mFileStatusLoader != null) {
-			mFileStatusLoader.breakThread();
-			mFileStatusLoader = null;
-		}
-
 		mImageMgr = null;
 		return;
 	}
@@ -422,9 +426,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 
 			if (mThumbnailLoader != null) {
 				mThumbnailLoader.setDispRange(mFirstIndex, mLastIndex);
-			}
-			if (mFileStatusLoader != null) {
-				mFileStatusLoader.setDispRange(mFirstIndex, mLastIndex);
 			}
 		}
 	}
@@ -554,7 +555,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 
 			// サムネイル読み込み
 			loadThumbnail();
-			loadFileState();
 		}
 		else if (id == DEF.MENU_ONLINE) {
 			// 操作方法画面に遷移
@@ -987,12 +987,19 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 									//ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + nextfile.getName() + "#date", (int)((nextfile.getDate() / 1000)));
 									ed.apply();
 								} else {
-									//	未読の場合はバックグラウンドで計算する
+									//	未読の場合は最大ページ数を新しく取得する
+									int openmode = 0;
 									// ファイルリストの読み込み
-									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + nextfile.getName(), DEF.PAGENUMBER_READ);
+									openmode = ImageManager.OPENMODE_TEXTVIEW;
+									mImageMgr2 = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileName, mUser, mPass, 0, null, mHidden, openmode, 1);
+									mImageMgr2.LoadImageList(0, 0, 0, 0);
+									mTextMgr = new TextManager(mImageMgr2, nextfile.getName(), mUser, mPass, null, mActivity, FileData.FILETYPE_TXT);
+									FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
+									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + nextfile.getName() + "#maxpage", mTextMgr.length());
+									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + nextfile.getName(), mTextMgr.length());
 									//ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + nextfile.getName() + "#date", (int)((nextfile.getDate() / 1000)));
 									ed.apply();
-									mFileStatusLoader.update(nextfile);
+									releaseManager();
 								}
 								updateListView();
 								break;
@@ -1005,16 +1012,16 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 					Logcat.v(logLevel, "mOpenOperation == CloseDialog.CLICK_CLOSE");
 					// 初回表示またはビュワー終了
 					updateListView();
-
-					// サムネイル読み込み
-					loadThumbnail();
-					// 既読情報読み込み
-					loadFileState();
+					if (mThumbnail) {
+						// 表示モードがサムネイルありならサムネイル読み込み
+						loadThumbnail();
+						mThumbnailLoader.setDispRange(mFirstIndex, mLastIndex);
+					}
 				}
 				return true;
 			}
-			case DEF.HMSG_THUMBNAIL, DEF.HMSG_FILE_STATUS:
-				Logcat.v(logLevel, "HMSG_THUMBNAIL or HMSG_FILE_STATUS");
+			case DEF.HMSG_THUMBNAIL:
+				Logcat.v(logLevel, "HMSG_THUMBNAIL");
 				// Bitmapの通知
 				String name = (String) msg.obj;
 				int bmIndex = msg.arg1;
@@ -1023,11 +1030,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 
 					for (int i = 0; i < files.size(); i++) {
 						if (name.equals(files.get(i).getName())) {
-							if (msg.what == DEF.HMSG_FILE_STATUS) {
-								// 既読情報の更新
-								readState(files.get(i));
-//								updateListView();
-							}
 							// リストの更新
 							mFileListAdapter.notifyDataSetChanged();
 							break;
@@ -1090,9 +1092,24 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		int imageCnt = 0;
 		for (int i = 0; i < filenum; i++) {
 			int state = DEF.PAGENUMBER_UNREAD;
-			FileData data = new FileData(mActivity, files[i].name, files[i].orglen, files[i].dtime);
-
-			if (files[i].type == FileData.FILETYPE_IMG) {
+			if (files[i].type == FileData.FILETYPE_TXT) {
+				Logcat.d(logLevel, "loadListViewAfter: FILETYPE_TXT url=" + DEF.relativePath(mActivity,mURI, mPath, mFileName) + files[i].name);
+				int	maxtextpage = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName) + files[i].name, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+				int	textpage = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName) + files[i].name, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+				if	(textpage == DEF.PAGENUMBER_READ)	{
+					//	既読で-2がセットされた場合
+					state = DEF.PAGENUMBER_READ;
+				}
+				else if (maxtextpage == DEF.PAGENUMBER_NONE)	{
+				}
+				else if	(textpage >= (maxtextpage - 1))	{
+					state = DEF.PAGENUMBER_READ;
+				}
+				else	{
+					state = textpage;
+				}
+			}
+			else {
 				if (mCurrentPage == DEF.PAGENUMBER_READ) {
 					if	(maxpage == DEF.PAGENUMBER_NONE)	{
 					}
@@ -1105,21 +1122,16 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 						state = DEF.PAGENUMBER_READ;
 					}
 				}
-				data.setState(state);
-				imageCnt ++;
-				mFileList.add(data);
-				Logcat.d(logLevel, "name=" + files[i].name + ", state=" + state);
 			}
-			else if(files[i].type == FileData.FILETYPE_TXT || files[i].name.equals("META-INF/container.xml")) {
-				Logcat.d(logLevel, "FILETYPE_TXT url=" + DEF.relativePath(mActivity,mURI, mPath, mFileName) + files[i].name);
-				readState(data);
-				mFileList.add(data);
-				Logcat.d(logLevel, "name=" + files[i].name + ", state=" + state);
+
+			Logcat.d(logLevel, "loadListViewAfter: name=" + files[i].name + ", state=" + state);
+			FileData data = new FileData(mActivity, files[i].name, files[i].orglen, files[i].dtime, state);
+			mFileList.add(data);
+
+			if (files[i].type != FileData.FILETYPE_TXT) {
+				imageCnt ++;
 			}
 		}
-
-		Collections.sort(mFileList, new FilenameComparator());
-
 		mFileListAdapter = new FileListAdapter(this, R.layout.listitem, mFileList);
 		//setListAdapter(mFileListAdapter);
 		mListView.setAdapter(mFileListAdapter);
@@ -1152,7 +1164,10 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			FileData data = files.get(i);
 
 			int state = DEF.PAGENUMBER_UNREAD;
-			if (data.getType() == FileData.FILETYPE_IMG) {
+			if (data.getType() == FileData.FILETYPE_TXT) {
+				state = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + data.getName(), DEF.PAGENUMBER_UNREAD);
+			}
+			else {
 				if (mCurrentPage == DEF.PAGENUMBER_READ) {
 					state = DEF.PAGENUMBER_READ;
 				}
@@ -1161,13 +1176,13 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 						state = DEF.PAGENUMBER_READ;
 					}
 				}
-				data.setState(state);
-				imageCnt ++;
-			}
-			else {
-				readState(data);
 			}
 
+			data.setState(state);
+
+			if (data.getType() != FileData.FILETYPE_TXT) {
+				imageCnt ++;
+			}
 		}
 		mFileListAdapter.notifyDataSetChanged();
 	}
@@ -1178,19 +1193,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 
 		mFileListAdapter.clear();
 		mFileList = null;
-	}
-
-	// 既読情報読み込み
-	private void loadFileState() {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します.");
-
-		if (mFileStatusLoader != null) {
-			// 今動いてるのは止める
-			mFileStatusLoader.breakThread();
-		}
-		mFileStatusLoader = new ExpandFileStatusLoader(mActivity, mImageMgr, mURI, mPath, mFileName, mUser, mPass, mHandler, mFileList, mHidden);
-		mFileStatusLoader.setDispRange(mFirstIndex, mLastIndex);
 	}
 
 	// サムネイル読み込み
@@ -1209,59 +1211,24 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		mThumbID = System.currentTimeMillis();
 
 		mThumbnailLoader = new ExpandThumbnailLoader(mActivity, mURI, DEF.relativePath(mActivity, mPath, mFileName), mHandler, mThumbID, mImageMgr, mFileList, mThumbSizeW, mThumbSizeH, mThumbNum, mThumbCrop, mThumbMargin);
-		mThumbnailLoader.setDispRange(mFirstIndex, mLastIndex);
 	}
 
-	public void readState(FileData fileData) {
 
-		if (fileData.getType() == FileData.FILETYPE_IMG){
-			return;
-		}
-
-		int maxpage;
-		int state;
-
-		String currentPath = DEF.relativePath(mActivity, mURI, mPath);
-		String name = fileData.getName();
-		String uri = DEF.createUrl(DEF.relativePath(mActivity, currentPath, mFileName), mUser, mPass);
-
-		String maxpageKey;
-		String stateKey;
-
-		switch (fileData.getType()) {
-			case FileData.FILETYPE_TXT:
-				maxpageKey = uri + name + "#maxpage";
-				stateKey = uri + name;
-				break;
-			case FileData.FILETYPE_EPUB_SUB:
-				maxpageKey = uri + "META-INF/container.xml" + "#maxpage";
-				stateKey = uri + "META-INF/container.xml";
-				break;
-			default:
-				// なにもしない
-				return;
-		}
-
-		maxpage = mSharedPreferences.getInt(maxpageKey, DEF.PAGENUMBER_NONE);
-		state = mSharedPreferences.getInt(stateKey, DEF.PAGENUMBER_UNREAD);
-		if (state >= 0) {
-			if (maxpage == DEF.PAGENUMBER_NONE) {
-				state = DEF.PAGENUMBER_NONE;
+	// ImageManager と TextManager を解放する
+	private void releaseManager() {
+		// 読み込み終了
+		if (mImageMgr2 != null) {
+			try {
+				mImageMgr2.close();
+			} catch (IOException e) {
+				;
 			}
-			else if (state + 1 >= maxpage) {
-				// ページ+1が最終ページなら既読
-				state = DEF.PAGENUMBER_READ;
-			}
-			else if (state + 1 >= maxpage - 1) {
-				// ページ+1が最終ページ-1なら 見開き表示なら既読
-				if (mTextPageDual) {
-					state = DEF.PAGENUMBER_READ;
-				}
-			}
+			mImageMgr2 = null;
 		}
-
-		fileData.setMaxpage(maxpage);
-		fileData.setState(state);
+		if (mTextMgr != null) {
+			mTextMgr.release();
+			mTextMgr = null;
+		}
 	}
 
 	// 解放
@@ -1271,13 +1238,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			mThumbnailLoader.breakThread();
 			mThumbnailLoader.releaseThumbnail();
 			mThumbnailLoader = null;
-		}
-
-		// 既読情報読み込みスレッドを停止
-		if (mFileStatusLoader != null) {
-			mFileStatusLoader.breakThread();
-			mFileStatusLoader.releaseThumbnail();
-			mFileStatusLoader = null;
 		}
 
 		// イメージ管理解放
@@ -1309,12 +1269,10 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			switch (nextopen) {
 				case CloseDialog.CLICK_NEXT:
 				case CloseDialog.CLICK_NEXTTOP:
-				case CloseDialog.CLICK_NEXTLAST:
 					// 次のファイル
 					index ++;
 					break;
 				case CloseDialog.CLICK_PREV:
-				case CloseDialog.CLICK_PREVTOP:
 				case CloseDialog.CLICK_PREVLAST:
 					// 前のファイル
 					index --;
@@ -1330,13 +1288,6 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	// ファイル名でソート
 	public static class FilenameComparator implements Comparator<FileData> {
 		public int compare(FileData file1, FileData file2) {
-			if (file1.getName().equals("META-INF/container.xml")) {
-				return -1;
-			}
-			else if (file2.getName().equals("META-INF/container.xml")) {
-				return 1;
-			}
-
 			return DEF.compareFileName(file1.getName(), file2.getName());
 		}
 	}
