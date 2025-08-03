@@ -20,6 +20,7 @@ import src.comitton.config.SetNoiseActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.data.RecordItem;
+import src.comitton.fileview.filelist.FileSelectList;
 import src.comitton.dialog.BookmarkDialog;
 import src.comitton.dialog.CloseDialog;
 import src.comitton.dialog.Information;
@@ -229,6 +230,8 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	private String mUriTextPath;
 	private String mFileName;
 	private String mTextName;
+	private int mPage;
+	private float mPageRate;
 	private int mFileType;
 	/** ファイルのタイムスタンプ */
 	private long mTimestamp = 0L;
@@ -241,6 +244,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	private int mRestoreMaxPage;
 	private int mRestorePage;
 	private int mCurrentPage;
+	private float mRestorePageRate;
 	private float mCurrentPageRate;
 	private int mSelectPage = 0;
 	private int mInitFlg = 0; // 初期表示の制御用フラグ
@@ -448,6 +452,8 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mPass = intent.getStringExtra("Pass");					// SMB認証用
 		mFileName = intent.getStringExtra("File");				// ZIP指定時
 		mTextName = intent.getStringExtra("Text");				// テキストファイル名
+		mPage = intent.getIntExtra("Page", DEF.PAGENUMBER_UNREAD);					// 既読ページ
+		mPageRate = intent.getFloatExtra("PageRate", (float)DEF.PAGENUMBER_UNREAD);	// 既読ページ％
 
 		// intentからページ番号を取り出すとバグが発生するので保存しない
 		// バックグラウンドでの実行を許可すると復帰時にonCreate()が呼ばれる
@@ -486,14 +492,54 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 		Logcat.d(logLevel, "既読位置を取得します.");
 		if (mFileType == FileData.FILETYPE_EPUB) {
+			mRestoreMaxPage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 			mRestorePage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 			Logcat.d(logLevel, "mRestorePage=" + mRestorePage + ", Url=" + DEF.createUrl(mUriTextPath, mUser, mPass));
 		}
 		else {
+			mRestoreMaxPage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 			mRestorePage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 			Logcat.d(logLevel, "mRestorePage=" + mRestorePage + ", Url=" + DEF.createUrl(mUriTextPath, mUser, mPass));
 		}
-
+		int maxpage = mRestoreMaxPage;
+		int	state = mRestorePage;
+		if (maxpage == DEF.PAGENUMBER_NONE)	{
+			//	最大数が0の場合は補完する
+			if (mTextName.equals("META-INF/container.xml"))	{
+				int openmode = 0;
+				// ファイルリストの読み込み
+				openmode = ImageManager.OPENMODE_TEXTVIEW;
+				mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, 0, mHandler, true, openmode, 1);
+				mImageMgr.LoadImageList(0, 0, 0, 0);
+				mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", mUser, mPass, mHandler, mActivity, FileData.FILETYPE_EPUB);
+				FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
+				maxpage = mTextMgr.length();
+			}
+			else {
+				int openmode = 0;
+				// ファイルリストの読み込み
+				openmode = ImageManager.OPENMODE_TEXTVIEW;
+				mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, 0, mHandler, true, openmode, 1);
+				mImageMgr.LoadImageList(0, 0, 0, 0);
+				mTextMgr = new TextManager(mImageMgr, mTextName, mUser, mPass, mHandler, mActivity, FileData.FILETYPE_TXT);
+				FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
+				maxpage = mTextMgr.length();
+			}
+			if (mRestorePage == DEF.PAGENUMBER_READ)	state = maxpage;
+			if (mRestorePage == DEF.PAGENUMBER_UNREAD)	state = 0;
+			//	再計算する
+			mRestorePageRate = (float)state / (float)maxpage;
+		} else if (state >= (maxpage - 1))	{
+			//	最大ページ数に達した場合は既読にする
+			mRestorePageRate = 1f;
+		} else {
+			//	再計算する
+			mRestorePageRate = (float)state / (float)maxpage;
+		}
+		mRestorePage = state;
+		mCurrentPage = (mPage != DEF.PAGENUMBER_UNREAD) ? mPage : state;
+		mCurrentPageRate = (float)mCurrentPage / (float)maxpage;
+		Logcat.d(logLevel, "onCreate: mCurrentPageRate=" + mCurrentPageRate);
 		mTextView.setOnTouchListener(this);
 
 		// プログレスダイアログ準備
@@ -2477,6 +2523,11 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 					ed.putInt(DEF.KEY_TX_ASCMODE, mAscMode);
 					ed.apply();
 				}
+				if	((ischange) && (issave))	{
+					// テキスト表示設定が変更されたら通知
+					FileSelectList.ChangeTextSize();
+					FileSelectActivity.ChangeTextSize();
+				}
 			}
 
 			@Override
@@ -3055,9 +3106,14 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor ed = sp.edit();
 		int savePage = mCurrentPage;
-		if (savePage  > mTextMgr.length() - 1) {
-			savePage = mTextMgr.length() - 1;
+		float savePageRate = (float)mCurrentPage / mTextMgr.length();
+		if (mTextMgr.length() <= mCurrentPage + 1) {
 			// 既読
+		}
+		else if (mDispMode == DEF.DISPMODE_TX_DUAL && mTextMgr.length() <= mCurrentPage + 2) {
+			// 見開きの場合は1ページ前でも既読
+			savePage = DEF.PAGENUMBER_READ;
+			savePageRate = (float)DEF.PAGENUMBER_READ;
 		}
 		else if (savePage < 0) {
 			// 範囲外は読み込みしない
