@@ -2,35 +2,36 @@ package src.comitton.common;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import src.comitton.config.SetImageTextDetailActivity;
-import src.comitton.config.SetTextActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.jni.CallImgLibrary;
 
 
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Point;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.preference.PreferenceManager;
 
 public class ThumbnailLoader {
 	private static final String TAG = "ThumbnailLoader";
+
+	public static final int SIZE_LOCALHEADER = 30;
+	public static final int SIZE_BITFLAG = 12;
+
+	public static final int OFFSET_LCL_SIGNA_LEN = 0;
+	public static final int OFFSET_LCL_BFLAG_LEN = 6;
+	public static final int OFFSET_LCL_CRC32_LEN = 14;
+	public static final int OFFSET_LCL_CDATA_LEN = 18;
+	public static final int OFFSET_LCL_FNAME_LEN = 26;
+	public static final int OFFSET_LCL_EXTRA_LEN = 28;
 
 	protected AppCompatActivity mActivity;
 	protected Handler mHandler;
@@ -40,7 +41,6 @@ public class ThumbnailLoader {
 	protected ArrayList<FileData> mFiles;
 	protected String mCachePath;
 	protected boolean mThreadBreak;
-	protected final Object mFileListLock;
 
 	protected long mID;
 	protected int mThumbSizeW;
@@ -52,38 +52,7 @@ public class ThumbnailLoader {
 	protected int mThumbCrop;
 	protected int mThumbMargin;
 
-	protected boolean mOut_of_memory = false;
-
-	// 以下、テキストマネージャー用の変数
-	protected static float mDensity;
-	protected static int mHeadSizeOrg;
-	protected static int mBodySizeOrg;
-	protected static int mRubiSizeOrg;
-	protected static int mInfoSizeOrg;
-	protected static int mMarginWOrg;
-	protected static int mMarginHOrg;
-
-	protected static int mPaperSel;
-	protected static boolean mNotice;
-	protected static boolean mImmEnable;
-	protected static int mViewRota;
-	protected static int mTextWidth;
-	protected static int mTextHeight;
-	protected static int mHeadSize;
-	protected static int mBodySize;
-	protected static int mRubiSize;
-	protected static int mInfoSize;
-	protected static int mPicSize;
-	protected static int mSpaceW;
-	protected static int mSpaceH;
-	protected static int mMarginW;
-	protected static int mMarginH;
-
-	protected static int mAscMode;	// 半角の表示方法
-	protected static String mFontFile;
-	// ここまで、テキストマネージャー用の変数
-
-	public ThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum, int crop, int margin) {
+	public ThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum,int crop, int margin) {
 		super();
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 
@@ -107,9 +76,6 @@ public class ThumbnailLoader {
 		mThumbCrop = crop;
 		mThumbMargin = margin;
 
-		mFileListLock = new Object();
-		mFiles = new ArrayList<>(files);
-
 		// キャッシュフォルダ
 		mCachePath = DEF.getBaseDirectory() + "thumb/";
 		try {
@@ -120,6 +86,8 @@ public class ThumbnailLoader {
 			mCachePath = null;
 		}
 
+		mFiles = files;
+		return;
 	}
 
 	// 解放
@@ -306,196 +274,6 @@ public class ThumbnailLoader {
 		}
 	}
 
-	// スクロール位置でソート
-	public static class FileRangeComparator implements Comparator<FileData> {
-
-		private static int mFirstIndex = -1;
-		private static int mLastIndex = -1;
-		private static int mCenter = -1;
-
-		public int compare(FileData file1, FileData file2) {
-
-			if (file2 == null) {
-				return -1;
-			}
-			if (file1 == null) {
-				return 1;
-			}
-
-			// 表示の中心からの距離が近い順
-			int distance1 = Math.abs(file1.getIndex() - mCenter);
-			int distance2 = Math.abs(file2.getIndex() - mCenter);
-
-			return distance1 - distance2;
-		}
-
-		// 表示中の範囲を設定
-		public void setDispRange(int firstindex, int lastindex) {
-			mFirstIndex = firstindex;
-			mLastIndex = lastindex;
-			mCenter = (mLastIndex + mFirstIndex) / 2 ;
-		}
-	}
-
-	// ファイル種別とスクロール位置でソート
-	public static class FileTypeSortComparator implements Comparator<FileData> {
-
-		private static int mFirstIndex = 0;
-		private static int mLastIndex = 1;
-		private static int mRange = 1;
-
-		public int compare(FileData file1, FileData file2) {
-
-			if (file2 == null) {
-				return -1;
-			}
-			if (file1 == null) {
-				return 1;
-			}
-
-			// 表示の中心からの距離が近い順
-			int distance1 = 0;
-			int distance2 = 0;
-
-			if (file1.getIndex() < mFirstIndex) {
-				distance1 = (int) Math.ceil(((double) mFirstIndex - file1.getIndex()) / mRange);
-			}
-			else if (mLastIndex < file1.getIndex()){
-				distance1 = (int) Math.ceil(((double) file1.getIndex() - mLastIndex) / mRange);
-			}
-
-			if (file2.getIndex() < mFirstIndex) {
-				distance2 = (int) Math.ceil(((double) mFirstIndex - file2.getIndex()) / mRange);
-			}
-			else if (mLastIndex < file2.getIndex()){
-				distance2 = (int) Math.ceil(((double) file2.getIndex() - mLastIndex) / mRange);
-			}
-
-			if (distance1 != distance2) {
-				return distance1 - distance2;
-			}
-
-			// ファイルタイプの単純な順
-			int type1 = getType(file1);
-			int type2 = getType(file2);
-
-			if (type1 != type2) {
-				return type1 - type2;
-			}
-
-			// ファイルサイズの小さい順
-			return (int)(file1.getSize() - file2.getSize());
-		}
-
-		// 表示中の範囲を設定
-		public void setDispRange(int firstindex, int lastindex) {
-			mFirstIndex = firstindex;
-			mLastIndex = lastindex;
-			mRange = mLastIndex - mFirstIndex;
-		}
-
-		private int getType(FileData file) {
-			switch (file.getType()) {
-				case FileData.FILETYPE_IMG:
-					return 1;
-				case FileData.FILETYPE_PDF:
-					return 2;
-				case FileData.FILETYPE_ARC:
-					switch (file.getExtType()) {
-						case FileData.EXTTYPE_ZIP:
-							return 3;
-						case FileData.EXTTYPE_RAR:
-						default:
-							return 6;
-					}
-				case FileData.FILETYPE_EPUB:
-					return 4;
-				case FileData.FILETYPE_DIR:
-					return 5;
-				default:
-					return 100;
-			}
-		}
-
-	}
-
-	public void readTextConfig() {
-		SharedPreferences mSp = PreferenceManager.getDefaultSharedPreferences(mActivity);
-
-		mSpaceW = SetTextActivity.getSpaceW(mSp);
-		mSpaceH = SetTextActivity.getSpaceH(mSp);
-		mHeadSizeOrg = SetTextActivity.getFontTop(mSp);	// 見出し
-		mBodySizeOrg = SetTextActivity.getFontBody(mSp);	// 本文
-		mRubiSizeOrg = SetTextActivity.getFontRubi(mSp);	// ルビ
-		mInfoSizeOrg = SetTextActivity.getFontInfo(mSp);	// ページ情報など
-		mMarginWOrg = SetTextActivity.getMarginW(mSp);	// 左右余白(設定値)
-		mMarginHOrg = SetTextActivity.getMarginH(mSp);	// 上下余白(設定値)
-		mDensity = mActivity.getResources().getDisplayMetrics().scaledDensity;
-		mHeadSize = DEF.calcFontPix(mHeadSizeOrg, mDensity);	// 見出し
-		mBodySize = DEF.calcFontPix(mBodySizeOrg, mDensity);	// 本文
-		mRubiSize = DEF.calcFontPix(mRubiSizeOrg, mDensity);	// ルビ
-		mInfoSize = DEF.calcFontPix(mInfoSizeOrg, mDensity);	// ページ情報など
-		mPicSize = SetTextActivity.getPicSize(mSp);	// 挿絵サイズ
-
-		mMarginW = DEF.calcDispMargin(mMarginWOrg);				// 左右余白
-		mMarginH = mInfoSize + DEF.calcDispMargin(mMarginHOrg);	// 上下余白
-		mAscMode = SetTextActivity.getAscMode(mSp);
-
-		String fontname = SetTextActivity.getFontName(mSp);
-		if (!fontname.isEmpty()) {
-			String path = DEF.getFontDirectory();
-			mFontFile = path + fontname;
-		}
-		else {
-			mFontFile = null;
-		}
-
-		mPaperSel = SetTextActivity.getPaper(mSp);	// 用紙サイズ
-		mNotice = SetTextActivity.getNotice(mSp);	// ステータスバーを隠す
-		mImmEnable = SetImageTextDetailActivity.getImmEnable(mSp);	// ナビゲーションバーを隠す
-		mViewRota = SetTextActivity.getViewRota(mSp);
-
-		int resourceId = mActivity.getResources().getIdentifier("status_bar_height", "dimen", "android");
-		int statusBarHeight = mActivity.getResources().getDimensionPixelSize(resourceId);
-		resourceId = mActivity.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-		int navigationBarHeight = mActivity.getResources().getDimensionPixelSize(resourceId);
-
-		if (mPaperSel == DEF.PAPERSEL_SCREEN) {
-			Point point = new Point();
-			mActivity.getWindowManager().getDefaultDisplay().getRealSize(point);
-			int cx = point.x;
-			int cy = point.y;
-
-			if (cx < cy) {
-				mTextWidth = cx;
-				mTextHeight = cy;
-			}
-			else {
-				mTextWidth = cy;
-				mTextHeight = cx;
-			}
-
-			if (!mImmEnable) {
-				mTextHeight -= navigationBarHeight;
-			}
-			if (!mNotice) {
-				if (mViewRota == 0 || mViewRota == 1 || mViewRota == 3) {
-					// 『回転あり』または『縦固定』または『縦固定(90°回転)』
-					mTextHeight -= statusBarHeight;
-				}
-				else {
-					// 『横固定』
-					mTextWidth -= statusBarHeight;
-				}
-
-			}
-		}
-		else {
-			mTextWidth = DEF.PAPERSIZE[mPaperSel][0];
-			mTextHeight = DEF.PAPERSIZE[mPaperSel][1];
-		}
-	}
-
 	// 表示中の範囲を設定
 	public void setDispRange(int firstindex, int lastindex) {
 		mFirstIndex = firstindex;
@@ -506,133 +284,6 @@ public class ThumbnailLoader {
 	// スレッド中断
 	protected void interruptThread() {
 		;
-	}
-
-	protected void removeFile(FileData file) {
-		synchronized (mFileListLock) {
-			if (mFiles != null && !mFiles.isEmpty()) {
-				mFiles.remove(file);
-			}
-		}
-	}
-
-	public class CacheException extends IOException {
-		private static final long serialVersionUID = 1L;
-
-		public CacheException(String str) {
-			super(str);
-		}
-
-		public CacheException(Exception e) {
-			super(e);
-		}
-	}
-
-
-	/**
-	 * ビットマップデータをメモリキャッシュに格納する
-	 * @param index
-	 * @param thum_cx
-	 * @param thum_cy
-	 * @param bm
-	 * @param priority 強制挿入する時はtrue
-	 * @return メモリキャッシュに変動があればtrue、それ以外はfalse
-	 * @exception CacheException メモリキャッシュが空けられなかった場合
-	 */
-	public boolean loadMemory(int index, int thum_cx, int thum_cy, Bitmap bm, boolean priority) throws CacheException {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "index=" + index + " 開始します. priority=" + priority);
-
-		int result;
-		boolean save = false;
-
-		if (bm == null) {
-			Logcat.d(logLevel, "index=" + index + " NULLです");
-			return false;
-		} else {
-			Logcat.d(logLevel, "index=" + index + " NULLじゃないです.");
-		}
-
-		// ビットマップをサムネイルサイズぴったりにリサイズする
-		Logcat.d(logLevel, "index=" + index + " リサイズします. thum_cx=" + thum_cx + ", thum_cy=" + thum_cy + ", crop=" + mThumbCrop + ", margin=" + mThumbMargin);
-		bm = ImageAccess.resizeTumbnailBitmap(bm, thum_cx, thum_cy, mThumbCrop, mThumbMargin);
-
-		Logcat.d(logLevel, "index=" + index + " 切り出します.");
-		int w = bm.getWidth();
-		int h = bm.getHeight();
-		boolean chg = false;
-		if (w > mThumbSizeW) {
-			w = mThumbSizeW;
-			chg = true;
-		}
-		if (h > mThumbSizeH) {
-			h = mThumbSizeH;
-			chg = true;
-		}
-
-		// ビットマップを切り出す
-		if (chg || bm.getConfig() != Bitmap.Config.RGB_565) {
-			Bitmap bm2 = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
-			bm = Bitmap.createBitmap(bm, 0, 0, w, h);
-			Paint drawBmp = new Paint();
-			Canvas offScreen = new Canvas(bm2);
-			drawBmp.setColor(0xFFFFFFFF);
-			drawBmp.setStyle(Paint.Style.FILL);
-			offScreen.drawRect(0, 0, w, h, drawBmp);
-			offScreen.drawBitmap(bm, 0, 0, null);
-			bm = bm2;
-		}
-
-		if (logLevel <= Logcat.LOG_LEVEL_DEBUG) {
-			bm = ImageAccess.setText(bm, String.valueOf(index), Color.BLUE, DEF.ALIGN_CENTER);
-		}
-
-		// 空きメモリがあるかをチェック
-		result = CallImgLibrary.ThumbnailMemorySizeCheck(mID, bm.getWidth(), bm.getHeight());
-		if (result == 0) {
-			// メモリあり
-			Logcat.d(logLevel, "index=" + index + " メモリキャッシュの空きがありました");
-		} else if (result > 0 && priority) {
-			// メモリなしでもpriorityがtrueなら
-			// 表示の中心から外れたものを解放してメモリを空ける
-			result = CallImgLibrary.ThumbnailImageAlloc(mID, result, (mFirstIndex + mLastIndex) / 2);
-			if (result == 0) {
-				// メモリ獲得成功
-				Logcat.d(logLevel, "index=" + index + " メモリキャッシュの空きを作りました.");
-			} else {
-				// メモリなし
-				Logcat.d(logLevel, "index=" + index + " メモリキャッシュの空きが作れませんでした.");
-				mOut_of_memory = true;
-				throw new CacheException("メモリキャッシュの空きが作れませんでした.");
-			}
-		}
-		else {
-			Logcat.d(logLevel, "index=" + index + " メモリキャッシュの空きがありませんでした");
-			return false;
-		}
-
-		result = CallImgLibrary.ThumbnailSave(mID, bm, index);
-		if (result != CallImgLibrary.RESULT_OK) {
-			// メモリ保持失敗
-			Logcat.d(logLevel, "index=" + index + " メモリキャッシュに挿入できませんでした. result=" + result);
-			mOut_of_memory = true;
-			return false;
-		}
-		else {
-			Logcat.d(logLevel, "index=" + index + " メモリキャッシュに挿入しました.");
-			return true;
-		}
-
-	}
-
-	protected void saveCache(Bitmap bm, String pathcode) {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		boolean debug = false;
-
-		if (bm != null) {
-			Logcat.d(logLevel, "キャッシュにセーブします pathcode=" + pathcode);
-			saveThumbnailCache(pathcode, bm);
-		}
 	}
 
 }
