@@ -273,13 +273,14 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "終了します.");
 	}
 
-	public void LoadImageList(int memsize, int memnext, int memprev, int memcache) {
+	public void LoadImageList(int memsize, int memnext, int memprev, int memcache, int messagemode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. memsize=" + memsize + ", memnext=" + memnext + ", memprev=" + memprev);
 		mMemSize = memsize;
 		mMemNextPages = memnext;
 		mMemPrevPages = memprev;
 		mMemCacheThreshold = memcache;
+		mMessageMode = messagemode;
 
 		try {
 
@@ -390,6 +391,9 @@ public class ImageManager extends InputStream implements Runnable {
 		long cmppos = 0;
 		long orgpos = 0;
 		long headpos = 0;
+		long totalSize = 0;
+		int nowPercent = 0;
+		int oldPercent = 0;
 		int count = 0;
 		int maxcmplen = 0;
 		int maxorglen = 0;
@@ -403,7 +407,7 @@ public class ImageManager extends InputStream implements Runnable {
 		boolean rar5 = false;
 		boolean stop = false;
 
-		sendProgress(0, count);
+		sendProgress(0, 0);
 
 		Logcat.d(logLevel, "mFilePath:" + mFilePath);
 		String name = mFilePath;
@@ -728,9 +732,23 @@ public class ImageManager extends InputStream implements Runnable {
 					}
 
 					count++;
-					if (!sendProgress(0, count)) {
-						mFileList = new FileListItem[0];
-						return;
+					if (mFileType == FILETYPE_RAR) {
+						totalSize += fl.cmplen;
+					}
+					else {
+						totalSize += fl.orglen;
+					}
+					oldPercent = nowPercent;
+					// 割合を計算する
+					nowPercent = (int)(((float)totalSize / (float)fileLength + 0.005) * 100);
+					// 100パーセントを超えた場合はリミッタを掛ける
+					nowPercent = nowPercent > 100 ? 100 : nowPercent;
+					if (oldPercent != nowPercent) {
+						// 値が変化していればメッセージを送る
+						if (!sendProgress(0, nowPercent)) {
+							mFileList = new FileListItem[0];
+							return;
+						}
 					}
 				}
 				else {
@@ -855,17 +873,30 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	public boolean sendProgress(int type, int count) {
-		// 10ファイル単位で通知
-		if (count % 10 == 0 && count != 0) {
-			if (!mRunningFlag) {
-				return false;
-			}
-			Message message = new Message();
-			message.what = DEF.HMSG_PROGRESS;
-			message.arg1 = count;
-			message.arg2 = type;
-			mHandler.sendMessage(message);
+		Logcat.d(2,"sendProgress=" + type);
+		// 割合を通知
+		if (!mRunningFlag) {
+			return false;
 		}
+		// 呼び出しの種類でメッセージの送出先を変更する
+		int messagewhat = 0;
+		if (mMessageMode == DEF.MESSAGE_IMAGE) {
+			// イメージビューアの場合
+			messagewhat = DEF.HMSG_PROGRESS_IMAGE;
+		}
+		else if (mMessageMode == DEF.MESSAGE_EXPAND) {
+			// ファイルの展開の場合
+			messagewhat = DEF.HMSG_PROGRESS_EXPAND;
+		}
+		else {
+			// 該当なし
+			messagewhat = DEF.HMSG_PROGRESS;
+		}
+		Message message = new Message();
+		message.what = messagewhat;
+		message.arg1 = count;
+		message.arg2 = type;
+		mHandler.sendMessage(message);
 		return true;
 	}
 
@@ -1402,6 +1433,9 @@ public class ImageManager extends InputStream implements Runnable {
 			return;
 		}
 
+		int nowPercent = 0;
+		int oldPercent = 0;
+
 		int count = 0;
 		while (true) {
 			FileListItem fl = dirGetFileListItem();
@@ -1414,15 +1448,21 @@ public class ImageManager extends InputStream implements Runnable {
 				maxorglen = fl.orglen;
 			}
 			// 読込通知
+			oldPercent = nowPercent;
+			// 割合を計算する
+			nowPercent = (int)(((float)count / (float)maxorglen + 0.005) * 100);
+			// 100パーセントを超えた場合はリミッタを掛ける
+			nowPercent = nowPercent > 100 ? 100 : nowPercent;
+			// 読込通知
 			count++;
-			if (count % 10 == 0) {
+			if (oldPercent != nowPercent) {
 				if (!mRunningFlag) {
 					mFileList = new FileListItem[0];
 					return;
 				}
 				Message message = new Message();
-				message.what = DEF.HMSG_PROGRESS;
-				message.arg1 = count;
+				message.what = DEF.HMSG_PROGRESS_IMAGE;
+				message.arg1 = nowPercent;
 				message.arg2 = 0;
 				mHandler.sendMessage(message);
 			}
@@ -1490,6 +1530,8 @@ public class ImageManager extends InputStream implements Runnable {
 		// ファイルリストを作成
 		maxPage = mPdfRenderer.getPageCount();
 		mFileList = new FileListItem[maxPage];
+		int nowPercent = 0;
+		int oldPercent = 0;
 
 		for (int page = 0; page < maxPage; page++) {
 
@@ -1500,15 +1542,20 @@ public class ImageManager extends InputStream implements Runnable {
 			filelist.orglen = 0; // ファイルリスト読込中
 			mFileList[page] = filelist;
 
+			oldPercent = nowPercent;
+			// 割合を計算する
+			nowPercent = (int)(((float)page / (float)maxPage + 0.005) * 100);
+			// 100パーセントを超えた場合はリミッタを掛ける
+			nowPercent = nowPercent > 100 ? 100 : nowPercent;
 			// 読込通知
-			if ((page+1) % 10 == 0) {
+			if (oldPercent != nowPercent) {
 				if (!mRunningFlag) {
 					mFileList = new FileListItem[0];
 					return;
 				}
 				Message message = new Message();
-				message.what = DEF.HMSG_PROGRESS;
-				message.arg1 = (page+1);
+				message.what = DEF.HMSG_PROGRESS_IMAGE;
+				message.arg1 = nowPercent;
 				message.arg2 = 0;
 				mHandler.sendMessage(message);
 			}
@@ -2980,6 +3027,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mMemPrevPages = 0;
 	private int mMemNextPages = 0;
 	private int mMemCacheThreshold = 0;
+	private int mMessageMode = 0;
 	private MemCacheFlag[] mMemCacheFlag;
 	private int[] mMemPriority;
 
@@ -3896,7 +3944,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mEpubOrder = true;
 		mEpubMode = TextManager.EPUB_MODE_COVER;
 
-		LoadImageList(0, 0, 0, 0);
+		LoadImageList(0, 0, 0, 0, 0);
 
 		if (mFileList != null || mFileList.length != 0) {
 			Logcat.d(logLevel, "mFileList[0].name=" + mFileList[0].name);
@@ -3911,7 +3959,7 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "開始します. page=" + page + ", width=" + width + ", height=" + height);
 
 		if (mFileList == null || mFileList.length == 0) {
-			LoadImageList(0, 0, 0, 0);
+			LoadImageList(0, 0, 0, 0, 0);
 		}
 
 		if (mFileList == null || mFileList.length == 0) {

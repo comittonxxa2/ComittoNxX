@@ -41,6 +41,7 @@ import src.comitton.dialog.MenuDialog.MenuSelectListener;
 import src.comitton.dialog.ImageConfigDialog.ImageConfigListenerInterface;
 import src.comitton.dialog.TabDialogFragment;
 import src.comitton.dialog.TextInputDialog;
+import src.comitton.dialog.CustomProgressDialog;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.noise.NoiseSwitch;
@@ -51,9 +52,9 @@ import android.app.ActivityManager;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.fragment.app.FragmentManager;
 
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -508,9 +509,10 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 	private boolean mFinishActivity;
 
 	private Information mInformation;
-	private ProgressDialog mReadDialog;
 	private String[] mReadingMsg;
 	private Message mReadTimerMsg;
+	private static CustomProgressDialog mProgressDialog;
+	private static FragmentManager supportFragmentManager;
 
 	private NoiseSwitch mNoiseSwitch = null;
 	private int mNoiseScroll = 0;
@@ -701,31 +703,15 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 		// プログレスダイアログ準備
 		mReadBreak = false;
 
-		mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-		mReadDialog.setMessage(mReadingMsg[0] + " (0)");
-		mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		mReadDialog.setCancelable(true);
-		mReadDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-			@Override
-			public void onShow(DialogInterface dialog) {
-				if (mImmEnable && mSdkVersion >= 19) {
-					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
-					uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-					uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-					getWindow().getDecorView().setSystemUiVisibility(uiOptions);
-				}
-			}
-		});
-		mReadDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			public void onCancel(DialogInterface dialog) {
-				// Thread を停止
-				if (mImageMgr != null) {
-					mImageMgr.setBreakTrigger();
-				}
-				mTerminate = true;
-				mReadBreak = true;
-			}
-		});
+		// ページ読み込みダイアログの表示を準備
+		res = mActivity.getResources();
+		mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadpage), res.getString(R.string.loadingfilelist),true, mHandler);
+
+		supportFragmentManager = mActivity.getSupportFragmentManager();
+		// ダイアログの表示
+		mProgressDialog.show(supportFragmentManager, TAG);
+		// プログレスバーをリセット
+		mProgressDialog.setProgress(0);
 
 		mListLoading = true;
 		mZipLoad = new ZipLoad(mHandler, this);
@@ -879,7 +865,7 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, mFileSort, handler, mHidden, ImageManager.OPENMODE_VIEW, mMaxThread);
 			Logcat.v(logLevel, "メモリ利用状況.\n" + DEF.getMemoryString(mActivity));
 			setMgrConfig(true);
-			mImageMgr.LoadImageList(mMemSize, mMemNext, mMemPrev, mMemCache);
+			mImageMgr.LoadImageList(mMemSize, mMemNext, mMemPrev, mMemCache, DEF.MESSAGE_IMAGE);
 			Logcat.v(logLevel, "メモリ利用状況.(2回目)\n" + DEF.getMemoryString(mActivity));
 			mImageMgr.setViewSize(mViewWidth, mViewHeight);
 			mImageView.setImageManager(mImageMgr);
@@ -1115,42 +1101,18 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			return true;
 		}
 
-		if (mReadTimerMsg == msg) {
-			// プログレスダイアログを表示
-			synchronized (this) {
-				if (!isFinishing() && mReadDialog != null) {
-					if (mImmEnable && mSdkVersion >= 19) {
-						mReadDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-						mReadDialog.show();
-						mReadDialog.getWindow().getDecorView().setSystemUiVisibility(this.getWindow().getDecorView().getSystemUiVisibility());
-						mReadDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-					} else {
-						mReadDialog.show();
-					}
-				}
-			}
-			return true;
-		}
-
 		switch (msg.what) {
 			case DEF.HMSG_RECENT_RELEASE:
 				// 最新バージョンを表示
 				mInformation.showRecentRelease();
 				return true;
 
-			case DEF.HMSG_PROGRESS:
+			case DEF.HMSG_PROGRESS_IMAGE:
 				// 読込中の表示
 				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
+					if (!isFinishing() && mProgressDialog != null) {
 						// ページ読み込み中
-						String readmsg;
-						if (msg.arg2 < mReadingMsg.length && mReadingMsg[msg.arg2] != null) {
-							readmsg = mReadingMsg[msg.arg2];
-						} else {
-							readmsg = "Loading...";
-						}
-						mMessage = MessageFormat.format("{0} ({1})", new Object[]{readmsg, msg.arg1});
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
+						mProgressDialog.setProgress(msg.arg1);
 					}
 				}
 				return true;
@@ -1158,47 +1120,14 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 			case DEF.HMSG_EPUB_PARSE:
 			case DEF.HMSG_HTML_PARSE:
 				// 読込中の表示
-				/*
-				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
-						// ページ読み込み中
-						String str = "";
-						if (msg.what == DEF.HMSG_EPUB_PARSE) {
-							str = mReadingMsg[1];
-							mMessage = str;
-							mReadDialog.setMessage(str);
-						}
-						else if (msg.what == DEF.HMSG_HTML_PARSE) {
-							str = mReadingMsg[2];
-							mMessage = MessageFormat.format("{0} [{1}/{2}]", new Object[]{str, msg.arg1, msg.arg2});
-						}
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-					}
-				}
-				*/
 				return true;
 
 			case DEF.HMSG_SUB_MESSAGE:
 				// 読込中の表示
-				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
-						mMessage2 = MessageFormat.format("{0} ({1})", new Object[]{msg.obj.toString(), msg.arg1});
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-					}
-				}
 				return true;
 
 			case DEF.HMSG_WORKSTREAM:
 				// 読込中の表示
-				/*
-				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
-						Logcat.v(logLevel, "HMSG_WORKSTREAM: mReadDialog != null");
-						mWorkMessage = msg.obj.toString();
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-					}
-				}
-				*/
 				return true;
 
 			case DEF.HMSG_EVENT_TOUCH_ZOOM:
@@ -1470,9 +1399,9 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 
 			case DEF.HMSG_READ_END:
 				// 読込中の表示
-				if (!isFinishing() && mReadDialog != null) {
-					mReadDialog.dismiss();
-					mReadDialog = null;
+				if (!isFinishing() && mProgressDialog != null) {
+					mProgressDialog.dismiss();
+					mProgressDialog = null;
 				}
 				mListLoading = false;
 				if (mTerminate) {
@@ -1503,6 +1432,17 @@ public class ImageActivity extends AppCompatActivity implements OnTouchListener,
 				mThumID = System.currentTimeMillis();
 				mPageBack = false;
 				setBitmapImage();
+				break;
+			case DEF.HMSG_PROGRESS_CANCEL:
+				// Thread を停止
+				if (mImageMgr != null) {
+					mImageMgr.setBreakTrigger();
+				}
+				mTerminate = true;
+				mReadBreak = true;
+				// トースト表示させる
+				Resources res = mActivity.getResources();
+				Toast.makeText(this, res.getString(R.string.cancelloadpage), Toast.LENGTH_SHORT).show();
 				break;
 		}
 		return false;
