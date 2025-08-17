@@ -7,6 +7,7 @@
         <item>双一次補間(二段階)</item>
         <item>双三次補間</item>
         <item>双三次補間(二段階)</item>
+        <item>Lanczos3</item>
     </string-array>
     <string-array name="algomode_value_list">
         <item>0</item>
@@ -14,6 +15,7 @@
         <item>2</item>
         <item>3</item>
         <item>4</item>
+        <item>5</item>
     </string-array>
     <string-array name="backmode_name_list">
         <item>ComittoNの終了</item>
