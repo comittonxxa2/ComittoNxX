@@ -66,6 +66,10 @@ public class DEF {
 	public static final int MESSAGE_MOVE_PATH_EROOR = 1016;
 	public static final int MESSAGE_RESETLOCAL = 1017;
 
+	public static final int MESSAGE_IMAGE = 1;
+	public static final int MESSAGE_TEXT = 2;
+	public static final int MESSAGE_EXPAND = 3;
+
 	public static final int ERROR_CODE_MALLOC_FAILURE = -1001;
 	public static final int ERROR_CODE_CACHE_COUNT_LIMIT_EXCEEDED = -1002;
 	public static final int ERROR_CODE_CACHE_INDEX_OUT_OF_RANGE = -1003;
@@ -101,6 +105,10 @@ public class DEF {
 	public static final int HMSG_APP_DOWNLOADS = 23;
 	public static final int HMSG_SET_LISTVIEW_INDEX = 24;
 	public static final int HMSG_FILE_STATUS = 25;
+	public static final int HMSG_PROGRESS_IMAGE = 26;
+	public static final int HMSG_PROGRESS_TEXT = 27;
+	public static final int HMSG_PROGRESS_EXPAND = 28;
+	public static final int HMSG_PROGRESS_CANCEL = 29;
 
 	public static final int HMSG_EVENT_READTIMER = 200;
 	public static final int HMSG_EVENT_EFFECT = 201;

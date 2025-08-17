@@ -52,6 +52,8 @@ public class ThumbnailLoader {
 	protected int mThumbCrop;
 	protected int mThumbMargin;
 
+	private static int mGetThumbnailPosition =  0;
+
 	public ThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum,int crop, int margin) {
 		super();
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -183,6 +185,10 @@ public class ThumbnailLoader {
 		return cacheFile.exists();
 	}
 
+	public static int GetThumbnailPosition() {
+		return mGetThumbnailPosition;
+	}
+
 	/**
 	 * サムネイルのキャッシュサイズが保存上限数を超えていたら削除する
 	 * @param leave 保存上限数（-1を指定したときは削除しない）
@@ -222,6 +228,8 @@ public class ThumbnailLoader {
 			// 新しい順に並べる
 			Collections.sort(fileArray, new ThumbnailLoader.TimeSortComparator());
 			for (int i = fileArray.size() - 1; i >= leave; i--) {
+				// サムネイルキャッシュ削除ダイアログのプログレスバー表示を更新
+				mGetThumbnailPosition = 100 - (int)(((float)(i) / (float)fileArray.size()) * 100);
 				File work = fileArray.get(i);
 				long filetime = work.lastModified();
 				if (leave > 0 && filetime >= nowtime - DEF.MILLIS_DELETECHE) {
