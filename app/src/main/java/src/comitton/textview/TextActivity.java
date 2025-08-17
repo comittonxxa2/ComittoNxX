@@ -46,7 +46,6 @@ import src.comitton.common.GuideView;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -299,7 +298,6 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	private boolean mHistorySaved;
 
 	private Information mInformation;
-	private ProgressDialog mReadDialog;
 	private String[] mReadingMsg;
 	private Message mReadTimerMsg;
 
@@ -510,7 +508,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 				// ファイルリストの読み込み
 				openmode = ImageManager.OPENMODE_TEXTVIEW;
 				mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, 0, mHandler, true, openmode, 1);
-				mImageMgr.LoadImageList(0, 0, 0, 0);
+				mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 				mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", mUser, mPass, mHandler, mActivity, FileData.FILETYPE_EPUB);
 				FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
 				maxpage = mTextMgr.length();
@@ -520,7 +518,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 				// ファイルリストの読み込み
 				openmode = ImageManager.OPENMODE_TEXTVIEW;
 				mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, 0, mHandler, true, openmode, 1);
-				mImageMgr.LoadImageList(0, 0, 0, 0);
+				mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 				mTextMgr = new TextManager(mImageMgr, mTextName, mUser, mPass, mHandler, mActivity, FileData.FILETYPE_TXT);
 				FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
 				maxpage = mTextMgr.length();
@@ -542,34 +540,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		Logcat.d(logLevel, "onCreate: mCurrentPageRate=" + mCurrentPageRate);
 		mTextView.setOnTouchListener(this);
 
-		// プログレスダイアログ準備
 		mReadBreak = false;
-		mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-		mReadDialog.setMessage(mReadingMsg[2] + " (0)");
-		mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		mReadDialog.setCancelable(true);
-		mReadDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-			@Override
-			public void onShow(DialogInterface dialog) {
-				if (mImmEnable && mSdkVersion >= 19) {
-					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
-					uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-					uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-					getWindow().getDecorView().setSystemUiVisibility(uiOptions);
-				}
-			}
-		});
-		mReadDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			public void onCancel(DialogInterface dialog) {
-				// Thread を停止
-				if (mTextMgr != null) {
-					mTextMgr.setBreakTrigger();
-				}
-				mTerminate = true;
-				mReadBreak = true;
-
-			}
-		});
 		return;
 	}
 
@@ -661,7 +632,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 			Logcat.d(logLevel, "mUriPath=" + mUriPath + ", mFileName=" + mFileName + ", mTextName=" + mTextName);
 			mImageMgr = new ImageManager(this.mActivity, mUriPath, mFileName, mUser, mPass, ImageManager.FILESORT_NAME_UP, handler, true, ImageManager.OPENMODE_TEXTVIEW, 1);
 			//mImageMgr.LoadImageList(mMemSize, mMemNext, mMemPrev);
-			mImageMgr.LoadImageList(0, 0, 0, 0);
+			mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 			mTextMgr = new TextManager(mImageMgr, mTextName, mUser, mPass, handler, mActivity, mFileType);
 			//mTextMgr.LoadTextFile();
 			mTextMgr.formatTextFile(mTextWidth, mTextHeight, mHeadSize, mBodySize, mRubiSize, mSpaceW, mSpaceH, mMarginW, mMarginH, mPicSize, mFontFile, mAscMode);
@@ -928,45 +899,14 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 			return true;
 		}
 
-		if (mReadTimerMsg == msg) {
-			// プログレスダイアログを表示
-			synchronized (this) {
-				if (!isFinishing() && mReadDialog != null) {
-					if (mImmEnable && mSdkVersion >= 19) {
-						mReadDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-						mReadDialog.show();
-						mReadDialog.getWindow().getDecorView().setSystemUiVisibility(this.getWindow().getDecorView().getSystemUiVisibility());
-						mReadDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-					}
-					else {
-						mReadDialog.show();
-					}
-				}
-			}
-			return true;
-		}
-
 		switch (msg.what) {
 			case DEF.HMSG_RECENT_RELEASE:
 				// 最新バージョンを表示
 				mInformation.showRecentRelease();
 				return true;
 
-			case DEF.HMSG_PROGRESS:
+			case DEF.HMSG_PROGRESS_TEXT:
 				// 読込中の表示
-				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
-						// ページ読み込み中
-						String readmsg;
-						if (msg.arg2 < mReadingMsg.length && mReadingMsg[msg.arg2] != null) {
-							readmsg = mReadingMsg[msg.arg2];
-						} else {
-							readmsg = "Loading...";
-						}
-						mMessage = MessageFormat.format("{0} ({1})", new Object[]{readmsg, msg.arg1});
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-					}
-				}
 				return true;
 
 			case DEF.HMSG_EPUB_PARSE:
@@ -974,50 +914,14 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 			case DEF.HMSG_TX_PARSE:
 			case DEF.HMSG_TX_LAYOUT:
 				// 読込中の表示
-				synchronized (this) {
-    				if (!isFinishing() && mReadDialog != null) {
-    					// ページ読み込み中
-    					String str = "";
-    					if (msg.what == DEF.HMSG_EPUB_PARSE) {
-    						str = mReadingMsg[1];
-							mMessage = str;
-							mReadDialog.setMessage(str);
-    					}
-						else if (msg.what == DEF.HMSG_HTML_PARSE) {
-							str = mReadingMsg[2];
-							mMessage = MessageFormat.format("{0} [{1}/{2}]", new Object[]{str, msg.arg1, msg.arg2});
-						}
-						else if (msg.what == DEF.HMSG_TX_PARSE) {
-							str = mReadingMsg[3];
-							mMessage = MessageFormat.format("{0} ({1}%)", new Object[]{str, msg.arg1});
-						}
-						else if (msg.what == DEF.HMSG_TX_LAYOUT) {
-    						str = mReadingMsg[4];
-							mMessage = MessageFormat.format("{0} ({1}%)", new Object[]{str, msg.arg1});
-    					}
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-    				}
-				}
 				return true;
 
 			case DEF.HMSG_SUB_MESSAGE:
 				// 読込中の表示
-				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
-						mMessage2 = MessageFormat.format("{0} ({1})", new Object[]{msg.obj.toString(), msg.arg1});
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-					}
-				}
 				return true;
 
 			case DEF.HMSG_WORKSTREAM:
 				// 読込中の表示
-				synchronized (this) {
-					if (!isFinishing() && mReadDialog != null) {
-						mWorkMessage = msg.obj.toString();
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
-					}
-				}
 				return true;
 
 			case DEF.HMSG_EVENT_TOUCH_TOP:
@@ -1096,17 +1000,6 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 			case DEF.HMSG_READ_END:
 				// 読込中の表示
-				synchronized (this) {
-    				if (!isFinishing() && mReadDialog != null) {
-    					try {
-    						mReadDialog.dismiss();
-    					}
-    					catch (Exception e){
-    						;
-    					}
-    					mReadDialog = null;
-    				}
-				}
 				mReadRunning = false;
 				if (mTerminate) {
 					finish();
@@ -2744,30 +2637,6 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mGuideView.setColor(mTopColor1, mTopColor2, mMgnColor);
 		mGuideView.setGuideSize(mClickArea, mTapPattern, mTapRate, mChgPage, mOldMenu);
 
-		// プログレスダイアログ準備
-		mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-		mReadDialog.setMessage(mReadingMsg[2] + " (0)");
-		mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		mReadDialog.setCancelable(true);
-		mReadDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			public void onCancel(DialogInterface dialog) {
-				// Thread を停止
-				if (mTextMgr != null) {
-					mTextMgr.setBreakTrigger();
-				}
-				mTerminate = true;
-			}
-		});
-		if (mImmEnable && mSdkVersion >= 19) {
-			mReadDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-			mReadDialog.show();
-			mReadDialog.getWindow().getDecorView().setSystemUiVisibility(this.getWindow().getDecorView().getSystemUiVisibility());
-			mReadDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-		}
-		else {
-			mReadDialog.show();
-		}
-
 		mReadRunning = true;
 		mTextLoad = new TextLoad(mHandler, this);
 		mTextThread = new Thread(mTextLoad);
@@ -3233,16 +3102,4 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mCloseDialog.show();
 	}
 
-	//	// 長押しタイマーイベント検知処理
-//	private final Handler mWaitHandler = new Handler() {
-//		@Override
-//		public void handleMessage(Message msg) {
-//			if (mReadTimerMsg == msg) {
-//				// プログレスダイアログを表示
-//				if (mReadDialog != null) {
-//					mReadDialog.show();
-//				}
-//			}
-//		}
-//	};
 }
