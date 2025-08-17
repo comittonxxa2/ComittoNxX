@@ -19,6 +19,7 @@ set(
   comitton/ImageThumbnail.cpp
   comitton/ImageScaleLinear.cpp
   comitton/ImageScaleCubic.cpp
+  comitton/ImageScaleLanczos3.cpp
   comitton/ImageScaleNear.cpp
   comitton/ImageScale.cpp
   comitton/ImageBright.cpp
