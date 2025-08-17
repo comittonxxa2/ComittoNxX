@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import jp.dip.muracoro.comittonx.R;
+
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetFileListActivity;
@@ -15,7 +17,9 @@ import src.comitton.imageview.ImageManager;
 import src.comitton.textview.TextManager;
 import src.comitton.config.SetTextActivity;
 import src.comitton.imageview.MyImageView;
+import src.comitton.dialog.CustomProgressDialog;
 
+import android.content.res.Resources;
 import android.graphics.Point;
 import android.view.WindowMetrics;
 
@@ -29,8 +33,10 @@ import android.os.Handler.Callback;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
+import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
 
 @SuppressLint("DefaultLocale")
 public class FileSelectList implements Runnable, Callback, DialogInterface.OnDismissListener {
@@ -56,7 +62,9 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private boolean mEpubViewer;
 
 	public LoadingDialog mDialog;
-	private Handler mHandler;
+	private static CustomProgressDialog mProgressDialog;
+	private static FragmentManager supportFragmentManager;
+	private static Handler mHandler;
 	private Handler mActivityHandler;
 	private static AppCompatActivity mActivity;
 	private static SharedPreferences mSp;
@@ -91,6 +99,11 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static boolean mChangeTextSize = false;
 	private static boolean mCacheFile = false;
 	private boolean mFileListFastReadOff = false;
+	private static int old_progress;
+	private static int progress;
+	private static Thread mMultiThread = null;
+	private static Handler mainHandler;
+	private static boolean threadstartcheck = false;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
@@ -145,13 +158,20 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mDialog.show();
 
 		// サムネイルスレッド開始
-		if (mThread != null) {
-			// 起動中のスレッドあり
-			return;
+		if (mThread == null) {
+			mThread = new Thread(this);
+			mThread.start();
 		}
 
-		mThread = new Thread(this);
-		mThread.start();
+		// ファイルリスト読み込みのフラグをクリアしておく
+		threadstartcheck = false;
+
+		// ファイルリスト読み込みダイアログの表示スレッド開始
+		if (mMultiThread == null) {
+			mMultiThread = new MultiThread();
+			mMultiThread.start();
+		}
+
 		return;
 	}
 
@@ -223,6 +243,84 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mCacheFile = false;
 	}
 
+	private void SetBreakProgressDialogThread() {
+		threadstartcheck = true;
+	}
+
+	// ファイルリスト読み込みダイアログの表示スレッド
+	static class MultiThread extends Thread {
+		public void run() {
+			try {
+				try {
+					// 頻繁に表示が行われるのを防ぐため500ミリ秒間待機
+					for (int i = 0 ; i < 50 ; i++) {
+						if (threadstartcheck) {
+							// 500ミリ秒の間に読み込み完了すれば戻る
+							// スレッドを終了させて最初から始める
+							msendResult();
+							return;
+						}
+						mMultiThread.sleep(10);
+					}
+				} catch (Exception e) {
+				}
+				// ファイルリスト読み込みダイアログの表示を準備
+				Resources res = mActivity.getResources();
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadfilelist), res.getString(R.string.loadingfilelist),true, mHandler);
+				supportFragmentManager = mActivity.getSupportFragmentManager();
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					// ダイアログの表示
+					mProgressDialog.show(supportFragmentManager, TAG);
+					// プログレスバーをリセット
+					mProgressDialog.setProgress(0);
+				});
+				// 読み込み中の位置の変化量をクリア
+				old_progress = progress;
+				boolean stop = true;
+				while (stop) {
+					if (threadstartcheck) {
+						// ファイルリスト読み込みが完了していれば終了させる
+						mainHandler.post(() -> {
+							// メイン画面で表示
+							mProgressDialog.dismiss();
+						});
+						// ループ終了
+						stop = false;
+					}
+					else if (old_progress != progress) {
+						// 読み込み中の位置が変化したらプログレスバーを更新
+						int finalProgress = progress;
+						mainHandler.post(() -> {
+							// メイン画面で表示
+							mProgressDialog.setProgress(finalProgress);
+						});
+						// 次の位置と比較するため値を保存
+						old_progress = progress;
+					}
+					if (mMultiThread.isInterrupted()) {
+						// 処理中断
+						mainHandler.post(() -> {
+							// メイン画面で表示
+							mProgressDialog.dismiss();
+						});
+						return;
+					}
+		        }
+			} catch  (Exception e) {
+			}
+			// スレッドを終了させて最初から始める
+			msendResult();
+ 	 	}
+	}
+
+	private static void msendResult() {
+		// スレッドを終了させて最初から始める
+		mMultiThread = null;
+	}
+
 	@SuppressLint("SuspiciousIndentation")
     @Override
 	public void run() {
@@ -257,6 +355,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 				if (thread.isInterrupted()) {
 					// 処理中断
+					// ファイルリスト読み込みダイアログの表示を終了させる
+					SetBreakProgressDialogThread();
 					return;
 				}
 
@@ -293,6 +393,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					// 処理中断
 					sendResult(true, thread);
 					mFileList = fileList;
+					// ファイルリスト読み込みダイアログの表示を終了させる
+					SetBreakProgressDialogThread();
 					return;
 				}
 
@@ -312,6 +414,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 			for (int i = fileList.size() - 1; i >= 0; i--) {
 
+				// ファイルリスト読み込みダイアログのプログレスバー表示を更新
+				progress = 100 - (int)(((float)(i) / (float)fileList.size()) * 100);
 				name = fileList.get(i).getName();
 				uri = DEF.relativePath(mActivity, currentPath, name);
 
@@ -327,7 +431,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							// ファイルリストの読み込み
 							openmode = ImageManager.OPENMODE_TEXTVIEW;
 							mImageMgr = new ImageManager(this.mActivity, currentPath, "", mUser, mPass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							mTextMgr = new TextManager(mImageMgr, name, mUser, mPass, mHandler, mActivity, FileData.FILETYPE_TXT);
 							SetReadConfig(mSp, mTextMgr);
 							maxpage = mTextMgr.length();
@@ -379,7 +483,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							openmode = ImageManager.OPENMODE_VIEW;
 							// 設定の読み込み
 							mImageMgr = new ImageManager(this.mActivity, currentPath, name, mUser, mPass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							maxpage = mImageMgr.length();
 							SharedPreferences.Editor ed = mSp.edit();
 							ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", maxpage);
@@ -428,7 +532,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								openmode = ImageManager.OPENMODE_TEXTVIEW;
 								if (debug) {Log.d(TAG,"run: mUri + mPath=" + mURI + mPath + ", name=" + name);}
 								mImageMgr = new ImageManager(this.mActivity, mURI + mPath, name, mUser, mPass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", mUser, mPass, mHandler, mActivity, FileData.FILETYPE_EPUB);
 								SetReadConfig(mSp, mTextMgr);
 								maxpage = mTextMgr.length();
@@ -476,7 +580,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								// ファイルリストの読み込み
 								openmode = ImageManager.OPENMODE_VIEW;
 								mImageMgr = new ImageManager(this.mActivity, currentPath, "", mUser, mPass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								maxpage = mImageMgr.length();
 								SharedPreferences.Editor ed = mSp.edit();
 								ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", maxpage);
@@ -525,7 +629,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							openmode = ImageManager.OPENMODE_VIEW;
 							// 設定の読み込み
 							mImageMgr = new ImageManager(this.mActivity, currentPath, name, mUser, mPass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							maxpage = mImageMgr.length();
 							SharedPreferences.Editor ed = mSp.edit();
 							ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", maxpage);
@@ -607,14 +711,20 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 				if (thread.isInterrupted()) {
 					// 処理中断
+					// ファイルリスト読み込みダイアログの表示を終了させる
+					SetBreakProgressDialogThread();
 					return;
 				}
 			}
 			mChangeTextSize = false;
+			// ファイルリスト読み込みダイアログの表示を終了させる
+			SetBreakProgressDialogThread();
 		}
 		catch (Exception e) {
 			Logcat.e(logLevel, "", e);
 			sendResult(false, e.toString(), thread);
+			// ファイルリスト読み込みダイアログの表示を終了させる
+			SetBreakProgressDialogThread();
 			return;
 		}
 
@@ -684,7 +794,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	}
 	
 	private void sendResult(boolean result, Thread thread) {
-		sendResult(result, result ? null : "User Cancelled.", thread);
+		Resources res = mActivity.getResources();
+		sendResult(result, result ? null : res.getString(R.string.cancelloadfilelist), thread);
 	}
 
 	private void sendResult(boolean result, String str, Thread thread) {
@@ -739,6 +850,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				// キャンセル時のみ
 				sendResult(false, mThread);
 			}
+			if (mMultiThread != null) {
+				mMultiThread.interrupt();
+				msendResult();
+			}
 		}
 	}
 
@@ -749,6 +864,15 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			// ファイルアクセスの表示
 			return true;
 		}
+		if (msg.what == DEF.HMSG_PROGRESS_CANCEL) {
+			// 割り込み
+			if (mThread != null) {
+				mThread.interrupt();
+				// キャンセル時のみ
+				sendResult(false, mThread);
+			}
+			return true;
+		}
 
 		// ファイルアクセス以外なら終了
 		closeDialog();
@@ -757,6 +881,13 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			Toast.makeText(mActivity, (String)msg.obj, Toast.LENGTH_LONG).show();
 		}
 		return true;
+	}
+
+	public static void ExitmMultiThread() {
+		if (mMultiThread != null) {
+			mMultiThread.interrupt();
+			msendResult();
+		}
 	}
 
 	// ImageManager と TextManager を解放する
