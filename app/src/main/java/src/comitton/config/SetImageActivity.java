@@ -82,8 +82,8 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		, R.string.selalgo01	// 双一次補間
 		, R.string.selalgo02	// 双一次補間(2Step)
 		, R.string.selalgo03	// 双三次補間
-		, R.string.selalgo04 };	// 双三次補間(2Step)
-//		, R.string.selalgo05 };	// Lanczos3
+		, R.string.selalgo04	// 双三次補間(2Step)
+		, R.string.selalgo05 };	// Lanczos3
 	public static final int[] ImgRotaName =
 		{ R.string.selrota00	// 回転無しで表示
 		, R.string.selrota01	// 90°回転して表示
