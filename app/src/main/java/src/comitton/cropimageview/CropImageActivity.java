@@ -34,7 +34,6 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 
 
     private CropImageView mCropImageView;
-    private ProgressDialog mProgress;
     private EditText mEditAspectRatio;
     float mAspectRatio;
 
@@ -62,12 +61,6 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
         mCropImageView = (CropImageView) findViewById(R.id.cropImageView);
         mCropImageView.setAspectRatio(mAspectRatio);
         mCropImageView.setCallback(this);
-
-        mProgress = new ProgressDialog(this, R.style.MyDialog);
-        mProgress.setIndeterminate(true);
-        mProgress.setMessage("Loading...");
-        mProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        mProgress.show();
 
         mThread = new Thread(this);
         mThread.start();
@@ -144,7 +137,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
         ImageManager imageMgr = null;
         if(mCropPath == null) {
             imageMgr = new ImageManager(this, mPath, mFile, mUser, mPass, ImageManager.FILESORT_NAME_UP, handler,true, ImageManager.OPENMODE_THUMBSORT, 1);
-            imageMgr.LoadImageList(0, 0, 0, 0);
+            imageMgr.LoadImageList(0, 0, 0, 0, 0);
             mCropPath = imageMgr.decompFile(mPage, null);
         }
         if(mCropPath != null) {
@@ -177,7 +170,6 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
                 }
             }
         }
-        mProgress.dismiss();
         handler.sendMessage(message);
     }
 
@@ -190,7 +182,6 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
         public void handleMessage(Message message){
             switch (message.what){
                 case DEF.HMSG_LOADING: // ロード状況表示
-                    mProgress.setMessage( String.valueOf(message.arg1 >> 24) + "%\n" + ((float) message.arg2 / 10) + "KB/S");
                     break;
                 case DEF.HMSG_LOAD_END:
                     mCropImageView.setImageBitmap(mBitmap);
@@ -200,9 +191,6 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
                     finish();
                     break;
                 case DEF.HMSG_PROGRESS:
-                    if (message.obj != null) {
-                        mProgress.setMessage(message.obj.toString());
-                    }
                     break;
                 case DEF.HMSG_WORKSTREAM:
                     // ファイルアクセスの表示
