@@ -10,11 +10,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
+import java.text.MessageFormat;
 
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetTextActivity;
+import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.expandview.ExpandActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
@@ -44,6 +46,7 @@ import src.comitton.dialog.MarkerInputDialog;
 import src.comitton.dialog.BookmarkDialog.BookmarkListenerInterface;
 import src.comitton.dialog.ListDialog.ListSelectListener;
 import src.comitton.dialog.TextInputDialog;
+import src.comitton.dialog.CustomProgressDialog;
 import src.comitton.fileaccess.FileAccessException;
 import src.comitton.fileaccess.SafFileAccess;
 import src.comitton.fileview.filelist.FileSelectList;
@@ -69,7 +72,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
@@ -110,10 +112,12 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
 
 @SuppressLint("DefaultLocale")
 public class FileSelectActivity extends AppCompatActivity implements OnTouchListener, ListNoticeListener, BookmarkListenerInterface, Handler.Callback {
@@ -163,6 +167,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private MarkerInputDialog mMarkerInputDialog;
 	private TextInputDialog mTextInputDialog;
 	EditServerDialog mEditServerDialog;
+	private static CustomProgressDialog mProgressDialog;
+	private static FragmentManager supportFragmentManager;
+	private static int old_progress;
+	private static int progress;
+	private static Handler mainHandler;
+	private static boolean threadstartcheck = false;
+	private static boolean threadstartcheck2 = false;
+	private static boolean threadstartcheck3 = false;
 
 	// ダイアログ表示中に選択項目を記憶しておくのに使用
 	private FileData mFileData = null;
@@ -260,18 +272,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private long mThumbID;
 	private int mFileFirstIndex;
 	private int mFileLastIndex;
+	private static int mNowItem;
 
 	private View mEditDlg = null;
 	private int mInitialize = 0;
 
 	private StorageManager mStorageManager;
 
-	private ProgressDialog mReadDialog;
 	private String[] mReadingMsg;
 	private static boolean mChangeTextSize = false;
 
 	private static final int REQUEST_CODE = 1;
 	private static boolean mThumbnail_Skip = false;
+	private static boolean mUpdateListViewSkip = false;
+
+	private static Thread mMultiThread = null;
+	private static Thread mMultiThread2 = null;
+	private static Thread mMultiThread3 = null;
+	private static Thread mMultiThread4 = null;
+	private static Thread mMultiThread5 = null;
+	private static Thread mMultiThread6 = null;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -652,26 +672,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 			// お知らせ表示
 			mInformation.showNotice();
-
-			Resources res = getResources();
-			mReadingMsg = new String[4];
-			mReadingMsg[0] = res.getString(R.string.textParsing);
-
-			// プログレスダイアログ準備
-			mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-			mReadDialog.setMessage(mReadingMsg[0]);
-			mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-			mReadDialog.setCancelable(true);
-			mReadDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-				@Override
-				public void onShow(DialogInterface dialog) {
-					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
-					uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-					uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-					getWindow().getDecorView().setSystemUiVisibility(uiOptions);
-				}
-			});
-
 		}
 
 		// GitHubに新しいバージョンがリリースされているか確認する
@@ -898,7 +898,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					} else {
 						Logcat.d(logLevel, "checkConfigChange() == false");
 						// 設定は変更されていない
-						updateListView();
 						loadThumbnail(true);
 					}
 				}
@@ -985,7 +984,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							// ファイルリストの読み込み
 							openmode = ImageManager.OPENMODE_TEXTVIEW;
 							mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), "", user, pass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							mTextMgr = new TextManager(mImageMgr, nextfile.getName(), user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
 							FileSelectList.SetReadConfig(mSharedPreferences, mTextMgr);
 							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, nextfile.getName()), user, pass) + "#maxpage", mTextMgr.length());
@@ -1008,7 +1007,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								// ファイルリストの読み込み
 								openmode = ImageManager.OPENMODE_TEXTVIEW;
 								mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), nextfile.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", user, pass, mHandler, mActivity, FileData.FILETYPE_EPUB);
 								FileSelectList.SetReadConfig(mSharedPreferences, mTextMgr);
 								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, nextfile.getName()), user, pass) + "META-INF/container.xml" + "#maxpage", mTextMgr.length());
@@ -1029,7 +1028,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								// ファイルリストの読み込み
 								openmode = ImageManager.OPENMODE_VIEW;
 								mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), nextfile.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								FileSelectList.SetReadConfig(mSharedPreferences, mTextMgr);
 								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, nextfile.getName()), user, pass) + "#maxpage", mImageMgr.length());
 								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, nextfile.getName()), user, pass), mImageMgr.length());
@@ -1053,7 +1052,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							openmode = ImageManager.OPENMODE_VIEW;
 							int filesort = SetImageActivity.getFileSort(mSharedPreferences);
 							mImageMgr = new ImageManager(this.mActivity, DEF.relativePath(mActivity, mURI, mPath), nextfile.getName(), user, pass, filesort, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							if (mImageMgr.length() > 0) {
 								ed = mSharedPreferences.edit();
 								//	最大ページ数を設定する
@@ -1549,6 +1548,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			mThumbnailLoader.breakThread();
 			mThumbnailLoader = null;
 		}
+		// ファイルリスト読み込みダイアログの表示スレッドを停止
+		FileSelectList.ExitmMultiThread();
+		// 他のダイアログの表示スレッドを中断させる
+		threadstartcheck = true;
+		threadstartcheck2 = true;
+		threadstartcheck3 = true;
 		return;
 	}
 
@@ -2200,14 +2205,35 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		else if (id == DEF.MENU_SIORI) {
 			// しおり削除
+			// しおり削除のスレッド開始
+			if (mMultiThread3 == null) {
+				mMultiThread3 = new MultiThread3();
+				mMultiThread3.start();
+			}
+			// しおり削除の完了のフラグをクリア
+			threadstartcheck2 = false;
+			// しおり削除ダイアログの表示スレッド開始
+			if (mMultiThread4 == null) {
+				mMultiThread4 = new MultiThread4();
+				mMultiThread4.start();
+			}
 			showShioriDialog();
 			switchFileList();
 		}
 		else if (id == DEF.MENU_THUMBDEL) {
 			// サムネイルキャッシュ削除
-			ThumbnailLoader.deleteThumbnailCache(0); // 0個を残す
-			switchFileList();
-			loadThumbnail(true);
+			// 別スレッドで動作させる
+			if (mMultiThread5 == null) {
+				mMultiThread5 = new MultiThread5();
+				mMultiThread5.start();
+			}
+			// サムネイルキャッシュ削除の完了のフラグをクリア
+			threadstartcheck3 = false;
+			// サムネイルキャッシュ削除ダイアログの表示スレッド開始
+			if (mMultiThread6 == null) {
+				mMultiThread6 = new MultiThread6();
+				mMultiThread6.start();
+			}
 		}
 		else if (id == DEF.MENU_ONLINE) {
 			// 操作方法画面に遷移
@@ -2392,6 +2418,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				marker = null;
 			}
 			for (int i = 0; i < files.size(); i++) {
+				if (mUpdateListViewSkip) {
+					mUpdateListViewSkip = false;
+					// 中断
+					break;
+				}
+				// ファイルリストの更新ダイアログのプログレスバー表示を更新
+				progress = (int)(((float)(i) / (float)files.size()) * 100);
 				FileData data = files.get(i);
 				String name = data.getName();
 				int maxpage;
@@ -2407,7 +2440,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							// ファイルリストの読み込み
 							openmode = ImageManager.OPENMODE_TEXTVIEW;
 							mImageMgr = new ImageManager(this.mActivity, path, "", user, pass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							mTextMgr = new TextManager(mImageMgr, name, user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
 							FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
 							maxpage = mTextMgr.length();
@@ -2441,7 +2474,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							openmode = ImageManager.OPENMODE_VIEW;
 							// 設定の読み込み
 							mImageMgr = new ImageManager(this.mActivity,path, name, user, pass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 							maxpage = mImageMgr.length();
 							Editor ed;
 							ed = mSharedPreferences.edit();
@@ -2472,7 +2505,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								// ファイルリストの読み込み
 								openmode = ImageManager.OPENMODE_TEXTVIEW;
 								mImageMgr = new ImageManager(this.mActivity, path, name, user, pass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", user, pass, mHandler, mActivity, FileData.FILETYPE_EPUB);
 
 								FileSelectList.SetReadConfig(mSharedPreferences, mTextMgr);
@@ -2506,7 +2539,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								// ファイルリストの読み込み
 								openmode = ImageManager.OPENMODE_TEXTVIEW;
 								mImageMgr = new ImageManager(this.mActivity, path, "", user, pass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								maxpage = mImageMgr.length();
 								Editor ed;
 								ed = mSharedPreferences.edit();
@@ -3114,12 +3147,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					return;
 				}
 
-				Editor ed = mSharedPreferences.edit();
-				String name = mFileData.getName();
-				int type = mFileData.getType();
-				String user = mServer.getUser();
-				String pass = mServer.getPass();
-
 				switch (mOperate[item]) {
 					case OPERATE_EXPAND:	// ファイルの展開
 						// サムネイル解放
@@ -3147,108 +3174,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 					case OPERATE_NONREAD:	// 未読にする
 					case OPERATE_FIRST:		// 先頭から読む
-						if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer) {
-							ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml" + "#maxpage", user, pass));
-							ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml", user, pass));
-							ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml", user, pass) + "#date");
-						}
-						else {
-							ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "#maxpage", user, pass));
-							ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass));
-							ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date");
-						}
-						ed.apply();
-						updateListView();
-
-						if (mOperate[item] == OPERATE_FIRST) {
-							// サムネイル解放
-							releaseThumbnail();
-
-							// ファイルオープン
-							openFile(mFileData, "");
-						}
+						// 別スレッドで実行させる
+						mNowItem = item;
 						break;
 
 					case OPERATE_READ: // 既読にする
-						type = mFileData.getType();
-						ed = mSharedPreferences.edit();
-						user = mServer.getUser();
-						pass = mServer.getPass();
-						if (mFileData.getType() == FileData.FILETYPE_EPUB)	{
-							if	(DEF.TEXT_VIEWER == mEpubViewer) {
-								int openmode = 0;
-								// ファイルリストの読み込み
-								openmode = ImageManager.OPENMODE_TEXTVIEW;
-								mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
-								mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", user, pass, mHandler, mActivity, FileData.FILETYPE_EPUB);
-								FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "META-INF/container.xml" + "#maxpage", mTextMgr.length());
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "META-INF/container.xml", mTextMgr.length());
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
-								ed.apply();
-								releaseManager();
-							}
-							else {
-								int openmode = 0;
-								// ファイルリストの読み込み
-								openmode = ImageManager.OPENMODE_TEXTVIEW;
-								mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mImageMgr.length());
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mImageMgr.length());
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
-								ed.apply();
-								releaseManager();
-							}
-						}
-						if (mFileData.getType() == FileData.FILETYPE_TXT)	{
-							int openmode = 0;
-							// ファイルリストの読み込み
-							openmode = ImageManager.OPENMODE_TEXTVIEW;
-							mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), "", user, pass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0);
-							mTextMgr = new TextManager(mImageMgr, mFileData.getName(), user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
-							FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mTextMgr.length());
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mTextMgr.length());
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
-							ed.apply();
-							releaseManager();
-						}
-						if (mFileData.getType() == FileData.FILETYPE_ARC
-								|| mFileData.getType() == FileData.FILETYPE_PDF){
-							int	maxpage;
-							maxpage = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
-							//	未読の場合と未読で無かった場合で場合分けする
-							if	(maxpage > 0)	{
-								//	未読で無かった場合は最大ページ数を最終ページにする
-								ed = mSharedPreferences.edit();
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", maxpage);
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), maxpage);
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
-								ed.apply();
-							} else {
-								//	未読の場合は最大ページ数を新しく取得する
-								int openmode = 0;
-								// ファイルリストの読み込み
-								openmode = ImageManager.OPENMODE_VIEW;
-								int filesort = SetImageActivity.getFileSort(mSharedPreferences);
-								mImageMgr = new ImageManager(mActivity,DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, filesort, mHandler, mHidden, openmode, 1);
-								mImageMgr.LoadImageList(0, 0, 0, 0);
-								maxpage = mImageMgr.length();
-								if (maxpage > 0) {
-									ed = mSharedPreferences.edit();
-									//	最大ページ数を最終ページにする
-									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mImageMgr.length());
-									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mImageMgr.length());
-									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
-									ed.apply();
-								}
-								releaseManager();
-							}
-						}
-						updateListView();
+						// 別スレッドで実行させる
+						mNowItem = item;
 						break;
 
 					case OPERATE_OPEN:		// ディレクトリ内のイメージ表示
@@ -3443,16 +3375,46 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mListDialog = new ListDialog(this, R.style.MyDialog, title, items, -1, new ListSelectListener() {
 			@Override
 			public void onSelectItem(int item) {
+				// 別スレッドで実行させる
+				mNowItem = item + 1;
+			}
+
+			@Override
+			public void onClose() {
+				// 終了
+				mListDialog = null;
+			}
+		});
+		mListDialog.show();
+	}
+
+	// しおり削除のメニューのスレッド
+	private class MultiThread3 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			boolean stop = true;
+			try {
+				while (stop) {
+					// しおり削除のメニューからの処理が始まるまで待機
+					if (mNowItem != 0) {
+						stop = false;
+					}
+					mMultiThread3.sleep(10);
+				}
+			} catch  (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			try {
 				Editor ed = mSharedPreferences.edit();
-				switch (item) {
-					case 0:
+				switch (mNowItem) {
 					case 1:
-					case 3:
+					case 2:
+					case 4:
 						Map<String, ?> keys = mSharedPreferences.getAll();
 						if (keys != null) {
 							for (String key : keys.keySet()) {
 							    //Logcat.i(logLevel,key);
-								if (item == 3) {
+								if (mNowItem == 4) {
 									String user = mServer.getUser();
 									String pass = mServer.getPass();
 									String uri = DEF.createUrl(mURI, user, pass).toLowerCase() + "/";
@@ -3469,14 +3431,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									int len = key.length();
 									if ((len >= 1 && key.substring(0, 1).equals("/"))) {
 										// ローカルのしおり削除
-										if (item == 1 && new File(key).exists()) {
+										if (mNowItem == 2 && new File(key).exists()) {
 											// 存在するので削除しない
 											continue;
 										}
 									}
 									else if (mServer.getSelect() != DEF.INDEX_LOCAL) {
 										// サーバのしおり削除
-										if (item == 1) {
+										if (mNowItem == 2) {
 											try {
 												if (FileAccess.exists(mActivity, key, "", "")) {
 													// 存在するので削除しない
@@ -3497,11 +3459,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							}
 						}
 						break;
-					case 2:
+					case 3:
 						String user = mServer.getUser();
 						String pass = mServer.getPass();
 						ArrayList<FileData> files = mFileList.getFileList();
 						for (int i = 0; i < files.size(); i++) {
+							// しおり削除のダイアログのプログレスバー表示を更新
+							progress = (int)(((float)(i) / (float)files.size()) * 100);
 							FileData data = files.get(i);
 							if (data.getType() == FileData.FILETYPE_ARC || data.getType() == FileData.FILETYPE_TXT || data.getType() == FileData.FILETYPE_DIR) {
 								// .zip又はディレクトリのしおり削除
@@ -3509,22 +3473,208 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								ed.remove(uri);
 								uri = DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, data.getName()) + "#date", user, pass);
 								ed.remove(uri);
-								updateListView();
 							}
 						}
 						break;
 				}
 				ed.apply();
+				threadstartcheck2 = true;
+				// しおり削除の完了のフラグをクリア
+				threadstartcheck = false;
+				// ファイルリストの更新ダイアログの表示スレッドを起動
+				if (mMultiThread2 == null) {
+					mMultiThread2 = new MultiThread2();
+					mMultiThread2.start();
+				}
+				// ファイルリストの更新
 				updateListView();
+				threadstartcheck = true;
+				mNowItem = 0;
+			} catch  (Exception e) {
+				Logcat.e(logLevel, "", e);
 			}
+			// スレッドを終了させて最初から始める
+			msendResult3();
+		}
+	}
+	private static void msendResult3() {
+		// スレッドを終了させて最初から始める
+		mMultiThread3 = null;
+	}
 
-			@Override
-			public void onClose() {
-				// 終了
-				mListDialog = null;
+	// しおり削除ダイアログの表示スレッド
+	private class MultiThread4 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			boolean stop = true;
+			try {
+				while (stop) {
+					// しおり削除のメニューからの処理が始まるまで待機
+					if (mNowItem != 0) {
+						stop = false;
+					}
+					mMultiThread4.sleep(10);
+				}
+			} catch  (Exception e) {
+				Logcat.e(logLevel, "", e);
 			}
-		});
-		mListDialog.show();
+			try {
+				try {
+					// 頻繁に表示が行われるのを防ぐため500ミリ秒間待機
+					for (int i = 0 ; i < 50 ; i++) {
+						if (threadstartcheck2) {
+							// 500ミリ秒の間に読み込み完了すれば戻る
+							// スレッドを終了させて最初から始める
+							msendResult4();
+							return;
+						}
+						mMultiThread4.sleep(10);
+					}
+				} catch (Exception e) {
+					Logcat.e(logLevel, "", e);
+				}
+				// しおり削除のダイアログの表示を準備
+				Resources res = mActivity.getResources();
+				// しおり削除中はダイアログの表示をキャンセルさせないようにする
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.deletesiori), res.getString(R.string.deletingsiori),false, mHandler);
+				supportFragmentManager = mActivity.getSupportFragmentManager();
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					// ダイアログの表示
+					mProgressDialog.show(supportFragmentManager, TAG);
+					// プログレスバーをリセット
+					mProgressDialog.setProgress(0);
+				});
+
+				// しおり削除の位置の変化量をクリア
+				old_progress = progress;
+				stop = true;
+				while (stop) {
+					if (threadstartcheck2) {
+						// しおり削除が完了していれば終了させる
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.dismiss();
+						});
+						// ループ終了
+						stop = false;
+					}
+					else if (old_progress != progress) {
+						// しおり削除の位置が変化したらプログレスバーを更新
+						int finalProgress = progress;
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.setProgress(finalProgress);
+						});
+						// 次の位置と比較するため値を保存
+						old_progress = progress;
+					}
+				}
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			// スレッドを終了させて最初から始める
+			msendResult4();
+		}
+	}
+	private static void msendResult4() {
+		// スレッドを終了させて最初から始める
+		mMultiThread4 = null;
+	}
+
+	// サムネイルキャッシュ削除のスレッド
+	private class MultiThread5 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			try {
+				// サムネイルキャッシュ削除
+				ThumbnailLoader.deleteThumbnailCache(0); // 0個を残す
+				switchFileList();
+				loadThumbnail(true);
+				threadstartcheck3 = true;
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			// スレッドを終了させて最初から始める
+			msendResult5();
+		}
+	}
+	private static void msendResult5() {
+		// スレッドを終了させて最初から始める
+		mMultiThread5 = null;
+	}
+
+	// サムネイルキャッシュ削除ダイアログの表示スレッド
+	private class MultiThread6 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			try {
+				try {
+					// 頻繁に表示が行われるのを防ぐため500ミリ秒間待機
+					for (int i = 0 ; i < 50 ; i++) {
+						if (threadstartcheck3) {
+							// 500ミリ秒の間に読み込み完了すれば戻る
+							// スレッドを終了させて最初から始める
+							msendResult6();
+							return;
+						}
+						mMultiThread6.sleep(10);
+					}
+				} catch (Exception e) {
+					Logcat.e(logLevel, "", e);
+				}
+				// サムネイルキャッシュ削除のダイアログの表示を準備
+				Resources res = mActivity.getResources();
+				// サムネイルキャッシュ削除中はダイアログの表示をキャンセルさせないようにする
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.thumbMenu), res.getString(R.string.deletingsiori),false, mHandler);
+				supportFragmentManager = mActivity.getSupportFragmentManager();
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					// ダイアログの表示
+					mProgressDialog.show(supportFragmentManager, TAG);
+					// プログレスバーをリセット
+					mProgressDialog.setProgress(0);
+				});
+
+				// サムネイルキャッシュ削除の位置の変化量をクリア
+				old_progress = progress;
+				boolean stop = true;
+				while (stop) {
+					progress = ThumbnailLoader.GetThumbnailPosition();
+					if (threadstartcheck3) {
+						// サムネイルキャッシュ削除が完了していれば終了させる
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.dismiss();
+						});
+						// ループ終了
+						stop = false;
+					}
+					else if (old_progress != progress) {
+						// サムネイルキャッシュ削除の位置が変化したらプログレスバーを更新
+						int finalProgress = progress;
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.setProgress(finalProgress);
+						});
+						// 次の位置と比較するため値を保存
+						old_progress = progress;
+					}
+				}
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			// スレッドを終了させて最初から始める
+			msendResult6();
+		}
+	}
+	private static void msendResult6() {
+		// スレッドを終了させて最初から始める
+		mMultiThread6 = null;
 	}
 
 	/**
@@ -3909,7 +4059,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. name=" + name);
 
-		Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		});
 
 		// 描画停止
 		setDrawEnable();
@@ -3934,12 +4089,17 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. file=" + file + ", name=" + name);
 
-		if (name.equals("META-INF/container.xml")) {
-			Toast.makeText(this, FileAccess.filename(mActivity, file), Toast.LENGTH_SHORT).show();
-		}
-		else {
-			Toast.makeText(this, FileAccess.filename(mActivity, file) + "\n" + FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
-		}
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			if (name.equals("META-INF/container.xml")) {
+				Toast.makeText(this, FileAccess.filename(mActivity, file), Toast.LENGTH_SHORT).show();
+			}
+			else {
+				Toast.makeText(this, FileAccess.filename(mActivity, file) + "\n" + FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+			}
+		});
 
 		// 描画停止
 		setDrawEnable();
@@ -3964,7 +4124,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. name=" + name);
 
-		Toast.makeText(this, mPath + FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			Toast.makeText(this, mPath + FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		});
 
 		// 描画停止
 		setDrawEnable();
@@ -3994,7 +4159,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. file=" + file + ", name=" + name);
 
-		Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		});
 
 		// 描画停止
 		setDrawEnable();
@@ -4019,7 +4189,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. name=" + name);
 
-		Toast.makeText(this, mPath + FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			Toast.makeText(this, mPath + FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		});
 
 		// 描画停止
 		setDrawEnable();
@@ -4044,7 +4219,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. name=" + name);
 
-		Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			Toast.makeText(this, FileAccess.filename(mActivity, name), Toast.LENGTH_SHORT).show();
+		});
 
 		// 描画停止
 		setDrawEnable();
@@ -4155,6 +4335,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 				}
 				return true;
+			case DEF.HMSG_PROGRESS_CANCEL:
+				// 周りをタッチしてダイアログをキャンセルさせた場合
+				// 処理中断
+				if (mMultiThread2 != null) {
+					mMultiThread2.interrupt();
+				}
+				// ファイルリストの更新を中断させる
+				mUpdateListViewSkip = true;
+				// ファイルリストの更新の完了のフラグをクリア
+				threadstartcheck = false;
+				// スレッド実行の項目の値をクリアして処理を中断させる
+				mNowItem = 0;
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					// 中断をトースト表示させる
+					Toast.makeText(this, R.string.cancelupdatefilelist, Toast.LENGTH_SHORT).show();
+				});
+				return true;
 		}
 		return false;
 	}
@@ -4210,6 +4410,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			mThumbnailLoader.releaseThumbnail();
 			mThumbnailLoader = null;
 		}
+		// ファイルリスト読み込みダイアログの表示スレッドを停止
+		FileSelectList.ExitmMultiThread();
 		return;
 	}
 
@@ -4382,6 +4584,243 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 	}
 
+	// 未読/既読のスレッド
+	private class MultiThread extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			boolean stop = true;
+			try {
+				while (stop) {
+					// ファイル長押しメニューからの処理が始まるまで待機
+					if (mNowItem != 0) {
+						stop = false;
+					}
+					mMultiThread.sleep(10);
+				}
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			try {
+				// 未読/既読の処理
+				OparateReadFirstNonread();
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			// スレッドを終了させて最初から始める
+			msendResult();
+		}
+	}
+	private static void msendResult() {
+		// スレッドを終了させて最初から始める
+		mMultiThread = null;
+	}
+
+	// 未読/既読の更新ダイアログの表示スレッド
+	private class MultiThread2 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			boolean stop = true;
+			try {
+				while (stop) {
+					// ファイル長押しメニューからの処理が始まるまで待機
+					if (mNowItem != 0) {
+						stop = false;
+					}
+					mMultiThread2.sleep(10);
+				}
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			try {
+				try {
+					// 頻繁に表示が行われるのを防ぐため500ミリ秒間待機
+					for (int i = 0 ; i < 50 ; i++) {
+						if (threadstartcheck) {
+							// 500ミリ秒の間に読み込み完了すれば戻る
+							// スレッドを終了させて最初から始める
+							msendResult2();
+							return;
+						}
+						mMultiThread2.sleep(10);
+					}
+				} catch (Exception e) {
+					Logcat.e(logLevel, "", e);
+				}
+				// ファイルリストの更新ダイアログの表示を準備
+				Resources res = mActivity.getResources();
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.updatefilelist), res.getString(R.string.updatingfilelist),true, mHandler);
+				supportFragmentManager = mActivity.getSupportFragmentManager();
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					// ダイアログの表示
+					mProgressDialog.show(supportFragmentManager, TAG);
+					// プログレスバーをリセット
+					mProgressDialog.setProgress(0);
+				});
+
+				// 更新中の位置の変化量をクリア
+				old_progress = progress;
+				stop = true;
+				while (stop) {
+					if (threadstartcheck) {
+						// ファイルリストの更新が完了していれば終了させる
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.dismiss();
+						});
+						// ループ終了
+						stop = false;
+					}
+					else if (old_progress != progress) {
+						// 更新中の位置が変化したらプログレスバーを更新
+						int finalProgress = progress;
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.setProgress(finalProgress);
+						});
+						// 次の位置と比較するため値を保存
+						old_progress = progress;
+					}
+					if (mMultiThread2.isInterrupted()) {
+						// 処理中断
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.dismiss();
+						});
+						// ループ終了
+						stop = false;
+					}
+				}
+			} catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			// スレッドを終了させて最初から始める
+			msendResult2();
+		}
+	}
+	private static void msendResult2() {
+		// スレッドを終了させて最初から始める
+		mMultiThread2 = null;
+	}
+
+	// 未読/既読の処理
+	private void OparateReadFirstNonread() {
+		Editor ed = mSharedPreferences.edit();
+		String name = mFileData.getName();
+		int type = mFileData.getType();
+		String user = mServer.getUser();
+		String pass = mServer.getPass();
+
+		if (mOperate[mNowItem] == OPERATE_READ) {
+			// 既読
+			if (mFileData.getType() == FileData.FILETYPE_EPUB)	{
+				if	(DEF.TEXT_VIEWER == mEpubViewer) {
+					int openmode = 0;
+					// ファイルリストの読み込み
+					openmode = ImageManager.OPENMODE_TEXTVIEW;
+					mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
+					mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+					mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", user, pass, mHandler, mActivity, FileData.FILETYPE_EPUB);
+					FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "META-INF/container.xml" + "#maxpage", mTextMgr.length());
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "META-INF/container.xml", mTextMgr.length());
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+					ed.apply();
+					releaseManager();
+				}
+				else {
+					int openmode = 0;
+					// ファイルリストの読み込み
+					openmode = ImageManager.OPENMODE_TEXTVIEW;
+					mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
+					mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mImageMgr.length());
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mImageMgr.length());
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+					ed.apply();
+					releaseManager();
+				}
+			}
+			if (mFileData.getType() == FileData.FILETYPE_TXT)	{
+				int openmode = 0;
+				// ファイルリストの読み込み
+				openmode = ImageManager.OPENMODE_TEXTVIEW;
+				mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), "", user, pass, 0, mHandler, mHidden, openmode, 1);
+				mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+				mTextMgr = new TextManager(mImageMgr, mFileData.getName(), user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
+				FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
+				ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mTextMgr.length());
+				ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mTextMgr.length());
+				ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+				ed.apply();
+				releaseManager();
+			}
+			if (mFileData.getType() == FileData.FILETYPE_ARC
+				|| mFileData.getType() == FileData.FILETYPE_PDF){
+				int	maxpage;
+				maxpage = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+				//	未読の場合と未読で無かった場合で場合分けする
+				if	(maxpage > 0)	{
+					//	未読で無かった場合は最大ページ数を最終ページにする
+					ed = mSharedPreferences.edit();
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", maxpage);
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), maxpage);
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+					ed.apply();
+				} else {
+					//	未読の場合は最大ページ数を新しく取得する
+					int openmode = 0;
+					// ファイルリストの読み込み
+					openmode = ImageManager.OPENMODE_VIEW;
+					int filesort = SetImageActivity.getFileSort(mSharedPreferences);
+					mImageMgr = new ImageManager(mActivity,DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, filesort, mHandler, mHidden, openmode, 1);
+					mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+					maxpage = mImageMgr.length();
+					if (maxpage > 0) {
+						ed = mSharedPreferences.edit();
+						//	最大ページ数を最終ページにする
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mImageMgr.length());
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mImageMgr.length());
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+						ed.apply();
+					}
+					releaseManager();
+				}
+			}
+
+			updateListView();
+			threadstartcheck = true;
+			mNowItem = 0;
+		}
+		if (mOperate[mNowItem] == OPERATE_NONREAD || mOperate[mNowItem] == OPERATE_FIRST) {
+			// 未読/先頭ページを開く
+			if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer) {
+				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml" + "#maxpage", user, pass));
+				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml", user, pass));
+				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml", user, pass) + "#date");
+			}
+			else {
+				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "#maxpage", user, pass));
+				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass));
+				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date");
+			}
+			ed.apply();
+
+			updateListView();
+			threadstartcheck = true;
+			if (mOperate[mNowItem] == OPERATE_FIRST) {
+				// 先頭ページを開く場合
+				// サムネイル解放
+				releaseThumbnail();
+				// ファイルオープン
+				openFile(mFileData, "");
+			}
+			mNowItem = 0;
+		}
+	}
+
 	@Override
 	public void onItemLongClick(int listtype, int position) {
 		if (listtype == RecordList.TYPE_FILELIST) {
@@ -4396,6 +4835,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			if (mFileData != null && mFileData.getType() != FileData.FILETYPE_PARENT) {
 				// ファイル長押し
 				showFileLongClickDialog();
+				// 未読/既読のスレッド開始
+				if (mMultiThread == null) {
+					mMultiThread = new MultiThread();
+					mMultiThread.start();
+				}
+				// ファイルリストの更新の完了のフラグをクリア
+				threadstartcheck = false;
+				// ファイルリストの更新ダイアログのスレッド開始
+				if (mMultiThread2 == null) {
+					mMultiThread2 = new MultiThread2();
+					mMultiThread2.start();
+				}
 			}
 		}
 		else {
@@ -4432,6 +4883,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					} else {
 						// ファイル長押しメニュー
 						showFileLongClickDialog();
+						// 未読/既読のスレッド開始
+						if (mMultiThread == null) {
+							mMultiThread = new MultiThread();
+							mMultiThread.start();
+						}
+						// ファイルリストの更新の完了のフラグをクリア
+						threadstartcheck = false;
+						// ファイルリストの更新ダイアログのスレッド開始
+						if (mMultiThread2 == null) {
+							mMultiThread2 = new MultiThread2();
+							mMultiThread2.start();
+						}
 					}
 				}
 			}else {
