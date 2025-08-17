@@ -29,10 +29,10 @@ import src.comitton.textview.TextActivity;
 import src.comitton.textview.TextManager;
 import src.comitton.expandview.ListItemView;
 import src.comitton.fileview.view.TitleView;
+import src.comitton.dialog.CustomProgressDialog;
 
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -65,6 +65,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
 
 public class ExpandActivity extends AppCompatActivity implements Handler.Callback, OnScrollListener {
 	private static final String TAG = "ExpandActivity";
@@ -115,9 +116,9 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private float mPageRate;
 	private int mCurrentPage;
 
-	private ProgressDialog mReadDialog;
 	private ListDialog mListDialog;
-	private String[] mReadingMsg;
+	private static CustomProgressDialog mProgressDialog;
+	private static FragmentManager supportFragmentManager;
 
 	private ZipLoad mZipLoad;
 	private Thread mZipThread;
@@ -298,7 +299,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		public void run() {
 			// ファイルリストの読み込み
 			mImageMgr = new ImageManager(this.mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileName, mUser, mPass, mFileSort, handler, mHidden, ImageManager.OPENMODE_LIST, 1);
-			mImageMgr.LoadImageList(0, 0, 0, 0);
+			mImageMgr.LoadImageList(0, 0, 0, 0, DEF.MESSAGE_EXPAND);
 
 			// 終了通知
 			Message message = new Message();
@@ -911,19 +912,12 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	public boolean handleMessage(Message msg) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		switch (msg.what) {
-			case DEF.HMSG_PROGRESS:
+			case DEF.HMSG_PROGRESS_EXPAND:
 				// 読込中の表示
 				synchronized (this) {
-					if (mReadDialog != null) {
+					if (mProgressDialog != null) {
 						// ページ読み込み中
-						String readmsg;
-						if (msg.arg2 < mReadingMsg.length && mReadingMsg[msg.arg2] != null) {
-							readmsg = mReadingMsg[msg.arg2];
-						} else {
-							readmsg = "Loading...";
-						}
-						mMessage = MessageFormat.format("{0} ({1})", new Object[]{readmsg, msg.arg1});
-						mReadDialog.setMessage(DEF.ProgressMessage(mMessage, mMessage2, mWorkMessage));
+						mProgressDialog.setProgress(msg.arg1);
 					}
 				}
 				return true;
@@ -939,11 +933,11 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			case DEF.HMSG_READ_END: {
 				Logcat.v(logLevel, "DEF.HMSG_READ_END. ImageManager の読み込みが終了しました.");
 				// 読込中の表示
-				if (mReadDialog != null) {
-					mReadDialog.dismiss();
-					mReadDialog = null;
+				if (mProgressDialog != null) {
+					mProgressDialog.dismiss();
+					mProgressDialog = null;
 				}
-//				mReadRunning = false;
+
 				if (mTerminate) {
 					finishActivity();
 					return true;
@@ -992,7 +986,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 									// ファイルリストの読み込み
 									openmode = ImageManager.OPENMODE_TEXTVIEW;
 									mImageMgr2 = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileName, mUser, mPass, 0, null, mHidden, openmode, 1);
-									mImageMgr2.LoadImageList(0, 0, 0, 0);
+									mImageMgr2.LoadImageList(0, 0, 0, 0, 0);
 									mTextMgr = new TextManager(mImageMgr2, nextfile.getName(), mUser, mPass, null, mActivity, FileData.FILETYPE_TXT);
 									FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
 									ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileName), mUser, mPass) + nextfile.getName() + "#maxpage", mTextMgr.length());
@@ -1037,7 +1031,16 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 					}
 				}
 				return true;
-
+			case DEF.HMSG_PROGRESS_CANCEL:
+				// Thread を停止
+				if (mImageMgr != null) {
+					mImageMgr.setBreakTrigger();
+				}
+				mTerminate = true;
+				// トースト表示させる
+				Resources res = mActivity.getResources();
+				Toast.makeText(this, res.getString(R.string.cancelexpandcompTitle), Toast.LENGTH_SHORT).show();
+				return true;
 		}
 		return true;
 	}
@@ -1047,26 +1050,17 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		Logcat.d(logLevel, "開始します.");
 
 		Resources res = getResources();
-		mReadingMsg = new String[1];
-		mReadingMsg[0] = res.getString(R.string.reading);
 
 		// プログレスダイアログ準備
-		mReadDialog = new ProgressDialog(this, R.style.MyDialog);
-		mReadDialog.setMessage(mReadingMsg[0] + " (0)");
-		mReadDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		mReadDialog.setCancelable(true);
-		mReadDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			public void onCancel(DialogInterface dialog) {
-				// Thread を停止
-				if (mImageMgr != null) {
-					mImageMgr.setBreakTrigger();
-				}
-				mTerminate = true;
-			}
-		});
-		mReadDialog.show();
+		// ファイル展開ダイアログの表示を準備
+		res = mActivity.getResources();
+		mProgressDialog = new CustomProgressDialog(res.getString(R.string.expandcompTitle), res.getString(R.string.expandingcompTitle),true, mHandler);
+		supportFragmentManager = mActivity.getSupportFragmentManager();
+		// ダイアログの表示
+		mProgressDialog.show(supportFragmentManager, TAG);
+		// プログレスバーをリセット
+		mProgressDialog.setProgress(0);
 
-//		mReadRunning = true;
 		mZipLoad = new ZipLoad(mHandler, this);
 		mZipThread = new Thread(mZipLoad);
 		mZipThread.start();
