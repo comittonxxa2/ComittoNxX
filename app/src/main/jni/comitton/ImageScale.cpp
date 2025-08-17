@@ -250,6 +250,12 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
 #endif
 				ret = CreateScaleCubic(index, Page, Half, Count, NowWidth, NowHeight, OrgWidth, OrgHeight);
 				break;
+			case 5:
+#ifdef DEBUG_CREATESCALE
+                LOGD("CreateScaleLanczos3: Lanczos3 Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
+#endif
+				ret = CreateScaleLanczos3(index, Page, Half, Count, NowWidth, NowHeight, OrgWidth, OrgHeight);
+				break;
 			default:
 #ifdef DEBUG_CREATESCALE
                 LOGD("CreateScale: Near Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);

@@ -180,6 +180,7 @@ int ImageColorMatrix(int, int, int, int, int, int, jfloat*);
 int CreateScaleNear(int, int, int, int, int, int, int, int);
 int CreateScaleLinear(int, int, int, int, int, int, int, int);
 int CreateScaleCubic(int, int, int, int, int, int, int, int);
+int CreateScaleLanczos3(int, int, int, int, int, int, int, int);
 int CreateScaleHalf(int, int, int, int, int, int);
 
 int ImageGetSizeAvif(int, int, int *, int *);
