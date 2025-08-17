@@ -382,6 +382,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbSaturation != null) mSkbSaturation.setProgress(mSaturation / 5);
 
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setText(mAlgoModeItems[mAlgoMode]);
+		// ボタンの文字を小文字対応にする(Lanczos3を表示させるため)
+		if (mBtnAlgoMode != null) mBtnAlgoMode.setAllCaps(false);
 		if (mBtnDispMode != null) mBtnDispMode.setText(mDispModeItems[mDispMode]);
 		if (mBtnScaleMode != null) mBtnScaleMode.setText(mScaleModeItems[mScaleMode]);
 		if (mBtnMgncut != null) mBtnMgncut.setText(mMgnCutItems[mMgnCut]);
