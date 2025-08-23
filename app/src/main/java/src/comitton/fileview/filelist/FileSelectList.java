@@ -420,10 +420,17 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				uri = DEF.relativePath(mActivity, currentPath, name);
 
 				if (fileList.get(i).getType() == FileData.FILETYPE_TXT) {
+					if (FileAccess.accessType(currentPath) == DEF.ACCESS_TYPE_SAF) {
+						// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+						uri = currentPath + name;
+					}
+					else {
+						uri = DEF.relativePath(mActivity, currentPath, name);
+					}
 					maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 					state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 					fileList.get(i).setMaxpage(maxpage);
-					if (state > 0) {
+					if (state >= 0) { // 先頭ページでも動作するようにした
 						nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 						date = fileList.get(i).getDate();
 						if ((nowdate != ((date / 1000))) || (mChangeTextSize)) {
@@ -474,7 +481,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 					state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 					fileList.get(i).setMaxpage(maxpage);
-					if	(state > 0)	{
+					if	(state >= 0)	{ // 先頭ページでも動作するようにした
 						nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 						date = fileList.get(i).getDate();
 						if (nowdate != ((date / 1000)))	{
@@ -519,18 +526,25 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					fileList.get(i).setState(state);
 				}
 				if (fileList.get(i).getType() == FileData.FILETYPE_EPUB) {
+					if (FileAccess.accessType(currentPath) == DEF.ACCESS_TYPE_SAF) {
+						// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+						uri = currentPath + name;
+					}
+					else {
+						uri = DEF.relativePath(mActivity, currentPath, name);
+					}
 					if (DEF.TEXT_VIEWER == mEpubViewer) {
 						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "META-INF/container.xml" + "#maxpage", DEF.PAGENUMBER_NONE);
 						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "META-INF/container.xml", DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
-						if	(state > 0)	{
+						if	(state >= 0)	{ // 先頭ページでも動作するようにした
 							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
 							if ((nowdate != ((date / 1000))) || (mChangeTextSize))	{
 								int openmode = 0;
 								// ファイルリストの読み込み
 								openmode = ImageManager.OPENMODE_TEXTVIEW;
-								if (debug) {Log.d(TAG,"run: mUri + mPath=" + mURI + mPath + ", name=" + name);}
+								Logcat.d(logLevel,"run: mUri + mPath=" + mURI + mPath + ", name=" + name);
 								mImageMgr = new ImageManager(this.mActivity, mURI + mPath, name, mUser, mPass, 0, mHandler, mHidden, openmode, 1);
 								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 								mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", mUser, mPass, mHandler, mActivity, FileData.FILETYPE_EPUB);
@@ -572,7 +586,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
-						if	(state > 0)	{
+						if	(state >= 0)	{ // 先頭ページでも動作するようにした
 							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
 							if ((nowdate != ((date / 1000))) || (mChangeTextSize))	{
@@ -620,7 +634,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				if (fileList.get(i).getType() == FileData.FILETYPE_DIR) {
 					maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 					state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
-					if	(state > 0)	{
+					if	(state >= 0)	{ // 先頭ページでも動作するようにした
 						nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 						date = fileList.get(i).getDate();
 						if (nowdate != ((date / 1000)))	{
@@ -730,6 +744,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 		if (thread.isInterrupted()) {
 			// 処理中断
+			// ファイルリスト読み込みダイアログの表示を終了させる
+			SetBreakProgressDialogThread();
 			return;
 		}
 
@@ -741,10 +757,14 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 		if (thread.isInterrupted()) {
 			// 処理中断
+			// ファイルリスト読み込みダイアログの表示を終了させる
+			SetBreakProgressDialogThread();
 			return;
 		}
 		mFileList = fileList;
 		sendResult(true, thread);
+		// ファイルリスト読み込みダイアログの表示を終了させる
+		SetBreakProgressDialogThread();
 	}
 
 	public class MyComparator implements Comparator<FileData> {
