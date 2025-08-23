@@ -272,7 +272,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private long mThumbID;
 	private int mFileFirstIndex;
 	private int mFileLastIndex;
-	private static int mNowItem;
+	private static int mNowItem = -1;
 
 	private View mEditDlg = null;
 	private int mInitialize = 0;
@@ -2403,13 +2403,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * ファイルリストの更新
 	 */
 	private void updateListView() {
-		boolean debug = false;
-		if (debug) {Log.d(TAG, "updateListView: 開始します.");}
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "updateListView: 開始します.");
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		String path = DEF.relativePath(mActivity, mURI, mPath);
 		String user = mServer.getUser();
 		String pass = mServer.getPass();
 		ArrayList<FileData> files = mFileList.getFileList();
+		String mUriFilePath;
 
 		if (files != null) {
 			// nullのときは読み込み中なので処理しない
@@ -2431,9 +2432,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				int state;
 				int type = data.getType();
 				if (type == FileData.FILETYPE_TXT) {
-					maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
-					state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), DEF.PAGENUMBER_UNREAD);
-					if (state > 0)	{
+					if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+						// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+						mUriFilePath = path + name;
+					}
+					else {
+						mUriFilePath = DEF.relativePath(mActivity, path, name);
+					}
+					maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+					state = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass), DEF.PAGENUMBER_UNREAD);
+					if (state >= 0)	{ // 先頭ページでも動作するようにした
 						if (maxpage == DEF.PAGENUMBER_NONE) {
 							//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
 							int openmode = 0;
@@ -2446,19 +2454,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							maxpage = mTextMgr.length();
 							Editor ed;
 							ed = mSharedPreferences.edit();
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", maxpage);
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
+							ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", maxpage);
+							ed.putInt(DEF.createUrl(mUriFilePath, user, pass), state);
 							ed.apply();
 							releaseManager();
-							if (state >= maxpage) {
+							if (state >= (maxpage - 1)) {
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
-						} else if (state >= maxpage)	{
+						} else if (state >= (maxpage - 1))	{
 							//	最大ページ数に達した場合は既読にする
 							state = DEF.PAGENUMBER_READ;
 						}
-						data.setMaxpage(maxpage);
+						data.setMaxpage(maxpage - 1);
 					}
 					data.setState(state);
 				}
@@ -2466,7 +2474,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						|| type == FileData.FILETYPE_PDF) {
 					maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
 					state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), DEF.PAGENUMBER_UNREAD);
-					if (state > 0)	{
+					if (state >= 0)	{ // 先頭ページでも動作するようにした
 						if	(maxpage == DEF.PAGENUMBER_NONE)	{
 							//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
 							int openmode = 0;
@@ -2495,10 +2503,17 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					data.setState(state);
 				}
 				if (type == FileData.FILETYPE_EPUB) {
+					if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+						// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+						mUriFilePath = path + name;
+					}
+					else {
+						mUriFilePath = DEF.relativePath(mActivity, path, name);
+					}
 					if (DEF.TEXT_VIEWER == mEpubViewer) {
-						maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "META-INF/container.xml" + "#maxpage", DEF.PAGENUMBER_NONE);
-						state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "META-INF/container.xml", DEF.PAGENUMBER_UNREAD);
-						if (state > 0) {
+						maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml", DEF.PAGENUMBER_UNREAD);
+						if (state >= 0) { // 先頭ページでも動作するようにした
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
 								int openmode = 0;
@@ -2512,8 +2527,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								maxpage = mTextMgr.length();
 								Editor ed;
 								ed = mSharedPreferences.edit();
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "META-INF/container.xml" + "#maxpage", maxpage);
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "META-INF/container.xml", state);
+								ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#maxpage", maxpage);
+								ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml", state);
 								ed.apply();
 								releaseManager();
 								if (state >= (maxpage - 1)) {
@@ -2529,11 +2544,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						data.setState(state);
 					}
 					else {
-						maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
-						state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), DEF.PAGENUMBER_UNREAD);
-						if (debug) {Log.d(TAG, "updateListView: name=" + name + ", maxpage=" + maxpage + ", state=" + state );}
-						if (state > 0)	{
-							if	(maxpage == 0)	{
+						maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass), DEF.PAGENUMBER_UNREAD);
+						Logcat.d(logLevel, "updateListView: name=" + name + ", maxpage=" + maxpage + ", state=" + state );
+						if (state >= 0)	{ // 先頭ページでも動作するようにした
+							if	(maxpage == DEF.PAGENUMBER_NONE)	{
 								//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
 								int openmode = 0;
 								// ファイルリストの読み込み
@@ -2543,8 +2558,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								maxpage = mImageMgr.length();
 								Editor ed;
 								ed = mSharedPreferences.edit();
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", maxpage);
-								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
+								ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", maxpage);
+								ed.putInt(DEF.createUrl(mUriFilePath, user, pass), state);
 								ed.apply();
 								releaseManager();
 								if (state >= (maxpage - 1)) {
@@ -2559,6 +2574,37 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						}
 						data.setState(state);
 					}
+				}
+				if (type == FileData.FILETYPE_DIR) { // 処理を追加した
+					maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+					state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), DEF.PAGENUMBER_UNREAD);
+					if (state >= 0)	{
+						if	(maxpage == DEF.PAGENUMBER_NONE)	{
+							//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
+							int openmode = 0;
+							// ファイルリストの読み込み
+							openmode = ImageManager.OPENMODE_VIEW;
+							// 設定の読み込み
+							mImageMgr = new ImageManager(this.mActivity,path, name, user, pass, 0, mHandler, mHidden, openmode, 1);
+							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+							maxpage = mImageMgr.length();
+							Editor ed;
+							ed = mSharedPreferences.edit();
+							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", maxpage);
+							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
+							ed.apply();
+							releaseManager();
+							if (state >= (maxpage - 1)) {
+								//	最大ページ数に達した場合は既読にする
+								state = DEF.PAGENUMBER_READ;
+							}
+						} else if (state >= (maxpage - 1))	{
+							//	最大ページ数に達した場合は既読にする
+							state = DEF.PAGENUMBER_READ;
+						}
+						data.setMaxpage(maxpage - 1);
+					}
+					data.setState(state);
 				}
 				boolean hit = false;
 				if (marker != null) {
@@ -3205,6 +3251,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 					case OPERATE_DELCACHE: // サムネイルキャッシュ削除
 						ThumbnailLoader.deleteThumbnailCache(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mThumbSizeW, mThumbSizeH);
+						// サムネイル解放
+						releaseThumbnail();
+						// サムネイルを読み直す
+						loadThumbnail(true);
 						break;
 
 					case OPERATE_SETTHUMBASDIR:		// 親ディレクトリのサムネイルとして設定
@@ -3396,7 +3446,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			try {
 				while (stop) {
 					// しおり削除のメニューからの処理が始まるまで待機
-					if (mNowItem != 0) {
+					if (mNowItem != -1) {
 						stop = false;
 					}
 					mMultiThread3.sleep(10);
@@ -3489,7 +3539,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// ファイルリストの更新
 				updateListView();
 				threadstartcheck = true;
-				mNowItem = 0;
+				mNowItem = -1;
 			} catch  (Exception e) {
 				Logcat.e(logLevel, "", e);
 			}
@@ -3510,7 +3560,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			try {
 				while (stop) {
 					// しおり削除のメニューからの処理が始まるまで待機
-					if (mNowItem != 0) {
+					if (mNowItem != -1) {
 						stop = false;
 					}
 					mMultiThread4.sleep(10);
@@ -4104,6 +4154,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 描画停止
 		setDrawEnable();
 
+		String filename = "";
+		if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+			// SAFのみファイル名称を追加(暫定措置)
+			filename = FileAccess.filename(mActivity, name);
+		}
+
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, TextActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -4112,7 +4168,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
-		intent.putExtra("File", file);					// ZIPファイル名
+		intent.putExtra("File", filename);					// ZIPファイル名
 		intent.putExtra("Text", name); 					// 中身のテキストファイル名
 		startActivityForResult(intent, DEF.REQUEST_TEXT);
 	}
@@ -4346,7 +4402,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// ファイルリストの更新の完了のフラグをクリア
 				threadstartcheck = false;
 				// スレッド実行の項目の値をクリアして処理を中断させる
-				mNowItem = 0;
+				mNowItem = -1;
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
 				// メイン画面で表示
@@ -4592,7 +4648,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			try {
 				while (stop) {
 					// ファイル長押しメニューからの処理が始まるまで待機
-					if (mNowItem != 0) {
+					if (mNowItem != -1) {
 						stop = false;
 					}
 					mMultiThread.sleep(10);
@@ -4623,7 +4679,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			try {
 				while (stop) {
 					// ファイル長押しメニューからの処理が始まるまで待機
-					if (mNowItem != 0) {
+					if (mNowItem != -1) {
 						stop = false;
 					}
 					mMultiThread2.sleep(10);
@@ -4712,10 +4768,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int type = mFileData.getType();
 		String user = mServer.getUser();
 		String pass = mServer.getPass();
+		String mUriFilePath;
 
-		if (mOperate[mNowItem] == OPERATE_READ) {
+		if (mNowItem != -1 && mOperate[mNowItem] == OPERATE_READ) {
 			// 既読
 			if (mFileData.getType() == FileData.FILETYPE_EPUB)	{
+				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+					mUriFilePath = mURI + mFileData.getName();
+				}
+				else {
+					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+				}
 				if	(DEF.TEXT_VIEWER == mEpubViewer) {
 					int openmode = 0;
 					// ファイルリストの読み込み
@@ -4724,9 +4788,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 					mTextMgr = new TextManager(mImageMgr, "META-INF/container.xml", user, pass, mHandler, mActivity, FileData.FILETYPE_EPUB);
 					FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
-					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "META-INF/container.xml" + "#maxpage", mTextMgr.length());
-					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "META-INF/container.xml", mTextMgr.length());
-					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+					ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#maxpage", mTextMgr.length());
+					ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml", mTextMgr.length());
+					ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#date", (int)((mFileData.getDate() / 1000)));
 					ed.apply();
 					releaseManager();
 				}
@@ -4736,24 +4800,31 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					openmode = ImageManager.OPENMODE_TEXTVIEW;
 					mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, 0, mHandler, mHidden, openmode, 1);
 					mImageMgr.LoadImageList(0, 0, 0, 0, 0);
-					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mImageMgr.length());
-					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mImageMgr.length());
-					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+					ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", mImageMgr.length());
+					ed.putInt(DEF.createUrl(mUriFilePath, user, pass), mImageMgr.length());
+					ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
 					ed.apply();
 					releaseManager();
 				}
 			}
 			if (mFileData.getType() == FileData.FILETYPE_TXT)	{
+				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+					mUriFilePath = mURI + mFileData.getName();
+				}
+				else {
+					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+				}
 				int openmode = 0;
 				// ファイルリストの読み込み
 				openmode = ImageManager.OPENMODE_TEXTVIEW;
-				mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), "", user, pass, 0, mHandler, mHidden, openmode, 1);
+				mImageMgr = new ImageManager(mActivity, DEF.relativePath(mActivity, mURI, mPath), mFileData.getName()/*""*/, user, pass, 0, mHandler, mHidden, openmode, 1);
 				mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 				mTextMgr = new TextManager(mImageMgr, mFileData.getName(), user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
 				FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
-				ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mTextMgr.length());
-				ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mTextMgr.length());
-				ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+				ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", mTextMgr.length());
+				ed.putInt(DEF.createUrl(mUriFilePath, user, pass), mTextMgr.length());
+				ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
 				ed.apply();
 				releaseManager();
 			}
@@ -4789,17 +4860,76 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					releaseManager();
 				}
 			}
+			if (mFileData.getType() == FileData.FILETYPE_DIR) { // 処理を追加した
+				int	maxpage;
+				maxpage = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+				//	未読の場合と未読で無かった場合で場合分けする
+				if	(maxpage > 0)	{
+					//	未読で無かった場合は最大ページ数を最終ページにする
+					ed = mSharedPreferences.edit();
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", maxpage);
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), maxpage);
+					ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+					ed.apply();
+				} else {
+					//	未読の場合は最大ページ数を新しく取得する
+					int openmode = 0;
+					// ファイルリストの読み込み
+					openmode = ImageManager.OPENMODE_VIEW;
+					int filesort = SetImageActivity.getFileSort(mSharedPreferences);
+					mImageMgr = new ImageManager(mActivity,DEF.relativePath(mActivity, mURI, mPath), mFileData.getName(), user, pass, filesort, mHandler, mHidden, openmode, 1);
+					mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+					maxpage = mImageMgr.length();
+					if (maxpage > 0) {
+						ed = mSharedPreferences.edit();
+						//	最大ページ数を最終ページにする
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", mImageMgr.length());
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), mImageMgr.length());
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+						ed.apply();
+					}
+					else {
+						// ページが取得できなかった場合は既読フラグにする
+						ed = mSharedPreferences.edit();
+						//	最大ページ数を最終ページにする
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", DEF.PAGENUMBER_READ);
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass), DEF.PAGENUMBER_READ);
+						ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
+						ed.apply();
+					}
+					releaseManager();
+				}
+			}
 
 			updateListView();
 			threadstartcheck = true;
-			mNowItem = 0;
+			mNowItem = -1;
 		}
-		if (mOperate[mNowItem] == OPERATE_NONREAD || mOperate[mNowItem] == OPERATE_FIRST) {
+		if (mNowItem != -1 && (mOperate[mNowItem] == OPERATE_NONREAD || mOperate[mNowItem] == OPERATE_FIRST)) {
 			// 未読/先頭ページを開く
 			if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer) {
-				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml" + "#maxpage", user, pass));
-				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml", user, pass));
-				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "META-INF/container.xml", user, pass) + "#date");
+				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+					mUriFilePath = mURI + mFileData.getName();
+				}
+				else {
+					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+				}
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#maxpage");
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml");
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#date");
+			}
+			else if (mFileData.getType() == FileData.FILETYPE_TXT) {
+				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+					mUriFilePath = mURI + mFileData.getName();
+				}
+				else {
+					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+				}
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage");
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass));
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#date");
 			}
 			else {
 				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "#maxpage", user, pass));
@@ -4817,7 +4947,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// ファイルオープン
 				openFile(mFileData, "");
 			}
-			mNowItem = 0;
+			mNowItem = -1;
 		}
 	}
 
