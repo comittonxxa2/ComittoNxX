@@ -1202,7 +1202,8 @@ public class TextManager {
 			message.obj = "Text file load error. filename=" + filename;
 			mHandler.sendMessage(message);
 		}
-		Logcat.d(logLevel, MessageFormat.format("終了します.", new Object[]{mInputBuff.length}));
+		// mInputBuffがnullの場合にエラーになるのでコメントアウトにした
+//		Logcat.d(logLevel, MessageFormat.format("終了します.", new Object[]{mInputBuff.length}));
 	}
 
 	ArrayList<String> mImageList = new ArrayList<String>();

@@ -474,7 +474,17 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		// 最後に開いたファイル情報を保存
 		mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		mLocalFileName = DEF.relativePath(mActivity, mPath, mFileName);
-		if (mFileName.isEmpty()) {
+		if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+			// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+			mUriFilePath = DEF.relativePath(mActivity, mUriPath, mTextName);
+			if (mFileType == FileData.FILETYPE_EPUB) {
+				mUriTextPath = mURI + mFileName + mTextName;
+			}
+			else {
+				mUriTextPath = mURI + mFileName;
+			}
+		}
+		else if (mFileName.isEmpty()) {
 			// 圧縮ファイルじゃなければパスのURLを解決する
 			mUriFilePath = DEF.relativePath(mActivity, mUriPath, mTextName);
 			mUriTextPath = DEF.relativePath(mActivity, mUriPath, mTextName);
@@ -489,16 +499,9 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		saveLastFile();
 
 		Logcat.d(logLevel, "既読位置を取得します.");
-		if (mFileType == FileData.FILETYPE_EPUB) {
-			mRestoreMaxPage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-			mRestorePage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass), DEF.PAGENUMBER_UNREAD);
-			Logcat.d(logLevel, "mRestorePage=" + mRestorePage + ", Url=" + DEF.createUrl(mUriTextPath, mUser, mPass));
-		}
-		else {
-			mRestoreMaxPage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-			mRestorePage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass), DEF.PAGENUMBER_UNREAD);
-			Logcat.d(logLevel, "mRestorePage=" + mRestorePage + ", Url=" + DEF.createUrl(mUriTextPath, mUser, mPass));
-		}
+		mRestoreMaxPage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+		mRestorePage = mSharedPreferences.getInt(DEF.createUrl(mUriTextPath, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+		Logcat.d(logLevel, "mRestorePage=" + mRestorePage + ", Url=" + DEF.createUrl(mUriTextPath, mUser, mPass));
 		int maxpage = mRestoreMaxPage;
 		int	state = mRestorePage;
 		if (maxpage == DEF.PAGENUMBER_NONE)	{
@@ -2993,23 +2996,12 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		intent.putExtra("Page", savePage);
 
 		long maxpage = mTextMgr.length();
-		if (mTextName.equals("META-INF/container.xml")) {
-			Logcat.d(logLevel,"mUriTextPath=" + mUriTextPath + ", savePage=" + savePage);
-			ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", (int)maxpage);
-			ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass), savePage);
+		Logcat.d(logLevel,"mUriTextPath=" + mUriTextPath + ", savePage=" + savePage);
+		ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", (int)maxpage);
+		ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass), savePage);
 
-			if (mTimestamp != 0L) {
-				ed.putInt(DEF.createUrl(mUriFilePath, mUser, mPass) + "#date", (int) (mTimestamp / 1000));
-			}
-		}
-		else {
-			Logcat.d(logLevel,"mUriTextPath=" + mUriTextPath + ", savePage=" + savePage);
-			ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage", (int)maxpage);
-			ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass), savePage);
-
-			if (mTimestamp != 0L) {
-				ed.putInt(DEF.createUrl(mUriFilePath, mUser, mPass) + "#date", (int) (mTimestamp / 1000));
-			}
+		if (mTimestamp != 0L) {
+			ed.putInt(DEF.createUrl(mUriTextPath, mUser, mPass) + "#date", (int) (mTimestamp / 1000));
 		}
 		ed.apply();
 	}
