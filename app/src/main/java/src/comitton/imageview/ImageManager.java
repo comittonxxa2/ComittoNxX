@@ -275,7 +275,7 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public void LoadImageList(int memsize, int memnext, int memprev, int memcache, int messagemode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. memsize=" + memsize + ", memnext=" + memnext + ", memprev=" + memprev);
+		Logcat.d(logLevel, "開始します. memsize=" + memsize + ", memnext=" + memnext + ", memprev=" + memprev + ", memcache=" + memcache + ", messagemode=" + messagemode);
 		mMemSize = memsize;
 		mMemNextPages = memnext;
 		mMemPrevPages = memprev;
@@ -873,7 +873,6 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	public boolean sendProgress(int type, int count) {
-		Logcat.d(2,"sendProgress=" + type);
 		// 割合を通知
 		if (!mRunningFlag) {
 			return false;
@@ -3770,6 +3769,20 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 		}
 
+		if (page < 0) {
+			// 見つからないならrelativePathに変換してみる (AccessTypeがSAFでテキストファイルオープンの時)
+			String target = DEF.relativePath(mActivity, mPath, filename);
+			String[] targetArray = target.split("/");
+			if (targetArray.length > 1) {
+				String name = targetArray[targetArray.length - 1];
+				for (int i = 0; i < mFileList.length; i++) {
+					if (name.equals(mFileList[i].name)) {
+						page = i;
+						break;
+					}
+				}
+			}
+		}
 		if (page < 0) {
 			// 見つからないなら名前に変換してみる (AccessTypeがPICKERでテキストファイルオープンの時)
 			String name = FileData.getName(filename);
