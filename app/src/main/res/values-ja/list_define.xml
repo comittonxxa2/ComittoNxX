@@ -568,7 +568,7 @@
         <item>表示しない</item>
         <item>表示する</item>
         <item>ローカルのみ表示</item>
-        <item>サーバのみ表示</item>
+        <item>サーバーのみ表示</item>
     </string-array>
     <string-array name="filemenu_value_list">
         <item>0</item>
@@ -647,6 +647,58 @@
         <item>10%以下</item>
     </string-array>
     <string-array name="memcachestart_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+    </string-array>
+    <string-array name="startserver_name_list">
+        <item>なし</item>
+        <item>ローカル</item>
+        <item>サーバー設定1</item>
+        <item>サーバー設定2</item>
+        <item>サーバー設定3</item>
+        <item>サーバー設定4</item>
+        <item>サーバー設定5</item>
+        <item>サーバー設定6</item>
+        <item>サーバー設定7</item>
+        <item>サーバー設定8</item>
+        <item>サーバー設定9</item>
+        <item>サーバー設定10</item>
+    </string-array>
+    <string-array name="startserver_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+    </string-array>
+    <string-array name="hardwarekey_name_list">
+        <item>システム設定</item>
+        <item>戻る</item>
+        <item>次ページ</item>
+        <item>前ページ</item>
+        <item>次ページへずらす</item>
+        <item>前ページへずらす</item>
+        <item>次ページへスクロール</item>
+        <item>前ページへスクロール</item>
+        <item>回転</item>
+        <item>プルダウンメニュー表示</item>
+    </string-array>
+    <string-array name="hardwarekey_value_list">
         <item>0</item>
         <item>1</item>
         <item>2</item>
