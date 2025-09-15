@@ -7,6 +7,7 @@ import java.util.Date;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetCacheActivity;
+import src.comitton.config.SetHardwareTextViewerKeyActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -41,11 +42,13 @@ import src.comitton.fileview.FileSelectActivity;
 import src.comitton.imageview.PageSelectListener;
 import src.comitton.noise.NoiseSwitch;
 import src.comitton.imageview.ImageManager;
+import src.comitton.imageview.TouchPanelView;
 import src.comitton.textview.TextManager.MidashiData;
 import src.comitton.common.GuideView;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -56,6 +59,7 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -64,6 +68,7 @@ import android.os.Vibrator;
 import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -75,12 +80,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GestureDetectorCompat;
 
 /**
  * 画像のスクロールを試すための画面を表します。
  */
 @SuppressLint("NewApi")
-public class TextActivity extends AppCompatActivity implements OnTouchListener, Handler.Callback, MenuSelectListener, PageSelectListener,  BookmarkListenerInterface {
+public class TextActivity extends AppCompatActivity implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener, Handler.Callback, MenuSelectListener, PageSelectListener,  BookmarkListenerInterface {
 	private static final String TAG = "TextActivity";
 
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
@@ -102,6 +108,9 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 	// 上下の操作領域タッチ後何msでボタンを表示するか
 	private static final int LONGTAP_TIMER_UI = 400;
+	private static final int LONGTAP_TIMER_BTM = 400;
+
+	private static final int CLICKGUARD = 16;
 
 	private final int EVENT_READTIMER = 200;
 //	private final int EVENT_NOISE  = 203;
@@ -155,9 +164,11 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 	// 設定値の保持
 	private int mClickArea = 16;
+	private boolean mClickGuard = false;
 	private int mPageRange = 16;
 	private int mScroll = 5;
 	private int mMoveRange = 12;
+	private int mLongTapZoom = 800; // 長押し時間
 	private int mCenter = 0;
 	private int mShadow = 0;
 	private int mViewPoint;
@@ -253,7 +264,7 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	private int mDispMode;
 
 	// 画面を構成する View の保持
-	private MyTextView mTextView = null;
+	private static MyTextView mTextView = null;
 	private GuideView mGuideView = null;
 
 	// 画面タッチの制御
@@ -280,6 +291,10 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 	// ビットマップ読み込みスレッドの制御用
 	private Handler mHandler;
+
+	// long touch timer
+	private boolean mLongTouchMode = false;
+	private int mLongTouchCount = 0;
 
 	private TextActivity mActivity;
 	SharedPreferences mSharedPreferences;
@@ -333,6 +348,11 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	private int mMemSize;
 	private int mMemNext;
 	private int mMemPrev;
+
+	private boolean mTapEditMode = false;
+	private GestureDetectorCompat mDetector;
+	private boolean mDoubleTapMode = false;
+	private boolean mAutoRepeatCheck = false;
 
 	/**
 	 * 画面が作成された時に発生します。
@@ -429,7 +449,14 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false);
 		setConfig();
 		mTextView.setColor(mTextColor, mBackColor, mGradColor, mGradation, mSrchColor);
-		mTextView.setTextScale(mScaleMode, mPinchScale);
+		mTextView.lockDraw();
+		synchronized (mTextView) {
+			mTextView.setTextScale(mScaleMode, mPinchScale);
+			mTextView.TextScaling();
+		}
+		this.updateOverSize();
+		mTextView.update(true);
+
 		mTextView.setGuideView(mGuideView);
 		mTextView.setMarker(null);
 
@@ -541,10 +568,78 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mCurrentPage = (mPage != DEF.PAGENUMBER_UNREAD) ? mPage : state;
 		mCurrentPageRate = (float)mCurrentPage / (float)maxpage;
 		Logcat.d(logLevel, "onCreate: mCurrentPageRate=" + mCurrentPageRate);
-		mTextView.setOnTouchListener(this);
+		// ジェスチャー検出を有効にする
+		mDetector = new GestureDetectorCompat(this,this);
+		// ダブルタップ検出のリスナーを有効にする
+        mDetector.setOnDoubleTapListener(this);
 
 		mReadBreak = false;
 		return;
+	}
+
+	@Override
+	public boolean onDown(MotionEvent event) {
+		return true;
+	}
+
+	@Override
+	public boolean onFling(MotionEvent event1, MotionEvent event2,
+		float velocityX, float velocityY) {
+		return true;
+	}
+
+	@Override
+	public void onLongPress(MotionEvent event) {
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
+		float distanceY) {
+		return true;
+	}
+
+	@Override
+	public void onShowPress(MotionEvent event) {
+	}
+
+	@Override
+	public boolean onSingleTapUp(MotionEvent event) {
+		return true;
+	}
+
+	@Override
+	public boolean onDoubleTap(MotionEvent event) {
+		// タッチイベントで捕捉できないダブルタップを実行する
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "onDoubleTap: " + event.toString());
+		if (mDoubleTapMode) {
+			// 先にタップ操作があった場合のみダブルタップを実行する
+			mDoubleTapMode = false;
+			if (TouchPanelView.GetTouchPositionData(2) > 0) {
+				SetTouchPanelCommand(2);
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public boolean onDoubleTapEvent(MotionEvent event) {
+		return true;
+	}
+
+	@Override
+	public boolean onSingleTapConfirmed(MotionEvent event) {
+		// タッチイベントで捕捉できないシングルタップを実行する
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "onSingleTapConfirmed: " + event.toString());
+		if (mDoubleTapMode) {
+			// 先にタップ操作があった場合のみシングルタップを実行する
+			mDoubleTapMode = false;
+			if (TouchPanelView.GetTouchPositionData(1) > 0) {
+				SetTouchPanelCommand(1);
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -568,10 +663,10 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		if (mNoiseSwitch != null) {
 			mNoiseSwitch.recordPause(false);
 		}
-//		if (mTextView != null) {
-//			mTextView.breakMessage(false);
-//			mTextView.update(true);
-//		}
+		if (mTextView != null) {
+			mTextView.breakMessage(false);
+			mTextView.update(true);
+		}
 	}
 
 	/**
@@ -692,6 +787,10 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
 
+		// 画面外からスワイプした場合にフォーカスが外れた場合はガードを外す
+		if (mClickGuard) {
+			mClickGuard = false;
+		}
 		/*
 		 * if (hasFocus) { if (mInitFlg == 0) { // 起動直後のみ呼び出し mInitFlg = 1;
 		 *
@@ -763,104 +862,177 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		super.onConfigurationChanged(newConfig);
 	}
 
+	private void SetHardwareKey(int data) {
+		SetTouchPanelCommandMain(data);
+	}
+
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent event) {
-		if (event.getAction() == KeyEvent.ACTION_DOWN) {
-			int code = event.getKeyCode();
-			switch (code) {
-				case KeyEvent.KEYCODE_DPAD_RIGHT:
-				{
-					if (mChgPageKey) {
-						// 前ページへ
-						prevPage();
-					} else {
-						// 次ページへ
-						nextPage();
-					}
-					break;
-				}
-				case KeyEvent.KEYCODE_DPAD_LEFT:
-				{
-					if (mChgPageKey) {
-						// 次ページへ
-						nextPage();
-					} else {
-						// 前ページへ
-						prevPage();
-					}
-				}
-				case KeyEvent.KEYCODE_MENU:
-					// 独自メニュー表示
-					openMenu();
-					return true;
-				case KeyEvent.KEYCODE_DEL:
-				case KeyEvent.KEYCODE_BACK:
-					operationBack();
-					return true;
-				case KeyEvent.KEYCODE_VOLUME_DOWN:
-				case KeyEvent.KEYCODE_VOLUME_UP:
-				{
-					// ボリュームモード
-					if (mVolKeyMode == VOLKEY_NONE) {
-						// Volキーを使用しない
-						break;
-					}
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
 
-					int move = mVolKeyMode == VOLKEY_DOWNTONEXT ? 1 : -1;
-					if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) {
-						move *= -1;
-					}
-					// 読込中の表示
-					startScroll(move);
-					return true;
-				}
-				case KeyEvent.KEYCODE_SPACE:
-				{
-					int meta = event.getMetaState();
-					int move = (meta & KeyEvent.META_SHIFT_ON) == 0 ? 1 : -1;
-					// 読込中の表示
-					startScroll(move);
-					return true;
-				}
-				case KeyEvent.KEYCODE_CAMERA:
-				case KeyEvent.KEYCODE_FOCUS:
-					if (mRotateBtn == 0) {
+		int code = event.getKeyCode();
+
+		int found_code = -1;
+		int data;
+		// 登録されているハードウェアキーを探す
+		for (int i = 0; i < DEF.KEYCODE_INDEX.length; i++) {
+			if (DEF.KEYCODE_INDEX[i] == code) {
+				found_code = i;
+				break;
+			}
+		}
+		if (found_code == -1) {
+			data = 0;
+			// ハードウェアキーが見つからない場合はカスタムキーの中から探す
+			for (int i = 0; i < DEF.KEY_CODE_CUSTOM_MAX; i++) {
+				if (TouchPanelView.LoadCustomkeyCode(mSharedPreferences, i) == code) {
+					// 見つかった場合はハードウェアキーの設定を取り出す
+					// カスタムキーは末尾から追加されているの長さ分を加算する
+					data = SetHardwareTextViewerKeyActivity.GetHardwareKeySetData(mSharedPreferences, DEF.KEYCODE_INDEX.length + i + 1);
+					if (data != 0) {
+						// 設定があれば終了
+						// 無ければ他のカスタムキーを探す
 						break;
 					}
-					else if (event.getKeyCode() != mRotateBtn) {
+				}
+			}
+		}
+		else {
+			// ハードウェアキーの設定を取り出す
+			data = SetHardwareTextViewerKeyActivity.GetHardwareKeySetData(mSharedPreferences, found_code + 1);
+		}
+
+		found_code = -1;
+		// 戻るキー設定があるかどうかを確認する
+		for (int i = 0; i < (DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX) ; i++) {
+			if (SetHardwareTextViewerKeyActivity.GetHardwareKeySetData(mSharedPreferences, i + 1) == DEF.TAP_BACK) {
+				// 戻る設定があれば処理を委ねる
+				found_code = 0;
+				break;
+			}
+		}
+		if (found_code == -1 && code == DEF.KEYCODE_BACK) {
+			// 戻る設定が無くてコードが戻るキーだった場合はシステム設定にする
+			// 戻るキーが無かった場合に破綻しないようにする
+			data = 0;
+		}
+
+		if (event.getAction() == KeyEvent.ACTION_DOWN) {
+			if (data == 0) {
+				// システム設定の場合
+				switch (code) {
+					case KeyEvent.KEYCODE_DPAD_RIGHT:
+					{
+						if (mChgPageKey) {
+							// 前ページへ
+							prevPage();
+						} else {
+							// 次ページへ
+							nextPage();
+						}
+						break;
+					}
+					case KeyEvent.KEYCODE_DPAD_LEFT:
+					{
+						if (mChgPageKey) {
+							// 次ページへ
+							nextPage();
+						} else {
+							// 前ページへ
+							prevPage();
+						}
+					}
+					case KeyEvent.KEYCODE_MENU:
+						// 独自メニュー表示
+						openMenu();
+						return true;
+					case KeyEvent.KEYCODE_DEL:
+					case KeyEvent.KEYCODE_BACK:
+						operationBack();
+						return true;
+					case KeyEvent.KEYCODE_VOLUME_DOWN:
+					case KeyEvent.KEYCODE_VOLUME_UP:
+						{
+						// ボリュームモード
+						if (mVolKeyMode == VOLKEY_NONE) {
+							// Volキーを使用しない
+							break;
+						}
+
+						int move = mVolKeyMode == VOLKEY_DOWNTONEXT ? 1 : -1;
+						if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) {
+							move *= -1;
+						}
+						// 読込中の表示
+						startScroll(move);
 						return true;
 					}
-					if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
-						int rotate;
-						if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-							// 横にする
-							rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-						}
-						else {
-							// 縦にする
-							rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-						}
-						setRequestedOrientation(rotate);
+					case KeyEvent.KEYCODE_SPACE:
+					{
+						int meta = event.getMetaState();
+						int move = (meta & KeyEvent.META_SHIFT_ON) == 0 ? 1 : -1;
+						// 読込中の表示
+						startScroll(move);
+						return true;
 					}
-					break;
-				default:
-					break;
+					case KeyEvent.KEYCODE_CAMERA:
+					case KeyEvent.KEYCODE_FOCUS:
+						if (mRotateBtn == 0) {
+							break;
+						}
+						else if (event.getKeyCode() != mRotateBtn) {
+							return true;
+						}
+						if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
+							int rotate;
+							if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+								// 横にする
+								rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+							}
+							else {
+								// 縦にする
+								rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+							}
+							setRequestedOrientation(rotate);
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			else {
+				// 通常設定の場合
+				if (!mAutoRepeatCheck) {
+					// オートリピート対策
+					mAutoRepeatCheck = true;
+					SetHardwareKey(data);
+				}
+				return true;
 			}
 		}
 		else if (event.getAction() == KeyEvent.ACTION_UP) {
-			switch (event.getKeyCode()) {
-				case KeyEvent.KEYCODE_BACK:
-					break;
-				case KeyEvent.KEYCODE_VOLUME_DOWN:
-				case KeyEvent.KEYCODE_VOLUME_UP:
-					// ボリュームモード
-					if (mVolKeyMode == VOLKEY_NONE) {
-						// Volキーを使用しない
-						break;
+			switch (data) {
+				case DEF.HARDWARE_NONE:
+					// システム設定の場合
+					switch (event.getKeyCode()) {
+						case KeyEvent.KEYCODE_BACK:
+							break;
+						case KeyEvent.KEYCODE_VOLUME_DOWN:
+						case KeyEvent.KEYCODE_VOLUME_UP:
+							// ボリュームモード
+							if (mVolKeyMode == VOLKEY_NONE) {
+								// Volキーを使用しない
+								break;
+							}
+							return true;
+						default:
+							break;
 					}
-					return true;
 				default:
-					break;
+					// 通常設定の場合
+					mAutoRepeatCheck = false;
+					return true;
 			}
 		}
 		// 自動生成されたメソッド・スタブ
@@ -869,14 +1041,28 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 	// 長押しタイマー開始
 	public boolean startLongTouchTimer(int longtouch_event) {
-		if (mImmEnable == false) {
-			return false;
+		int longtaptime;
+		if (longtouch_event == DEF.HMSG_EVENT_LONG_TAP) {
+			longtaptime = mLongTapZoom;
+		}
+		else {
+			// 下部押下時のみIMMERSIVEがOFFでも長押しにする(先頭・末尾の誤爆対策)
+			if (longtouch_event == DEF.HMSG_EVENT_TOUCH_BOTTOM) {
+				longtaptime = LONGTAP_TIMER_BTM;
+			}
+			else {
+				if (!mImmEnable) {
+					return false;
+				}
+				longtaptime = LONGTAP_TIMER_UI;
+			}
 		}
 
-		mLongTouchMsg = mHandler.obtainMessage(longtouch_event);
-		long NextTime = SystemClock.uptimeMillis() + LONGTAP_TIMER_UI;
+		Message msg = mHandler.obtainMessage(longtouch_event);
+		msg.arg1 = ++ mLongTouchCount;
+		long NextTime = SystemClock.uptimeMillis() + longtaptime;
 
-		mHandler.sendMessageAtTime(mLongTouchMsg, NextTime);
+		mHandler.sendMessageAtTime(msg, NextTime);
 		return (true);
 	}
 
@@ -925,6 +1111,16 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 			case DEF.HMSG_WORKSTREAM:
 				// 読込中の表示
+				return true;
+
+			case DEF.HMSG_EVENT_LONG_TAP:
+				if (mLongTouchCount == msg.arg1) {
+					if (mTouchFirst) {
+						// タッチ位置が範囲内の時だけ処理
+						Logcat.v(logLevel, "HMSG_EVENT_LONG_TAP");
+						SetTouchPanelCommand(3);
+					}
+				}
 				return true;
 
 			case DEF.HMSG_EVENT_TOUCH_TOP:
@@ -1062,11 +1258,14 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	 */
 	public void ChangeScale(int mode) {
 		mScaleMode = mode;
-		mTextView.setTextScale(mScaleMode, mPinchScale);
-		// イメージ拡大縮小
-		mTextView.TextScaling();
 
+		mTextView.lockDraw();
+		synchronized (mTextView) {
+			mTextView.setTextScale(mScaleMode, mPinchScale);
+			mTextView.TextScaling();
+		}
 		this.updateOverSize();
+		mTextView.update(true);
 
 		// 第3引数は、表示期間（LENGTH_SHORT、または、LENGTH_LONG）
 		// Toast.makeText(this, strScaleMode, Toast.LENGTH_SHORT).show();
@@ -1075,6 +1274,17 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		Editor ed = sp.edit();
 		ed.putInt("scalemode", mScaleMode);
 		ed.apply();
+	}
+
+	public static int isGestureNavigationEnabled(Context context) {
+		// APIレベル29以降でジェスチャーナビゲーションの有効状態を取得
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+			return context.getResources().getInteger(Resources.getSystem()
+	        .getIdentifier("config_navBarInteractionMode", "integer", "android"));
+		}
+		else {
+			return 0;
+		}
 	}
 
 	/**
@@ -1087,8 +1297,10 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	 *
 	 * @return タッチ操作を他の View へ伝搬しないなら true。する場合は false。
 	 */
-	@SuppressLint("SuspiciousIndentation")
-    public boolean onTouch(View v, MotionEvent event) {
+	public boolean onTouchEvent(MotionEvent event){
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
+
 		if (mReadRunning) {
 			// ファイル一覧の読み込み中はページ操作しない
 			return true;
@@ -1156,84 +1368,85 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
     				}
     			}
     		}
-    		if (!mPinchOn && !mPageMode && mOperation != TOUCH_COMMAND && mPinchDown) {
-    			if (action2 == MotionEvent.ACTION_MOVE) {
-    				int count = event.getPointerCount();
-    				if (count >= 2) {
-    					float x1 = (int)event.getX(0);
-    					float y1 = (int)event.getY(0);
-    					float x2 = (int)event.getX(1);
-    					float y2 = (int)event.getY(1);
-    					if (Math.abs(x1 - x2) > mDensity * 20 || Math.abs(y1 - y2) > mDensity * 20) {
-    						// 2点間が10sp以上であれば拡大縮小開始
-    						mPinchOn = true;
-    						mPinchScaleSel = mPinchScale;
-    						mTouchFirst = false;
-    					}
-    				}
-    			}
-    		}
-    		if (mPinchOn) {
-    			// サイズ変更中
-    			if (action2 == MotionEvent.ACTION_POINTER_1_DOWN || action2 == MotionEvent.ACTION_MOVE) {
-    				// サイズ変更
-    				int count = event.getPointerCount();
-    				float x1 = 0;
-    				float y1 = 0;
-    				for (int i = 0; i < count; i++) {
-    					x = (int) event.getX(i);
-    					y = (int) event.getY(i);
+   			if (!mPinchOn && !mPageMode && mOperation != TOUCH_COMMAND && mPinchDown) {
+   				if (action2 == MotionEvent.ACTION_MOVE) {
+   					int count = event.getPointerCount();
+   					if (count >= 2) {
+   						float x1 = (int)event.getX(0);
+   						float y1 = (int)event.getY(0);
+   						float x2 = (int)event.getX(1);
+   						float y2 = (int)event.getY(1);
+   						if (Math.abs(x1 - x2) > mDensity * 20 || Math.abs(y1 - y2) > mDensity * 20) {
+   							// 2点間が10sp以上であれば拡大縮小開始
+   							mPinchOn = true;
+   							mPinchScaleSel = mPinchScale;
+   							mTouchFirst = false;
+   						}
+   					}
+   				}
+   			}
+   			if (mPinchOn) {
+   				// サイズ変更中
+   				if (action2 == MotionEvent.ACTION_POINTER_1_DOWN || action2 == MotionEvent.ACTION_MOVE) {
+   					// サイズ変更
+   					int count = event.getPointerCount();
+   					float x1 = 0;
+   					float y1 = 0;
+   					for (int i = 0; i < count; i++) {
+   						x = (int) event.getX(i);
+   						y = (int) event.getY(i);
 
-    					if (i == 0) {
-    						x1 = x;
-    						y1 = y;
+   						if (i == 0) {
+   							x1 = x;
+   							y1 = y;
 
-    					}
-    					else if (i == 1) { // if (mPinchId == (int) event.getPointerId(i)) {
-    						// 距離を求める
-    						int range;
-    						range = (int) Math.sqrt(Math.pow(Math.abs(x1 - x), 2) + Math.pow(Math.abs(y1 - y), 2));
-    						if (mPinchDown) {
-    							mPinchRange = range;
-    							mPinchDown = false;
-    						}
-    						else {
-    							// 初回は記録のみ
-    							int range2 = (int)((range - mPinchRange) / (8 * mDensity));
-    							int zoom = range2;
-    							if (Math.abs(zoom) >= 6) {
-    								zoom *= 8;
-    							}
-    							else if (Math.abs(zoom) >= 4) {
-    								zoom *= 4;
-    							}
-    							else if (Math.abs(zoom) >= 2) {
-    								zoom *= 2;
-    							}
-    							mPinchScaleSel += zoom;
-    							if (mPinchScaleSel < 10) {
-    								mPinchScaleSel = 10;
-    							}
-    							else if (mPinchScaleSel > 250) {
-    								mPinchScaleSel = 250;
-    							}
-    							mPinchRange += range2 * (8 * mDensity);
-    						}
-    						mGuideView.setGuideText(mPinchScaleSel + "%");
-    					}
-    				}
-    			}
-    			else if (action2 == MotionEvent.ACTION_UP) {
-    				// サイズ変更終了
-    				mGuideView.setGuideText(null);
-    				mPinchOn = false;
-    				if (mPinchScale != mPinchScaleSel) {
-    					mPinchScale = mPinchScaleSel;
-    					// テキストモード
+   						}
+   						else if (i == 1) { // if (mPinchId == (int) event.getPointerId(i)) {
+   							// 距離を求める
+   							int range;
+   							range = (int) Math.sqrt(Math.pow(Math.abs(x1 - x), 2) + Math.pow(Math.abs(y1 - y), 2));
+   							if (mPinchDown) {
+   								mPinchRange = range;
+   								mPinchDown = false;
+   							}
+   							else {
+   								// 初回は記録のみ
+   								int range2 = (int)((range - mPinchRange) / (8 * mDensity));
+   								int zoom = range2;
+   								if (Math.abs(zoom) >= 6) {
+   									zoom *= 8;
+   								}
+   								else if (Math.abs(zoom) >= 4) {
+   									zoom *= 4;
+   								}
+   								else if (Math.abs(zoom) >= 2) {
+   									zoom *= 2;
+   								}
+   								mPinchScaleSel += zoom;
+   								if (mPinchScaleSel < 10) {
+   									mPinchScaleSel = 10;
+   								}
+   								else if (mPinchScaleSel > 250) {
+   									mPinchScaleSel = 250;
+   								}
+   								mPinchRange += range2 * (8 * mDensity);
+   							}
+   							mGuideView.setGuideText(mPinchScaleSel + "%");
+   						}
+   					}
+   				}
+   				else if (action2 == MotionEvent.ACTION_UP) {
+   					// サイズ変更終了
+   					mGuideView.setGuideText(null);
+   					mPinchOn = false;
+   					if (mPinchScale != mPinchScaleSel) {
+   						mPinchScale = mPinchScaleSel;
+   						// テキストモード
 						mTextView.lockDraw();
-
-						mTextView.setTextScale(DEF.SCALE_PINCH, mPinchScale);
-						mTextView.TextScaling();
+						synchronized (mTextView) {
+							mTextView.setTextScale(DEF.SCALE_PINCH, mPinchScale);
+							mTextView.TextScaling();
+						}
 						this.updateOverSize();
 						mTextView.update(true);
 
@@ -1241,9 +1454,9 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 						ed.putString(DEF.KEY_PinchScaleText, Integer.toString(mPinchScale));
 						ed.apply();
 					}
-    			}
-    			return true;
-    		}
+   				}
+   				return true;
+   			}
 		}
 
 		if (mImmEnable) {
@@ -1263,404 +1476,206 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 				return true;
 			}
 		}
+		// タッチパネルの座標を設定する
+		TouchPanelView.SetTouchPosition((int)x, (int)y, cx, cy);
 
-		switch (action) {
-			case MotionEvent.ACTION_DOWN:
-			{
-				// 押下状態を設定
-				mGuideView.eventTouchDown((int)x, (int)y, cx, cy, mImmEnable ? false : true);
-
-				mPageMode = false;
-				mTouchPointNum = 0;
-
-				// 慣性スクロールの停止
-				mTouchThrough = mTextView.scrollStop();
-
-				if (y > cy - mClickArea) {
-					if (mPageSelect == PAGE_SLIDE) {
-						if (mClickArea <= x && x <= cx - mClickArea) {
-							// ページ選択開始
-							mCurrentPage = mTextView.getPage(); // 現在ページ取得
-
-							int sel = GuideView.GUIDE_BCENTER;
-							mSelectPage = mCurrentPage;
-							mGuideView.setGuideIndex(sel);
-
-							mPageMode = true;
-//							mPageView.setText(mFileList.createPageStr(mSelectPage));
-//							mPageView.setBackgroundColor(mTopColor1);
-							mGuideView.setPageColor(mTopColor1);
-							if (mPageSelect == 0) {
-								mGuideView.setPageText(mTextMgr.createPageStr(mSelectPage, mUriFilePath));
-							}
-							mPageModeIn = true;
+		if (this.mDetector.onTouchEvent(event)) {
+			// タッチイベントで捕捉できる場合
+			switch (action) {
+				case MotionEvent.ACTION_DOWN:
+				{
+					Logcat.v(logLevel, "ACTION_DOWN");
+					// 押下状態を設定
+					if (!mClickGuard) {
+						// ジェスチャーナビゲーションモードで画面下からのスワイプだった場合は無視する
+						if (y >= cy - CLICKGUARD && isGestureNavigationEnabled(mActivity) == 2) {
+							
+							mClickGuard = true;
 						}
 					}
-					// 下部押下
-					startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_BOTTOM); // ロングタッチのタイマー開始
-					mOperation = TOUCH_COMMAND;
-				}
-				else if (y < mClickArea) {
-					// 上部押下
-					startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
-					mOperation = TOUCH_COMMAND;
-				}
-				else {
-					// 操作モード
-					mOperation = TOUCH_OPERATION;
+					if (mClickGuard) {
+					}
+					else if (mTapEditMode) {
+					}
+					else {
+						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, mImmEnable ? false : true);
+					}
 
-					mTouchPoint[0].x = x;
-					mTouchPoint[0].y = y;
-					mTouchPointTime[0] = SystemClock.uptimeMillis();
-					mTouchPointNum = 1;
-//					mTouchTime = SystemClock.uptimeMillis();	// フリックの判定に
-					mTouchDrawLeft = (int)mTextView.getDrawLeft();
-//					mTouchFirstX = x;
-				}
+					mPageMode = false;
+					mTouchPointNum = 0;
 
-				this.mTouchFirst = true;
-				this.mTouchBeginX = x;
-				this.mTouchBeginY = y;
-				break;
-			}
-			case MotionEvent.ACTION_MOVE:
-			{
-				// 移動位置設定
-				mGuideView.eventTouchMove((int)x, (int)y);
+					// 慣性スクロールの停止
+					mTouchThrough = mTextView.scrollStop();
 
-				if (mOperation == TOUCH_COMMAND) {
-					if (this.mPageMode && mPageSelect == PAGE_SLIDE) {
-						// スライドページ選択中
-						int sel = GuideView.GUIDE_NOSEL;
-						if (y >= cy - mClickArea) {
-							// 操作エリアから出て戻ったらそこを基準にする
-							if (!mPageModeIn) {
-								// 指定のページを基準とした位置を設定
-								mTouchBeginX = x - calcPageSelectRange(mSelectPage);
-							}
+					if (y > cy - mClickArea) {
+						if (mClickGuard) {
+						}
+						else if (mTapEditMode) {
+						}
+						else if (mPageSelect == PAGE_SLIDE) {
+							if (mClickArea <= x && x <= cx - mClickArea) {
+								// ページ選択開始
+								mCurrentPage = mTextView.getPage(); // 現在ページ取得
 
-							// タッチの位置でページを選択
-							if (x < mClickArea) {
-								if (mSelectPage != mTextMgr.length() - 1) {
-									mSelectPage = mTextMgr.length() - 1;
-									startVibrate();
+								int sel = GuideView.GUIDE_BCENTER;
+								mSelectPage = mCurrentPage;
+								mGuideView.setGuideIndex(sel);
+
+								mPageMode = true;
+								mGuideView.setPageColor(mTopColor1);
+								if (mPageSelect == 0) {
+									mGuideView.setPageText(mTextMgr.createPageStr(mSelectPage, mUriFilePath));
 								}
-								sel = GuideView.GUIDE_BLEFT;
+								mPageModeIn = true;
 							}
-							else if (x > cx - mClickArea) {
-								if (mSelectPage != 0) {
-									mSelectPage = 0;
-									startVibrate();
-								}
-								sel = GuideView.GUIDE_BRIGHT;
-							}
-							else {
-								// mSelectPage = mCurrentPage
-								// + (int) (x - this.mTouchBeginX) / mPageRange;
-								mSelectPage = calcSelectPage(x);
-
-								if (mSelectPage < 0) {
-									// 最小値は先頭ページ
-									mSelectPage = 0;
-									// タッチ位置を先頭ページとしたときのCurrentPageの位置を求める
-									mTouchBeginX = x - calcPageSelectRange(mSelectPage);
-								}
-								else if (mSelectPage > mTextMgr.length() - 1) {
-									// 最大値は最終ページ
-									mSelectPage = mTextMgr.length() - 1;
-									// タッチ位置を最終ページとしたときのCurrentPageの位置を求める
-									mTouchBeginX = x - calcPageSelectRange(mSelectPage);
-								}
-								sel = GuideView.GUIDE_BCENTER;
-							}
-
-							String strPage = mTextMgr.createPageStr(mSelectPage, mUriFilePath);
-							// String strOld = mPageView.getText().toString();
-							String strOld = mGuideView.getPageText();
-							if (!strPage.equals(strOld)) {
-								if (mCurrentPage - 1 <= mSelectPage && mSelectPage <= mCurrentPage + 1) {
-									// ページ変更時に振動
-									startVibrate();
-								}
-								mGuideView.setPageText(strPage);
-							}
-							mGuideView.setPageColor(mTopColor1);
-							mPageModeIn = true;
+						}
+						// 下部押下
+						if (mClickGuard) {
+						}
+						else if (mTapEditMode) {
 						}
 						else {
-							mPageModeIn = false;
-						}
-						// 選択に反映
-						mGuideView.setGuideIndex(sel);
-					}
-				}
-				else if (mOperation == TOUCH_OPERATION) {
-					// ページ戻or進、スクロール処理
-					if (this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
-						// タッチ後に範囲を超えて移動した場合はスクロールモードへ
-						this.mTouchFirst = false;
-						mTextView.scrollStart(mTouchBeginX, mTouchBeginY, RANGE_FLICK, mScroll);
-					}
-
-					if (!this.mTouchFirst) {
-							// スクロールモード
-							long now = SystemClock.uptimeMillis();
-							mTextView.scrollMoveAmount(x - mTouchPoint[0].x, y - mTouchPoint[0].y, mScroll, true);
-
-							for (int i = MAX_TOUCHPOINT - 1 ; i >= 1 ; i --) {
-								mTouchPoint[i].x = mTouchPoint[i - 1].x;
-								mTouchPoint[i].y = mTouchPoint[i - 1].y;
-								mTouchPointTime[i] = mTouchPointTime[i - 1];
-							}
-							mTouchPoint[0].x = x;
-							mTouchPoint[0].y = y;
-							mTouchPointTime[0] = now;
-							if (mTouchPointNum < MAX_TOUCHPOINT) {
-								mTouchPointNum ++;
-							}
-					}
-				}
-				break;
-			}
-			case MotionEvent.ACTION_CANCEL:
-			{
-				// 押してる間のフラグクリア
-				mTouchFirst = false;
-				mOperation = TOUCH_NONE;
-				mPinchOn = false;
-				mPinchDown = false;
-
-				// 上部/下部選択中の状態解除
-				mGuideView.eventTouchCancel();
-				// ページ選択中解除
-				mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
-				break;
-			}
-			case MotionEvent.ACTION_UP:
-			{
-				// 選択されたコマンド
-				int result = mGuideView.eventTouchUp((int)x, (int)y);
-
-				if (mPageMode) {
-					// ページ選択モード終了
-					mGuideView.setPageText(null);
-					mGuideView.setPageColor(Color.argb(0, 0, 0, 0));
-					mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
-
-					if (mPageSelect == PAGE_SLIDE) {
-						if (y > cy - mClickArea) {
-							if (mPageSelect == 0 || x < mClickArea || x > cx - mClickArea) {
-								// ページ選択確定
-								if (mSelectPage != mCurrentPage) {
-									// ページ変更時に振動
-									startVibrate();
-									mCurrentPage = mSelectPage;
-									setPage(false);
-								}
-							}
+							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_BOTTOM); // ロングタッチのタイマー開始
+							mOperation = TOUCH_COMMAND;
 						}
 					}
-				}
-				if (result != -1) {
-					int index = (result & 0x7FFF);
-					if ((result & 0x8000) != 0) {
-						// 上部選択の場合は選択リストを表示
-						showSelectList(index);
-					}
-					else if (result == 0x4000) {
-						// 戻るボタン
-						operationBack();
-					}
-					else if (result == 0x4001) {
-						// メニューボタン
-						// 独自メニュー表示
-						openMenu();
-					}
-					else if (result == 0x4002 || result == 0x4003) {
-						int mPageWay = DEF. PAGEWAY_RIGHT;
-
-						if (mPageSelect == PAGE_SLIDE) {
-							// ページ選択方法が画面下をスワイプのとき
-							// 末尾ボタン
-							if (result == 0x4003) {
-								if (mSelectPage != mTextMgr.length() - 1) {
-									mSelectPage = mTextMgr.length() - 1;
-								}
-							}
-							else {
-								// 右側ボタン
-								if (mSelectPage != 0) {
-									mSelectPage = 0;
-								}
-							}
-							// ページ選択確定
-							if (mSelectPage != mCurrentPage) {
-								// ページ変更時に振動
-								startVibrate();
-								mCurrentPage = mSelectPage;
-								setPage(false);
-							}
+					else if (y < mClickArea) {
+						// 上部押下
+						if (mTapEditMode) {
 						}
 						else {
-							// ページ選択方法がスライダー表示かサムネイルのとき
-
-							if (result == 0x4003) {
-								// 左側ボタン
-								int leftpage = mPageWay == DEF.PAGEWAY_RIGHT ? mTextMgr.length() - 1 : 0;
-								if (mSelectPage != leftpage) {
-									mSelectPage = leftpage;
-								}
-							} else {
-								// 右側ボタン
-								int rightpage = mPageWay == DEF.PAGEWAY_RIGHT ? 0 : mTextMgr.length() - 1;
-								if (mSelectPage != rightpage) {
-									mSelectPage = rightpage;
-								}
-							}
-							// ページ選択確定
-							if (mSelectPage != mCurrentPage) {
-								// ページ変更時に振動
-								startVibrate();
-								mCurrentPage = mSelectPage;
-								setPage(false);
-							}
-							/*
-							AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this, R.style.MyDialog);
-							if ((result == 0x4002 && mPageWay == DEF.PAGEWAY_RIGHT) || (result == 0x4003 && mPageWay != DEF.PAGEWAY_RIGHT)) {
-								dialogBuilder.setTitle(R.string.pageTop);
-							} else {
-								dialogBuilder.setTitle(R.string.pageLast);
-							}
-							dialogBuilder.setMessage(null);
-							dialogBuilder.setPositiveButton(R.string.btnOK, new DialogInterface.OnClickListener() {
-								@Override
-								public void onClick(DialogInterface dialog, int whichButton) {
-									if (result == 0x4003) {
-										// 左側ボタン
-										int leftpage = mPageWay == DEF.PAGEWAY_RIGHT ? mTextMgr.length() - 1 : 0;
-										if (mSelectPage != leftpage) {
-											mSelectPage = leftpage;
-										}
-									} else {
-										// 右側ボタン
-										int rightpage = mPageWay == DEF.PAGEWAY_RIGHT ? 0 : mTextMgr.length() - 1;
-										if (mSelectPage != rightpage) {
-											mSelectPage = rightpage;
-										}
-									}
-									// ページ選択確定
-									if (mSelectPage != mCurrentPage) {
-										// ページ変更時に振動
-										startVibrate();
-										mCurrentPage = mSelectPage;
-										setPage(false);
-									}
-
-									dialog.dismiss();
-								}
-							});
-							dialogBuilder.setNegativeButton(R.string.btnCancel, new DialogInterface.OnClickListener() {
-								public void onClick(DialogInterface dialog, int whichButton) {
-									// dialog.cancel();
-								}
-							});
-							Dialog dialog = dialogBuilder.create();
-							dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-							dialog.getWindow().getDecorView().setSystemUiVisibility(
-									mActivity.getWindow().getDecorView().getSystemUiVisibility());
-							dialog.show();
-							dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-							*/
+							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
+							mOperation = TOUCH_COMMAND;
 						}
 					}
 					else {
-						switch (index) {
-							case 0:
-								// 1ページ次へずらす
-								if (mDispMode == DEF.DISPMODE_TX_DUAL && mCurrentPage > 0) {
-									startVibrate();
-									mCurrentPage--;
-									setPage(true);
-								}
-								break;
-							case 1:
-								// 1ページ前へずらす
-								if (mDispMode == DEF.DISPMODE_TX_DUAL && mCurrentPage < mTextMgr.length() - 1) {
-									startVibrate();
-									mCurrentPage++;
-									setPage(false);
-								}
-								break;
-							case 2:
-								// 次巻(しおり位置)
-								// 次のファイルを開き、続きから記録せず、現在頁保存
-								finishActivity(CloseDialog.CLICK_NEXT, false, true);
-								break;
-							case 3:
-								// 次巻(先頭ページ)
-								// 次のファイルを開き、続きから記録せず、現在頁保存
-								finishActivity(CloseDialog.CLICK_NEXTTOP, false, true);
-								break;
-							case 4:
-								// 次巻(最終ページ)
-								// 次のファイルを開き、続きから記録せず、現在頁保存
-								finishActivity(CloseDialog.CLICK_NEXTLAST, false, true);
-								break;
-							case 5:
-								// 前巻(しおり位置)
-								// 前のファイルを開き、続きから記録せず、現在頁保存
-								finishActivity(CloseDialog.CLICK_PREV, false, true);
-								break;
-							case 6:
-								// 前巻(先頭ページ)
-								// 前のファイルを開き、続きから記録せず、現在頁保存
-								finishActivity(CloseDialog.CLICK_PREVTOP, false, true);
-								break;
-							case 7:
-								// 前巻(最終ページ)
-								// 前のファイルを開き、続きから記録せず、現在頁保存
-								finishActivity(CloseDialog.CLICK_PREVLAST, false, true);
-								break;
-							case 8:
-								if (mPageSelect == PAGE_INPUT) {
-									// 下部選択の場合は対応する操作を実行
-									mCurrentPage = mTextView.getPage(); // 現在ページ取得
+						// 操作モード
+						mOperation = TOUCH_OPERATION;
+						if (mTapEditMode) {
+						}
+						else if (TouchPanelView.GetTouchPositionData(3) > 0) {
+							// 長押しタップの場合
+							// タッチパネル設定が有効な場合
+							startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
+						}
+						else {
 
-									if (PageSelectDialog.mIsOpened == false) {
-										PageSelectDialog pageDlg = new PageSelectDialog(this, R.style.MyDialog);
-										pageDlg.setParams(DEF.TEXT_VIEWER, mCurrentPage, mTextMgr.length(), true);
-										pageDlg.setPageSelectListear(this);
-										pageDlg.show();
-										mPageDlg = pageDlg;
-									}
-								}
-								break;
+							mTouchPoint[0].x = x;
+							mTouchPoint[0].y = y;
+							mTouchPointTime[0] = SystemClock.uptimeMillis();
+							mTouchPointNum = 1;
+//							mTouchTime = SystemClock.uptimeMillis();	// フリックの判定に
+							mTouchDrawLeft = (int)mTextView.getDrawLeft();
+//							mTouchFirstX = x;
 						}
 					}
-				}
-				else if (mOperation == TOUCH_OPERATION) {
-					if (this.mTouchFirst) {
-						// スクロール停止の時は呼ばない
-						if (mTouchThrough == false) {
-							this.mTouchFirst = false;
 
-							boolean next = checkTapDirectionNext(x, y, cx, cy);
-							if (mTapScrl) {
-								// タップでスクロール
-								int move = next ? 1 : -1;
-								// 読込中の表示
-								if (!mTextView.setViewPosScroll(move)) {
-									// スクロールする余地がなければ次ページ
-									changePage(move);
-								}
-								else {
-									// スクロール開始
-									mTextView.startScroll();
-								}
+					this.mTouchFirst = true;
+					this.mTouchBeginX = x;
+					this.mTouchBeginY = y;
+
+					break;
+				}
+				case MotionEvent.ACTION_MOVE:
+				{
+					Logcat.v(logLevel, "ACTION_MOVE");
+					// 移動位置設定
+					if (mTapEditMode) {
+					}
+					else {
+						// タップのスクロール
+						Action_Move_Sub(event);
+					}
+					break;
+				}
+				case MotionEvent.ACTION_CANCEL:
+				{
+					// 押してる間のフラグクリア
+					mTouchFirst = false;
+					mOperation = TOUCH_NONE;
+					mPinchOn = false;
+					mPinchDown = false;
+
+					// 上部/下部選択中の状態解除
+					mGuideView.eventTouchCancel();
+					// ページ選択中解除
+					mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
+					break;
+				}
+				case MotionEvent.ACTION_UP:
+				{
+					Logcat.v(logLevel, "ACTION_UP");
+					// タップの解除
+					if (mClickGuard) {
+						mClickGuard = false;
+					}
+					Action_Up_Sub(event);
+					if (mOperation == TOUCH_OPERATION) {
+						Logcat.v(logLevel, "通常タップ");
+						if (mTapEditMode) {
+							Logcat.v(logLevel, "タップ操作の設定ダイアログを表示させる");
+							// タップ操作の設定ダイアログを表示させる
+							TouchPanelView.SetAlertDialog(mActivity);
+						}
+						else if (TouchPanelView.GetTouchPositionData(1) > 0 || TouchPanelView.GetTouchPositionData(2) > 0) {
+							// シングルタップまたはダブルタップが有効の場合
+							if (TouchPanelView.GetTouchPositionData(2) > 0) {
+								// ダブルタップが有効の場合は外部設定を有効にする
+								mDoubleTapMode = true;
 							}
 							else {
-								// タップでスクロールしない
-								if (next) {
+								// シングルタップのみの場合
+								// タッチパネル設定が有効な場合
+								mDoubleTapMode = false;
+								SetTouchPanelCommand(1);
+							}
+						}
+						else if (this.mTouchFirst) {
+							// スクロール停止の時は呼ばない
+							if (mTouchThrough == false) {
+								this.mTouchFirst = false;
+
+								boolean next = checkTapDirectionNext(x, y, cx, cy);
+								if (mTapScrl) {
+									// タップでスクロール
+									int move = next ? 1 : -1;
+									// 読込中の表示
+									if (!mTextView.setViewPosScroll(move)) {
+										// スクロールする余地がなければ次ページ
+										changePage(move);
+									}
+									else {
+										// スクロール開始
+										mTextView.startScroll();
+									}
+								}
+								else {
+									// タップでスクロールしない
+									if (next) {
+										// 次ページへ
+										nextPage();
+									}
+									else {
+										// 前ページへ
+										prevPage();
+									}
+								}
+								// スクロールを停止した場合は処理しない
+								break;
+							}
+						}
+						else {
+							// スワイプ
+							int flickPage = mTextView.checkFlick();
+
+							if (mFlickPage && mDispMode != DEF.DISPMODE_TX_SERIAL && flickPage != 0) {
+								// 連続表示ではなし
+								// フリックでページ遷移
+								if (mFlickEdge && mTouchDrawLeft != (int)mTextView.getDrawLeft()) {
+									// 端からフリックしないときはページめくりしない
+									;
+								}
+								else if (flickPage > 0 ? !mChgFlick : mChgFlick) {
 									// 次ページへ
 									nextPage();
 								}
@@ -1669,56 +1684,416 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 									prevPage();
 								}
 							}
-							// スクロールを停止した場合は処理しない
-							break;
-						}
-					}
-					else {
-						// スワイプ
-						int flickPage = mTextView.checkFlick();
-
-						if (mFlickPage && mDispMode != DEF.DISPMODE_TX_SERIAL && flickPage != 0) {
-							// 連続表示ではなし
-							// フリックでページ遷移
-							if (mFlickEdge && mTouchDrawLeft != (int)mTextView.getDrawLeft()) {
-								// 端からフリックしないときはページめくりしない
-								;
-							}
-							else if (flickPage > 0 ? !mChgFlick : mChgFlick) {
-								// 次ページへ
-								nextPage();
-							}
-							else {
-								// 前ページへ
-								prevPage();
-							}
-						}
-						else if (mMomentMode < DEF.MAX_MOMENTMODE){
-							int i;
-							long now = SystemClock.uptimeMillis();
-							for (i = 1 ; i < mTouchPointNum && i < MAX_TOUCHPOINT ; i ++) {
-								if (now - mTouchPointTime[i]> TERM_MOMENT) {
-									// 過去0.2秒の範囲
-									break;
+							else if (mMomentMode < DEF.MAX_MOMENTMODE){
+								int i;
+								long now = SystemClock.uptimeMillis();
+								for (i = 1 ; i < mTouchPointNum && i < MAX_TOUCHPOINT ; i ++) {
+									if (now - mTouchPointTime[i]> TERM_MOMENT) {
+										// 過去0.2秒の範囲
+										break;
+									}
+								}
+								if (i >= 3) {
+									float sx = mTouchPoint[2].x - mTouchPoint[i - 1].x;
+									float sy = mTouchPoint[2].y - mTouchPoint[i - 1].y;
+									long term = mTouchPointTime[2] - mTouchPointTime[i - 1];
+//									Logcat.d(logLevel, "i=" + i + ", sx=" + sx + ", sy=" + sy + ", term=" + term);
+									mTextView.momentiumStart(x, y, mScroll, sx, sy, (int)term, mMomentMode);
 								}
 							}
-							if (i >= 3) {
-								float sx = mTouchPoint[2].x - mTouchPoint[i - 1].x;
-								float sy = mTouchPoint[2].y - mTouchPoint[i - 1].y;
-								long term = mTouchPointTime[2] - mTouchPointTime[i - 1];
-//								Logcat.d(logLevel, "i=" + i + ", sx=" + sx + ", sy=" + sy + ", term=" + term);
-								mTextView.momentiumStart(x, y, mScroll, sx, sy, (int)term, mMomentMode);
-							}
+						}
+					}
+					// 押してる間のフラグクリア
+					mTouchFirst = false;
+					mOperation = TOUCH_NONE;
+					break;
+				}
+			}
+			return true;
+		}
+		// タッチイベントで捕捉できない場合はここで処理を行う
+		action = event.getAction();
+		if (action == MotionEvent.ACTION_MOVE) {
+			// タップのスクロール
+			if (mClickGuard) {
+			}
+			else {
+				Action_Move_Sub(event);
+			}
+		}
+		if (action == MotionEvent.ACTION_UP) {
+			// タップの解除
+			if (mClickGuard) {
+				mClickGuard = false;
+			}
+			Action_Up_Sub(event);
+		}
+		return super.onTouchEvent(event);
+	}
+
+	// タップの解除の部分をイベント処理から分離
+	private void Action_Up_Sub(MotionEvent event) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "ACTION_UP");
+		float x;
+		float y;
+		int cx;
+		int cy;
+		if (!mPseLand) {
+			x = event.getX();
+			y = event.getY();
+			cx = mTextView.getWidth();
+			cy = mTextView.getHeight();
+		}
+		else {
+			// 疑似横モード
+			cx = mTextView.getHeight();
+			cy = mTextView.getWidth();
+			y = cy - event.getX();
+			x = event.getY();
+		}
+		// 選択されたコマンド
+		int result = mGuideView.eventTouchUp((int)x, (int)y);
+
+		if (mPageMode) {
+			// ページ選択モード終了
+			mGuideView.setPageText(null);
+			mGuideView.setPageColor(Color.argb(0, 0, 0, 0));
+			mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
+
+			if (mPageSelect == PAGE_SLIDE) {
+				if (y > cy - mClickArea) {
+					if (mPageSelect == 0 || x < mClickArea || x > cx - mClickArea) {
+						// ページ選択確定
+						if (mSelectPage != mCurrentPage) {
+							// ページ変更時に振動
+							startVibrate();
+							mCurrentPage = mSelectPage;
+							setPage(false);
 						}
 					}
 				}
-				// 押してる間のフラグクリア
-				mTouchFirst = false;
-				mOperation = TOUCH_NONE;
-				break;
 			}
 		}
-		return true;
+		if (result != -1) {
+			int index = (result & 0x7FFF);
+			if ((result & 0x8000) != 0) {
+				// 上部選択の場合は選択リストを表示
+				showSelectList(index);
+			}
+			else if (result == 0x4000) {
+				// 戻るボタン
+				operationBack();
+			}
+			else if (result == 0x4001) {
+				// メニューボタン
+				// 独自メニュー表示
+				openMenu();
+			}
+			else if (result == 0x4002 || result == 0x4003) {
+				int mPageWay = DEF. PAGEWAY_RIGHT;
+
+				if (mPageSelect == PAGE_SLIDE) {
+					// ページ選択方法が画面下をスワイプのとき
+					// 末尾ボタン
+					if (result == 0x4003) {
+						if (mSelectPage != mTextMgr.length() - 1) {
+							mSelectPage = mTextMgr.length() - 1;
+						}
+					}
+					else {
+						// 右側ボタン
+						if (mSelectPage != 0) {
+							mSelectPage = 0;
+						}
+					}
+					// ページ選択確定
+					if (mSelectPage != mCurrentPage) {
+						// ページ変更時に振動
+						startVibrate();
+						mCurrentPage = mSelectPage;
+						setPage(false);
+					}
+				}
+				else {
+					// ページ選択方法がスライダー表示かサムネイルのとき
+
+					if (result == 0x4003) {
+						// 左側ボタン
+						int leftpage = mPageWay == DEF.PAGEWAY_RIGHT ? mTextMgr.length() - 1 : 0;
+						if (mSelectPage != leftpage) {
+							mSelectPage = leftpage;
+						}
+					} else {
+						// 右側ボタン
+						int rightpage = mPageWay == DEF.PAGEWAY_RIGHT ? 0 : mTextMgr.length() - 1;
+						if (mSelectPage != rightpage) {
+							mSelectPage = rightpage;
+						}
+					}
+					// ページ選択確定
+					if (mSelectPage != mCurrentPage) {
+						// ページ変更時に振動
+						startVibrate();
+						mCurrentPage = mSelectPage;
+						setPage(false);
+					}
+				}
+			}
+			else {
+				switch (index) {
+					case 0:
+						// 1ページ次へずらす
+						if (mDispMode == DEF.DISPMODE_TX_DUAL && mCurrentPage > 0) {
+							startVibrate();
+							mCurrentPage--;
+							setPage(true);
+						}
+						break;
+					case 1:
+						// 1ページ前へずらす
+						if (mDispMode == DEF.DISPMODE_TX_DUAL && mCurrentPage < mTextMgr.length() - 1) {
+							startVibrate();
+							mCurrentPage++;
+							setPage(false);
+						}
+						break;
+					case 2:
+						// 次巻(しおり位置)
+						// 次のファイルを開き、続きから記録せず、現在頁保存
+						finishActivity(CloseDialog.CLICK_NEXT, false, true);
+						break;
+					case 3:
+						// 次巻(先頭ページ)
+						// 次のファイルを開き、続きから記録せず、現在頁保存
+						finishActivity(CloseDialog.CLICK_NEXTTOP, false, true);
+						break;
+					case 4:
+						// 次巻(最終ページ)
+						// 次のファイルを開き、続きから記録せず、現在頁保存
+						finishActivity(CloseDialog.CLICK_NEXTLAST, false, true);
+						break;
+					case 5:
+						// 前巻(しおり位置)
+						// 前のファイルを開き、続きから記録せず、現在頁保存
+						finishActivity(CloseDialog.CLICK_PREV, false, true);
+						break;
+					case 6:
+						// 前巻(先頭ページ)
+						// 前のファイルを開き、続きから記録せず、現在頁保存
+						finishActivity(CloseDialog.CLICK_PREVTOP, false, true);
+						break;
+					case 7:
+						// 前巻(最終ページ)
+						// 前のファイルを開き、続きから記録せず、現在頁保存
+						finishActivity(CloseDialog.CLICK_PREVLAST, false, true);
+						break;
+					case 8:
+						if (mPageSelect == PAGE_INPUT) {
+							// 下部選択の場合は対応する操作を実行
+							mCurrentPage = mTextView.getPage(); // 現在ページ取得
+
+							if (PageSelectDialog.mIsOpened == false) {
+								PageSelectDialog pageDlg = new PageSelectDialog(this, R.style.MyDialog);
+								pageDlg.setParams(DEF.TEXT_VIEWER, mCurrentPage, mTextMgr.length(), true);
+								pageDlg.setPageSelectListear(this);
+								pageDlg.show();
+								mPageDlg = pageDlg;
+							}
+						}
+						break;
+				}
+			}
+		}
+	}
+
+	// タップのスクロールの部分をイベント処理から分離
+	private void Action_Move_Sub(MotionEvent event) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "ACTION_MOVE");
+		float x;
+		float y;
+		int cx;
+		int cy;
+		if (!mPseLand) {
+			x = event.getX();
+			y = event.getY();
+			cx = mTextView.getWidth();
+			cy = mTextView.getHeight();
+		}
+		else {
+			// 疑似横モード
+			cx = mTextView.getHeight();
+			cy = mTextView.getWidth();
+			y = cy - event.getX();
+			x = event.getY();
+		}
+
+		mGuideView.eventTouchMove((int)x, (int)y);
+
+		if (mOperation == TOUCH_COMMAND) {
+			if (this.mPageMode && mPageSelect == PAGE_SLIDE) {
+				// スライドページ選択中
+				int sel = GuideView.GUIDE_NOSEL;
+				if (y >= cy - mClickArea) {
+					// 操作エリアから出て戻ったらそこを基準にする
+					if (!mPageModeIn) {
+						// 指定のページを基準とした位置を設定
+						mTouchBeginX = x - calcPageSelectRange(mSelectPage);
+					}
+
+					// タッチの位置でページを選択
+					if (x < mClickArea) {
+						if (mSelectPage != mTextMgr.length() - 1) {
+							mSelectPage = mTextMgr.length() - 1;
+							startVibrate();
+						}
+						sel = GuideView.GUIDE_BLEFT;
+					}
+					else if (x > cx - mClickArea) {
+						if (mSelectPage != 0) {
+							mSelectPage = 0;
+							startVibrate();
+						}
+						sel = GuideView.GUIDE_BRIGHT;
+					}
+					else {
+						// mSelectPage = mCurrentPage
+						// + (int) (x - this.mTouchBeginX) / mPageRange;
+						mSelectPage = calcSelectPage(x);
+
+						if (mSelectPage < 0) {
+							// 最小値は先頭ページ
+							mSelectPage = 0;
+							// タッチ位置を先頭ページとしたときのCurrentPageの位置を求める
+							mTouchBeginX = x - calcPageSelectRange(mSelectPage);
+						}
+						else if (mSelectPage > mTextMgr.length() - 1) {
+							// 最大値は最終ページ
+							mSelectPage = mTextMgr.length() - 1;
+							// タッチ位置を最終ページとしたときのCurrentPageの位置を求める
+							mTouchBeginX = x - calcPageSelectRange(mSelectPage);
+						}
+						sel = GuideView.GUIDE_BCENTER;
+					}
+
+					String strPage = mTextMgr.createPageStr(mSelectPage, mUriFilePath);
+					// String strOld = mPageView.getText().toString();
+					String strOld = mGuideView.getPageText();
+					if (!strPage.equals(strOld)) {
+						if (mCurrentPage - 1 <= mSelectPage && mSelectPage <= mCurrentPage + 1) {
+							// ページ変更時に振動
+							startVibrate();
+						}
+						mGuideView.setPageText(strPage);
+					}
+					mGuideView.setPageColor(mTopColor1);
+					mPageModeIn = true;
+				}
+				else {
+					mPageModeIn = false;
+				}
+				// 選択に反映
+				mGuideView.setGuideIndex(sel);
+			}
+		}
+		else if (mOperation == TOUCH_OPERATION) {
+			// ページ戻or進、スクロール処理
+			if (this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
+				// タッチ後に範囲を超えて移動した場合はスクロールモードへ
+				this.mTouchFirst = false;
+				mLongTouchCount ++;
+				mTextView.scrollStart(mTouchBeginX, mTouchBeginY, RANGE_FLICK, mScroll);
+			}
+
+			if (!this.mTouchFirst) {
+					// スクロールモード
+					long now = SystemClock.uptimeMillis();
+					mTextView.scrollMoveAmount(x - mTouchPoint[0].x, y - mTouchPoint[0].y, mScroll, true);
+
+					for (int i = MAX_TOUCHPOINT - 1 ; i >= 1 ; i --) {
+						mTouchPoint[i].x = mTouchPoint[i - 1].x;
+						mTouchPoint[i].y = mTouchPoint[i - 1].y;
+						mTouchPointTime[i] = mTouchPointTime[i - 1];
+					}
+					mTouchPoint[0].x = x;
+					mTouchPoint[0].y = y;
+					mTouchPointTime[0] = now;
+					if (mTouchPointNum < MAX_TOUCHPOINT) {
+						mTouchPointNum ++;
+					}
+			}
+		}
+
+		mPageMode = false;
+		mTouchPointNum = 0;
+
+		// 慣性スクロールの停止
+		mTouchThrough = mTextView.scrollStop();
+
+		if (y > cy - mClickArea) {
+			if (mTapEditMode) {
+			}
+			else if (mPageSelect == PAGE_SLIDE) {
+				if (mClickArea <= x && x <= cx - mClickArea) {
+					// ページ選択開始
+					mCurrentPage = mTextView.getPage(); // 現在ページ取得
+
+					int sel = GuideView.GUIDE_BCENTER;
+					mSelectPage = mCurrentPage;
+					mGuideView.setGuideIndex(sel);
+	
+					mPageMode = true;
+//					mPageView.setText(mFileList.createPageStr(mSelectPage));
+//					mPageView.setBackgroundColor(mTopColor1);
+					mGuideView.setPageColor(mTopColor1);
+					if (mPageSelect == 0) {
+						mGuideView.setPageText(mTextMgr.createPageStr(mSelectPage, mUriFilePath));
+					}
+					mPageModeIn = true;
+				}
+			}
+			// 下部押下
+			if (mTapEditMode) {
+			}
+			else {
+				startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_BOTTOM); // ロングタッチのタイマー開始
+				mOperation = TOUCH_COMMAND;
+			}
+		}
+		else if (y < mClickArea) {
+			// 上部押下
+			if (mTapEditMode) {
+			}
+			else {
+				startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
+				mOperation = TOUCH_COMMAND;
+			}
+		}
+		else {
+			// 操作モード
+			if (mTapEditMode) {
+			}
+			else if (TouchPanelView.GetTouchPositionData(3) > 0) {
+				// 長押しタップの場合
+				// タッチパネル設定が有効な場合
+				startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
+			}
+			else {
+				mOperation = TOUCH_OPERATION;
+					mTouchPoint[0].x = x;
+				mTouchPoint[0].y = y;
+				mTouchPointTime[0] = SystemClock.uptimeMillis();
+				mTouchPointNum = 1;
+//				mTouchTime = SystemClock.uptimeMillis();	// フリックの判定に
+				mTouchDrawLeft = (int)mTextView.getDrawLeft();
+//				mTouchFirstX = x;
+			}
+		}
+
+		this.mTouchFirst = true;
+		this.mTouchBeginX = x;
+		this.mTouchBeginY = y;
 	}
 
 	// タップが前/次どちらか判定
@@ -1745,6 +2120,288 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		return next;
 	}
 
+	private void SetTouchPanelCommand(int mode) {
+
+		int index = TouchPanelView.GetTouchPositionData(mode);
+		SetTouchPanelCommandMain(index);
+	}
+
+	private void SetTouchPanelCommandMain(int index) {
+
+		switch (index) {
+			case DEF.TAP_NOSELECT:
+				break;
+			case DEF.TAP_BACK:
+				operationBack();
+				break;
+			case DEF.TAP_TOOLBARNEXTSCROLL:
+				// 次のページへスクロール
+				if (mTapScrl) {
+					// タップでスクロール
+					int move = true ? 1 : -1;
+					// 読込中の表示
+					if (!mTextView.setViewPosScroll(move)) {
+						// スクロールする余地がなければ次ページ
+						changePage(move);
+					}
+					else {
+						// スクロール開始
+						mTextView.startScroll();
+					}
+				} else {
+					// タップでスクロールしない
+					// 普通のタッチでページ遷移
+					// 次ページへ
+					nextPage();
+				}
+				break;
+			case DEF.TAP_TOOLBARPREVSCROLL:
+				// 前のページへスクロール
+				if (mTapScrl) {
+					// タップでスクロール
+					int move = false ? 1 : -1;
+					// 読込中の表示
+					if (!mTextView.setViewPosScroll(move)) {
+						// スクロールする余地がなければ次ページ
+						changePage(move);
+					}
+					else {
+						// スクロール開始
+						mTextView.startScroll();
+					}
+				} else {
+					// タップでスクロールしない
+					// 普通のタッチでページ遷移
+					// 前ページへ
+					prevPage();
+				}
+				break;
+			case DEF.TAP_TOOLBARLEFTMOST:
+				if (mCurrentPage == (mTextMgr.length() - 1)) {
+					nextPage();
+				}
+				else {
+					mCurrentPage = mTextMgr.length() - 1;
+					setPage(false);
+				}
+				break;
+			case DEF.TAP_TOOLBARLEFT100:
+				if (mCurrentPage == (mTextMgr.length() - 1)) {
+					nextPage();
+				}
+				else {
+					mCurrentPage += 100;
+					if (mCurrentPage > (mTextMgr.length() - 1)) {
+						mCurrentPage = mTextMgr.length() - 1;
+					}
+					setPage(false);
+				}
+				break;
+			case DEF.TAP_TOOLBARLEFT10:
+				if (mCurrentPage == (mTextMgr.length() - 1)) {
+					nextPage();
+				}
+				else {
+					mCurrentPage += 10;
+					if (mCurrentPage > (mTextMgr.length() - 1)) {
+						mCurrentPage = mTextMgr.length() - 1;
+					}
+					setPage(false);
+				}
+				break;
+			case DEF.TAP_TOOLBARLEFT1:
+				if (mCurrentPage == (mTextMgr.length() - 1)) {
+					nextPage();
+				}
+				else {
+					if (mCurrentPage < (mTextMgr.length() - 1)) {
+						mCurrentPage++;
+						setPage(false);
+					}
+				}
+				break;
+			case DEF.TAP_TOOLBARRIGHT1:
+				if (mCurrentPage == 0) {
+					prevPage();
+				}
+				else {
+					if (mCurrentPage > 0) {
+						mCurrentPage--;
+						setPage(false);
+					}
+				}
+				break;
+			case DEF.TAP_TOOLBARRIGHT10:
+				if (mCurrentPage == 0) {
+					prevPage();
+				}
+				else {
+					mCurrentPage -= 10;
+					if (mCurrentPage < 0) {
+						mCurrentPage = 0;
+					}
+					setPage(false);
+				}
+				break;
+			case DEF.TAP_TOOLBARRIGHT100:
+				if (mCurrentPage == 0) {
+					prevPage();
+				}
+				else {
+					mCurrentPage -= 100;
+					if (mCurrentPage < 0) {
+						mCurrentPage = 0;
+					}
+					setPage(false);
+				}
+				break;
+			case DEF.TAP_TOOLBARRIGHTMOST:
+				if (mCurrentPage == 0) {
+					prevPage();
+				}
+				else {
+					mCurrentPage = 0;
+					setPage(false);
+				}
+				break;
+			case DEF.TAP_PINCHSCALEUP:
+				// ズーム変更
+				mPinchScaleSel /= 5;
+				mPinchScaleSel *= 5;
+				mPinchScaleSel += 5;
+				if (mPinchScaleSel > 250) {
+					mPinchScaleSel = 250;
+				}
+				mGuideView.setGuideText(mPinchScaleSel + "%");
+				if (mPinchScale != mPinchScaleSel) {
+					mPinchScale = mPinchScaleSel;
+					// 慣性スクロールの停止
+					mTouchThrough = mTextView.scrollStop();
+					// ズームイン処理
+					mTextView.lockDraw();
+					synchronized (mTextView) {
+						mTextView.setTextScale(DEF.SCALE_PINCH, mPinchScale);
+						mTextView.TextScaling();
+					}
+					this.updateOverSize();
+					mTextView.update(true);
+				}
+				mGuideView.setGuideText(null);
+				break;
+			case DEF.TAP_PINCHSCALEDOWN:
+				// ズーム変更
+				mPinchScaleSel /= 5;
+				mPinchScaleSel *= 5;
+				mPinchScaleSel -= 5;
+				if (mPinchScaleSel < 10) {
+					mPinchScaleSel = 10;
+				}
+				mGuideView.setGuideText(mPinchScaleSel + "%");
+				if (mPinchScale != mPinchScaleSel) {
+					mPinchScale = mPinchScaleSel;
+					// 慣性スクロールの停止
+					mTouchThrough = mTextView.scrollStop();
+					// ズームアウト処理
+					mTextView.lockDraw();
+					synchronized (mTextView) {
+						mTextView.setTextScale(DEF.SCALE_PINCH, mPinchScale);
+						mTextView.TextScaling();
+					}
+					this.updateOverSize();
+					mTextView.update(true);
+				}
+				mGuideView.setGuideText(null);
+				break;
+			case DEF.TAP_TOOLBARMENU:
+				// ツールバー編集ダイアログ表示
+				onSelectMenuDialog(DEF.MENU_EDIT_TOOLBAR);
+				break;
+			case DEF.TAP_TOOLBARCONFIG:
+				// 設定画面に遷移
+				onSelectMenuDialog(DEF.MENU_SETTING);
+				break;
+			case DEF.TAP_PULLDOWNMENU:
+				// プルダウンメニューに遷移
+				// 独自メニュー表示
+				openMenu();
+				break;
+			case DEF.TAP_TXTCONFMENU:
+				// テキスト設定
+				onSelectMenuDialog(DEF.MENU_TXTCONF);
+				break;
+			case DEF.TAP_TGUIDE02:
+				// 見開き設定
+				onSelectMenuDialog(DEF.MENU_IMGVIEW);
+				break;
+			case DEF.TAP_TGUIDE03:
+				// 画像サイズ
+				onSelectMenuDialog(DEF.MENU_IMGSIZE);
+				break;
+			case DEF.TAP_NOISEMENU:
+				// マイク開始
+				onSelectMenuDialog(DEF.MENU_NOISE);
+				break;
+			case DEF.TAP_CHGOPEMENU:
+				// 操作方向の入れ替え
+				onSelectMenuDialog(DEF.MENU_CHG_OPE);
+				break;
+			case DEF.TAP_ADDBOOKMARKMENU:
+				// ブックマーク追加ダイアログ表示
+				onSelectMenuDialog(DEF.MENU_ADDBOOKMARK);
+				break;
+			case DEF.TAP_SELBOOKMARKMENU:
+				// ブックマーク選択ダイアログ表示
+				onSelectMenuDialog(DEF.MENU_SELBOOKMARK);
+				break;
+			case DEF.TAP_TOOLBARTOC:
+				// 見出し選択ダイアログ表示
+				openChapterMenu();
+				break;
+			case DEF.TAP_TOOLBARSEARCH:
+				// 検索文字列設定
+				onSelectMenuDialog(DEF.MENU_SEARCHTEXT);
+				break;
+			case DEF.TAP_PICSIZE00:
+			case DEF.TAP_PICSIZE01:
+			case DEF.TAP_PICSIZE02:
+			case DEF.TAP_PICSIZE03:
+			case DEF.TAP_PICSIZE04:
+			case DEF.TAP_PICSIZE05:
+			case DEF.TAP_PICSIZE06:
+			case DEF.TAP_PICSIZE07:
+				// 画像拡大率の変更
+				// 通し番号なのでオフセットを演算する
+				mPicSize = index - DEF.TAP_PICSIZE00;
+				// 表示を更新
+				reloadText();
+				break;
+			case DEF.TAP_ASCMODE00:
+			case DEF.TAP_ASCMODE01:
+			case DEF.TAP_ASCMODE02:
+				// 通し番号なのでオフセットを演算する
+				mAscMode = index - DEF.TAP_ASCMODE00;
+				// 表示を更新
+				reloadText();
+				break;
+			case DEF.TAP_SELVIEW00:
+			case DEF.TAP_SELVIEW01:
+			case DEF.TAP_SELVIEW02:
+			case DEF.TAP_SELVIEW03:
+			case DEF.TAP_SELVIEW04:
+				// 見開き設定変更
+				// 通し番号なのでオフセットを演算する
+				mDispMode = index - DEF.TAP_SELVIEW00;
+				mTextView.lockDraw();
+				mTextView.setDispMode(mDispMode);
+				mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false);
+				setTextPageData();
+				mTextView.update(true);
+				break;
+			case DEF.TAP_EXIT_VIEWER:
+				finishActivity(true);
+				break;
+		}
+	}
 
 	private int mSelectMode;
 
@@ -1849,8 +2506,10 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 							if (isPrePort == isAftPort) {
 								// 変化がないときは強制的に発生させる
 								mTextView.lockDraw();
-								mTextView.updateScreenSize();
-								mTextView.TextScaling();
+								synchronized (mTextView) {
+									mTextView.updateScreenSize();
+									mTextView.TextScaling();
+								}
 								mTextView.updateOverSize();
 								mTextView.update(true);
 							}
@@ -1945,6 +2604,12 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 
 	// 戻る操作
 	private void operationBack() {
+		if (mTapEditMode) {
+			// タップ操作の設定の編集中だった場合は解除して戻る
+			mTapEditMode = false;
+			mTextView.ViewTapSw(false);
+			return;
+		}
 		if (mGuideView.getOperationMode()) {
 			mGuideView.setOperationMode(false);
 			return;
@@ -2021,6 +2686,10 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mMenuDialog.addItem(DEF.MENU_EDIT_TOOLBAR, res.getString(R.string.ToolbarEditToolbar));
 		// 設定
 		mMenuDialog.addItem(DEF.MENU_SETTING, res.getString(R.string.setMenu));
+		mMenuDialog.addItem(DEF.MENU_TAP_PATTERN, res.getString(R.string.tapPatternMenu));
+		mMenuDialog.addItem(DEF.MENU_TAP_CLICK, res.getString(R.string.tapClickMenu));
+		mMenuDialog.addItem(DEF.MENU_TAP_SETTING, res.getString(R.string.tapSettingMenu));
+		mMenuDialog.addItem(DEF.MENU_CUSTOMKEY_SETTING, res.getString(R.string.CustonkeySettingMenu));
 		// バージョン情報
 		mMenuDialog.addItem(DEF.MENU_ABOUT, res.getString(R.string.aboutMenu));
 
@@ -2330,6 +2999,28 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 				dialog.show();
 				break;
 			}
+			case DEF.MENU_TAP_PATTERN: {
+				// タップ操作のパターンのダイアログを表示させる
+				TouchPanelView.SetAlertDialogTag(mActivity);
+				break;
+			}
+			case DEF.MENU_TAP_CLICK: {
+				// タップ操作のクリックのダイアログを表示させる
+				TouchPanelView.SetAlertDialogClick(mActivity);
+				break;
+			}
+			case DEF.MENU_TAP_SETTING: {
+				if (TouchPanelView.GetEditMode()) {
+					// タップ操作の設定の編集中にする
+					mTapEditMode = true;
+					mTextView.ViewTapSw(true);
+				}
+				break;
+			}
+			case DEF.MENU_CUSTOMKEY_SETTING:
+				TouchPanelView.SetAlertDialogCustom(mActivity);
+				break;
+
 			default: {
 				if (id >= DEF.MENU_CHAPTER) {
 					onSelectPage(id - DEF.MENU_CHAPTER);
@@ -2603,10 +3294,24 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 	// 他アクティビティからの復帰通知
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == DEF.REQUEST_SETTING) {
+			// ダブルタップ検出のリスナーを有効にする(これを入れないとタップ操作ができなくなる)
+			mDetector.setOnDoubleTapListener(this);
+
 			// 設定の読込
 			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 			ReadSetting(sharedPreferences);
+
+			// 慣性スクロールの停止
+			mTouchThrough = mTextView.scrollStop();
+
+			mTextView.lockDraw();
+			synchronized (mTextView) {
+				mTextView.setTextScale(mScaleMode, mPinchScale);
+				mTextView.TextScaling();
+			}
+			this.updateOverSize();
+			mTextView.update(true);
 
 			reloadText();
 		}
@@ -3094,4 +3799,9 @@ public class TextActivity extends AppCompatActivity implements OnTouchListener, 
 		mCloseDialog.show();
 	}
 
+	public static void UpdateTouchPanelData() {
+		if (mTextView != null) {
+			mTextView.ViewTapSw(true);
+		}
+	}
 }

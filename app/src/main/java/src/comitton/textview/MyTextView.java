@@ -7,6 +7,7 @@ import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.fileaccess.WorkStream;
 import src.comitton.fileview.data.FileData;
+import src.comitton.imageview.TouchPanelView;
 import src.comitton.jni.CallTxtLibrary;
 import src.comitton.imageview.ImageManager;
 import src.comitton.common.GuideView;
@@ -193,6 +194,8 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	private ImageManager mImageMgr;
 	private GuideView mGuideView;
 
+	private boolean mViewTapSw = false;
+
 	private float[] mShiftX = { 0.0f, 0.65f, 0.2f, 0.05f, 0.0f, 0.3f, 0.0f, 0.0f, 0.0f, -0.7f, -0.15f};
 	private float[] mShiftY = { 0.0f, 0.5f, 0.1f, 0.10f, 0.1f, 0.5f, -0.03f, 0.03f, 0.0f, 0.0f, -0.30f};
 // TODO 半角対応
@@ -203,6 +206,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		super(activity);
 
 		mActivity = activity;
+		new TouchPanelView(activity, 2);
 		mHolder = getHolder();
 		// デフォルト設定が有効になってしまう(RGB565になる)可能性があるためRGBA_8888を設定する
 		mHolder.setFormat(PixelFormat.RGBA_8888);
@@ -544,6 +548,12 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 				grad.setBounds(cen_x1, 0, cen_x2, cy);
 				grad.draw(canvas);
 			}
+		}
+
+		if (mViewTapSw) {
+			// タップ操作の設定を表示
+			TouchPanelView.SetViewArea(mDispWidth, mDispHeight);
+			TouchPanelView.Drawmain(canvas);
 		}
 
 //		if (mPseLand == true) {
@@ -2931,5 +2941,10 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 				}
 			}
 		}
+	}
+
+	public void ViewTapSw(boolean sw) {
+		mViewTapSw = sw;
+		updateNotify();
 	}
 }
