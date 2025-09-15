@@ -31,8 +31,9 @@ extern int			gCancel[];
 int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int left, int right, int top, int bottom, int algorithm, int Rotate, int Margin, int MarginColor, int Sharpen, int Bright, int Gamma, int Param, jint *RetSize, jfloat *colormatrix)
 {
 //#define DEBUG_CREATESCALE
-    int Invert   = (Param & PARAM_INVERT) != 0 ? 1 : 0;;
+    int Invert   = (Param & PARAM_INVERT) != 0 ? 1 : 0;
 	int Gray     = (Param & PARAM_GRAY) != 0 ? 1 : 0;
+	int Coloring  = (Param & PARAM_COLORING) != 0 ? 1 : 0;
 	int Moire    = (Param & PARAM_MOIRE) != 0 ? 1 : 0;
 	int Pseland  = (Param & PARAM_PSELAND) != 0 ? 1 : 0;
 #ifdef DEBUG_CREATESCALE
@@ -323,7 +324,7 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
 #endif
 	}
 
-	if (Gray > 0) {
+	if (Gray > 0 || Coloring > 0) {
 #ifdef DEBUG_CREATESCALE
         LOGD("CreateScale: Gray START: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
 #endif
@@ -334,7 +335,7 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
 		}
 
 		// グレースケール化
-		ret = ImageGray(index, Page, Half, Count, scl_w, scl_h);
+		ret = ImageGray(index, Page, Half, Count, scl_w, scl_h, Coloring);
 		if (ret < 0) {
 			return ret;
 		}

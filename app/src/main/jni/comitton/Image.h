@@ -173,7 +173,7 @@ int ImageHalf(int, int, int, int, int, int);
 int ImageSharpen(int, int, int, int, int, int, int);
 int ImageBlur(int, int, int, int, int, int, int);
 int ImageInvert(int, int, int, int, int, int);
-int ImageGray(int, int, int, int, int, int);
+int ImageGray(int, int, int, int, int, int, int);
 int ImageBright(int, int, int, int, int, int, int, int);
 int ImageColorMatrix(int, int, int, int, int, int, jfloat*);
 
