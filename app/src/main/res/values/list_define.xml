@@ -658,5 +658,57 @@
         <item>8</item>
         <item>9</item>
     </string-array>
+    <string-array name="startserver_name_list">
+        <item>None</item>
+        <item>Local</item>
+        <item>ServerSetting 1</item>
+        <item>ServerSetting 2</item>
+        <item>ServerSetting 3</item>
+        <item>ServerSetting 4</item>
+        <item>ServerSetting 5</item>
+        <item>ServerSetting 6</item>
+        <item>ServerSetting 7</item>
+        <item>ServerSetting 8</item>
+        <item>ServerSetting 9</item>
+        <item>ServerSetting 10</item>
+    </string-array>
+    <string-array name="startserver_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+    </string-array>
+    <string-array name="hardwarekey_name_list">
+        <item>System Setting</item>
+        <item>Back</item>
+        <item>Next Page</item>
+        <item>Prev Page</item>
+        <item>Next Page Shift</item>
+        <item>Prev Page Shift</item>
+        <item>Next Scroll Page</item>
+        <item>Prev Scroll Page</item>
+        <item>Rotate</item>
+        <item>Pulldown Menu</item>
+    </string-array>
+    <string-array name="hardwarekey_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+    </string-array>
 
 </resources>

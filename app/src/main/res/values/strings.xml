@@ -118,6 +118,13 @@
     <string name="exitMenu">Exit</string>
     <string name="noticeMenu">Notice</string>
     <string name="aboutMenu">About</string>
+    <string name="tapPatternMenu">Pattern of tap operation</string>
+    <string name="tapClickMenu">Type of tap operation</string>
+    <string name="tapClick00">Single tap</string>
+    <string name="tapClick01">Double tap</string>
+    <string name="tapClick02">Long press</string>
+    <string name="tapSettingMenu">Setup of tap operation</string>
+    <string name="CustonkeySettingMenu">Setup of custon key</string>
     <string name="downloadCountMenu">Number of Downloads</string>
     <string name="licenseMenu">License</string>
     <string name="noiseMenu">Operation by noise</string>
@@ -384,6 +391,18 @@
     <string name="bkmode00">Exit ComittoNxX</string>
     <string name="bkmode01">Parent Directory</string>
     <string name="bkmode02">History Back</string>
+    <string name="serverlist00">None</string>
+    <string name="serverlist01">Local</string>
+    <string name="serverlist02">Server Setting 1</string>
+    <string name="serverlist03">Server Setting 2</string>
+    <string name="serverlist04">Server Setting 3</string>
+    <string name="serverlist05">Server Setting 4</string>
+    <string name="serverlist06">Server Setting 5</string>
+    <string name="serverlist07">Server Setting 6</string>
+    <string name="serverlist08">Server Setting 7</string>
+    <string name="serverlist09">Server Setting 8</string>
+    <string name="serverlist10">Server Setting 9</string>
+    <string name="serverlist11">Server Setting 10</string>
     <string name="volkey00">No Use</string>
     <string name="volkey01">Vol-Up:Prev / Down:Next</string>
     <string name="volkey02">Vol-Up:Next / Down:Prev</string>
@@ -488,6 +507,16 @@
     <string name="memcache07">Under 30%%</string>
     <string name="memcache08">Under 20%%</string>
     <string name="memcache09">Under 10%%</string>
+    <string name="pattern00">System settings</string>
+    <string name="pattern01">Pattern1</string>
+    <string name="pattern02">Pattern2</string>
+    <string name="pattern03">Pattern3</string>
+    <string name="pattern04">Pattern4</string>
+    <string name="pattern05">Pattern5</string>
+    <string name="pattern06">Pattern6</string>
+    <string name="pattern07">Pattern7</string>
+    <string name="pattern08">Pattern8</string>
+    <string name="pattern09">Pattern9</string>
     <string name="Cancel">Cancel</string>
     <string name="desc"></string>
     <string name="none">None</string>
@@ -585,8 +614,119 @@
     <string name="ToolbarControl">Image/Text Config</string>
     <string name="ToolbarMenu">Open Menu</string>
     <string name="ToolbarConfig">Open Settings</string>
+    <string name="ToolbarPulldownMenu">Open Pulldown Menu</string>
     <string name="ToolbarEditToolbar">Edit Toolbar</string>
     <string name="ToolbarSize">Toolbar Size(%)</string>
+    <string name="Toolbardisplayposition00">Move toward the center</string>
+    <string name="Toolbardisplayposition01">Move up</string>
+    <string name="Toolbardisplayposition02">Move down</string>
+    <string name="Toolbardisplayposition03">Move left</string>
+    <string name="Toolbardisplayposition04">Move right</string>
+    <string name="Toolbardisplayposition05">Move to the top left</string>
+    <string name="Toolbardisplayposition06">Move to the top right</string>
+    <string name="Toolbardisplayposition07">Move to the bottom left</string>
+    <string name="Toolbardisplayposition08">Move to the bottom right</string>
+    <string name="ToolbarNextScroll">Scroll to the next page</string>
+    <string name="ToolbarPrevScroll">Scroll back to the previous page </string>
+    <string name="ToolbarPinchScaleUp">Zoom In</string>
+    <string name="ToolbarPinchScaleDown">Zoom Out</string>
+    <string name="ToolbarExitViewer">Exit viewer</string>
+    <string name="Toolbarpicsize00">Original Size</string>
+    <string name="Toolbarpicsize01">Original x1</string>
+    <string name="Toolbarpicsize02">Original x2</string>
+    <string name="Toolbarpicsize03">Original x3</string>
+    <string name="Toolbarpicsize04">Fit Screen</string>
+    <string name="Toolbarpicsize05">Fit Screen\n(Ignore margins)</string>
+    <string name="Toolbarpicsize06">Fit Screen\n(for Spread)</string>
+    <string name="Toolbarpicsize07">Fit Screen\n(for Spread, Ignore margins)</string>
+    <string name="Toolbarascmode00">Vertical</string>
+    <string name="Toolbarascmode01">Horizontal</string>
+    <string name="Toolbarascmode02">Blend</string>
+
+    <string name="TapTOC">Select Chapter</string>
+    <string name="TapSearch">Set Search Text</string>
+    <string name="TapThumbSlider">Thumbnail/Slider switching</string>
+    <string name="TapDirTree">Select Directory</string>
+    <string name="TapShare">Share</string>
+    <string name="TapRotateImage">Image Rotate</string>
+    <string name="TapSelectThum">Set as thumbnail</string>
+    <string name="TapTrimThumb">Crop and set as thumbnail</string>
+    <string name="Tapascmode00">Vertical</string>
+    <string name="Tapascmode01">Horizontal</string>
+    <string name="Tapascmode02">Blend</string>
+
+    <string name="hardwarekey00">System Setting</string>
+    <string name="hardwarekey01">No response</string>
+    <string name="hardwarekey02">Back</string>
+    <string name="hardwarekey03">Decision</string>
+    <string name="hardwarekey04">Move left</string>
+    <string name="hardwarekey05">Move right</string>
+    <string name="hardwarekey06">Move up</string>
+    <string name="hardwarekey07">Move down</string>
+    <string name="hardwarekey08">Go to top</string>
+    <string name="hardwarekey09">Go to bottom</string>
+    <string name="hardwarekey10">Change to parent directory</string>
+    <string name="hardwarekey11">List selection</string>
+    <string name="hardwarekey12">Move up list</string>
+    <string name="hardwarekey13">Move down list</string>
+    <string name="hardwarekey14">Update list display</string>
+    <string name="hardwarekey15">Toggle list mode</string>
+    <string name="hardwarekey16">Exiting the app</string>
+
+    <string name="imageviwerhardwarekeytitle">Image Viewer hardware key assignment"</string>
+    <string name="textviewerhardwarekeytitle">Text Viewer hardware key assignment</string>
+    <string name="filelisthardwarekeytitle">File list ardware key assignment</string>
+
+    <string name="hardwarekeytitle00">Back key assignment</string>
+    <string name="hardwarekeytitle01">Volume up button assignment</string>
+    <string name="hardwarekeytitle02">Volume down button assignment</string>
+    <string name="hardwarekeytitle03">Camera button assignment</string>
+    <string name="hardwarekeytitle04">Focus button assignment</string>
+    <string name="hardwarekeytitle05">Menu button assignment</string>
+    <string name="hardwarekeytitle06">Cursor left key assignment</string>
+    <string name="hardwarekeytitle07">Cursor right key assignment</string>
+    <string name="hardwarekeytitle08">Cursor up key assignment</string>
+    <string name="hardwarekeytitle09">Cursor down key assignment</string>
+    <string name="hardwarekeytitle10">Enter button assignment</string>
+    <string name="hardwarekeytitle11">Enter key assignment</string>
+    <string name="hardwarekeytitle12">Delete key assignment</string>
+    <string name="hardwarekeytitle13">Spacebar assignment</string>
+    <string name="hardwarekeytitle14">Search button assignment</string>
+    <string name="hardwarekeytitle15">Page up button assignment</string>
+    <string name="hardwarekeytitle16">Page down button assignment</string>
+    <string name="hardwarekeytitle17">Escape key assignment</string>
+    <string name="hardwarekeytitle18">Home key assignment</string>
+    <string name="hardwarekeytitle19">End key assignment</string>
+    <string name="hardwarekeytitle20">Forward button assignment</string>
+    <string name="hardwarekeytitle21">L1 button assignment</string>
+    <string name="hardwarekeytitle22">L2 button assignment</string>
+    <string name="hardwarekeytitle23">L3 button assignment</string>
+    <string name="hardwarekeytitle24">R1 button assignment</string>
+    <string name="hardwarekeytitle25">R2 button assignment</string>
+    <string name="hardwarekeytitle26">R3 button assignment</string>
+    <string name="hardwarekeytitle27">A button assignment</string>
+    <string name="hardwarekeytitle28">B button assignment</string>
+    <string name="hardwarekeytitle29">X button assignment</string>
+    <string name="hardwarekeytitle30">Y button assignment</string>
+    <string name="hardwarekeytitle31">Select button assignment</string>
+    <string name="hardwarekeytitle32">Start button assignment</string>
+    <string name="hardwarekeytitle33">Skip button assignment</string>
+    <string name="hardwarekeytitle34">Previous button assignment</string>
+    <string name="hardwarekeytitle35">Play/Pause button assignment</string>
+    <string name="hardwarekeytitle36">Custom Key 1 assignment</string>
+    <string name="hardwarekeytitle37">Custom Key 2 assignment</string>
+    <string name="hardwarekeytitle38">Custom Key 3 assignment</string>
+    <string name="hardwarekeytitle39">Custom Key 4 assignment</string>
+    <string name="hardwarekeytitle40">Custom Key 5 assignment</string>
+    <string name="hardwarekeytitle41">Custom Key 6 assignment</string>
+    <string name="hardwarekeytitle42">Custom Key 7 assignment</string>
+    <string name="hardwarekeytitle43">Custom Key 8 assignment</string>
+    <string name="hardwarekeytitle44">Custom Key 9 assignment</string>
+    <string name="hardwarekeytitle45">Custom Key 10 assignment</string>
+
+    <string name="nohardwarekeytitle">Title not set</string>
+
+    <string name="noselect">No reaction</string>
 
     <string name="ChapMenuFile">File</string>
     <string name="ChapMenuTOC">TOC</string>
@@ -626,5 +766,44 @@
 
     <string name="UnknownArchiveFormat">Unknown Archive Format.</string>
     <string name="ErrorNoPages">There are no pages to display.</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <string name="DetectHardwareKey">Hardware key detection</string>
+    <string name="WaitHardwareKey">Waiting for key detection</string>
+    <string name="FoundHardwareKey">Key detected. Code：</string>
+    <string name="HintHardwareKey">Enter title here</string>
+    <string-array name="customkeylist">
+        <item>Custom key 1</item>
+        <item>Custom key 2</item>
+        <item>Custom key 3</item>
+        <item>Custom key 4</item>
+        <item>Custom key 5</item>
+        <item>Custom key 6</item>
+        <item>Custom key 7</item>
+        <item>Custom key 8</item>
+        <item>Custom key 9</item>
+        <item>Custom key 10</item>
+    </string-array>
+    <string name="BtnTitleEnter">Title input decision</string>
+    <string name="BtnTitleCansel">Cancel title input</string>
+    <string name="ViewCodeData">Stored key code</string>
+    <string name="MesTapHelpMes">Tap to set up the dialog, then press the back key to exit</string>
+    <string name="SettingTapClick">Type of tap operation</string>
+    <string name="MesUpscaling">Screen updating</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
 
 </resources>
