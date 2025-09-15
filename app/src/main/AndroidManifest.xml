@@ -1,40 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="preferExternal">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION" />
+    <uses-permission android:name="android.permission.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_MEDIA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <application
+        android:hardwareAccelerated="true"
         android:icon="${icon}"
         android:label="@string/app_name"
         android:largeHeap="true"
-        android:hardwareAccelerated="true"
-        android:usesCleartextTraffic="true"
-        android:requestLegacyExternalStorage="true" >
+        android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name="src.comitton.dialog.SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_settings" />
 
-        <meta-data android:name="android.max_aspect" android:value="3.0" />
+        <meta-data
+            android:name="android.max_aspect"
+            android:value="3.0" />
 
         <activity
             android:name="src.comitton.fileview.FileSelectActivity"
-            android:label="@string/app_launch_name"
-            android:theme="@style/MyAppCompat"
-            android:resizeableActivity="true"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:exported="true"
+            android:label="@string/app_launch_name"
             android:launchMode="singleTop"
-            android:exported="true" >
-            <intent-filter >
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat">
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
-            <intent-filter >
+
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="true" />
+
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="comittonxx"/>
-            </intent-filter>
-            <intent-filter android:label="@string/app_name" android:scheme="http" tools:ignore="AppLinkUrlError" >
+
+                <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="comittonxx" />
+            </intent-filter>
+            <intent-filter
+                android:label="@string/app_name"
+                android:scheme="http"
+                tools:ignore="AppLinkUrlError">
+                <category android:name="android.intent.category.DEFAULT" />
+
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.VIEW" />
                 <!-- for image viewer -->
@@ -57,159 +84,148 @@
         </activity>
         <activity
             android:name="src.comitton.imageview.ImageActivity"
-            android:theme="@style/MyAppCompat"
-            android:resizeableActivity="true"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:exported="true"
             android:launchMode="singleTop"
-            android:exported="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.textview.TextActivity"
-            android:theme="@style/MyAppCompat"
-            android:resizeableActivity="true"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:exported="true"
             android:launchMode="singleTop"
-            android:exported="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.expandview.ExpandActivity"
-            android:theme="@style/MyAppCompat"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.helpview.HelpActivity"
-            android:theme="@style/MyAppCompat"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.webview.WebViewActivity"
-            android:theme="@style/MyAppCompat"
-            android:resizeableActivity="true"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:exported="true"
             android:launchMode="singleTop"
-            android:exported="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.cropimageview.CropImageActivity"
-            android:theme="@style/MyAppCompat"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.config.SetConfigActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetFileListActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetRecorderActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetFileColorActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageDetailActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetTextActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetEpubActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageTextDetailActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageTextColorActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetNoiseActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCacheActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCommonActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCustomUrlSchemeActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetServerMessageBlockActivity"
-            android:theme="@style/MyTheme"
             android:launchMode="singleTop"
-            android:resizeableActivity="true" >
-        </activity>
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetHardwareSelectKeyActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetHardwareImageViewerKeyActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetHardwareTextViewerKeyActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetHardwareFileListKeyActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
             android:exported="false"
+            android:grantUriPermissions="true"
             android:readPermission="true"
-            android:writePermission="true"
-            android:grantUriPermissions="true">
+            android:writePermission="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
+                android:resource="@xml/provider_paths" />
         </provider>
     </application>
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION" />
-    <uses-permission android:name="android.permission.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.MANAGE_MEDIA"/>
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 </manifest>
