@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Hardware key assignment" >
+        <PreferenceScreen
+            android:key="ImageViewerHardKeySet"
+            android:title="Managing image viewer hardware keys"
+            android:summary="Setting hardware key assignments" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareImageViewerKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="TextViewerHardKeySet"
+            android:title="Managing text viewer hardware keys"
+            android:summary="Setting hardware key assignments" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareTextViewerKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="FileListHardKeySet"
+            android:title="Managing filelist hardware keys"
+            android:summary="Setting hardware key assignments" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareFileListKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+    </PreferenceCategory>
+</PreferenceScreen>
