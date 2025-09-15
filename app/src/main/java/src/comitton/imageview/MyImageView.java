@@ -162,6 +162,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	// 一時保存画像で描画すべき状態
 	private boolean mIsBackDraw = false;
 
+	private boolean mViewTapSw = false;
+
 	public MyImageView(Activity activity) {
 		super(activity);
 		mActivity = activity;
@@ -170,6 +172,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mDrawRect = new Rect();
 		mWorkRect = new Rect();
 		mHandler = new Handler(this);
+		new TouchPanelView(activity, 1);
 
 		requestFocus();
 		mHolder = getHolder();
@@ -1029,6 +1032,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						canvas.restore();
 					}
 				}
+			}
+			if (mViewTapSw) {
+				// タップ操作の設定を表示
+				TouchPanelView.SetViewArea(mDispWidth, mDispHeight);
+				TouchPanelView.Drawmain(canvas);
 			}
 		}
 	}
@@ -3199,5 +3207,10 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	public void onUpdateArea(short areatype, boolean isRealtime) {
 		// サムネイルページ選択の描画更新通知
 		update(false);
+	}
+
+	public void ViewTapSw(boolean sw) {
+		mViewTapSw = sw;
+		updateNotify();
 	}
 }
