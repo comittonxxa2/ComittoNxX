@@ -27,6 +27,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ListPreference mListRota;
 	private ListPreference mListSort;
 	private ListPreference mBackMode;
+	private ListPreference mStartServer;
 
 	private ListPreference mMaxLines;
 	private ListPreference mFileDelMenu;
@@ -69,6 +70,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		{ R.string.bkmode00		// アプリ終了
 		, R.string.bkmode01		// 親ディレクトリ
 		, R.string.bkmode02 };	// 遷移を戻る
+	public static final int[] StartServerName =
+		{ R.string.serverlist00
+		, R.string.serverlist01
+		, R.string.serverlist02
+		, R.string.serverlist03
+		, R.string.serverlist04
+		, R.string.serverlist05
+		, R.string.serverlist06
+		, R.string.serverlist07
+		, R.string.serverlist08
+		, R.string.serverlist09
+		, R.string.serverlist10 };
 	public static final int[] ShowMenu =
 		{ R.string.showmenu00		// 表示しない
 		, R.string.showmenu01		// 表示する
@@ -108,6 +121,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mListRota  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LISTROTA);
 		mListSort  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LISTSORT);
 		mBackMode  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_BACKMODE);
+		mStartServer = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_STARTSERVER);
 		mMaxLines = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_MAX_LINES);
 		mFileDelMenu = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_FILEDELMENU);
 		mFileRenMenu = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_FILERENMENU);
@@ -153,6 +167,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mListRota.setSummary(getListRotaSummary(sharedPreferences));	// ファイル選択画面の回転制御
 		mListSort.setSummary(getListSortSummary(sharedPreferences));	// ソート
 		mBackMode.setSummary(getBackModeSummary(sharedPreferences));	// 戻るボタン動作
+		mStartServer.setSummary(getStartServerSummary(sharedPreferences));	// 起動時のサーバーリストの番号
 		mMaxLines.setSummary(getMaxLinesSummary(sharedPreferences));		// ファイル名の行数
 		mFileDelMenu.setSummary(getFileDelMenuSummary(sharedPreferences));		// 削除メニュー表示
 		mFileRenMenu.setSummary(getFileRenMenuSummary(sharedPreferences));		// 名前変更メニュー表示
@@ -211,6 +226,10 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		else if(key.equals(DEF.KEY_BACKMODE)){
 			//
 			mBackMode.setSummary(getBackModeSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_STARTSERVER)){
+			//
+			mStartServer.setSummary(getStartServerSummary(sharedPreferences));
 		}
 		else if(key.equals(DEF.KEY_THUMBSIZEW) || key.equals(DEF.KEY_THUMBSIZEH)){
 			// サムネイルサイズ
@@ -404,6 +423,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static int getBackMode(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_BACKMODE, "0");
 		if (val < 0 || val > BackModeName.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static int getStartServer(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_STARTSERVER, "0");
+		if (val < 0 || val > StartServerName.length){
 			val = 0;
 		}
 		return val;
@@ -629,6 +656,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		int val = getBackMode(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(BackModeName[val]);
+	}
+
+	private String getStartServerSummary(SharedPreferences sharedPreferences){
+		int val = getStartServer(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(StartServerName[val]);
 	}
 
 	private String getThumbnailSummary(SharedPreferences sharedPreferences){
