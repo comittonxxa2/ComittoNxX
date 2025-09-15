@@ -119,6 +119,14 @@
                 android:targetClass="src.comitton.config.SetServerMessageBlockActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="HardKeySet"
+            android:title="ハードウェアキーの管理"
+            android:summary="ハードウェアキーの割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareSelectKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="設定のファイル保存" >
         <src.comitton.config.ExportSettingPreference

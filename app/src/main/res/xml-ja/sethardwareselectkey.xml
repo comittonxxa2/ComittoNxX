@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="ハードウェアキーの管理" >
+        <PreferenceScreen
+            android:key="ImageViewerHardKeySet"
+            android:title="イメージビューアのハードウェアキーの管理"
+            android:summary="ハードウェアキーの割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareImageViewerKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="TextViewerHardKeySet"
+            android:title="テキストビューアのハードウェアキーの管理"
+            android:summary="ハードウェアキーの割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareTextViewerKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="FileListHardKeySet"
+            android:title="ファイルリストのハードウェアキーの管理"
+            android:summary="ハードウェアキーの割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareFileListKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+    </PreferenceCategory>
+</PreferenceScreen>

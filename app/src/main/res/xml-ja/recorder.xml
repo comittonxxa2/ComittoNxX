@@ -29,8 +29,8 @@
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="RHSambaRec"
-            android:summary="サーバのファイルを読んだとき履歴に記録する"
-            android:title="サーバの履歴保存" />
+            android:summary="サーバーのファイルを読んだとき履歴に記録する"
+            android:title="サーバーの履歴保存" />
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="履歴の保持件数"

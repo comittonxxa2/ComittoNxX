@@ -35,6 +35,14 @@
             android:key="BackMode"
             android:summary="dummy"
             android:title="Backキーの動作" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="起動時のサーバー選択"
+            android:entries="@array/startserver_name_list"
+            android:entryValues="@array/startserver_value_list"
+            android:key="StartServer"
+            android:summary="dummy"
+            android:title="起動時のサーバー選択" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ResumeOpen"

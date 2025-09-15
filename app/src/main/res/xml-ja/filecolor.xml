@@ -18,11 +18,11 @@
     <PreferenceCategory android:title="カスタム設定" >
         <src.comitton.config.color.ColorTxtSetting
             android:dialogMessage="色を設定してください。"
-            android:dialogTitle="サーバ選択のテキスト色"
+            android:dialogTitle="サーバー選択のテキスト色"
             android:key="TxtRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="サーバ選択のテキスト色" />
+            android:title="サーバー選択のテキスト色" />
         <src.comitton.config.color.ColorDirSetting
             android:dialogMessage="色を設定してください。"
             android:dialogTitle="ディレクトリの色"
