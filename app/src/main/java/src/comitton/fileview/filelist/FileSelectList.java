@@ -300,16 +300,13 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						// 次の位置と比較するため値を保存
 						old_progress = progress;
 					}
-					if (mMultiThread.isInterrupted()) {
-						// 処理中断
-						mainHandler.post(() -> {
-							// メイン画面で表示
-							mProgressDialog.dismiss();
-						});
-						return;
-					}
 		        }
 			} catch  (Exception e) {
+				// 処理中断
+				mainHandler.post(() -> {
+					// メイン画面で表示
+					mProgressDialog.dismiss();
+				});
 			}
 			// スレッドを終了させて最初から始める
 			msendResult();
