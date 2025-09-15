@@ -15,11 +15,13 @@ import java.text.MessageFormat;
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetHardwareFileListKeyActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.expandview.ExpandActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
+import src.comitton.imageview.TouchPanelView;
 import src.comitton.textview.TextActivity;
 import src.comitton.textview.TextManager;
 import src.comitton.common.DEF;
@@ -192,6 +194,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int mFontTile;
 	private int mItemMargin;
 	private int mBackMode;
+	private int mStartServer;
 
 	private int mDirColor;
 	private int mBefColor;
@@ -293,10 +296,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static Thread mMultiThread5 = null;
 	private static Thread mMultiThread6 = null;
 
+	private boolean mAutoRepeatCheck = false;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
+		int logLevel = 1;//Logcat.LOG_LEVEL_WARN;
 		super.onCreate(savedInstanceState);
 
 		// 設定の読込
@@ -547,6 +552,15 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		if (path != null && !path.isEmpty()) {
 			mPath = path;
+		}
+
+		if (serverSelect == -2 && path == null && server == null) {
+			// サーバーパスがすべて設定されていなかった場合
+			if (mStartServer > 1) {
+				// サーバー選択が有効の場合は番号とパスをセット
+				serverSelect = mStartServer - 2;
+				mPath = "/";
+			}
 		}
 
 		// サーバパス
@@ -1145,6 +1159,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mListRota = SetFileListActivity.getListRota(mSharedPreferences);
 
 		mBackMode = SetFileListActivity.getBackMode(mSharedPreferences);
+		mStartServer = SetFileListActivity.getStartServer(mSharedPreferences);
 		// mThumbnail = SetFileListActivity.getThumbnail(mSharedPreferences);
 		mThumbSizeW = DEF.calcThumbnailSize(SetFileListActivity.getThumbSizeW(mSharedPreferences));
 		mThumbSizeH = DEF.calcThumbnailSize(SetFileListActivity.getThumbSizeH(mSharedPreferences));
@@ -1298,6 +1313,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (mBackMode != SetFileListActivity.getBackMode(mSharedPreferences)) {
 			return true;
 		}
+		if (mStartServer != SetFileListActivity.getStartServer(mSharedPreferences)) {
+			return true;
+		}
 		if (mRotateBtn != DEF.RotateBtnList[SetCommonActivity.getRotateBtn(mSharedPreferences)]) {
 			return true;
 		}
@@ -1369,155 +1387,403 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		return false;
 	}
 
+	// リストモード切替
+	private void ChangListmode() {
+		int select = 0;
+		select = (mListMode == FileListArea.LISTMODE_LIST ? 0 : 2) + (mThumbnail ? 0 : 1);
+		select++;
+		if (select > 3) {
+			select = 0;
+		}
+		switch (select) {
+			case 0: {
+				// サムネイルあり
+				if (!mThumbnail) {
+					mThumbnail = true;
+				}
+				mListMode = FileListArea.LISTMODE_LIST;
+				break;
+			}
+			case 1: {
+				// サムネイルなし
+				if (mThumbnail) {
+					mThumbnail = false;
+				}
+				mListMode = FileListArea.LISTMODE_LIST;
+				break;
+			}
+			case 2: {
+				// サムネイルあり
+				if (!mThumbnail) {
+					mThumbnail = true;
+				}
+				mListMode = FileListArea.LISTMODE_TILE;
+				break;
+			}
+			default: {
+				// サムネイルなし
+				if (mThumbnail) {
+					mThumbnail = false;
+				}
+				mListMode = FileListArea.LISTMODE_TILE;
+				break;
+			}
+		}
+		// 表示を反映
+		mListScreenView.setListMode(mListMode);
+		mListScreenView.setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
+		mListScreenView.notifyUpdate(RecordList.TYPE_FILELIST);
+		saveListMode(true);
+		loadThumbnail(true);
+	}
+
 	private boolean mEnterDown = false;
+
+	// ハードウェアキーの設定
+	private void SetHardwareKey(int keycode, int keydata) {
+
+		switch (keydata) {
+			case DEF.TAP_FILELIST_NOSELECT:
+				break;
+			case DEF.TAP_FILELIST_BACK:
+				int listtype = mListScreenView.getListType();
+				if(listtype != RecordList.TYPE_FILELIST){
+					// サムネイルを読み込ませる
+					loadThumbnail(true);
+					switchFileList(); // ファイルリストをアクティブ化
+					break;
+				}
+
+				// ジェスチャーナビゲーションのBack操作中に長押し判定が発生していた場合にキャンセルする
+				if (mTouchArea == ListScreenView.AREATYPE_FILELIST) {
+					mListScreenView.mFileListArea.cancelOperation();
+				} else if (mTouchArea == ListScreenView.AREATYPE_DIRLIST) {
+					mListScreenView.mDirListArea.cancelOperation();
+				} else if (mTouchArea == ListScreenView.AREATYPE_SERVERLIST) {
+					mListScreenView.mServerListArea.cancelOperation();
+				} else if (mTouchArea == ListScreenView.AREATYPE_FAVOLIST) {
+					mListScreenView.mFavoListArea.cancelOperation();
+				} else if (mTouchArea == ListScreenView.AREATYPE_HISTLIST) {
+					mListScreenView.mHistListArea.cancelOperation();
+				}
+
+				if (mBackMode == BACKMODE_EXIT) {
+					checkExitTimer();
+					break;
+				}
+				else if (mBackMode == BACKMODE_PARENT) {
+					// 親ディレクトリに移動
+					if (mPath.equals("/")) {
+						// アプリ終了
+						checkExitTimer();
+						break;
+					}
+					moveParentDir();
+					mExitBackTimer = 0;
+
+					switchFileList(); // ファイルリストをアクティブ化
+				}
+				else if (mBackMode == BACKMODE_HISTORY) {
+					HistoryData data = mPathHistory.pop();
+					String uri;
+					if (data == null) {
+						// 最初のディレクトリ
+						checkExitTimer();
+						break;
+					}
+					else if (data.mCode == null || data.mCode.length() <= 0) {
+						mServer.select(DEF.INDEX_LOCAL);
+						uri = "";
+					}
+					else {
+						if (!mServer.select(data.mCode)) {
+							mExitBackTimer = 0;
+							break;
+						}
+						uri = mServer.getURI();
+					}
+					moveFileSelect(uri, data.mPath, data.mTopIndex, false);
+					mExitBackTimer = 0;
+
+					switchFileList(); // ファイルリストをアクティブ化
+				}
+				break;
+			case DEF.TAP_FILELIST_ENTER:
+				if (!mEnterDown) {
+					mListScreenView.moveCursor(KeyEvent.KEYCODE_ENTER, true);
+					mEnterDown = true;
+				}
+				break;
+			case DEF.TAP_FILELIST_LEFT:
+				mListScreenView.moveCursor(KeyEvent.KEYCODE_DPAD_LEFT, true);
+				break;
+			case DEF.TAP_FILELIST_RIGHT:
+				mListScreenView.moveCursor(KeyEvent.KEYCODE_DPAD_RIGHT, true);
+				break;
+			case DEF.TAP_FILELIST_UP:
+				mListScreenView.moveCursor(KeyEvent.KEYCODE_DPAD_UP, true);
+				break;
+			case DEF.TAP_FILELIST_DOWN:
+				mListScreenView.moveCursor(KeyEvent.KEYCODE_DPAD_DOWN, true);
+				break;
+			case DEF.TAP_FILELIST_HOME:
+				mListScreenView.moveCursor(KeyEvent.KEYCODE_MOVE_HOME, true);
+				break;
+			case DEF.TAP_FILELIST_END:
+				mListScreenView.moveCursor(KeyEvent.KEYCODE_MOVE_END, true);
+				break;
+			case DEF.TAP_FILELIST_PARENT_DIR:
+				// 親ディレクトリに移動
+				if (!mPath.equals("/")) {
+					moveParentDir();
+				}
+				break;
+			case DEF.TAP_FILELIST_SELECT_LIST:
+				// リストを選択
+				mListScreenView.switchListType(false);
+				break;
+			case DEF.TAP_FILELIST_MOVELISTUP:
+				mListScreenView.moveListUp(mMarker.length() > 0);
+				break;
+			case DEF.TAP_FILELIST_MOVELISTDOWN:
+				mListScreenView.moveListDown(mMarker.length() > 0);
+				break;
+			case DEF.TAP_FILELIST_REFRESH:
+				// リスト表示更新
+				SafFileAccess.InitRelativePath();
+				mFileList.FlushFileList();
+				loadListView();
+				break;
+			case DEF.TAP_FILELIST_CHANGELISTMODE:
+				// リストモード切替
+				ChangListmode();
+				break;
+			case DEF.TAP_FILELIST_ENDAPP:
+				// アプリ終了
+				finishApplication();
+				break;
+			default:
+				break;
+		}
+	}
 
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent event) {
-		int keycode = event.getKeyCode();
-		if (event.getAction() == KeyEvent.ACTION_DOWN) {
-			switch (keycode) {
-				case KeyEvent.KEYCODE_ENTER:
-				case KeyEvent.KEYCODE_DPAD_CENTER:
-					if (!mEnterDown) {
-						mListScreenView.moveCursor(keycode, true);
-						mEnterDown = true;
-					}
-					break;
-				case KeyEvent.KEYCODE_DPAD_UP:
-				case KeyEvent.KEYCODE_DPAD_DOWN:
-				case KeyEvent.KEYCODE_DPAD_LEFT:
-				case KeyEvent.KEYCODE_DPAD_RIGHT:
-				case KeyEvent.KEYCODE_MOVE_END:
-				case KeyEvent.KEYCODE_MOVE_HOME:
-					mListScreenView.moveCursor(keycode, true);
-					break;
-				case KeyEvent.KEYCODE_DEL:
-					// 親ディレクトリに移動
-					if (!mPath.equals("/")) {
-						moveParentDir();
-					}
-					break;
-				case KeyEvent.KEYCODE_SPACE:
-					// リストを選択
-					mListScreenView.switchListType(false);
-					break;
-				case KeyEvent.KEYCODE_ESCAPE:
-				case KeyEvent.KEYCODE_BACK:
-					int listtype = mListScreenView.getListType();
-					if(listtype != RecordList.TYPE_FILELIST){
-						// サムネイルを読み込ませる
-						loadThumbnail(true);
-						switchFileList(); // ファイルリストをアクティブ化
-						return true;
-					}
 
-					// ジェスチャーナビゲーションのBack操作中に長押し判定が発生していた場合にキャンセルする
-					if (mTouchArea == ListScreenView.AREATYPE_FILELIST) {
-						mListScreenView.mFileListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_DIRLIST) {
-						mListScreenView.mDirListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_SERVERLIST) {
-						mListScreenView.mServerListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_FAVOLIST) {
-						mListScreenView.mFavoListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_HISTLIST) {
-						mListScreenView.mHistListArea.cancelOperation();
-					}
+		int code = event.getKeyCode();
 
-					if (mBackMode == BACKMODE_EXIT) {
-						checkExitTimer();
-						return true;
-					}
-					else if (mBackMode == BACKMODE_PARENT) {
-						// 親ディレクトリに移動
-						if (mPath.equals("/")) {
-							// アプリ終了
-							checkExitTimer();
-							return true;
-						}
-						moveParentDir();
-						mExitBackTimer = 0;
-
-						switchFileList(); // ファイルリストをアクティブ化
-						return true;
-					}
-					else if (mBackMode == BACKMODE_HISTORY) {
-						HistoryData data = mPathHistory.pop();
-						String uri;
-						if (data == null) {
-							// 最初のディレクトリ
-							checkExitTimer();
-							return true;
-						}
-						else if (data.mCode == null || data.mCode.length() <= 0) {
-							mServer.select(DEF.INDEX_LOCAL);
-							uri = "";
-						}
-						else {
-							if (!mServer.select(data.mCode)) {
-								mExitBackTimer = 0;
-								return true;
-							}
-							uri = mServer.getURI();
-						}
-						moveFileSelect(uri, data.mPath, data.mTopIndex, false);
-						mExitBackTimer = 0;
-
-						switchFileList(); // ファイルリストをアクティブ化
-						return true;
-					}
-					break;
-				case KeyEvent.KEYCODE_CAMERA:
-				case KeyEvent.KEYCODE_FOCUS:
-					if (mRotateBtn == 0) {
+		int found_code = -1;
+		int keydata;
+		// 登録されているハードウェアキーを探す
+		for (int i = 0; i < DEF.KEYCODE_INDEX.length; i++) {
+			if (DEF.KEYCODE_INDEX[i] == code) {
+				found_code = i;
+				break;
+			}
+		}
+		if (found_code == -1) {
+			keydata = 0;
+			// ハードウェアキーが見つからない場合はカスタムキーの中から探す
+			for (int i = 0; i < DEF.KEY_CODE_CUSTOM_MAX; i++) {
+				if (TouchPanelView.LoadCustomkeyCode(mSharedPreferences, i) == code) {
+					// 見つかった場合はハードウェアキーの設定を取り出す
+					// カスタムキーは末尾から追加されているの長さ分を加算する
+					keydata = SetHardwareFileListKeyActivity.GetHardwareKeySetData(mSharedPreferences, DEF.KEYCODE_INDEX.length + i + 1);
+					if (keydata != 0) {
+						// 設定があれば終了
+						// 無ければ他のカスタムキーを探す
 						break;
 					}
-					else if (keycode != mRotateBtn) {
+				}
+			}
+		}
+		else {
+			// ハードウェアキーの設定を取り出す
+			keydata = SetHardwareFileListKeyActivity.GetHardwareKeySetData(mSharedPreferences, found_code + 1);
+		}
+
+		found_code = -1;
+		// 戻るキー設定があるかどうかを確認する
+		for (int i = 0; i < (DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX) ; i++) {
+			if (SetHardwareFileListKeyActivity.GetHardwareKeySetData(mSharedPreferences, i + 1) == DEF.TAP_BACK) {
+				// 戻る設定があれば処理を委ねる
+				found_code = 0;
+				break;
+			}
+		}
+		if (found_code == -1 && code == DEF.KEYCODE_BACK) {
+			// 戻る設定が無くてコードが戻るキーだった場合はシステム設定にする
+			// 戻るキーが無かった場合に破綻しないようにする
+			keydata = 0;
+		}
+
+		int keycode = event.getKeyCode();
+		if (event.getAction() == KeyEvent.ACTION_DOWN) {
+			if (keydata == 0) {
+				// システム設定の場合
+				switch (keycode) {
+					case KeyEvent.KEYCODE_ENTER:
+					case KeyEvent.KEYCODE_DPAD_CENTER:
+						if (!mEnterDown) {
+							mListScreenView.moveCursor(keycode, true);
+							mEnterDown = true;
+						}
+						break;
+					case KeyEvent.KEYCODE_DPAD_UP:
+					case KeyEvent.KEYCODE_DPAD_DOWN:
+					case KeyEvent.KEYCODE_DPAD_LEFT:
+					case KeyEvent.KEYCODE_DPAD_RIGHT:
+					case KeyEvent.KEYCODE_MOVE_END:
+					case KeyEvent.KEYCODE_MOVE_HOME:
+						mListScreenView.moveCursor(keycode, true);
+						break;
+					case KeyEvent.KEYCODE_DEL:
+						// 親ディレクトリに移動
+						if (!mPath.equals("/")) {
+							moveParentDir();
+						}
+						break;
+					case KeyEvent.KEYCODE_SPACE:
+						// リストを選択
+						mListScreenView.switchListType(false);
+						break;
+					case KeyEvent.KEYCODE_ESCAPE:
+					case KeyEvent.KEYCODE_BACK:
+						int listtype = mListScreenView.getListType();
+						if(listtype != RecordList.TYPE_FILELIST){
+							// サムネイルを読み込ませる
+							loadThumbnail(true);
+							switchFileList(); // ファイルリストをアクティブ化
+							return true;
+						}
+
+						// ジェスチャーナビゲーションのBack操作中に長押し判定が発生していた場合にキャンセルする
+						if (mTouchArea == ListScreenView.AREATYPE_FILELIST) {
+							mListScreenView.mFileListArea.cancelOperation();
+						} else if (mTouchArea == ListScreenView.AREATYPE_DIRLIST) {
+							mListScreenView.mDirListArea.cancelOperation();
+						} else if (mTouchArea == ListScreenView.AREATYPE_SERVERLIST) {
+							mListScreenView.mServerListArea.cancelOperation();
+						} else if (mTouchArea == ListScreenView.AREATYPE_FAVOLIST) {
+							mListScreenView.mFavoListArea.cancelOperation();
+						} else if (mTouchArea == ListScreenView.AREATYPE_HISTLIST) {
+							mListScreenView.mHistListArea.cancelOperation();
+						}
+
+						if (mBackMode == BACKMODE_EXIT) {
+							checkExitTimer();
+							return true;
+						}
+						else if (mBackMode == BACKMODE_PARENT) {
+							// 親ディレクトリに移動
+							if (mPath.equals("/")) {
+								// アプリ終了
+								checkExitTimer();
+								return true;
+							}
+							moveParentDir();
+							mExitBackTimer = 0;
+
+							switchFileList(); // ファイルリストをアクティブ化
+							return true;
+						}
+						else if (mBackMode == BACKMODE_HISTORY) {
+							HistoryData data = mPathHistory.pop();
+							String uri;
+							if (data == null) {
+								// 最初のディレクトリ
+								checkExitTimer();
+								return true;
+							}
+							else if (data.mCode == null || data.mCode.length() <= 0) {
+								mServer.select(DEF.INDEX_LOCAL);
+								uri = "";
+							}
+							else {
+								if (!mServer.select(data.mCode)) {
+									mExitBackTimer = 0;
+									return true;
+								}
+								uri = mServer.getURI();
+							}
+							moveFileSelect(uri, data.mPath, data.mTopIndex, false);
+							mExitBackTimer = 0;
+
+							switchFileList(); // ファイルリストをアクティブ化
+							return true;
+						}
+						break;
+					case KeyEvent.KEYCODE_CAMERA:
+					case KeyEvent.KEYCODE_FOCUS:
+						if (mRotateBtn == 0) {
+							break;
+						}
+						else if (keycode != mRotateBtn) {
+							return true;
+						}
+						if (mListRota == DEF.ROTATE_PORTRAIT || mListRota == DEF.ROTATE_LANDSCAPE) {
+							int rotate;
+							if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+								// 横にする
+								rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+							}
+							else {
+								// 縦にする
+								rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+							}
+							setRequestedOrientation(rotate);
+							mListRotaChg = true;
+						}
 						return true;
-					}
-					if (mListRota == DEF.ROTATE_PORTRAIT || mListRota == DEF.ROTATE_LANDSCAPE) {
-						int rotate;
-						if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-							// 横にする
-							rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-						}
-						else {
-							// 縦にする
-							rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-						}
-						setRequestedOrientation(rotate);
-						mListRotaChg = true;
-					}
-					return true;
-				case KeyEvent.KEYCODE_VOLUME_UP:
-				case KeyEvent.KEYCODE_PAGE_UP:
-					mListScreenView.moveListUp(mMarker.length() > 0);
-					return true;
-				case KeyEvent.KEYCODE_VOLUME_DOWN:
-				case KeyEvent.KEYCODE_PAGE_DOWN:
-					mListScreenView.moveListDown(mMarker.length() > 0);
-					return true;
-				default:
-					break;
+					case KeyEvent.KEYCODE_VOLUME_UP:
+					case KeyEvent.KEYCODE_PAGE_UP:
+						mListScreenView.moveListUp(mMarker.length() > 0);
+						return true;
+					case KeyEvent.KEYCODE_VOLUME_DOWN:
+					case KeyEvent.KEYCODE_PAGE_DOWN:
+						mListScreenView.moveListDown(mMarker.length() > 0);
+						return true;
+					default:
+						break;
+				}
+			}
+			else {
+				// 通常設定の場合
+				// ハードウェアキーの設定
+				SetHardwareKey(keycode, keydata);
+				return true;
 			}
 		}
 		else if (event.getAction() == KeyEvent.ACTION_UP) {
-			switch (keycode) {
-				case KeyEvent.KEYCODE_BACK:
-					if (mBackMode == BACKMODE_PARENT || mBackMode == BACKMODE_HISTORY) {
-						// 上へ又は履歴移動のときのUPは何もしない
-						return true;
+			switch (keydata) {
+				case DEF.HARDWARE_NONE:
+					// システム設定の場合
+					switch (keycode) {
+						case KeyEvent.KEYCODE_BACK:
+							if (mBackMode == BACKMODE_PARENT || mBackMode == BACKMODE_HISTORY) {
+								// 上へ又は履歴移動のときのUPは何もしない
+								return true;
+							}
+							break;
+						case KeyEvent.KEYCODE_ENTER:
+						case KeyEvent.KEYCODE_DPAD_CENTER:
+							if (mEnterDown) {
+								mListScreenView.moveCursor(keycode, false);
+							}
+							mEnterDown = false;
+							return true;
+						default:
+							break;
 					}
-					break;
-				case KeyEvent.KEYCODE_ENTER:
-				case KeyEvent.KEYCODE_DPAD_CENTER:
-					if (mEnterDown) {
-						mListScreenView.moveCursor(keycode, false);
-					}
-					mEnterDown = false;
-					return true;
 				default:
-					break;
+					// 通常設定の場合
+					if (keydata == DEF.TAP_FILELIST_ENTER) {
+						if (mEnterDown) {
+							mListScreenView.moveCursor(KeyEvent.KEYCODE_ENTER, false);
+						}
+						mEnterDown = false;
+					}
+					return true;
 			}
 		}
 		// 自動生成されたメソッド・スタブ
@@ -3449,7 +3715,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					if (mNowItem != -1) {
 						stop = false;
 					}
-					mMultiThread3.sleep(10);
+					mMultiThread3.sleep(500);
 				}
 			} catch  (Exception e) {
 				Logcat.e(logLevel, "", e);
@@ -5147,8 +5413,15 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					Logcat.d(logLevel, "テキストまたはイメージ直接指定.");
 					// 画像直接かテキストファイルファイルオープン
 					mLoadListNextPath = path;
-					mLoadListNextFile = file;
-					mLoadListNextInFile = infile;
+					if (file.equals("") && !infile.equals("")) {
+						// 途中のファイル名が空白で直接設定するファイル名が存在する場合は補完する
+						mLoadListNextFile = infile;
+						mLoadListNextInFile = "";
+					}
+					else {
+						mLoadListNextFile = file;
+						mLoadListNextInFile = infile;
+					}
 					// サムネイル解放
 					releaseThumbnail();
 					// サムネイル読み込みをスキップさせる
