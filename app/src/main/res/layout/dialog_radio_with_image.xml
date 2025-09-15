@@ -1,0 +1,109 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+   android:id="@+id/scroll_view_id"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="4dp"
+    android:orientation="vertical">
+
+  <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+    <RadioGroup
+        android:id="@+id/radio_group_items"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radio_option0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern00"
+            android:drawableLeft="@drawable/tappattern000" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern01"
+            android:drawableLeft="@drawable/tappattern001" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern02"
+            android:drawableLeft="@drawable/tappattern002" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern03"
+            android:drawableLeft="@drawable/tappattern003" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern04"
+            android:drawableLeft="@drawable/tappattern004" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern05"
+            android:drawableLeft="@drawable/tappattern005" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern06"
+            android:drawableLeft="@drawable/tappattern006" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option7"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern07"
+            android:drawableLeft="@drawable/tappattern007" /> <!-- 画像を設定 -->
+
+        <RadioButton
+            android:id="@+id/radio_option8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern08"
+            android:drawableLeft="@drawable/tappattern008" /> <!-- 画像を設定 -->
+        <RadioButton
+            android:id="@+id/radio_option9"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:gravity="center"
+            android:text="@string/pattern09"
+            android:drawableLeft="@drawable/tappattern009" /> <!-- 画像を設定 -->
+    </RadioGroup>
+  </LinearLayout>
+</ScrollView>

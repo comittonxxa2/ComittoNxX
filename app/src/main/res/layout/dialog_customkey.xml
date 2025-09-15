@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      android:id="@+id/main_layout"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical">
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/customkeylist"
+        android:theme="@style/spinnerDropDownItemStyle"
+        android:paddingBottom="5dip"
+        android:spinnerMode="dropdown" />
+    <TextView
+        android:id="@+id/codeview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="16.0sp"
+        android:focusableInTouchMode="true"
+        android:paddingBottom="5dip" />
+    <EditText
+        android:id="@+id/editTextDialogInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="20sp" />
+    <Button
+        android:id="@+id/positiveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/My4thButton" />
+    <Button
+        android:id="@+id/negaitiveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/My4thButton" />
+</LinearLayout>

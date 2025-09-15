@@ -40,6 +40,14 @@
 				android:textSize="17sp"
 				android:text= "@string/moireMenu" />
 	
+			<CheckBox
+				android:id="@+id/chk_coloring"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="left|center"
+				android:textSize="17sp"
+				android:text= "@string/coloringMenu" />
+
 			<TextView
 				android:id="@+id/label_sharpen"
 				android:layout_width="match_parent"
