@@ -50,6 +50,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 	private boolean mInvert;
 	private boolean mGray;
+	private boolean mColoring;
 	private boolean mMoire;
 	private boolean mTopSingle;
 	private int mSharpen;
@@ -78,6 +79,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private Button mBtnApply;
 	private Button mBtnOK;
 	private CheckBox mChkGray;
+	private CheckBox mChkColoring;
 	private CheckBox mChkInvert;
 	private CheckBox mChkMoire;
 	private CheckBox mChkTopSingle;
@@ -209,8 +211,9 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		addItem(inflater.inflate(R.layout.imageconfig_other, null, false));
 	}
 
-	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation) {
+	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring) {
 		mGray = gray;
+		mColoring = coloring;
 		mInvert = invert;
 		mMoire = moire;
 		mTopSingle = topsingle;
@@ -248,6 +251,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 		for( int i = 0; i < mViewArray.size(); ++i) {
 			mChkGray = mChkGray != null ? mChkGray : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_gray);
+			mChkColoring = mChkColoring != null ? mChkColoring : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_coloring);
 			mChkInvert = mChkInvert != null ? mChkInvert : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_invert);
 			mChkMoire = mChkMoire != null ? mChkMoire : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_moire);
 			mChkTopSingle = mChkTopSingle != null ? mChkTopSingle : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_topsingle);
@@ -288,6 +292,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 		if (mCommandId != DEF.MENU_IMGCONF) {
 			mChkGray.setVisibility(View.GONE);
+			mChkColoring.setVisibility(View.GONE);
 			mChkInvert.setVisibility(View.GONE);
 			mChkMoire.setVisibility(View.GONE);
 			mChkTopSingle.setVisibility(View.GONE);
@@ -337,6 +342,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		}
 
 		if (mChkGray != null) mChkGray.setChecked(mGray);
+		if (mChkColoring != null) mChkColoring.setChecked(mColoring);
 		if (mChkInvert != null) mChkInvert.setChecked(mInvert);
 		if (mChkMoire != null) mChkMoire.setChecked(mMoire);
 		if (mChkTopSingle != null) mChkTopSingle.setChecked(mTopSingle);
@@ -415,7 +421,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public interface ImageConfigListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation);
+	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring);
 	    public void onClose();
 	}
 
@@ -565,11 +571,12 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 		if (select == CLICK_REVERT) {
 			// 戻すは元の値を通知
-			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation);
+			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring);
 		}
 		else {
 			// OK/適用は設定された値を通知
 			boolean gray = mChkGray.isChecked();
+			boolean coloring = mChkColoring.isChecked();
 			boolean invert = mChkInvert.isChecked();
 			boolean moire = mChkMoire.isChecked();
 			boolean topsingle = mChkTopSingle.isChecked();
@@ -582,7 +589,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			int hue = (mSkbHue.getProgress() - 20) * 5;
 			int saturation = mSkbSaturation.getProgress() * 5;
 
-			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation);
+			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation, coloring);
 		}
 
 		if (select != CLICK_APPLY) {
