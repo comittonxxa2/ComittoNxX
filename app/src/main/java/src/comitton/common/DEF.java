@@ -32,6 +32,7 @@ import androidx.annotation.StringRes;
 import androidx.core.app.ActivityCompat;
 
 import jp.dip.muracoro.comittonx.BuildConfig;
+import jp.dip.muracoro.comittonx.R;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 
@@ -124,6 +125,7 @@ public class DEF {
 	public static final int HMSG_EVENT_EFFECT_NEXT = 211;
 	public static final int HMSG_EVENT_SCROLL_NEXT = 212;
 	public static final int HMSG_EVENT_LOADING_NEXT = 213;
+	public static final int HMSG_EVENT_LONG_TAP = 214;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -201,6 +203,11 @@ public class DEF {
 	public static final int MENU_CONTRAST = Menu.FIRST + 62;
 	public static final int MENU_HUE = Menu.FIRST + 63;
 	public static final int MENU_SATURATION = Menu.FIRST + 64;
+	public static final int MENU_TAP_PATTERN = Menu.FIRST + 65;
+	public static final int MENU_TAP_CLICK = Menu.FIRST + 66;
+	public static final int MENU_TAP_SETTING = Menu.FIRST + 67;
+	public static final int MENU_CUSTOMKEY_SETTING = Menu.FIRST + 68;
+	public static final int MENU_COLORING = Menu.FIRST + 69;
 	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
@@ -480,6 +487,7 @@ public class DEF {
 	public static final String KEY_HALFHEIGHT = "HalfHeight";
 	public static final String KEY_SCALEBMP = "ScaleBmp";
 	public static final String KEY_BACKMODE = "BackMode";
+	public static final String KEY_STARTSERVER = "StartServer";
 	public static final String KEY_VOLKEY = "VolKey";
 	public static final String KEY_SCRLWAY = "ScrlWay";
 	public static final String KEY_THUMBNAIL = "Thumbnail";
@@ -520,6 +528,7 @@ public class DEF {
 	public static final String KEY_SATURATION = "Saturation";
 	public static final String KEY_MOIRE = "Moire";
 	public static final String KEY_GRAY = "Gray";
+	public static final String KEY_COLORING = "Coloring";
 	public static final String KEY_INVERT = "Invert";
 	public static final String KEY_TOPSINGLE = "TopSingle";
 	public static final String KEY_MAXTHREAD = "MaxThread";
@@ -571,6 +580,8 @@ public class DEF {
 	public static final String KEY_FLICKPAGE = "FlickPage";
 	public static final String KEY_FLICKEDGE = "FlickEdge";
 	public static final String KEY_TOPMENU = "TopMenu";
+	public static final String KEY_TAP_PATTERN_MENU = "tapPatternMenu";
+	public static final String KEY_TAP_SETUP_MENU = "tapSettingMenu";
 
 	// スケーリング設定
 	public static final String KEY_ALGOMODE = "AlgoMode";
@@ -735,6 +746,12 @@ public class DEF {
 	public static final String KEY_PROFILE_DISPLAYPOSITION_03 = "ProfileDisplayPosition3";
 	public static final String KEY_PROFILE_DISPLAYPOSITION_04 = "ProfileDisplayPosition4";
 	public static final String KEY_PROFILE_DISPLAYPOSITION_05 = "ProfileDisplayPosition5";
+
+	public static final String KEY_PROFILE_COLORING_01 = "ProfileColoring1";
+	public static final String KEY_PROFILE_COLORING_02 = "ProfileColoring2";
+	public static final String KEY_PROFILE_COLORING_03 = "ProfileColoring3";
+	public static final String KEY_PROFILE_COLORING_04 = "ProfileColoring4";
+	public static final String KEY_PROFILE_COLORING_05 = "ProfileColoring5";
 
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
@@ -957,6 +974,922 @@ public class DEF {
 	public static final int ALIGN_CENTER = 1;
 	public static final int ALIGN_BOTTOM = 2;
 
+	public static final String KEY_TAP_I_PATTERN_NUMBER = "TapPatINum";
+	public static final String KEY_TAP_T_PATTERN_NUMBER = "TapPatTNum";
+
+	public static final String KEY_TAP_PATTERN_01_01 = "TapPat0101";
+	public static final String KEY_TAP_PATTERN_01_02 = "TapPat0102";
+	public static final String KEY_TAP_PATTERN_01_03 = "TapPat0103";
+	public static final String KEY_TAP_PATTERN_01_04 = "TapPat0104";
+
+	public static final String KEY_TAP_PATTERN_02_01 = "TapPat0201";
+	public static final String KEY_TAP_PATTERN_02_02 = "TapPat0202";
+	public static final String KEY_TAP_PATTERN_02_03 = "TapPat0203";
+	public static final String KEY_TAP_PATTERN_02_04 = "TapPat0204";
+	public static final String KEY_TAP_PATTERN_02_05 = "TapPat0205";
+	public static final String KEY_TAP_PATTERN_02_06 = "TapPat0206";
+
+	public static final String KEY_TAP_PATTERN_03_01 = "TapPat0301";
+	public static final String KEY_TAP_PATTERN_03_02 = "TapPat0302";
+	public static final String KEY_TAP_PATTERN_03_03 = "TapPat0303";
+	public static final String KEY_TAP_PATTERN_03_04 = "TapPat0304";
+	public static final String KEY_TAP_PATTERN_03_05 = "TapPat0305";
+	public static final String KEY_TAP_PATTERN_03_06 = "TapPat0306";
+
+	public static final String KEY_TAP_PATTERN_04_01 = "TapPat0401";
+	public static final String KEY_TAP_PATTERN_04_02 = "TapPat0402";
+	public static final String KEY_TAP_PATTERN_04_03 = "TapPat0403";
+	public static final String KEY_TAP_PATTERN_04_04 = "TapPat0404";
+	public static final String KEY_TAP_PATTERN_04_05 = "TapPat0405";
+	public static final String KEY_TAP_PATTERN_04_06 = "TapPat0406";
+	public static final String KEY_TAP_PATTERN_04_07 = "TapPat0407";
+	public static final String KEY_TAP_PATTERN_04_08 = "TapPat0408";
+	public static final String KEY_TAP_PATTERN_04_09 = "TapPat0409";
+
+	public static final String KEY_TAP_PATTERN_05_01 = "TapPat0501";
+	public static final String KEY_TAP_PATTERN_05_02 = "TapPat0502";
+	public static final String KEY_TAP_PATTERN_05_03 = "TapPat0503";
+	public static final String KEY_TAP_PATTERN_05_04 = "TapPat0504";
+	public static final String KEY_TAP_PATTERN_05_05 = "TapPat0505";
+	public static final String KEY_TAP_PATTERN_05_06 = "TapPat0506";
+	public static final String KEY_TAP_PATTERN_05_07 = "TapPat0507";
+	public static final String KEY_TAP_PATTERN_05_08 = "TapPat0508";
+	public static final String KEY_TAP_PATTERN_05_09 = "TapPat0509";
+	public static final String KEY_TAP_PATTERN_05_10 = "TapPat0510";
+	public static final String KEY_TAP_PATTERN_05_11 = "TapPat0511";
+
+	public static final String KEY_TAP_PATTERN_06_01 = "TapPat0601";
+	public static final String KEY_TAP_PATTERN_06_02 = "TapPat0602";
+	public static final String KEY_TAP_PATTERN_06_03 = "TapPat0603";
+	public static final String KEY_TAP_PATTERN_06_04 = "TapPat0604";
+	public static final String KEY_TAP_PATTERN_06_05 = "TapPat0605";
+
+	public static final String KEY_TAP_PATTERN_07_01 = "TapPat0701";
+	public static final String KEY_TAP_PATTERN_07_02 = "TapPat0702";
+	public static final String KEY_TAP_PATTERN_07_03 = "TapPat0703";
+	public static final String KEY_TAP_PATTERN_07_04 = "TapPat0604";
+	public static final String KEY_TAP_PATTERN_07_05 = "TapPat0605";
+	public static final String KEY_TAP_PATTERN_07_06 = "TapPat0606";
+	public static final String KEY_TAP_PATTERN_07_07 = "TapPat0607";
+
+	public static final String KEY_TAP_PATTERN_08_01 = "TapPat0801";
+	public static final String KEY_TAP_PATTERN_08_02 = "TapPat0802";
+	public static final String KEY_TAP_PATTERN_08_03 = "TapPat0803";
+	public static final String KEY_TAP_PATTERN_08_04 = "TapPat0804";
+	public static final String KEY_TAP_PATTERN_08_05 = "TapPat0805";
+
+	public static final String KEY_TAP_PATTERN_09_01 = "TapPat0901";
+	public static final String KEY_TAP_PATTERN_09_02 = "TapPat0902";
+	public static final String KEY_TAP_PATTERN_09_03 = "TapPat0903";
+	public static final String KEY_TAP_PATTERN_09_04 = "TapPat0904";
+	public static final String KEY_TAP_PATTERN_09_05 = "TapPat0905";
+	public static final String KEY_TAP_PATTERN_09_06 = "TapPat0906";
+	public static final String KEY_TAP_PATTERN_09_07 = "TapPat0907";
+
+	public static final String KEY_TAP_PATTERN_T_01_01 = "TapPat0101";
+	public static final String KEY_TAP_PATTERN_T_01_02 = "TapPat0102";
+	public static final String KEY_TAP_PATTERN_T_01_03 = "TapPat0103";
+	public static final String KEY_TAP_PATTERN_T_01_04 = "TapPat0104";
+
+	public static final String KEY_TAP_PATTERN_T_02_01 = "TapPatt0201";
+	public static final String KEY_TAP_PATTERN_T_02_02 = "TapPatt0202";
+	public static final String KEY_TAP_PATTERN_T_02_03 = "TapPatt0203";
+	public static final String KEY_TAP_PATTERN_T_02_04 = "TapPatt0204";
+	public static final String KEY_TAP_PATTERN_T_02_05 = "TapPatt0205";
+	public static final String KEY_TAP_PATTERN_T_02_06 = "TapPatt0206";
+
+	public static final String KEY_TAP_PATTERN_T_03_01 = "TapPatt0301";
+	public static final String KEY_TAP_PATTERN_T_03_02 = "TapPatt0302";
+	public static final String KEY_TAP_PATTERN_T_03_03 = "TapPatt0303";
+	public static final String KEY_TAP_PATTERN_T_03_04 = "TapPatt0304";
+	public static final String KEY_TAP_PATTERN_T_03_05 = "TapPatt0305";
+	public static final String KEY_TAP_PATTERN_T_03_06 = "TapPatt0306";
+
+	public static final String KEY_TAP_PATTERN_T_04_01 = "TapPatt0401";
+	public static final String KEY_TAP_PATTERN_T_04_02 = "TapPatt0402";
+	public static final String KEY_TAP_PATTERN_T_04_03 = "TapPatt0403";
+	public static final String KEY_TAP_PATTERN_T_04_04 = "TapPatt0404";
+	public static final String KEY_TAP_PATTERN_T_04_05 = "TapPatt0405";
+	public static final String KEY_TAP_PATTERN_T_04_06 = "TapPatt0406";
+	public static final String KEY_TAP_PATTERN_T_04_07 = "TapPatt0407";
+	public static final String KEY_TAP_PATTERN_T_04_08 = "TapPatt0408";
+	public static final String KEY_TAP_PATTERN_T_04_09 = "TapPatt0409";
+
+	public static final String KEY_TAP_PATTERN_T_05_01 = "TapPatt0501";
+	public static final String KEY_TAP_PATTERN_T_05_02 = "TapPatt0502";
+	public static final String KEY_TAP_PATTERN_T_05_03 = "TapPatt0503";
+	public static final String KEY_TAP_PATTERN_T_05_04 = "TapPatt0504";
+	public static final String KEY_TAP_PATTERN_T_05_05 = "TapPatt0505";
+	public static final String KEY_TAP_PATTERN_T_05_06 = "TapPatt0506";
+	public static final String KEY_TAP_PATTERN_T_05_07 = "TapPatt0507";
+	public static final String KEY_TAP_PATTERN_T_05_08 = "TapPatt0508";
+	public static final String KEY_TAP_PATTERN_T_05_09 = "TapPatt0509";
+	public static final String KEY_TAP_PATTERN_T_05_10 = "TapPatt0510";
+	public static final String KEY_TAP_PATTERN_T_05_11 = "TapPatt0511";
+
+	public static final String KEY_TAP_PATTERN_T_06_01 = "TapPatt0601";
+	public static final String KEY_TAP_PATTERN_T_06_02 = "TapPatt0602";
+	public static final String KEY_TAP_PATTERN_T_06_03 = "TapPatt0603";
+	public static final String KEY_TAP_PATTERN_T_06_04 = "TapPatt0604";
+	public static final String KEY_TAP_PATTERN_T_06_05 = "TapPatt0605";
+
+	public static final String KEY_TAP_PATTERN_T_07_01 = "TapPatt0701";
+	public static final String KEY_TAP_PATTERN_T_07_02 = "TapPatt0702";
+	public static final String KEY_TAP_PATTERN_T_07_03 = "TapPatt0703";
+	public static final String KEY_TAP_PATTERN_T_07_04 = "TapPatt0604";
+	public static final String KEY_TAP_PATTERN_T_07_05 = "TapPatt0605";
+	public static final String KEY_TAP_PATTERN_T_07_06 = "TapPatt0606";
+	public static final String KEY_TAP_PATTERN_T_07_07 = "TapPatt0607";
+
+	public static final String KEY_TAP_PATTERN_T_08_01 = "TapPatt0801";
+	public static final String KEY_TAP_PATTERN_T_08_02 = "TapPatt0802";
+	public static final String KEY_TAP_PATTERN_T_08_03 = "TapPatt0803";
+	public static final String KEY_TAP_PATTERN_T_08_04 = "TapPatt0804";
+	public static final String KEY_TAP_PATTERN_T_08_05 = "TapPatt0805";
+
+	public static final String KEY_TAP_PATTERN_T_09_01 = "TapPatt0901";
+	public static final String KEY_TAP_PATTERN_T_09_02 = "TapPatt0902";
+	public static final String KEY_TAP_PATTERN_T_09_03 = "TapPatt0903";
+	public static final String KEY_TAP_PATTERN_T_09_04 = "TapPatt0904";
+	public static final String KEY_TAP_PATTERN_T_09_05 = "TapPatt0905";
+	public static final String KEY_TAP_PATTERN_T_09_06 = "TapPatt0906";
+	public static final String KEY_TAP_PATTERN_T_09_07 = "TapPatt0907";
+
+	public static final int TAP_NONE = 0;
+	public static final int TAP_NOSELECT = 1;
+	public static final int TAP_BACK = 2;					// 戻る
+	public static final int TAP_TOOLBARLEFTMOST = 3;		// 一番左のページ
+	public static final int TAP_TOOLBARLEFT100 = 4;			// 左へ100ページ
+	public static final int TAP_TOOLBARLEFT10 = 5;			// 左へ10ページ
+	public static final int TAP_TOOLBARLEFT1 = 6;			// 左へ1ページ
+	public static final int TAP_TOOLBARRIGHT1 = 7;			// 右へ1ページ
+	public static final int TAP_TOOLBARRIGHT10 = 8;			// 右へ10ページ
+	public static final int TAP_TOOLBARRIGHT100 = 9;		// 右へ100ページ
+	public static final int TAP_TOOLBARRIGHTMOST = 10;		// 一番右のページ
+	public static final int TAP_TOOLBARNEXTSCROLL = 11;		// 次のページへスクロール
+	public static final int TAP_TOOLBARPREVSCROLL = 12;		// 前のページへスクロール
+	public static final int TAP_PINCHSCALEUP = 13;			// ズームアップ
+	public static final int TAP_PINCHSCALEDOWN = 14;			// ズームダウン
+	public static final int TAP_TOOLBARBOOKLEFT = 15;		// 前のファイル(最終ページ)/次のファイル(先頭ページ)
+	public static final int TAP_TOOLBARBOOKRIGHT = 16;		// 次のファイル(先頭ページ)/前のファイル(最終ページ)
+	public static final int TAP_TOOLBARBOOKMARKLEFT = 17;	// 前(次)のファイル(しおり位置)
+	public static final int TAP_TOOLBARBOOKMARKRIGHT = 18;	// 次(前)のファイル(しおり位置)
+	public static final int TAP_TOOLBARTHUMBSLIDER = 19;	// サムネイル/スライダー切り替え
+	public static final int TAP_TOOLBARDIRTREE = 20;		// サブディレクトリ選択
+	public static final int TAP_TOOLBARTOC = 21;			// 見出し選択
+	public static final int TAP_TOOLBARSEARCH = 22;			// 検索文字列設定
+	public static final int TAP_TOOLBARSHARE = 23;			// 共有
+	public static final int TAP_TOOLBARROTATE = 24;			// 画面方向切り替え
+	public static final int TAP_TOOLBARROTATEIMAGE = 25;	// 画像の回転
+	public static final int TAP_TOOLBARSELECTTHUM = 26;		// サムネイルに設定
+	public static final int TAP_TOOLBARTRIMTHUMB = 27;		// 範囲選択してサムネイルに設定
+	public static final int TAP_TOOLBARMENU = 28;			// メニューを開く
+	public static final int TAP_TOOLBARCONFIG = 29;			// 設定画面を開く
+	public static final int TAP_PULLDOWNMENU = 30;	// プルダウンメニューを開く
+
+	public static final int TAP_SCRLWAY00 = 31;	// 横方向→縦方向
+	public static final int TAP_SCRLWAY01 = 32;	// 縦方向→横方向
+	public static final int TAP_TOOLBARDISPLAYPOSITION00 = 33;	// 中心へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION01 = 34;	// 上へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION02 = 35;	// 下へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION03 = 36;	// 左へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION04 = 37;	// 右へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION05 = 38;	// 左上へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION06 = 39;	// 右上へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION07 = 40;	// 左下へ移動
+	public static final int TAP_TOOLBARDISPLAYPOSITION08 = 41;	// 右下へ移動
+	public static final int TAP_SELROTA00 = 42;	// 回転無しで表示
+	public static final int TAP_SELROTA01 = 43;	// 90°回転して表示
+	public static final int TAP_SELROTA02 = 44;	// 180°回転して表示
+	public static final int TAP_SELROTA03 = 45;	// 270°回転して表示
+	public static final int TAP_SELSIZE00 = 46;	// 元のサイズで表示
+	public static final int TAP_SELSIZE01 = 47;	// 幅に合わせて表示
+	public static final int TAP_SELSIZE02 = 48;	// 高さに合わせて表示
+	public static final int TAP_SELSIZE03 = 49;	// 全体を表示
+	public static final int TAP_SELSIZE04 = 50;	// 画面全体で表示
+	public static final int TAP_SELSIZE05 = 51;	// 画面全体で表示(見開き対応)
+	public static final int TAP_SELSIZE06 = 52;	// 幅に合わせて表示(見開き対応)
+	public static final int TAP_SELSIZE07 = 53;	// 全体を表示(見開き対応)
+	public static final int TAP_SELVIEW00 = 54;	// そのまま表示
+	public static final int TAP_SELVIEW01 = 55;	// 見開き表示
+	public static final int TAP_SELVIEW02 = 56;	// 単ページ表示
+	public static final int TAP_SELVIEW03 = 57;	// 連続表示
+	public static final int TAP_SELVIEW04 = 58;	// 単ページ／見開き
+	public static final int TAP_PICSIZE00 = 59;	// 元画像サイズ
+	public static final int TAP_PICSIZE01 = 60;	// 元画像サイズの2倍
+	public static final int TAP_PICSIZE02 = 61;	// 元画像サイズの3倍
+	public static final int TAP_PICSIZE03 = 62;	// 元画像サイズの4倍
+	public static final int TAP_PICSIZE04 = 63;	// 画面サイズに拡大
+	public static final int TAP_PICSIZE05 = 64;	// 画面サイズに拡大(余白無視)
+	public static final int TAP_PICSIZE06 = 65;	// 画面サイズに拡大(見開き対応)
+	public static final int TAP_PICSIZE07 = 66;	// 画面サイズに拡大(見開き対応:余白無視)
+	public static final int TAP_ASCMODE00 = 67;	// 縦表示
+	public static final int TAP_ASCMODE01 = 68;	// 横表示(回転)
+	public static final int TAP_ASCMODE02 = 69;	// 縦/横併用
+	public static final int TAP_MGNCUTMENU = 70;	// 余白削除
+	public static final int TAP_MGNCUTCOLORMENU = 71;	// 余白削除の色
+	public static final int TAP_IMGCONFMENU = 72;	// 画像表示設定
+	public static final int TAP_TXTCONFMENU = 73;	// テキスト表示設定
+	public static final int TAP_TGUIDE02 = 74;		// 見開き設定
+	public static final int TAP_TGUIDE03 = 75;		// 画像サイズ
+	public static final int TAP_NOISEMENU = 76;		// 音操作
+	public static final int TAP_PLAYMENU = 77;		// オートプレイ開始
+	public static final int TAP_ADDBOOKMARKMENU = 78;// ブックマーク追加
+	public static final int TAP_SELBOOKMARKMENU = 79;// ブックマーク選択
+	public static final int TAP_SHARPENMENU = 80;	// シャープ化
+	public static final int TAP_MOIREMENU = 81;		// モアレ軽減
+	public static final int TAP_BRIGHTMENU = 82;	// 明るさ補正
+	public static final int TAP_GAMMAMENU = 83;		// ガンマ補正
+	public static final int TAP_CONTRASTMENU = 84;	// コントラスト
+	public static final int TAP_HUEMENU = 85;		// 色相
+	public static final int TAP_SATURATIONMENU = 86;	// 彩度
+	public static final int TAP_BKLIGHTMENU = 87;	// バックライト
+	public static final int TAP_INVERTMENU = 88;	// 白黒反転
+	public static final int TAP_GRAYMENU = 89;		// グレースケール
+	public static final int TAP_COLORINGMENU = 90;	// 自動着色
+	public static final int TAP_ALGORIMENU = 91;	// 画像補間方式
+	public static final int TAP_REVERSEMENU = 92;	// ページ逆順
+	public static final int TAP_CHGOPEMENU = 93;	// 操作入れ替え
+	public static final int TAP_PAGEWAYMENU = 94;	// 表紙方向
+	public static final int TAP_SCRLWAY2MENU = 95;	// スクロール方向入れ替え
+	public static final int TAP_SETTOPMENU = 96;	// 上部メニュー設定
+	public static final int TAP_CMARGIN = 97;		// 中央余白表示
+	public static final int TAP_CSHADOW = 98;		// 中央影表示
+	public static final int TAP_DISPLAYPOSITIONMENU = 99;		// 画面の表示位置
+	public static final int TAP_SETPROFILE = 100;		// プロファイルの登録
+	public static final int TAP_DELPROFILE = 101;		// プロファイルの削除
+	public static final int TAP_PROFILE1 = 102;		// プロファイル1
+	public static final int TAP_PROFILE2 = 103;		// プロファイル2
+	public static final int TAP_PROFILE3 = 104;		// プロファイル3
+	public static final int TAP_PROFILE4 = 105;		// プロファイル4
+	public static final int TAP_PROFILE5 = 106;		// プロファイル5
+	public static final int TAP_EXIT_VIEWER = 107;	// ビューアの終了
+
+	// イメージビューア用のタップ操作の初期値
+	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_I01_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I01_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I01_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+
+	public static final int TAP_PATTERN_I02_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_I02_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I02_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I02_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_I02_DEFAULT_05 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_I02_DEFAULT_06 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_I03_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_I03_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_I03_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I03_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I03_DEFAULT_05 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I03_DEFAULT_06 = TAP_TOOLBARPREVSCROLL;
+
+	public static final int TAP_PATTERN_I04_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_I04_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_I04_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I04_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I04_DEFAULT_05 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I04_DEFAULT_06 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_I04_DEFAULT_07 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_I04_DEFAULT_08 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_I04_DEFAULT_09 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_I05_DEFAULT_01 = TAP_TOOLBARLEFT10;
+	public static final int TAP_PATTERN_I05_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_I05_DEFAULT_03 = TAP_TOOLBARRIGHT10;
+	public static final int TAP_PATTERN_I05_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I05_DEFAULT_05 = TAP_PINCHSCALEUP;
+	public static final int TAP_PATTERN_I05_DEFAULT_06 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I05_DEFAULT_07 = TAP_PINCHSCALEDOWN;
+	public static final int TAP_PATTERN_I05_DEFAULT_08 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_I05_DEFAULT_09 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_I05_DEFAULT_10 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_I05_DEFAULT_11 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_I06_DEFAULT_01 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I06_DEFAULT_02 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I06_DEFAULT_03 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I06_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_I06_DEFAULT_05 = TAP_TOOLBARLEFT1;
+
+	public static final int TAP_PATTERN_I07_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_I07_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I07_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I07_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I07_DEFAULT_05 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_I07_DEFAULT_06 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_I07_DEFAULT_07 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_I08_DEFAULT_01 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I08_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I08_DEFAULT_03 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_I08_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I08_DEFAULT_05 = TAP_TOOLBARLEFT1;
+
+	public static final int TAP_PATTERN_I09_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_I09_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_I09_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_I09_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_I09_DEFAULT_05 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_I09_DEFAULT_06 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_I09_DEFAULT_07 = TAP_TOOLBARPREVSCROLL;
+
+	// テキストビューア用のタップ操作の初期値
+	public static final int TAP_PATTERN_T01_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_T01_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T01_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T01_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+
+	public static final int TAP_PATTERN_T02_DEFAULT_01 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T02_DEFAULT_02 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_T02_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T02_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_T02_DEFAULT_05 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_T02_DEFAULT_06 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_T03_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_T03_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_T03_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T03_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T03_DEFAULT_05 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T03_DEFAULT_06 = TAP_TOOLBARPREVSCROLL;
+
+	public static final int TAP_PATTERN_T04_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_T04_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_T04_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T04_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T04_DEFAULT_05 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T04_DEFAULT_06 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_T04_DEFAULT_07 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_T04_DEFAULT_08 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_T04_DEFAULT_09 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_T05_DEFAULT_01 = TAP_TOOLBARLEFT10;
+	public static final int TAP_PATTERN_T05_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_T05_DEFAULT_03 = TAP_TOOLBARRIGHT10;
+	public static final int TAP_PATTERN_T05_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T05_DEFAULT_05 = TAP_PINCHSCALEUP;
+	public static final int TAP_PATTERN_T05_DEFAULT_06 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T05_DEFAULT_07 = TAP_PINCHSCALEDOWN;
+	public static final int TAP_PATTERN_T05_DEFAULT_08 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_T05_DEFAULT_09 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_T05_DEFAULT_10 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_T05_DEFAULT_11 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_T06_DEFAULT_01 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T06_DEFAULT_02 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T06_DEFAULT_03 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T06_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_T06_DEFAULT_05 = TAP_TOOLBARLEFT1;
+
+	public static final int TAP_PATTERN_T07_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_T07_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T07_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T07_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T07_DEFAULT_05 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_T07_DEFAULT_06 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_T07_DEFAULT_07 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_T08_DEFAULT_01 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T08_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T08_DEFAULT_03 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_T08_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T08_DEFAULT_05 = TAP_TOOLBARLEFT1;
+
+	public static final int TAP_PATTERN_T09_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_T09_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_T09_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_T09_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_T09_DEFAULT_05 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_T09_DEFAULT_06 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_T09_DEFAULT_07 = TAP_TOOLBARPREVSCROLL;
+
+	// スマホ/タブレット
+	public static final int CODE_BACK = 1;		//	バックキー
+	public static final int CODE_VOLUME_UP = 2;	//	ボリュームUPキー
+	public static final int CODE_VOLUME_DOWN = 3;	//	ボリュームDOWNキー
+	public static final int CODE_CAMERA = 4;	//	カメラボタン
+	public static final int CODE_FOCUS = 5;	//	フォーカスボタン
+	// キーボード
+	public static final int CODE_MENU = 6;		//	メニューキー
+	public static final int CODE_DPAD_LEFT = 7;	//	カーソル左キー
+	public static final int CODE_DPAD_RIGHT = 8;	//	カーソル右キー
+	public static final int CODE_DPAD_UP = 9;	//	カーソル上キー
+	public static final int CODE_DPAD_DOWN = 10;	//	カーソル下キー
+	public static final int CODE_DPAD_CENTER = 11;	// 決定キー
+	public static final int CODE_ENTER = 12;	// エンターキー
+	public static final int CODE_DEL = 13;	//	削除キー
+	public static final int CODE_SPACE = 14;	//	スペースキー
+	public static final int CODE_SERACH = 15;	//	検索キー
+	public static final int CODE_PAGEUP = 16;	//	ページアップキー
+	public static final int CODE_PAGEDOWN = 17;	//	ページダウンキー
+	public static final int CODE_ESCAPE = 18;	//	エスケープキー
+	public static final int CODE_MOVEHOME = 19;	//	ホームキー
+	public static final int CODE_MOVEEND = 20;	//	エンドキー
+	public static final int CODE_FORWARD = 21;	//	フォワードボタン
+	// ゲームパッド
+	public static final int CODE_BUTTON_L1 = 22;		//	L1ボタン
+	public static final int CODE_BUTTON_L2 = 23;		//	L2ボタン
+	public static final int CODE_BUTTON_THUMBL = 24;	//	L3ボタン
+	public static final int CODE_BUTTON_R1 = 25;		//	R1ボタン
+	public static final int CODE_BUTTON_R2 = 26;		//	R2ボタン
+	public static final int CODE_BUTTON_THUMBR = 27;	//	R3ボタン
+	public static final int CODE_BUTTON_A = 28;		//	Aボタン
+	public static final int CODE_BUTTON_B = 29;		//	Bボタン
+	public static final int CODE_BUTTON_X = 30;		//	Xボタン
+	public static final int CODE_BUTTON_Y = 31;		//	Yボタン
+	public static final int CODE_BUTTON_SELECT = 32;	//	SELECTボタン
+	public static final int CODE_BUTTON_START = 33;	//	STARTボタン
+	// メディアプレイヤー
+	public static final int CODE_MEDIANEXT = 34;	//	曲送りボタン
+	public static final int CODE_MEDIAPREV = 35;	//	曲戻しボタン
+	public static final int CODE_MEDIAPLAYPAUSE = 36;	//	再生一時停止ボタン
+	// カスタムキー
+	public static final int CODE_CUSTOMKEY01 = 37;	//	カスタムキー1
+	public static final int CODE_CUSTOMKEY02 = 38;	//	カスタムキー2
+	public static final int CODE_CUSTOMKEY03 = 39;	//	カスタムキー3
+	public static final int CODE_CUSTOMKEY04 = 40;	//	カスタムキー4
+	public static final int CODE_CUSTOMKEY05 = 41;	//	カスタムキー5
+	public static final int CODE_CUSTOMKEY06 = 42;	//	カスタムキー6
+	public static final int CODE_CUSTOMKEY07 = 43;	//	カスタムキー7
+	public static final int CODE_CUSTOMKEY08 = 44;	//	カスタムキー8
+	public static final int CODE_CUSTOMKEY09 = 45;	//	カスタムキー9
+	public static final int CODE_CUSTOMKEY10 = 46;	//	カスタムキー10
+
+	public static final int KEY_CODE_CUSTOM_MAX = 10;
+
+	// イメージビューア用
+	// スマホ/タブレット
+	public static final String KEY_CODE_I_BACK = "CodeIBack";		//	バックキー
+	public static final String KEY_CODE_I_VOLUME_UP = "CodeIVolUp";	//	ボリュームUPキー
+	public static final String KEY_CODE_I_VOLUME_DOWN = "CodeIVolDown";	//	ボリュームDOWNキー
+	public static final String KEY_CODE_I_CAMERA = "CodeICamera";	//	カメラボタン
+	public static final String KEY_CODE_I_FOCUS = "CodeIFocus";	//	フォーカスボタン
+	// キーボード
+	public static final String KEY_CODE_I_MENU = "CodeIMenu";		//	メニューキー
+	public static final String KEY_CODE_I_DPAD_LEFT = "CodeIDpadLeft";	//	カーソル左キー
+	public static final String KEY_CODE_I_DPAD_RIGHT = "CodeIDpadRight";	//	カーソル右キー
+	public static final String KEY_CODE_I_DPAD_UP = "CodeIDpadUp";	//	カーソル上キー
+	public static final String KEY_CODE_I_DPAD_DOWN = "CodeIDpadDown";	//	カーソル下キー
+	public static final String KEY_CODE_I_DPAD_CENTER = "CodeIDpadCenter";	// 決定キー
+	public static final String KEY_CODE_I_ENTER = "CodeIEnter";	//	エンターキー
+	public static final String KEY_CODE_I_DEL = "CodeIDel";	//	削除キー
+	public static final String KEY_CODE_I_SPACE = "CodeISpace";	//	スペースキー
+	public static final String KEY_CODE_I_SEARCH = "CodeISearch";	//	検索キー
+	public static final String KEY_CODE_I_PAGE_UP = "CodeIPageUp";	//	ページアップキー
+	public static final String KEY_CODE_I_PAGE_DOWN = "CodeIPageDown";	//	ページダウンキー
+	public static final String KEY_CODE_I_ESCAPE = "CodeIEscape";	//	エスケープキー
+	public static final String KEY_CODE_I_MOVEHOME = "CodeIMoveHome";	//	ホームキー
+	public static final String KEY_CODE_I_MOVEEND = "CodeIMoveEnd";	//	エンドキー
+	public static final String KEY_CODE_I_FORWARD = "CodeIForward";	//	フォワードボタン
+	// ゲームパッド
+	public static final String KEY_CODE_I_BUTTON_L1 = "CodeIL1";		//	L1ボタン
+	public static final String KEY_CODE_I_BUTTON_L2 = "CodeIL2";		//	L2ボタン
+	public static final String KEY_CODE_I_BUTTON_THUMBL = "CodeIThumbL";	//	L3ボタン
+	public static final String KEY_CODE_I_BUTTON_R1 = "CodeIR1";		//	R1ボタン
+	public static final String KEY_CODE_I_BUTTON_R2 = "CodeIR2";		//	R2ボタン
+	public static final String KEY_CODE_I_BUTTON_THUMBR = "CodeIThumbR";	//	R3ボタン
+	public static final String KEY_CODE_I_BUTTON_A = "CodeIA";		//	Aボタン
+	public static final String KEY_CODE_I_BUTTON_B = "CodeIB";		//	Bボタン
+	public static final String KEY_CODE_I_BUTTON_X = "CodeIX";		//	Xボタン
+	public static final String KEY_CODE_I_BUTTON_Y = "CodeIY";		//	Yボタン
+	public static final String KEY_CODE_I_BUTTON_SELECT = "CodeISelect";	//	SELECTボタン
+	public static final String KEY_CODE_I_BUTTON_START = "CodeIStart";	//	STARTボタン
+	// メディアプレイヤー
+	public static final String KEY_CODE_I_MEDIA_NEXT = "CodeIMediaNext";	//	曲送りボタン
+	public static final String KEY_CODE_I_MEDIA_PREVIOUS = "CodeIMediaPrev";	//	曲戻しボタン
+	public static final String KEY_CODE_I_MEDIA_PLAY_PAUSE = "CodeIMediaPlayPause";	//	再生一時停止ボタン
+	// カスタムキー
+	public static final String KEY_CODE_I_CUSTOMKEY01 = "CustomKeyI01";	//	カスタムキー1
+	public static final String KEY_CODE_I_CUSTOMKEY02 = "CustomKeyI02";	//	カスタムキー2
+	public static final String KEY_CODE_I_CUSTOMKEY03 = "CustomKeyI03";	//	カスタムキー3
+	public static final String KEY_CODE_I_CUSTOMKEY04 = "CustomKeyI04";	//	カスタムキー4
+	public static final String KEY_CODE_I_CUSTOMKEY05 = "CustomKeyI05";	//	カスタムキー5
+	public static final String KEY_CODE_I_CUSTOMKEY06 = "CustomKeyI06";	//	カスタムキー6
+	public static final String KEY_CODE_I_CUSTOMKEY07 = "CustomKeyI07";	//	カスタムキー7
+	public static final String KEY_CODE_I_CUSTOMKEY08 = "CustomKeyI08";	//	カスタムキー8
+	public static final String KEY_CODE_I_CUSTOMKEY09 = "CustomKeyI09";	//	カスタムキー9
+	public static final String KEY_CODE_I_CUSTOMKEY10 = "CustomKeyI10";	//	カスタムキー10
+
+	// テキストビューア用
+	// スマホ/タブレット
+	public static final String KEY_CODE_T_BACK = "CodeTBack";		//	バックキー
+	public static final String KEY_CODE_T_VOLUME_UP = "CodeTVolUp";	//	ボリュームUPキー
+	public static final String KEY_CODE_T_VOLUME_DOWN = "CodeTVolDown";	//	ボリュームDOWNキー
+	public static final String KEY_CODE_T_CAMERA = "CodeTCamera";	//	カメラボタン
+	public static final String KEY_CODE_T_FOCUS = "CodeTFocus";	//	フォーカスボタン
+	// キーボード
+	public static final String KEY_CODE_T_MENU = "CodeTMenu";		//	メニューキー
+	public static final String KEY_CODE_T_DPAD_LEFT = "CodeTDpadLeft";	//	カーソル左キー
+	public static final String KEY_CODE_T_DPAD_RIGHT = "CodeTDpadRight";	//	カーソル右キー
+	public static final String KEY_CODE_T_DPAD_UP = "CodeTDpadUp";	//	カーソル上キー
+	public static final String KEY_CODE_T_DPAD_DOWN = "CodeTDpadDown";	//	カーソル下キー
+	public static final String KEY_CODE_T_DPAD_CENTER = "CodeTDpadCenter";	// 決定キー
+	public static final String KEY_CODE_T_ENTER = "CodeTEnter";	//	エンターキー
+	public static final String KEY_CODE_T_DEL = "CodeTDel";	//	削除キー
+	public static final String KEY_CODE_T_SPACE = "CodeTSpace";	//	スペースキー
+	public static final String KEY_CODE_T_SEARCH = "CodeTSearch";	//	検索キー
+	public static final String KEY_CODE_T_PAGE_UP = "CodeTPageUp";	//	ページアップキー
+	public static final String KEY_CODE_T_PAGE_DOWN = "CodeTPageDown";	//	ページダウンキー
+	public static final String KEY_CODE_T_ESCAPE = "CodeTEscape";	//	エスケープキー
+	public static final String KEY_CODE_T_MOVEHOME = "CodeTMoveHome";	//	ホームキー
+	public static final String KEY_CODE_T_MOVEEND = "CodeTMoveEnd";	//	エンドキー
+	public static final String KEY_CODE_T_FORWARD = "CodeTForward";	//	フォワードボタン
+	// ゲームパッド
+	public static final String KEY_CODE_T_BUTTON_L1 = "CodeTL1";		//	L1ボタン
+	public static final String KEY_CODE_T_BUTTON_L2 = "CodeTL2";		//	L2ボタン
+	public static final String KEY_CODE_T_BUTTON_THUMBL = "CodeTThumbL";	//	L3ボタン
+	public static final String KEY_CODE_T_BUTTON_R1 = "CodeTR1";		//	R1ボタン
+	public static final String KEY_CODE_T_BUTTON_R2 = "CodeTR2";		//	R2ボタン
+	public static final String KEY_CODE_T_BUTTON_THUMBR = "CodeTThumbR";	//	R3ボタン
+	public static final String KEY_CODE_T_BUTTON_A = "CodeTA";		//	Aボタン
+	public static final String KEY_CODE_T_BUTTON_B = "CodeTB";		//	Bボタン
+	public static final String KEY_CODE_T_BUTTON_X = "CodeTX";		//	Xボタン
+	public static final String KEY_CODE_T_BUTTON_Y = "CodeTY";		//	Yボタン
+	public static final String KEY_CODE_T_BUTTON_SELECT = "CodeTSelect";	//	SELECTボタン
+	public static final String KEY_CODE_T_BUTTON_START = "CodeTStart";	//	STARTボタン
+	// メディアプレイヤー
+	public static final String KEY_CODE_T_MEDIA_NEXT = "CodeTMediaNext";	//	曲送りボタン
+	public static final String KEY_CODE_T_MEDIA_PREVIOUS = "CodeTMediaPrev";	//	曲戻しボタン
+	public static final String KEY_CODE_T_MEDIA_PLAY_PAUSE = "CodeTMediaPlayPause";	//	再生一時停止ボタン
+	// カスタムキー
+	public static final String KEY_CODE_T_CUSTOMKEY01 = "CustomKeyT01";	//	カスタムキー1
+	public static final String KEY_CODE_T_CUSTOMKEY02 = "CustomKeyT02";	//	カスタムキー2
+	public static final String KEY_CODE_T_CUSTOMKEY03 = "CustomKeyT03";	//	カスタムキー3
+	public static final String KEY_CODE_T_CUSTOMKEY04 = "CustomKeyT04";	//	カスタムキー4
+	public static final String KEY_CODE_T_CUSTOMKEY05 = "CustomKeyT05";	//	カスタムキー5
+	public static final String KEY_CODE_T_CUSTOMKEY06 = "CustomKeyT06";	//	カスタムキー6
+	public static final String KEY_CODE_T_CUSTOMKEY07 = "CustomKeyT07";	//	カスタムキー7
+	public static final String KEY_CODE_T_CUSTOMKEY08 = "CustomKeyT08";	//	カスタムキー8
+	public static final String KEY_CODE_T_CUSTOMKEY09 = "CustomKeyT09";	//	カスタムキー9
+	public static final String KEY_CODE_T_CUSTOMKEY10 = "CustomKeyT10";	//	カスタムキー10
+
+	// ファイルリスト用
+	// スマホ/タブレット
+	public static final String KEY_CODE_F_BACK = "CodeFBack";		//	バックキー
+	public static final String KEY_CODE_F_VOLUME_UP = "CodeFVolUp";	//	ボリュームUPキー
+	public static final String KEY_CODE_F_VOLUME_DOWN = "CodeFVolDown";	//	ボリュームDOWNキー
+	public static final String KEY_CODE_F_CAMERA = "CodeFCamera";	//	カメラボタン
+	public static final String KEY_CODE_F_FOCUS = "CodeFFocus";	//	フォーカスボタン
+	// キーボード
+	public static final String KEY_CODE_F_MENU = "CodeFMenu";		//	メニューキー
+	public static final String KEY_CODE_F_DPAD_LEFT = "CodeFDpadLeft";	//	カーソル左キー
+	public static final String KEY_CODE_F_DPAD_RIGHT = "CodeFDpadRight";	//	カーソル右キー
+	public static final String KEY_CODE_F_DPAD_UP = "CodeFDpadUp";	//	カーソル上キー
+	public static final String KEY_CODE_F_DPAD_DOWN = "CodeFDpadDown";	//	カーソル下キー
+	public static final String KEY_CODE_F_DPAD_CENTER = "CodeFDpadCenter";	// 決定キー
+	public static final String KEY_CODE_F_ENTER = "CodeFEnter";	//	エンターキー
+	public static final String KEY_CODE_F_DEL = "CodeFDel";	//	削除キー
+	public static final String KEY_CODE_F_SPACE = "CodeFSpace";	//	スペースキー
+	public static final String KEY_CODE_F_SEARCH = "CodeFSearch";	//	検索キー
+	public static final String KEY_CODE_F_PAGE_UP = "CodeFPageUp";	//	ページアップキー
+	public static final String KEY_CODE_F_PAGE_DOWN = "CodeFPageDown";	//	ページダウンキー
+	public static final String KEY_CODE_F_ESCAPE = "CodeFEscape";	//	エスケープキー
+	public static final String KEY_CODE_F_MOVEHOME = "CodeFMoveHome";	//	ホームキー
+	public static final String KEY_CODE_F_MOVEEND = "CodeFMoveEnd";	//	エンドキー
+	public static final String KEY_CODE_F_FORWARD = "CodeFForward";	//	フォワードボタン
+	// ゲームパッド
+	public static final String KEY_CODE_F_BUTTON_L1 = "CodeFL1";		//	L1ボタン
+	public static final String KEY_CODE_F_BUTTON_L2 = "CodeFL2";		//	L2ボタン
+	public static final String KEY_CODE_F_BUTTON_THUMBL = "CodeFThumbL";	//	L3ボタン
+	public static final String KEY_CODE_F_BUTTON_R1 = "CodeFR1";		//	R1ボタン
+	public static final String KEY_CODE_F_BUTTON_R2 = "CodeFR2";		//	R2ボタン
+	public static final String KEY_CODE_F_BUTTON_THUMBR = "CodeFThumbR";	//	R3ボタン
+	public static final String KEY_CODE_F_BUTTON_A = "CodeFA";		//	Aボタン
+	public static final String KEY_CODE_F_BUTTON_B = "CodeFB";		//	Bボタン
+	public static final String KEY_CODE_F_BUTTON_X = "CodeFX";		//	Xボタン
+	public static final String KEY_CODE_F_BUTTON_Y = "CodeFY";		//	Yボタン
+	public static final String KEY_CODE_F_BUTTON_SELECT = "CodeFSelect";	//	SELECTボタン
+	public static final String KEY_CODE_F_BUTTON_START = "CodeFStart";	//	STARTボタン
+	// メディアプレイヤー
+	public static final String KEY_CODE_F_MEDIA_NEXT = "CodeFMediaNext";	//	曲送りボタン
+	public static final String KEY_CODE_F_MEDIA_PREVIOUS = "CodeFMediaPrev";	//	曲戻しボタン
+	public static final String KEY_CODE_F_MEDIA_PLAY_PAUSE = "CodeFMediaPlayPause";	//	再生一時停止ボタン
+	// カスタムキー
+	public static final String KEY_CODE_F_CUSTOMKEY01 = "CustomKeyF01";	//	カスタムキー1
+	public static final String KEY_CODE_F_CUSTOMKEY02 = "CustomKeyF02";	//	カスタムキー2
+	public static final String KEY_CODE_F_CUSTOMKEY03 = "CustomKeyF03";	//	カスタムキー3
+	public static final String KEY_CODE_F_CUSTOMKEY04 = "CustomKeyF04";	//	カスタムキー4
+	public static final String KEY_CODE_F_CUSTOMKEY05 = "CustomKeyF05";	//	カスタムキー5
+	public static final String KEY_CODE_F_CUSTOMKEY06 = "CustomKeyF06";	//	カスタムキー6
+	public static final String KEY_CODE_F_CUSTOMKEY07 = "CustomKeyF07";	//	カスタムキー7
+	public static final String KEY_CODE_F_CUSTOMKEY08 = "CustomKeyF08";	//	カスタムキー8
+	public static final String KEY_CODE_F_CUSTOMKEY09 = "CustomKeyF09";	//	カスタムキー9
+	public static final String KEY_CODE_F_CUSTOMKEY10 = "CustomKeyF10";	//	カスタムキー10
+
+	public static final int TAP_FILELIST_NONE = 0;
+	public static final int TAP_FILELIST_NOSELECT = 1;
+	public static final int TAP_FILELIST_BACK = 2;					// 戻る
+	public static final int TAP_FILELIST_ENTER = 3;		// 
+	public static final int TAP_FILELIST_LEFT = 4;		// 
+	public static final int TAP_FILELIST_RIGHT = 5;		// 
+	public static final int TAP_FILELIST_UP = 6;		// 
+	public static final int TAP_FILELIST_DOWN = 7;		// 
+	public static final int TAP_FILELIST_HOME = 8;		// 
+	public static final int TAP_FILELIST_END = 9;		// 
+	public static final int TAP_FILELIST_PARENT_DIR = 10;		// 
+	public static final int TAP_FILELIST_SELECT_LIST = 11;
+	public static final int TAP_FILELIST_MOVELISTUP = 12;
+	public static final int TAP_FILELIST_MOVELISTDOWN = 13;
+	public static final int TAP_FILELIST_REFRESH = 14;
+	public static final int TAP_FILELIST_CHANGELISTMODE = 15;
+	public static final int TAP_FILELIST_ENDAPP = 16;
+
+	public static final String KEY_CUSTOMKEY_TITLE_01 = "Customkeytitle01";
+	public static final String KEY_CUSTOMKEY_TITLE_02 = "Customkeytitle02";
+	public static final String KEY_CUSTOMKEY_TITLE_03 = "Customkeytitle03";
+	public static final String KEY_CUSTOMKEY_TITLE_04 = "Customkeytitle04";
+	public static final String KEY_CUSTOMKEY_TITLE_05 = "Customkeytitle05";
+	public static final String KEY_CUSTOMKEY_TITLE_06 = "Customkeytitle06";
+	public static final String KEY_CUSTOMKEY_TITLE_07 = "Customkeytitle07";
+	public static final String KEY_CUSTOMKEY_TITLE_08 = "Customkeytitle08";
+	public static final String KEY_CUSTOMKEY_TITLE_09 = "Customkeytitle09";
+	public static final String KEY_CUSTOMKEY_TITLE_10 = "Customkeytitle10";
+
+	public static final String KEY_CUSTOMKEY_CODE_01 = "Customkeycode01";
+	public static final String KEY_CUSTOMKEY_CODE_02 = "Customkeycode02";
+	public static final String KEY_CUSTOMKEY_CODE_03 = "Customkeycode03";
+	public static final String KEY_CUSTOMKEY_CODE_04 = "Customkeycode04";
+	public static final String KEY_CUSTOMKEY_CODE_05 = "Customkeycode05";
+	public static final String KEY_CUSTOMKEY_CODE_06 = "Customkeycode06";
+	public static final String KEY_CUSTOMKEY_CODE_07 = "Customkeycode07";
+	public static final String KEY_CUSTOMKEY_CODE_08 = "Customkeycode08";
+	public static final String KEY_CUSTOMKEY_CODE_09 = "Customkeycode09";
+	public static final String KEY_CUSTOMKEY_CODE_10 = "Customkeycode10";
+
+	public static final int HARDWARE_NONE = 0;
+
+	// ハードウェアキー割り当てコード
+	public static final int KEYCODE_HOME = 3;
+	public static final int KEYCODE_BACK = 4;
+	public static final int KEYCODE_DPAD_UP = 19;
+	public static final int KEYCODE_DPAD_DOWN = 20;
+	public static final int KEYCODE_DPAD_LEFT = 21;
+	public static final int KEYCODE_DPAD_RIGHT = 22;
+	public static final int KEYCODE_DPAD_CENTER = 23;
+	public static final int KEYCODE_VOLUME_UP = 24;
+	public static final int KEYCODE_VOLUME_DOWN = 25;
+	public static final int KEYCODE_CAMERA = 27;
+	public static final int KEYCODE_SPACE = 62;
+	public static final int KEYCODE_ENTER = 66;
+	public static final int KEYCODE_DEL = 67;
+	public static final int KEYCODE_MENU = 82;
+	public static final int KEYCODE_FOCUS = 80;
+	public static final int KEYCODE_SEARCH = 84;
+	public static final int KEYCODE_MEDIA_PLAY_PAUSE = 85;
+	public static final int KEYCODE_MEDIA_NEXT = 87;
+	public static final int KEYCODE_MEDIA_PREVIOUS = 88;
+	public static final int KEYCODE_PAGE_UP = 92;
+	public static final int KEYCODE_PAGE_DOWN = 93;
+	public static final int KEYCODE_BUTTON_A = 96;
+	public static final int KEYCODE_BUTTON_B = 97;
+	public static final int KEYCODE_BUTTON_X = 99;
+	public static final int KEYCODE_BUTTON_Y = 100;
+	public static final int KEYCODE_BUTTON_L1 = 102;
+	public static final int KEYCODE_BUTTON_R1 = 103;
+	public static final int KEYCODE_BUTTON_L2 = 104;
+	public static final int KEYCODE_BUTTON_R2 = 105;
+	public static final int KEYCODE_BUTTON_THUMBL = 106;
+	public static final int KEYCODE_BUTTON_THUMBR = 107;
+	public static final int KEYCODE_BUTTON_START = 108;
+	public static final int KEYCODE_BUTTON_SELECT = 109;
+	public static final int KEYCODE_ESCAPE = 111;
+	public static final int KEYCODE_MOVE_HOME = 122;
+	public static final int KEYCODE_MOVE_END = 123;
+	public static final int KEYCODE_FORWARD = 125;
+
+	public static final int[] KEYCODE_INDEX =
+	{
+		DEF.KEYCODE_BACK,
+		DEF.KEYCODE_VOLUME_UP,
+		DEF.KEYCODE_VOLUME_DOWN,
+		DEF.KEYCODE_CAMERA,
+		DEF.KEYCODE_FOCUS,
+		DEF.KEYCODE_MENU,
+		DEF.KEYCODE_DPAD_LEFT,
+		DEF.KEYCODE_DPAD_RIGHT,
+		DEF.KEYCODE_DPAD_UP,
+		DEF.KEYCODE_DPAD_DOWN,
+		DEF.KEYCODE_DPAD_CENTER,
+		DEF.KEYCODE_ENTER,
+		DEF.KEYCODE_DEL,
+		DEF.KEYCODE_SPACE,
+		DEF.KEYCODE_SEARCH,
+		DEF.KEYCODE_PAGE_UP,
+		DEF.KEYCODE_PAGE_DOWN,
+		DEF.KEYCODE_ESCAPE,
+		DEF.KEYCODE_MOVE_HOME,
+		DEF.KEYCODE_MOVE_END,
+		DEF.KEYCODE_FORWARD,
+		DEF.KEYCODE_BUTTON_L1,
+		DEF.KEYCODE_BUTTON_L2,
+		DEF.KEYCODE_BUTTON_THUMBL,
+		DEF.KEYCODE_BUTTON_R1,
+		DEF.KEYCODE_BUTTON_R2,
+		DEF.KEYCODE_BUTTON_THUMBR,
+		DEF.KEYCODE_BUTTON_A,
+		DEF.KEYCODE_BUTTON_B,
+		DEF.KEYCODE_BUTTON_X,
+		DEF.KEYCODE_BUTTON_Y,
+		DEF.KEYCODE_BUTTON_SELECT,
+		DEF.KEYCODE_BUTTON_START,
+		DEF.KEYCODE_MEDIA_NEXT,
+		DEF.KEYCODE_MEDIA_PREVIOUS,
+		DEF.KEYCODE_MEDIA_PLAY_PAUSE
+	};
+
+	public static final int[] HardwareKeyTitleName =
+		{ R.string.hardwarekeytitle00
+		, R.string.hardwarekeytitle01
+		, R.string.hardwarekeytitle02
+		, R.string.hardwarekeytitle03
+		, R.string.hardwarekeytitle04
+		, R.string.hardwarekeytitle05
+		, R.string.hardwarekeytitle06
+		, R.string.hardwarekeytitle07
+		, R.string.hardwarekeytitle08
+		, R.string.hardwarekeytitle09
+		, R.string.hardwarekeytitle10
+		, R.string.hardwarekeytitle11
+		, R.string.hardwarekeytitle12
+		, R.string.hardwarekeytitle13
+		, R.string.hardwarekeytitle14
+		, R.string.hardwarekeytitle15
+		, R.string.hardwarekeytitle16
+		, R.string.hardwarekeytitle17
+		, R.string.hardwarekeytitle18
+		, R.string.hardwarekeytitle19
+		, R.string.hardwarekeytitle20
+		, R.string.hardwarekeytitle21
+		, R.string.hardwarekeytitle22
+		, R.string.hardwarekeytitle23
+		, R.string.hardwarekeytitle24
+		, R.string.hardwarekeytitle25
+		, R.string.hardwarekeytitle26
+		, R.string.hardwarekeytitle27
+		, R.string.hardwarekeytitle28
+		, R.string.hardwarekeytitle29
+		, R.string.hardwarekeytitle30
+		, R.string.hardwarekeytitle31
+		, R.string.hardwarekeytitle32
+		, R.string.hardwarekeytitle33
+		, R.string.hardwarekeytitle34
+		, R.string.hardwarekeytitle35
+		, R.string.hardwarekeytitle36
+		, R.string.hardwarekeytitle37
+		, R.string.hardwarekeytitle38
+		, R.string.hardwarekeytitle39
+		, R.string.hardwarekeytitle40
+		, R.string.hardwarekeytitle41
+		, R.string.hardwarekeytitle42
+		, R.string.hardwarekeytitle43
+		, R.string.hardwarekeytitle44
+		, R.string.hardwarekeytitle45 };
+
+	public static final String[] HardwareImageKeyIdName =
+		{ DEF.KEY_CODE_I_BACK
+		, DEF.KEY_CODE_I_VOLUME_UP
+		, DEF.KEY_CODE_I_VOLUME_DOWN
+		, DEF.KEY_CODE_I_CAMERA
+		, DEF.KEY_CODE_I_FOCUS
+		, DEF.KEY_CODE_I_MENU
+		, DEF.KEY_CODE_I_DPAD_LEFT
+		, DEF.KEY_CODE_I_DPAD_RIGHT
+		, DEF.KEY_CODE_I_DPAD_UP
+		, DEF.KEY_CODE_I_DPAD_DOWN
+		, DEF.KEY_CODE_I_DPAD_CENTER
+		, DEF.KEY_CODE_I_ENTER
+		, DEF.KEY_CODE_I_DEL
+		, DEF.KEY_CODE_I_SPACE
+		, DEF.KEY_CODE_I_SEARCH
+		, DEF.KEY_CODE_I_PAGE_UP
+		, DEF.KEY_CODE_I_PAGE_DOWN
+		, DEF.KEY_CODE_I_ESCAPE
+		, DEF.KEY_CODE_I_MOVEHOME
+		, DEF.KEY_CODE_I_MOVEEND
+		, DEF.KEY_CODE_I_FORWARD
+		, DEF.KEY_CODE_I_BUTTON_L1
+		, DEF.KEY_CODE_I_BUTTON_L2
+		, DEF.KEY_CODE_I_BUTTON_THUMBL
+		, DEF.KEY_CODE_I_BUTTON_R1
+		, DEF.KEY_CODE_I_BUTTON_R2
+		, DEF.KEY_CODE_I_BUTTON_THUMBR
+		, DEF.KEY_CODE_I_BUTTON_A
+		, DEF.KEY_CODE_I_BUTTON_B
+		, DEF.KEY_CODE_I_BUTTON_X
+		, DEF.KEY_CODE_I_BUTTON_Y
+		, DEF.KEY_CODE_I_BUTTON_SELECT
+		, DEF.KEY_CODE_I_BUTTON_START
+		, DEF.KEY_CODE_I_MEDIA_NEXT
+		, DEF.KEY_CODE_I_MEDIA_PREVIOUS
+		, DEF.KEY_CODE_I_MEDIA_PLAY_PAUSE
+		, DEF.KEY_CODE_I_CUSTOMKEY01
+		, DEF.KEY_CODE_I_CUSTOMKEY02
+		, DEF.KEY_CODE_I_CUSTOMKEY03
+		, DEF.KEY_CODE_I_CUSTOMKEY04
+		, DEF.KEY_CODE_I_CUSTOMKEY05
+		, DEF.KEY_CODE_I_CUSTOMKEY06
+		, DEF.KEY_CODE_I_CUSTOMKEY07
+		, DEF.KEY_CODE_I_CUSTOMKEY08
+		, DEF.KEY_CODE_I_CUSTOMKEY09
+		, DEF.KEY_CODE_I_CUSTOMKEY10 };
+
+	public static final String[] HardwareTextKeyIdName =
+		{ DEF.KEY_CODE_T_BACK
+		, DEF.KEY_CODE_T_VOLUME_UP
+		, DEF.KEY_CODE_T_VOLUME_DOWN
+		, DEF.KEY_CODE_T_CAMERA
+		, DEF.KEY_CODE_T_FOCUS
+		, DEF.KEY_CODE_T_MENU
+		, DEF.KEY_CODE_T_DPAD_LEFT
+		, DEF.KEY_CODE_T_DPAD_RIGHT
+		, DEF.KEY_CODE_T_DPAD_UP
+		, DEF.KEY_CODE_T_DPAD_DOWN
+		, DEF.KEY_CODE_T_DPAD_CENTER
+		, DEF.KEY_CODE_T_ENTER
+		, DEF.KEY_CODE_T_DEL
+		, DEF.KEY_CODE_T_SPACE
+		, DEF.KEY_CODE_T_SEARCH
+		, DEF.KEY_CODE_T_PAGE_UP
+		, DEF.KEY_CODE_T_PAGE_DOWN
+		, DEF.KEY_CODE_T_ESCAPE
+		, DEF.KEY_CODE_T_MOVEHOME
+		, DEF.KEY_CODE_T_MOVEEND
+		, DEF.KEY_CODE_T_FORWARD
+		, DEF.KEY_CODE_T_BUTTON_L1
+		, DEF.KEY_CODE_T_BUTTON_L2
+		, DEF.KEY_CODE_T_BUTTON_THUMBL
+		, DEF.KEY_CODE_T_BUTTON_R1
+		, DEF.KEY_CODE_T_BUTTON_R2
+		, DEF.KEY_CODE_T_BUTTON_THUMBR
+		, DEF.KEY_CODE_T_BUTTON_A
+		, DEF.KEY_CODE_T_BUTTON_B
+		, DEF.KEY_CODE_T_BUTTON_X
+		, DEF.KEY_CODE_T_BUTTON_Y
+		, DEF.KEY_CODE_T_BUTTON_SELECT
+		, DEF.KEY_CODE_T_BUTTON_START
+		, DEF.KEY_CODE_T_MEDIA_NEXT
+		, DEF.KEY_CODE_T_MEDIA_PREVIOUS
+		, DEF.KEY_CODE_T_MEDIA_PLAY_PAUSE
+		, DEF.KEY_CODE_T_CUSTOMKEY01
+		, DEF.KEY_CODE_T_CUSTOMKEY02
+		, DEF.KEY_CODE_T_CUSTOMKEY03
+		, DEF.KEY_CODE_T_CUSTOMKEY04
+		, DEF.KEY_CODE_T_CUSTOMKEY05
+		, DEF.KEY_CODE_T_CUSTOMKEY06
+		, DEF.KEY_CODE_T_CUSTOMKEY07
+		, DEF.KEY_CODE_T_CUSTOMKEY08
+		, DEF.KEY_CODE_T_CUSTOMKEY09
+		, DEF.KEY_CODE_T_CUSTOMKEY10 };
+
+	public static final String[] HardwareFilelistKeyIdName =
+		{ DEF.KEY_CODE_F_BACK
+		, DEF.KEY_CODE_F_VOLUME_UP
+		, DEF.KEY_CODE_F_VOLUME_DOWN
+		, DEF.KEY_CODE_F_CAMERA
+		, DEF.KEY_CODE_F_FOCUS
+		, DEF.KEY_CODE_F_MENU
+		, DEF.KEY_CODE_F_DPAD_LEFT
+		, DEF.KEY_CODE_F_DPAD_RIGHT
+		, DEF.KEY_CODE_F_DPAD_UP
+		, DEF.KEY_CODE_F_DPAD_DOWN
+		, DEF.KEY_CODE_F_DPAD_CENTER
+		, DEF.KEY_CODE_F_ENTER
+		, DEF.KEY_CODE_F_DEL
+		, DEF.KEY_CODE_F_SPACE
+		, DEF.KEY_CODE_F_SEARCH
+		, DEF.KEY_CODE_F_PAGE_UP
+		, DEF.KEY_CODE_F_PAGE_DOWN
+		, DEF.KEY_CODE_F_ESCAPE
+		, DEF.KEY_CODE_F_MOVEHOME
+		, DEF.KEY_CODE_F_MOVEEND
+		, DEF.KEY_CODE_F_FORWARD
+		, DEF.KEY_CODE_F_BUTTON_L1
+		, DEF.KEY_CODE_F_BUTTON_L2
+		, DEF.KEY_CODE_F_BUTTON_THUMBL
+		, DEF.KEY_CODE_F_BUTTON_R1
+		, DEF.KEY_CODE_F_BUTTON_R2
+		, DEF.KEY_CODE_F_BUTTON_THUMBR
+		, DEF.KEY_CODE_F_BUTTON_A
+		, DEF.KEY_CODE_F_BUTTON_B
+		, DEF.KEY_CODE_F_BUTTON_X
+		, DEF.KEY_CODE_F_BUTTON_Y
+		, DEF.KEY_CODE_F_BUTTON_SELECT
+		, DEF.KEY_CODE_F_BUTTON_START
+		, DEF.KEY_CODE_F_MEDIA_NEXT
+		, DEF.KEY_CODE_F_MEDIA_PREVIOUS
+		, DEF.KEY_CODE_F_MEDIA_PLAY_PAUSE
+		, DEF.KEY_CODE_F_CUSTOMKEY01
+		, DEF.KEY_CODE_F_CUSTOMKEY02
+		, DEF.KEY_CODE_F_CUSTOMKEY03
+		, DEF.KEY_CODE_F_CUSTOMKEY04
+		, DEF.KEY_CODE_F_CUSTOMKEY05
+		, DEF.KEY_CODE_F_CUSTOMKEY06
+		, DEF.KEY_CODE_F_CUSTOMKEY07
+		, DEF.KEY_CODE_F_CUSTOMKEY08
+		, DEF.KEY_CODE_F_CUSTOMKEY09
+		, DEF.KEY_CODE_F_CUSTOMKEY10 };
 
 	public static final int[] ColorList = {Color.rgb(0, 0, 0) // 0
 			, Color.rgb(255, 255, 255) // 1
