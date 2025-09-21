@@ -4317,6 +4317,14 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mScrImgScale; // 拡大
 	private int mMarginCut; // 余白削除
 	private int mMarginCutColor; // 余白削除の色
+	private int mMarginBlackMask;
+	private int mMarginLimit;
+	private int mMarginSpace;
+	private int mMarginRange;
+	private int mMarginStart;
+	private int mMarginLevel;
+	private boolean mMarginAspectMask;
+	private boolean mMarginForceIgnoreAspect;
 	private int mSharpen;	// シャープ化
 	private int mInvert;	// カラー反転
 	private int mGray;		// グレースケール
@@ -4406,7 +4414,7 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	// 設定変更
-	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation, boolean coloring) {
+	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation, boolean coloring, boolean marginblackmask, int marginlevel, int marginlimit, int marginspace, int marginrange, int marginstart, boolean marginaspectmask, boolean marginforceignoreaspect) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "wscale=" + wscale + ", scale=" + scale);
 		mScrScaleMode = mode;
@@ -4425,6 +4433,14 @@ public class ImageManager extends InputStream implements Runnable {
 		mPageWay = pageway;
 		mMarginCut = mgncut;
 		mMarginCutColor = mgncutcolor;
+		mMarginBlackMask = (marginblackmask == true) ? 1 : 0;
+		mMarginLimit = marginlimit;
+		mMarginSpace = marginspace;
+		mMarginRange = marginrange;
+		mMarginStart = marginstart;
+		mMarginLevel = marginlevel;
+		mMarginAspectMask = marginaspectmask;
+		mMarginForceIgnoreAspect = marginforceignoreaspect;
 		mBright = bright;
 		mGamma = gamma;
 		mSharpen = sharpen;
@@ -4544,7 +4560,7 @@ public class ImageManager extends InputStream implements Runnable {
 		if (mMarginCut != 0) {
 			// 余白カットありの場合
 			// 余白のサイズを計測
-			if (CallImgLibrary.GetMarginSize(mActivity, mHandler, mCacheIndex, page1, half1, 0, mMarginCut, mMarginCutColor, margin) > 0) {
+			if (CallImgLibrary.GetMarginSize(mActivity, mHandler, mCacheIndex, page1, half1, 0, mMarginCut, mMarginCutColor, margin, mMarginBlackMask, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginLevel) > 0) {
 				left[0] = margin[0];
 				right[0] = margin[1];
 				top[0] = margin[2];
@@ -4567,14 +4583,14 @@ public class ImageManager extends InputStream implements Runnable {
 			if (mMarginCut != 0) {
 				// 余白カットありの場合
 				// 余白のサイズを計測
-				if (CallImgLibrary.GetMarginSize(mActivity, mHandler, mCacheIndex, page2, half2, 0, mMarginCut, mMarginCutColor, margin) > 0) {
+				if (CallImgLibrary.GetMarginSize(mActivity, mHandler, mCacheIndex, page2, half2, 0, mMarginCut, mMarginCutColor, margin, mMarginBlackMask, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginLevel) > 0) {
 					left[1] = margin[0];
 					right[1] = margin[1];
 					top[1] = margin[2];
 					bottom[1] = margin[3];
 				}
 			}
-			CallImgLibrary.GetMarginSize(mActivity, mHandler, mCacheIndex, page2, half2, 0, mMarginCut, mMarginCutColor, margin);
+			CallImgLibrary.GetMarginSize(mActivity, mHandler, mCacheIndex, page2, half2, 0, mMarginCut, mMarginCutColor, margin, mMarginBlackMask, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginLevel);
 			Logcat.v(logLevel, "Page=" + page2 + ", Half=" + half1 + ", マージン:P2 左=" + left[1] + ", 右=" + right[1] + ", 上=" + top[1] + ", 下=" + bottom[1]);
 		}
 
@@ -4629,8 +4645,10 @@ public class ImageManager extends InputStream implements Runnable {
 				if (x * 1000 / work_x < y * 1000 / disp_y) {
 					int margin_x = (int) ((float) src_x[0] - ((float) y * ((float) work_x / (float) disp_y)));
 					margin_x = Math.max(0, margin_x);
-					left[0] = margin_x * left[0] / (left[0] + right[0]);
-					right[0] = margin_x - left[0];
+					if (!mMarginAspectMask) {
+						left[0] = margin_x * left[0] / (left[0] + right[0]);
+						right[0] = margin_x - left[0];
+					}
 				}
 			}
 			if (page2 != -1) {
@@ -4640,8 +4658,10 @@ public class ImageManager extends InputStream implements Runnable {
 					if (x * 1000 / work_x < y * 1000 / disp_y) {
 						int margin_x = (int) ((float) src_x[1] - ((float) y * ((float) work_x / (float) disp_y)));
 						margin_x = Math.max(0, margin_x);
-						left[1] = margin_x * left[1] / (left[1] + right[1]);
-						right[1] = margin_x - left[1];
+						if (!mMarginAspectMask) {
+							left[1] = margin_x * left[1] / (left[1] + right[1]);
+							right[1] = margin_x - left[1];
+						}
 					}
 				}
 			}
@@ -4653,8 +4673,10 @@ public class ImageManager extends InputStream implements Runnable {
 				if (x * 1000 / work_x > y * 1000 / disp_y) {
 					int margin_y = (int) ((float) src_y[0] - ((float) x * ((float) disp_y / (float) work_x)));
 					margin_y = Math.max(0, margin_y);
-					top[0] = margin_y * top[0] / (top[0] + bottom[0]);
-					bottom[0] = margin_y - top[0];
+					if (!mMarginAspectMask) {
+						top[0] = margin_y * top[0] / (top[0] + bottom[0]);
+						bottom[0] = margin_y - top[0];
+					}
 				}
 			}
 			if (page2 != -1) {
@@ -4664,8 +4686,10 @@ public class ImageManager extends InputStream implements Runnable {
 					if (x * 1000 / work_x > y * 1000 / disp_y) {
 						int margin_y = (int) ((float) src_y[1] - ((float) x * ((float) disp_y / (float) work_x)));
 						margin_y = Math.max(0, margin_y);
-						top[1] = margin_y * top[1] / (top[1] + bottom[1]);
-						bottom[1] = margin_y - top[1];
+						if (!mMarginAspectMask) {
+							top[1] = margin_y * top[1] / (top[1] + bottom[1]);
+							bottom[1] = margin_y - top[1];
+						}
 					}
 				}
 			}
@@ -4753,7 +4777,7 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 		}
 
-		if (mMarginCut == 6) {
+		if (mMarginCut == 6 || mMarginForceIgnoreAspect) {
 			// 余白削除モードが縦横比無視の場合
 			// 元画像の縦横比を画面サイズにする
 			src_x[0] = disp_x;
