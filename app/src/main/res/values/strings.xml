@@ -424,6 +424,7 @@
     <string name="mgncut04">Special</string>
     <string name="mgncut05">Overkill</string>
     <string name="mgncut06">Ignore Aspect Ratio</string>
+    <string name="mgncut07">Custom Setting</string>
     <string name="mgncutcolor00">Black and White</string>
     <string name="mgncutcolor01">All colors</string>
     <string name="displayposition00">Center</string>
