@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="余白の削除の詳細設定" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarginAspectMask"
+            android:summary="上下左右に余白が残らないようにしたい場合はチェックを入れる"
+            android:title="縦横比に関係なく余白を切り取る" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarginForceIgnoreAspect"
+            android:summary="余白の強弱に関係なく設定する場合はチェックを入れる"
+            android:title="縦横比無視を強制する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MargingBlackMask"
+            android:summary="白と黒の時に白のみ余白を切り取る場合はチェックを入れる"
+            android:title="白と黒の時に黒の余白を残す" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="カスタム設定の初期化(余白の削除の一覧から選択して上書きする)"
+            android:entries="@array/margincustominit_name_list"
+            android:entryValues="@array/margincustominit_value_list"
+            android:key="MarginCustomInit"
+            android:summary="余白の削除の一覧から選択して上書きする"
+            android:title="カスタム設定の初期化" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="カスタム設定のパラメータ" >
+        <src.comitton.config.seekbar.MarginLevelSeekbar
+            android:dialogMessage="RGBすべてが上位4ビットからこのビット数と一致すれば同じ色と判定する"
+            android:dialogTitle="色判定時のビットマスク深度(0～15)"
+            android:key="MarginLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="色判定時のビットマスク深度" />
+        <src.comitton.config.seekbar.MarginLimitSeekbar
+            android:dialogMessage="違う色の回数がこの数値を超えると余白でないと判定する"
+            android:dialogTitle="違う色の出現回数の許容する割合(単位1パーセント)"
+            android:key="MarginLimit"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="違う色の出現回数の許容する割合" />
+        <src.comitton.config.seekbar.MarginStartSeekbar
+            android:dialogMessage="画面端にノイズがあっても余白削除を失敗させない"
+            android:dialogTitle="余白判定を開始するまでの無視区間(単位0.1パーセント)"
+            android:key="MarginStart"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="余白判定を開始するまでの無視区間" />
+        <src.comitton.config.seekbar.MarginSpaceSeekbar
+            android:dialogMessage="100%からこの値を引いた割合に応じて画像の縁に余白を残す"
+            android:dialogTitle="余白判定された幅のうち画像から削除する割合(単位1パーセント)"
+            android:key="MarginSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="余白判定された幅のうち画像から削除する割合" />
+        <src.comitton.config.seekbar.MarginRangeSeekbar
+            android:dialogMessage="画像のほとんどが余白のときカットする量を制限する"
+            android:dialogTitle="余白判定を行う範囲(単位1パーセント)"
+            android:key="MarginRange"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="余白判定を行う範囲" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -20,6 +20,16 @@
             android:key="RotateBtn"
             android:summary="dummy"
             android:title="画面を回転するボタン" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ForceHideNavigationBar"
+            android:summary="強制的にナビゲーションバーを非表示にする(再起動で反映)"
+            android:title="すべての画面でナビゲーションバーを表示しない" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ForceHideStatusBar"
+            android:summary="強制的にステータスバーを非表示にする(再起動で反映)"
+            android:title="すべての画面でステータスバーを表示しない" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="文字コード" >
