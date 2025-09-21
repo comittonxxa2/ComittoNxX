@@ -242,7 +242,7 @@ int GetModeColor(int index, int Page, int Half, int Index, int StartH, int Start
 
 // Margin     : 画像の何%まで余白チェックするか(0～20%)
 // *pLeft, *pRight, *pTop, *pBottom  : 余白カット量を返す
-int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int MarginColor, int *pLeft, int *pRight, int *pTop, int *pBottom)
+int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int MarginColor, int *pLeft, int *pRight, int *pTop, int *pBottom, int MarginBlackMask, int MarginLimit, int MarginSpace, int MagrinRange, int MarginStart, int MarginLevel)
 {
 
     IMAGEDATA *pData = &gImageData[index][Page];
@@ -316,6 +316,13 @@ int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int Marg
             start = 5;
             bitmask = 3;
             break;
+        case BMPMARGIN_CUSTOM:		// カスタム設定
+            limit = MarginLimit;
+            space = MarginSpace;
+            range = MagrinRange;
+            start = MarginStart;
+            bitmask = 5;
+            break;
         default:	// 最強
             limit = 50;
             space = 100;
@@ -345,6 +352,9 @@ int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int Marg
             break;
         case 4:
             mask = 0xF0F0F0;  // 上位4ビット
+            break;
+        case 5:
+            mask = (MarginLevel << 4) | (MarginLevel << 12) | (MarginLevel << 20);  // カスタム設定
             break;
         default:
             mask = 0xF0F0F0;  // 上位4ビット
@@ -414,6 +424,7 @@ int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int Marg
         orgbuff1 = gLinesPtr[index][yy + HOKAN_DOTS / 2];
         MODE_WHITE = true;
         MODE_BLACK = true;
+        if (MarginBlackMask) MODE_BLACK = false;
         whitecnt = 0;	// 白でないカウンタ
         blackcnt = 0;	// 黒でないカウンタ
         colorcnt = 0;	// 最頻色でないカウンタ
@@ -467,6 +478,7 @@ int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int Marg
         orgbuff1 = gLinesPtr[index][yy + HOKAN_DOTS / 2];
         MODE_WHITE = true;
         MODE_BLACK = true;
+        if (MarginBlackMask) MODE_BLACK = false;
         whitecnt = 0;	// 白でないカウンタ
         blackcnt = 0;	// 黒でないカウンタ
         colorcnt = 0;	// 最頻色でないカウンタ
@@ -524,6 +536,7 @@ int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int Marg
     for (xx = startW + 0; xx < CheckCX ; xx ++) {
         MODE_WHITE = true;
         MODE_BLACK = true;
+        if (MarginBlackMask) MODE_BLACK = false;
         whitecnt = 0;	// 白でないカウンタ
         blackcnt = 0;	// 黒でないカウンタ
         colorcnt = 0;	// 最頻色でないカウンタ
@@ -576,6 +589,7 @@ int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int Marg
     for (int xx = OrgWidth - startW - 1 ; xx >= OrgWidth - CheckCX ; xx --) {
         MODE_WHITE = true;
         MODE_BLACK = true;
+        if (MarginBlackMask) MODE_BLACK = false;
         whitecnt = 0;    // 白でないカウンタ
         blackcnt = 0;    // 黒でないカウンタ
         colorcnt = 0;    // 最頻色でないカウンタ

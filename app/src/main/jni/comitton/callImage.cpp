@@ -771,7 +771,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_ImageGetFreeSize (JN
  * Method:    GetMarginSize
  * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_GetMarginSize (JNIEnv *env, jclass obj, jint index, jint page, jint half, jint Index, jint margin, jint margincolor, jintArray size)
+JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_GetMarginSize (JNIEnv *env, jclass obj, jint index, jint page, jint half, jint Index, jint margin, jint margincolor, jintArray size, jint marginblackmask, jint marginlimit, jint marginspace, jint marginrange, jint marginstart, jint marginlevel)
 {
 //#define DEBUG_GetMarginSize
 
@@ -792,7 +792,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_GetMarginSize (JNIEn
 #endif
 
 	jint *retsize = env->GetIntArrayElements(size, nullptr);
-	int ret = GetMarginSize(index, page, half, Index, margin, margincolor, &retsize[0], &retsize[1], &retsize[2], &retsize[3]);
+	int ret = GetMarginSize(index, page, half, Index, margin, margincolor, &retsize[0], &retsize[1], &retsize[2], &retsize[3], marginblackmask, marginlimit, marginspace, marginrange, marginstart, marginlevel);
 	env->ReleaseIntArrayElements(size, retsize, 0);
 	return ret;
 //	return

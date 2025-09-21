@@ -118,6 +118,7 @@ typedef struct buff_manage {
 #define BMPMARGIN_SPECIAL   4
 #define BMPMARGIN_OVERKILL  5
 #define BMPMARGIN_IGNORE_ASPECT_RATIO  6
+#define BMPMARGIN_CUSTOM  7
 
 #define MARGIN_COLOR_WHITE_AND_BLACK	0
 #define MARGIN_COLOR_ALL_COLORS     	1
@@ -167,7 +168,7 @@ int CopySclBuffMngToBuffMng(int);
 int RefreshSclLinesPtr(int, int, int, int, int, int);
 
 int ImageRotate(int, int, int, int, int, int, int);
-int GetMarginSize(int, int, int, int, int, int, int*, int*, int*, int*);
+int GetMarginSize(int, int, int, int, int, int, int*, int*, int*, int*, int, int, int, int, int, int);
 int ImageMarginCut(int, int, int, int, int, int, int, int, int, int, int*, int*);
 int ImageHalf(int, int, int, int, int, int);
 int ImageSharpen(int, int, int, int, int, int, int);
