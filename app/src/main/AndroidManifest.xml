@@ -214,6 +214,11 @@
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetMarginCutActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
