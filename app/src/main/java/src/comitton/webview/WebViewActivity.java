@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 
 import android.annotation.SuppressLint;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
@@ -20,6 +21,7 @@ import src.comitton.fileaccess.FileAccess;
 import src.comitton.dialog.MenuDialog.MenuSelectListener;
 import src.comitton.imageview.PageSelectListener;
 import src.comitton.dialog.BookmarkDialog.BookmarkListenerInterface;
+import src.comitton.config.SetCommonActivity;
 
 import android.os.Handler;
 import android.view.View;
@@ -34,6 +36,8 @@ public class WebViewActivity extends AppCompatActivity {
 
 	private boolean mNotice = false;
 	private boolean mNoSleep = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	// ファイル情報
 	/** 選択したサーバのインデックス */
@@ -67,6 +71,9 @@ public class WebViewActivity extends AppCompatActivity {
 		// タイトル非表示
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
 			// 通知領域非表示
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -74,6 +81,13 @@ public class WebViewActivity extends AppCompatActivity {
 		if (mNoSleep) {
 			// スリープしない
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
 
 		// Intentを取得する
