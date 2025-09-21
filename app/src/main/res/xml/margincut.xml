@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Advanced settings for remove the margin" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarginAspectMask"
+            android:summary="Check this box if you want to ensure there are no margins on the top, bottom, left, or right."
+            android:title="Crop margins regardless of aspect ratio" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarginForceIgnoreAspect"
+            android:summary="Check this box if you want to set the margins regardless of their strength."
+            android:title="Force aspect ratio ignorance" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MargingBlackMask"
+            android:summary="Check this box if you want to cut off only the white margins when using black and white."
+            android:title="Leave a black margin when using black and white." />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Reset custom settings(Select from the Delete Margin list and overwrite)"
+            android:entries="@array/margincustominit_name_list"
+            android:entryValues="@array/margincustominit_value_list"
+            android:key="MarginCustomInit"
+            android:summary="Select from the Delete Margin list and overwrite"
+            android:title="Reset custom settings" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Custom Settings Parameters" >
+        <src.comitton.config.seekbar.MarginLevelSeekbar
+            android:dialogMessage="If all RGB values ​​match this number of bits from the top 4 bits, they are determined to be the same color."
+            android:dialogTitle="Bitmask depth for color detection(0～15)"
+            android:key="MarginLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Bitmask depth for color detection" />
+        <src.comitton.config.seekbar.MarginLimitSeekbar
+            android:dialogMessage="If the number of different colors exceeds this value, it is determined to be non-blank."
+            android:dialogTitle="Percentage of different colors allowed(Unit: 1 percent)"
+            android:key="MarginLimit"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Percentage of different colors allowed" />
+        <src.comitton.config.seekbar.MarginStartSeekbar
+            android:dialogMessage="Noise at the edge of the screen will not cause margin removal to fail"
+            android:dialogTitle="Ignored section before starting margin determination(Unit: 0.1 percent)"
+            android:key="MarginStart"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Ignored section before starting margin determination" />
+        <src.comitton.config.seekbar.MarginSpaceSeekbar
+            android:dialogMessage="Leave a margin around the edge of the image according to the percentage obtained by subtracting this value from 100%."
+            android:dialogTitle="The percentage of the determined margin width to be removed from the image(Unit: 1 percent)"
+            android:key="MarginSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="The percentage of the determined margin width to be removed from the image" />
+        <src.comitton.config.seekbar.MarginRangeSeekbar
+            android:dialogMessage="Limit the amount of cutting when most of the image is white space."
+            android:dialogTitle="Range for margin determination(Unit: 1 percent)"
+            android:key="MarginRange"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Range for margin determination" />
+    </PreferenceCategory>
+</PreferenceScreen>

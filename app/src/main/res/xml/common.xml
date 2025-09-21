@@ -20,6 +20,16 @@
             android:key="RotateBtn"
             android:summary="dummy"
             android:title="Button to rotate the screen" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ForceHideNavigationBar"
+            android:summary="Forces the navigation bar to be hidden (Required Restart)."
+            android:title="Hide the navigation bar on all screens" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ForceHideStatusBar"
+            android:summary="Forces the status bar to be hidden (Required Restart)."
+            android:title="Hide the status bar on all screens" />
     </PreferenceCategory>
 
 

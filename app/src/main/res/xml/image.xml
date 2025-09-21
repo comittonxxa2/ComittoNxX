@@ -41,6 +41,14 @@
             android:key="MarginCutColor"
             android:summary="dummy"
             android:title="Color to remove margin" />
+        <PreferenceScreen
+            android:key="SetMarginCutActivity"
+            android:title="Advanced settings for remove the margin"
+            android:summary="Set parameters for remove the margin." >
+            <intent
+                android:targetClass="src.comitton.config.SetMarginCutActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Display position on screen"
