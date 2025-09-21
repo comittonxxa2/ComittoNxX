@@ -176,6 +176,14 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = mContext.getString(R.string.srngSumm1);
 			mSummary2 = mContext.getString(R.string.srngSumm2);
 		}
+		else if (mKey.equals(DEF.KEY_MarginSpace) || mKey.equals(DEF.KEY_MarginStart) || mKey.equals(DEF.KEY_MarginRange) || mKey.equals(DEF.KEY_MarginLimit)) {
+			mSummary1 = "";
+			mSummary2 = mContext.getString(R.string.srngSumm2);
+		}
+		else if (mKey.equals(DEF.KEY_MarginLevel)) {
+			mSummary1 = "";
+			mSummary2 = "";
+		}
 		else {
 			mSummary1 = mContext.getString(R.string.pixSumm1);
 			mSummary2 = mContext.getString(R.string.pixSumm2);
@@ -279,6 +287,15 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		else if (mKey.equals(DEF.KEY_SCRLRNGW) || mKey.equals(DEF.KEY_SCRLRNGH) || mKey.equals(DEF.KEY_TX_SCRLRNGW) || mKey.equals(DEF.KEY_TX_SCRLRNGH)) {
 			// スクロール範囲
 			strSummary = DEF.getScrlRangeStr(num, mSummary1, mSummary2);
+		}
+		else if (mKey.equals(DEF.KEY_MarginSpace) || mKey.equals(DEF.KEY_MarginRange) || mKey.equals(DEF.KEY_MarginLimit)) {
+			strSummary = String.valueOf(num) + mSummary2;
+		}
+		else if (mKey.equals(DEF.KEY_MarginStart)) {
+			strSummary = String.valueOf((float)num / 10) + mSummary2;
+		}
+		else if (mKey.equals(DEF.KEY_MarginLevel)) {
+			strSummary = String.valueOf(num);
 		}
 		else {
 			strSummary = DEF.getSizeStr(num, mSummary1, mSummary2);
