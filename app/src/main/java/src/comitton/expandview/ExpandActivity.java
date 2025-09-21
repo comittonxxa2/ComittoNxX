@@ -18,6 +18,7 @@ import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetFileColorActivity;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
+import src.comitton.config.SetCommonActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.dialog.CloseDialog;
 import src.comitton.dialog.ListDialog;
@@ -55,6 +56,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
@@ -147,6 +149,10 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private int mOpenOperation;
 	private String mOpenLastFile;
 
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+
 	private AppCompatActivity mActivity = null;
 
 	protected ListView getListView() { return findViewById( android.R.id.list ); }
@@ -157,6 +163,21 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		super.onCreate(savedInstanceState);
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		mActivity = this;
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
