@@ -34,7 +34,7 @@ public class CallImgLibrary {
 	private static native int ImageConvert(int index, int type, int scale);
 	private static native int ImageGetBitmap(int index, int type, int scale, Bitmap bitmap);
 
-	private static native int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int MarginColor, int[] size);
+	private static native int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int MarginColor, int[] size, int MarginMode, int MarginLimit, int MarginSpace, int MagrinRange, int MarginStart, int MarginLevel);
 	private static native int ImageScale(int index, int page, int half, int width, int height, int left, int right, int top, int bottom, int algorithm, int rotate, int margin, int margincolor, int sharpen, int bright, int gamma, int param, int size[], float colormatrix[]);
 	private static native int ImageDraw(int index, int page, int half, int x, int y, Bitmap bitmap);
 	private static native int ImageScaleDraw(int index, int page, int rotate, int sx, int sy, int scx, int scy, int dx, int dy, int dcx, int dcy, int psel, Bitmap bm, int cutLeft, int cutRight, int cutTop, int cutBottom);
@@ -148,9 +148,9 @@ public class CallImgLibrary {
 		return ret;
 	}
 
-	public static int GetMarginSize(Context context, Handler handler, int index, int Page, int Half, int Index, int Margin, int MarginColor, int[] size) {
+	public static int GetMarginSize(Context context, Handler handler, int index, int Page, int Half, int Index, int Margin, int MarginColor, int[] size, int MarginMode, int MarginLimit, int MarginSpace, int MagrinRange, int MarginStart, int MarginLevel) {
 		Logcat.v(logLevel, "index=" + index);
-		int ret = GetMarginSize(index, Page, Half, Index, Margin, MarginColor, size);
+		int ret = GetMarginSize(index, Page, Half, Index, Margin, MarginColor, size, MarginMode, MarginLimit, MarginSpace, MagrinRange, MarginStart, MarginLevel);
 		checkResult(context, handler, ret, "GetMarginSize: index=" + index + ", Page=" + Page);
 		return ret;
 	}
