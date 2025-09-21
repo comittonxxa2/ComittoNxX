@@ -469,6 +469,9 @@ public class DEF {
 
 	public static final String KEY_HIDDENFILE = "HiddenFile";
 
+	public static final String KEY_FORCENAVIGATIONBAR = "ForceHideNavigationBar";
+	public static final String KEY_FORCESTATUSBAR = "ForceHideStatusBar";
+
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
 	public static final String KEY_NOISEOVER = "NoiseOver";
@@ -582,6 +585,17 @@ public class DEF {
 	public static final String KEY_TOPMENU = "TopMenu";
 	public static final String KEY_TAP_PATTERN_MENU = "tapPatternMenu";
 	public static final String KEY_TAP_SETUP_MENU = "tapSettingMenu";
+
+	public static final String KEY_MarginAspectMask = "MarginAspectMask";
+	public static final String KEY_MarginForceIgnoreAspect = "MarginForceIgnoreAspect";
+	public static final String KEY_MargingBlackMask = "MargingBlackMask";
+	public static final String KEY_MarginCustomInit = "MarginCustomInit";
+
+	public static final String KEY_MarginLevel = "MarginLevel";
+	public static final String KEY_MarginSpace = "MarginSpace";
+	public static final String KEY_MarginStart = "MarginStart";
+	public static final String KEY_MarginRange = "MarginRange";
+	public static final String KEY_MarginLimit = "MarginLimit";
 
 	// スケーリング設定
 	public static final String KEY_ALGOMODE = "AlgoMode";
@@ -812,6 +826,42 @@ public class DEF {
 	public static final int DEFAULT_THUMBSIZEH = 28; // 320 (28 * 10 + 40)
 	public static final int DEFAULT_LISTTHUMBSIZEH = 20; // 240 (20 * 10 + 40)
 	public static final int DEFAULT_TOOLBAR_SIZE = 2; // 100%
+
+	public static final int DEFAULT_MarginLevel_Min = 15; // 色判定時のビットマスク深度(弱設定)
+	public static final int DEFAULT_MarginLevel_Mid = 15; // 色判定時のビットマスク深度(中設定)
+	public static final int DEFAULT_MarginLevel_Ultra = 14; // 色判定時のビットマスク深度(強設定)
+	public static final int DEFAULT_MarginLevel_Strong = 14; // 色判定時のビットマスク深度(特上設定)
+	public static final int DEFAULT_MarginLevel_Overkill = 12; // 色判定時のビットマスク深度(最強設定)
+	public static final int DEFAULT_MarginLevel = 14; // 色判定時のビットマスク深度(デフォルト設定)
+	public static final int MAX_MarginLevel = 15;	// 色判定時のビットマスク深度(最大数)
+	public static final int DEFAULT_MarginStart_Min = 1; // 余白判定を開始するまでの無視区間(弱設定)
+	public static final int DEFAULT_MarginStart_Mid = 2; // 余白判定を開始するまでの無視区間(中設定)
+	public static final int DEFAULT_MarginStart_Ultra = 3; // 余白判定を開始するまでの無視区間(強設定)
+	public static final int DEFAULT_MarginStart_Strong = 5; // 余白判定を開始するまでの無視区間(特上設定)
+	public static final int DEFAULT_MarginStart_Overkill = 10; // 余白判定を開始するまでの無視区間(最強設定)
+	public static final int DEFAULT_MarginStart = 5; // 余白判定を開始するまでの無視区間(デフォルト設定)
+	public static final int MAX_MarginStart = 10;	// 余白判定を開始するまでの無視区間(最大数)
+	public static final int DEFAULT_MarginSpace_Min = 60; // 余白判定された幅のうち画像から削除する割合(弱設定)
+	public static final int DEFAULT_MarginSpace_Mid = 80; // 余白判定された幅のうち画像から削除する割合(中設定)
+	public static final int DEFAULT_MarginSpace_Ultra = 90; // 余白判定された幅のうち画像から削除する割合(強設定)
+	public static final int DEFAULT_MarginSpace_Strong = 95; // 余白判定された幅のうち画像から削除する割合(特上設定)
+	public static final int DEFAULT_MarginSpace_Overkill = 100; // 余白判定された幅のうち画像から削除する割合(最強設定)
+	public static final int DEFAULT_MarginSpace = 95; // 余白判定された幅のうち画像から削除する割合(デフォルト設定)
+	public static final int MAX_MarginSpace = 100;	// 余白判定された幅のうち画像から削除する割合(最大数)
+	public static final int DEFAULT_MarginRange_Min = 25; // 余白判定を行う範囲(弱設定)
+	public static final int DEFAULT_MarginRange_Mid = 30; // 余白判定を行う範囲(中設定)
+	public static final int DEFAULT_MarginRange_Ultra = 45; // 余白判定を行う範囲(強設定)
+	public static final int DEFAULT_MarginRange_Strong = 50; // 余白判定を行う範囲(特上設定)
+	public static final int DEFAULT_MarginRange_Overkill = 100; // 余白判定を行う範囲(最強設定)
+	public static final int DEFAULT_MarginRange = 50; // 余白判定を行う範囲(デフォルト設定)
+	public static final int MAX_MarginRange = 100;	// 余白判定を行う範囲(最大数)
+	public static final int DEFAULT_MarginLimit_Min = 5; // 違う色の出現回数の許容する割合(弱設定)
+	public static final int DEFAULT_MarginLimit_Mid = 6; // 違う色の出現回数の許容する割合(中設定)
+	public static final int DEFAULT_MarginLimit_Ultra = 8; // 違う色の出現回数の許容する割合(強設定)
+	public static final int DEFAULT_MarginLimit_Strong = 20; // 違う色の出現回数の許容する割合(特上設定)
+	public static final int DEFAULT_MarginLimit_Overkill = 50; // 違う色の出現回数の許容する割合(最強設定)
+	public static final int DEFAULT_MarginLimit = 20; // 違う色の出現回数の許容する割合(デフォルト設定)
+	public static final int MAX_MarginLimit = 50;	// 違う色の出現回数の許容する割合(最大数)
 
 	public static final int MAX_SCROLL = 9;
 	public static final int MAX_CLICKAREA = 100;
