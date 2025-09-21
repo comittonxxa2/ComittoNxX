@@ -57,6 +57,7 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Build;
@@ -73,8 +74,11 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.WindowMetrics;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -110,7 +114,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private static final int LONGTAP_TIMER_UI = 400;
 	private static final int LONGTAP_TIMER_BTM = 400;
 
-	private static final int CLICKGUARD = 16;
+	private static final int CLICKGUARD = 32;
 
 	private final int EVENT_READTIMER = 200;
 //	private final int EVENT_NOISE  = 203;
@@ -200,6 +204,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private boolean mNoiseLevel;
 
 	private boolean mNotice;
+	private boolean mForceNotice = false;
 	private boolean mNoSleep;
 	private boolean mChgPage;
 	private boolean mChgPageKey;
@@ -216,6 +221,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private boolean mFlickPage;
 	private boolean mFlickEdge;
 	private boolean mImmEnable;
+	private boolean mImmForce;
 	private boolean mBottomFile;
 	private boolean mPinchEnable;
 
@@ -273,6 +279,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private int mTouchDrawLeft;
 	private int mOperation; 	// 操作種別
 	private boolean mTouchFirst = false; // タッチ開始後リミットを超えて移動していない
+	private boolean mTouchMove = false;
 	private boolean mPageMode = false; // ページ選択モード
 	private boolean mPageModeIn = false; // ページ選択中の操作エリア外フラグ
 	private boolean mPinchOn = false;
@@ -354,6 +361,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private boolean mDoubleTapMode = false;
 	private boolean mAutoRepeatCheck = false;
 
+	private Insets insets;
+	private boolean mHideNavigationBar = false;
+
 	/**
 	 * 画面が作成された時に発生します。
 	 *
@@ -379,7 +389,13 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mHandler = new Handler(this);
 		mActivity = this;
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
-		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 6);
+		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 32);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+			// ステータスバーとナビゲーションバーの高さを求めるための準備を行う
+			WindowMetrics windowMetrics = this.getWindowManager().getCurrentWindowMetrics();
+			insets = windowMetrics.getWindowInsets().getInsetsIgnoringVisibility(WindowInsets.Type.systemBars());
+		}
+
 		mIsConfSave = true;
 		mNoiseSwitch = new NoiseSwitch(mHandler);
 
@@ -401,11 +417,11 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// 設定の読み込み
 		SetCommonActivity.loadSettings(mSharedPreferences);
 		ReadSetting(mSharedPreferences);
-		if (mNotice) {
+		if (mNotice || mForceNotice) {
 			// 通知領域非表示
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		}
-		if (mImmEnable && mSdkVersion >= 19) {
+		if ((mImmEnable || mImmForce) && mSdkVersion >= 19) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -573,6 +589,23 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// ダブルタップ検出のリスナーを有効にする
         mDetector.setOnDoubleTapListener(this);
 
+		// 自分のIDからViewのIDを取得する
+		View contentView = findViewById(android.R.id.content);
+		ViewGroup rootView = (ViewGroup)contentView.getRootView();
+		// ナビゲーションバーの表示更新を検出するためリスナーをセット
+		rootView.setOnApplyWindowInsetsListener((view, insets) -> {
+			// ナビゲーションバーの情報を取得
+			boolean isVisible = insets.isVisible(WindowInsets.Type.navigationBars());
+			if (isVisible) {
+				// ナビゲーションバーが表示されている場合の処理
+				mHideNavigationBar = false;
+			} else {
+				// ナビゲーションバーが非表示の場合の処理
+				mHideNavigationBar = true;
+			}
+			return insets;
+		});
+
 		mReadBreak = false;
 		return;
 	}
@@ -692,7 +725,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	public void onRestart(){
 		super.onRestart();
 		// IMM
-		if (mImmEnable && mSdkVersion >= 19) {
+		if ((mImmEnable || mImmForce) && mSdkVersion >= 19) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -788,6 +821,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		super.onWindowFocusChanged(hasFocus);
 
 		// 画面外からスワイプした場合にフォーカスが外れた場合はガードを外す
+		mImmCancel = false;
 		if (mClickGuard) {
 			mClickGuard = false;
 		}
@@ -842,7 +876,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		}
 
 		if (hasFocus) {
-			if (mImmEnable && mSdkVersion >= 19) {
+			if ((mImmEnable || mImmForce) && mSdkVersion >= 19) {
 				int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -1051,7 +1085,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				longtaptime = LONGTAP_TIMER_BTM;
 			}
 			else {
-				if (!mImmEnable) {
+				if (!mImmEnable && !mImmForce) {
 					return false;
 				}
 				longtaptime = LONGTAP_TIMER_UI;
@@ -1459,11 +1493,33 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
    			}
 		}
 
-		if (mImmEnable) {
+		if (mImmEnable || mImmForce) {
 			if (action == MotionEvent.ACTION_DOWN) {
-//				Logcat.d(logLevel, "x=" + x + ", y=" + y);
-				if (y <= mImmCancelRange || y >= cy - mImmCancelRange) {
-					// IMMERSIVEモードの発動時にタッチ処理を無視する
+				// IMMERSIVEモードの発動時にタッチ処理を無視する(スワイプでバーを表示させるときに重なるのを防ぐ)
+				int navibar_height = 0;
+				int statusibar_height = 0;
+				if (mSdkVersion >= 19) {
+					// ナビゲーションバーの高さを得る
+					if (mTextView.getHeight() < mTextView.getWidth()) {
+						// 横向きの場合
+						navibar_height = insets.right;
+						statusibar_height = insets.left;
+					}
+					else {
+						// 縦向きの場合
+						navibar_height = insets.bottom;
+						statusibar_height = insets.top;
+					}
+				}
+				else {
+					statusibar_height = mImmCancelRange;
+					navibar_height = mImmCancelRange;
+				}
+				if (mHideNavigationBar) {
+					// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
+					navibar_height = CLICKGUARD;
+				}
+				if (y <= statusibar_height || y >= cy - navibar_height) {
 					mImmCancel = true;
 				}
 			}
@@ -1488,8 +1544,27 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					// 押下状態を設定
 					if (!mClickGuard) {
 						// ジェスチャーナビゲーションモードで画面下からのスワイプだった場合は無視する
-						if (y >= cy - CLICKGUARD && isGestureNavigationEnabled(mActivity) == 2) {
-							
+						int navibar_height = 0;
+						if (mSdkVersion >= 19) {
+							// ナビゲーションバーの高さを得る
+							if (mTextView.getHeight() < mTextView.getWidth()) {
+								// 横向きの場合
+								navibar_height = insets.right;
+							}
+							else {
+								// 縦向きの場合
+								navibar_height = insets.bottom;
+							}
+						}
+						if (navibar_height == 0) {
+							// ナビゲーションバーが非表示だった場合は固定値を入れる
+							navibar_height = mImmCancelRange;
+						}
+						if (mHideNavigationBar) {
+							// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
+							navibar_height = CLICKGUARD;
+						}
+						if ((y >= cy - navibar_height) && isGestureNavigationEnabled(mActivity) == 2 && (!mImmForce && !mImmEnable)) {
 							mClickGuard = true;
 						}
 					}
@@ -1498,7 +1573,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					else if (mTapEditMode) {
 					}
 					else {
-						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, mImmEnable ? false : true);
+						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, (mImmEnable || mImmForce) ? false : true);
 					}
 
 					mPageMode = false;
@@ -1553,11 +1628,6 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 						mOperation = TOUCH_OPERATION;
 						if (mTapEditMode) {
 						}
-						else if (TouchPanelView.GetTouchPositionData(3) > 0) {
-							// 長押しタップの場合
-							// タッチパネル設定が有効な場合
-							startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
-						}
 						else {
 
 							mTouchPoint[0].x = x;
@@ -1565,11 +1635,17 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							mTouchPointTime[0] = SystemClock.uptimeMillis();
 							mTouchPointNum = 1;
 //							mTouchTime = SystemClock.uptimeMillis();	// フリックの判定に
-							mTouchDrawLeft = (int)mTextView.getDrawLeft();
+							mTouchDrawLeft = (int)x;
 //							mTouchFirstX = x;
+							if (TouchPanelView.GetTouchPositionData(3) > 0) {
+								// 長押しタップの場合
+								// タッチパネル設定が有効な場合
+								startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
+							}
 						}
 					}
 
+					this.mTouchMove = false;
 					this.mTouchFirst = true;
 					this.mTouchBeginX = x;
 					this.mTouchBeginY = y;
@@ -1617,7 +1693,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							// タップ操作の設定ダイアログを表示させる
 							TouchPanelView.SetAlertDialog(mActivity);
 						}
-						else if (TouchPanelView.GetTouchPositionData(1) > 0 || TouchPanelView.GetTouchPositionData(2) > 0) {
+						else if (!this.mTouchMove && (TouchPanelView.GetTouchPositionData(1) > 0 || TouchPanelView.GetTouchPositionData(2) > 0)) {
 							// シングルタップまたはダブルタップが有効の場合
 							if (TouchPanelView.GetTouchPositionData(2) > 0) {
 								// ダブルタップが有効の場合は外部設定を有効にする
@@ -1671,7 +1747,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							if (mFlickPage && mDispMode != DEF.DISPMODE_TX_SERIAL && flickPage != 0) {
 								// 連続表示ではなし
 								// フリックでページ遷移
-								if (mFlickEdge && mTouchDrawLeft != (int)mTextView.getDrawLeft()) {
+								if (mFlickEdge && mTouchDrawLeft > mImmCancelRange) {
 									// 端からフリックしないときはページめくりしない
 									;
 								}
@@ -1706,6 +1782,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					// 押してる間のフラグクリア
 					mTouchFirst = false;
 					mOperation = TOUCH_NONE;
+					this.mTouchMove = false;
 					break;
 				}
 			}
@@ -2008,6 +2085,8 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 			if (!this.mTouchFirst) {
 					// スクロールモード
+					// スクロール中のフラグをセット
+					this.mTouchMove = true;
 					long now = SystemClock.uptimeMillis();
 					mTextView.scrollMoveAmount(x - mTouchPoint[0].x, y - mTouchPoint[0].y, mScroll, true);
 
@@ -2086,12 +2165,18 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				mTouchPointTime[0] = SystemClock.uptimeMillis();
 				mTouchPointNum = 1;
 //				mTouchTime = SystemClock.uptimeMillis();	// フリックの判定に
+				// フリックを検出できなくなるのでコメントアウトにする
+				/*
 				mTouchDrawLeft = (int)mTextView.getDrawLeft();
+				*/
 //				mTouchFirstX = x;
 			}
 		}
 
+		// スワイプを検出できなくなるのでコメントアウトにする
+		/*
 		this.mTouchFirst = true;
+		*/
 		this.mTouchBeginX = x;
 		this.mTouchBeginY = y;
 	}
@@ -2888,6 +2973,13 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			}
 			case DEF.MENU_SETTING: {
 				// 設定画面に遷移
+				if (mImmForce) {
+				}
+				else if (mImmEnable && mSdkVersion >= 19) {
+					int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+					uiOptions &= ~(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+					getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+				}
 				mCurrentPageRate = (float)(mCurrentPage + 1) / mTextMgr.length();
 				Intent intent = new Intent(TextActivity.this, SetConfigActivity.class);
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -3322,7 +3414,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 	// テキストを再読み込み
 	private void reloadText() {
-		if (mImmEnable && mSdkVersion >= 19) {
+		if ((mImmEnable || mImmForce) && mSdkVersion >= 19) {
 			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
 			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -3370,9 +3462,11 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		if (mSdkVersion >= 19) {
 			// KitKat以降のみ設定読み込み
 			mImmEnable = SetImageTextDetailActivity.getImmEnable(sharedPreferences);
+			mImmForce = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
 		}
 		else {
 			mImmEnable = false;
+			mImmForce = false;
 		}
 		mOldMenu = SetImageTextDetailActivity.getOldMenu(sharedPreferences);
 		mBottomFile = SetImageTextDetailActivity.getBottomFile(sharedPreferences);
@@ -3424,7 +3518,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			if (mTextView != null) {
 				int cx;
 				int cy;
-				if (mSdkVersion >= 19 && mImmEnable) {
+				if (mSdkVersion >= 19 && (mImmEnable || mImmForce)) {
 					// ウィンドウマネージャのインスタンス取得
 					WindowManager wm = (WindowManager)getSystemService(WINDOW_SERVICE);
 					// ディスプレイのインスタンス生成
@@ -3484,6 +3578,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mAscMode = SetTextActivity.getAscMode(sharedPreferences);
 
 		mNotice = SetTextActivity.getNotice(sharedPreferences);
+		mForceNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		mNoSleep = SetTextActivity.getNoSleep(sharedPreferences);
 		mCMargin = SetTextActivity.getCenterMargin(sharedPreferences);
 		mCShadow = SetTextActivity.getCenterShadow(sharedPreferences);
