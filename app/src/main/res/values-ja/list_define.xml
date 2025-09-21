@@ -310,6 +310,7 @@
         <item>特上</item>
         <item>最強</item>
         <item>縦横比無視</item>
+        <item>カスタム設定</item>
     </string-array>
     <string-array name="mgncut_value_list">
         <item>0</item>
@@ -319,6 +320,7 @@
         <item>4</item>
         <item>5</item>
         <item>6</item>
+        <item>7</item>
     </string-array>
     <string-array name="mgncut_color_name_list">
         <item>白と黒</item>
@@ -709,6 +711,22 @@
         <item>7</item>
         <item>8</item>
         <item>9</item>
+    </string-array>
+    <string-array name="margincustominit_name_list">
+        <item>上書き無し</item>
+        <item>弱で上書き</item>
+        <item>中で上書き</item>
+        <item>強で上書き</item>
+        <item>特上で上書き</item>
+        <item>最強で上書き</item>
+    </string-array>
+    <string-array name="margincustominit_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
     </string-array>
 
 </resources>

@@ -424,6 +424,7 @@
     <string name="mgncut04">特上</string>
     <string name="mgncut05">最強</string>
     <string name="mgncut06">縦横比無視</string>
+    <string name="mgncut07">カスタム設定</string>
     <string name="mgncutcolor00">白と黒</string>
     <string name="mgncutcolor01">全ての色</string>
     <string name="displayposition00">中心</string>
