@@ -18,6 +18,7 @@ import src.comitton.common.Logcat;
 import src.comitton.config.SetHardwareFileListKeyActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
+import src.comitton.config.SetCommonActivity;
 import src.comitton.expandview.ExpandActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
@@ -296,14 +297,77 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static Thread mMultiThread5 = null;
 	private static Thread mMultiThread6 = null;
 
+	private boolean mImmForce = false;
+	private boolean mForceNotice = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+
 	private boolean mAutoRepeatCheck = false;
+
+	private Bundle mSavedInstanceState = null;
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		int logLevel = 1;//Logcat.LOG_LEVEL_WARN;
 		super.onCreate(savedInstanceState);
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "開始します");
+		// レジューム起動を保存
+		mSavedInstanceState = savedInstanceState;
+		if (mSavedInstanceState != null) {
+			// 既にレジューム起動用のデータがあればSharedPreferencesのレジューム内容を破棄する
+			mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+			Editor ed = mSharedPreferences.edit();
+			ed.remove("ResumePath");
+			ed.remove("ResumeServer");
+			ed.remove("ResumeServerSelect");
+			ed.remove("Resume");
+			ed.apply();
+		}
+		// Intentに保存されたデータを取り出す
+		Intent intent = getIntent();
+		// Intentからメインを起動(onCreate)
+		MainProcess(intent, true);
+	}
 
+	@Override
+	protected void onPause() {
+		super.onPause();
+		// onNewIntentが呼び出されることを想定してここで記録する
+		Editor ed = mSharedPreferences.edit();
+		ed.putString("ResumePath", mPath);
+		ed.putString("ResumeServer", mServer.getCode());
+		ed.putInt("ResumeServerSelect", mServer.getSelect());
+		ed.putBoolean("Resume", true);
+		ed.apply();
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		// onCreateが呼び出される場合はこちら側の保存データが使われる
+		savedInstanceState.putString("Path", mPath);
+		savedInstanceState.putString("Server", mServer.getCode());
+		savedInstanceState.putInt("ServerSelect", mServer.getSelect());
+		super.onSaveInstanceState(savedInstanceState);
+	}
+
+	// アプリがバックグラウンドに入ってからホーム画面から起動したりタスクキルしてActivityが破棄されなかった場合はonNewIntentが呼び出される
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "開始します");
+		// レジューム起動をクリア(念のためクリアしておく)
+		mSavedInstanceState = null;
+		// Intentからメインを起動(onNewIntent)
+		MainProcess(intent, false);
+	}
+
+	// メインの起動
+	// onCreateのコードを切り離してonNewIntentからも呼び出せるようにした
+	// 第二パラメータでonCreateとonNewIntentの呼び出しを識別してレジュームデータを選択する
+	private void MainProcess(Intent intent, boolean initmode) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "開始します");
 		// 設定の読込
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor ed = mSharedPreferences.edit();
@@ -334,14 +398,25 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mInformation = new Information(this);
 
 		// カメラボタンで縦横切替した場合
-		if (savedInstanceState != null) {
-			mListRotaChg = savedInstanceState.getBoolean("Rotate");
+		if (mSavedInstanceState != null) {
+			mListRotaChg = mSavedInstanceState.getBoolean("Rotate");
 		}
 
 		// 設定の読込
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SetCommonActivity.loadSettings(mSharedPreferences);
 		readConfig();
+
+		if (mForceNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		if (mImmForce && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+			uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+			getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		mHandler = new Handler(this);
 		if (mPathHistory == null) {
@@ -381,9 +456,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mServer = new ServerSelect(mSharedPreferences, this);
 		mServer.select(DEF.INDEX_LOCAL);
 		RecordList.setContext(this);
-
-		// Intentに保存されたデータを取り出す
-		Intent intent = getIntent();
 
 		try {
 			String action = intent.getAction();
@@ -516,12 +588,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				finish();
 			}
 		}
-		else if (savedInstanceState != null) {
-			// レジュームから復帰
-			path = savedInstanceState.getString("Path");
-			server = savedInstanceState.getString("Server");
-			serverSelect = savedInstanceState.getInt("ServerSelect", -2);
-			Logcat.d(logLevel, "レジューム復帰. path=" + path + ", server=" + server + ", serverSelect=" + serverSelect);
+		else if (mSavedInstanceState != null && initmode) {
+			// レジュームから復帰(SavedInstanceState)
+			path = mSavedInstanceState.getString("Path");
+			server = mSavedInstanceState.getString("Server");
+			serverSelect = mSavedInstanceState.getInt("ServerSelect", -2);
+			Logcat.d(logLevel, "レジューム復帰(SavedInstanceState). path=" + path + ", server=" + server + ", serverSelect=" + serverSelect);
+		}
+		else if (mSharedPreferences.getBoolean("Resume", false) && !initmode) {
+			// レジュームから復帰(SharedPreferences)
+			path = mSharedPreferences.getString("ResumePath", "");
+			server = mSharedPreferences.getString("ResumeServer", "");
+			serverSelect = mSharedPreferences.getInt("ResumeServerSelect", -2);
+			// 取り出したら用済みなのでのレジューム内容を破棄する
+			ed = mSharedPreferences.edit();
+			ed.remove("ResumePath");
+			ed.remove("ResumeServer");
+			ed.remove("ResumeServerSelect");
+			ed.remove("Resume");
+			ed.apply();
+			Logcat.d(logLevel, "レジューム復帰(SharedPreferences). path=" + path + ", server=" + server + ", serverSelect=" + serverSelect);
 		}
 		else {
 			// ショートカットから起動
@@ -541,7 +627,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// レジューム起動チェック
 		if (path == null) {
 			// アイコンから起動(ショートカットや回転ではない)とき
-			if (mResumeOpen && savedInstanceState == null && intent.getStringExtra("Refresh") == null) {
+			if (mResumeOpen && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
 				// 初回起動のみ(回転時などは行わない)
 				int lastView = mSharedPreferences.getInt("LastOpen", -1);
 				if (lastView != DEF.LASTOPEN_NONE) {
@@ -580,10 +666,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 画面リフレッシュ実施時
 		int topindex = 0;
-		if (savedInstanceState != null) {
-			mMarker = savedInstanceState.getString("Marker");
-			topindex = savedInstanceState.getInt("TopIndex", 0);
-			savedInstanceState.clear();
+		if (mSavedInstanceState != null) {
+			mMarker = mSavedInstanceState.getString("Marker");
+			topindex = mSavedInstanceState.getInt("TopIndex", 0);
+			mSavedInstanceState.clear();
 		}
 		else {
 			mMarker = intent.getStringExtra("Marker");
@@ -591,6 +677,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (mMarker == null) {
 			mMarker = "";
 		}
+
+		// SharedPreferencesのレジューム内容を破棄する(念のため破棄する)
+		ed = mSharedPreferences.edit();
+		ed.remove("ResumePath");
+		ed.remove("ResumeServer");
+		ed.remove("ResumeServerSelect");
+		ed.remove("Resume");
+		ed.apply();
 
 		String cursor = intent.getStringExtra("Cursor");
 
@@ -690,54 +784,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// GitHubに新しいバージョンがリリースされているか確認する
 		mInformation.checkRecentRelease(mHandler, false);
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle savedInstanceState) {
-		savedInstanceState.putString("Path", mPath);
-		savedInstanceState.putString("Server", mServer.getCode());
-		savedInstanceState.putInt("ServerSelect", mServer.getSelect());
-
-		super.onSaveInstanceState(savedInstanceState);
-	}
-
-	@Override
-	protected void onNewIntent(Intent intent) {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します");
-		super.onNewIntent(intent);
-		String path = intent.getStringExtra("Path");
-		String server = intent.getStringExtra("Server");
-		int serverSelect = intent.getIntExtra("ServerSelect", -2);
-		Logcat.d(logLevel, "path=" + path + ", server=" + server + ", serverSelect=" + serverSelect);
-
-		if (path == null || !path.isEmpty()) {
-			mPath = path;
-		}
-
-		// サーバパス
-		if (serverSelect != -2) {
-			if (mServer.select(serverSelect)) {
-				mURI = mServer.getURI();
-			}
-		}
-		else if (server != null && !server.isEmpty()) {
-			if (mServer.select(server)) {
-				mURI = mServer.getURI();
-			}
-			else {
-				mPath = null;
-				Resources res = getResources();
-				Toast.makeText(this, res.getString(R.string.svNotFound), Toast.LENGTH_LONG).show();
-			}
-		}
-
-		if (mPath == null || mPath.isEmpty()) {
-			mServer.select(DEF.INDEX_LOCAL);
-			mPath = mServer.getPath();
-			mURI = mServer.getURI();
-		}
-		loadListView();
 	}
 
 	/**
@@ -1209,6 +1255,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// リストモードの設定
 		mListMode = (short) mSharedPreferences.getInt(DEF.KEY_LISTMODE, FileListArea.LISTMODE_LIST);
 		mThumbnail = mSharedPreferences.getBoolean(DEF.KEY_THUMBNAIL, false);
+
+		mForceNotice = SetCommonActivity.getForceHideStatusBar(mSharedPreferences);
+		mImmForce = SetCommonActivity.getForceHideNavigationBar(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
