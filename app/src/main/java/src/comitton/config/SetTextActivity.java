@@ -12,6 +12,7 @@ import src.comitton.config.seekbar.TextScrlRngHSeekbar;
 import src.comitton.config.seekbar.TextScrlRngWSeekbar;
 import src.comitton.config.seekbar.TextSpaceHSeekbar;
 import src.comitton.config.seekbar.TextSpaceWSeekbar;
+import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 
@@ -27,6 +28,10 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.view.View;
+import android.view.WindowManager;
+
+import androidx.preference.PreferenceManager;
 
 public class SetTextActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private TextFontTopSeekbar mFontTop;
@@ -55,6 +60,10 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 
 	private OperationPreference mTapPattern;
 	private TimeAndBatteryPreference mTimeAndBattery;
+
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	public static final int[] ScaleName =
 		{ R.string.selsize00	// 元のサイズで表示
@@ -112,6 +121,21 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		addPreferencesFromResource(R.xml.text);
 		mFontTop  = (TextFontTopSeekbar)getPreferenceScreen().findPreference(DEF.KEY_TX_FONTTOP);

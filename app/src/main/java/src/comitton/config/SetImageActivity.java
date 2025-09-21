@@ -2,6 +2,7 @@ package src.comitton.config;
 
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
+import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +14,10 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.view.View;
+import android.view.WindowManager;
+
+import androidx.preference.PreferenceManager;
 
 public class SetImageActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ListPreference mViewRota;
@@ -36,6 +41,10 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	private OperationPreference mTapPattern;
 	private PageNumberPreference mPageNumber;
 	private TimeAndBatteryPreference mTimeAndBattery;
+
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	public static final int[] FileSortName =
 		{ R.string.fsort00		// ソートなし
@@ -103,7 +112,8 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		, R.string.mgncut03		// 強
 		, R.string.mgncut04		// 特上
 		, R.string.mgncut05		// 最強
-		, R.string.mgncut06 };	// 縦横比無視
+		, R.string.mgncut06		// 縦横比無視
+		, R.string.mgncut07 };	// カスタム設定
 	public static final int[] MgnCutColorName =
 			{ R.string.mgncutcolor00		// 白と黒
 			, R.string.mgncutcolor01 };		// 全ての色
@@ -154,6 +164,21 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		addPreferencesFromResource(R.xml.image);
 		mViewRota = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_VIEWROTA);

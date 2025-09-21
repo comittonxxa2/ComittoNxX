@@ -3,6 +3,7 @@ package src.comitton.config;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.fileview.filelist.RecordList;
+import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,6 +15,10 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.view.View;
+import android.view.WindowManager;
+
+import androidx.preference.PreferenceManager;
 
 public class SetRecorderActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ListPreference mHistNum;
@@ -26,9 +31,28 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 		, R.string.histnum04	// 80
 		, R.string.histnum05 };	// 100
 
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		addPreferencesFromResource(R.xml.recorder);
 		mHistNum = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_HISTNUM);

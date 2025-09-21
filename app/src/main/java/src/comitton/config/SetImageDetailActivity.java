@@ -7,6 +7,7 @@ import src.comitton.config.seekbar.ScrlRngHSeekbar;
 import src.comitton.config.seekbar.ScrlRngWSeekbar;
 import src.comitton.config.seekbar.WAdjustSeekbar;
 import src.comitton.config.seekbar.WScalingSeekbar;
+import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
@@ -20,6 +21,10 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.view.View;
+import android.view.WindowManager;
+
+import androidx.preference.PreferenceManager;
 
 public class SetImageDetailActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private WAdjustSeekbar mWAdjust;
@@ -31,6 +36,10 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 	private AutoPlaySeekbar mAutoPlay;
 	private ListPreference mMaxThread;
 	private ListPreference mLoupeSize;
+
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	public static final int[] MaxThread =
 		{ R.string.maxthread00		// 自動
@@ -52,6 +61,21 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		addPreferencesFromResource(R.xml.imagedetail);
 

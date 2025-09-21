@@ -17,9 +17,14 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+
+import src.comitton.config.SetCommonActivity;
 
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceHeaderFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +69,10 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	private EditTextPreference mPriorityWord09;
 	private EditTextPreference mPriorityWord10;
 
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+
 	public static final int[] RotateBtnName =
 		{ R.string.rotabtn00	// 使用しない
 		, R.string.rotabtn01	// フォーカスキー
@@ -72,6 +81,21 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		addPreferencesFromResource(R.xml.common);
 		mRotateBtn  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_ROTATEBTN);
@@ -271,6 +295,19 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 
 		Logcat.d(logLevel, "DEF.PRIORITY_WORDS=" + Arrays.toString(DEF.PRIORITY_WORDS));
 	}
+
+	public static boolean getForceHideNavigationBar(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FORCENAVIGATIONBAR, false);
+		return flag;
+	}
+
+	public static boolean getForceHideStatusBar(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FORCESTATUSBAR, false);
+		return flag;
+	}
+
 	// 終了処理
 	protected void onDestroy() {
 		super.onDestroy();

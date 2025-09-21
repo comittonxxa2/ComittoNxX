@@ -5,6 +5,7 @@ import src.comitton.config.seekbar.MemPrevSeekbar;
 import src.comitton.config.seekbar.MemSizeSeekbar;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
+import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,12 +17,20 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.view.View;
+import android.view.WindowManager;
+
+import androidx.preference.PreferenceManager;
 
 public class SetCacheActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private MemSizeSeekbar mMemSize;
 	private MemNextSeekbar mMemNext;
 	private MemPrevSeekbar mMemPrev;
 	private ListPreference mMemCacheStartThreshold;
+
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	public static final int[] MemCache =
 		{ R.string.memcache00		// 自動
@@ -38,6 +47,21 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(mSharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(mSharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		addPreferencesFromResource(R.xml.cache);
 

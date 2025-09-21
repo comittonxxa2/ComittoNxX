@@ -17,16 +17,25 @@ import androidx.preference.CheckBoxPreference;
 import androidx.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
+import android.view.View;
+import android.view.WindowManager;
+
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
 import src.comitton.imageview.TouchPanelView;
+import src.comitton.config.SetCommonActivity;
 
 public class SetHardwareImageViewerKeyActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private static TouchPanelView mTpView;
+
+	private boolean mNotice = false;
+	private boolean mImmEnable = false;
+	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	private ListPreference mBackKey;
 	private ListPreference mVolumeUpKey;
@@ -80,6 +89,21 @@ public class SetHardwareImageViewerKeyActivity extends PreferenceActivity implem
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		if (mNotice) {
+			// 通知領域非表示
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		if (mImmEnable && mSdkVersion >= 19) {
+			int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+		}
 
 		final int[] loop = {0};
 		String[] items_temp = new String[mTpView.HardwareKeyName.length];
