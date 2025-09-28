@@ -1,11 +1,21 @@
 package src.comitton.fileview.view.list;
 
+import static org.apache.commons.io.FileUtils.openInputStream;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import src.comitton.common.DEF;
 import src.comitton.common.ImageAccess;
 import src.comitton.common.Logcat;
 import src.comitton.common.TextFormatter;
+import src.comitton.config.SetBookShelfActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.view.DrawNoticeListener;
@@ -15,9 +25,12 @@ import jp.dip.muracoro.comittonx.R;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -28,8 +41,14 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
+
+import androidx.core.content.res.ResourcesCompat;
+import androidx.preference.PreferenceManager;
 
 public class FileListArea extends ListArea implements Handler.Callback {
 	private static final String TAG = "FileListArea";
@@ -61,6 +80,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private final int MAXLINE_TITLE = 3;
 	private final int DATETIME_LENGTH = 21;
 
+	private final int SHELF_SHADOW_SIZE = 5;
+	private final int SHELF_SHADOW_EFFECT = 10;
+
 	private Bitmap[] mIcon;
 	private Bitmap[] mMark;
 
@@ -78,6 +100,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private int mMrkColor;
 	private int mInfColor;
 	private int mBdrColor;
+	private int mBsfColor;
+	private int mBseColor;
 
 	private boolean mThumbFlag;
 	private short mItemMargin;
@@ -92,8 +116,11 @@ public class FileListArea extends ListArea implements Handler.Callback {
 //	private boolean mSeparate = true;
 
 	private Paint mBitmapPaint;
+	private Paint mBitmapPaintS;
 	private Paint mFillPaint;
+	private Paint mFillPaintS;
 	private Paint mLinePaint;
+	private Paint mLinePaintS;
 	private Paint mNamePaint;
 	private Paint mInfoPaint;
 	private Paint mReadPaint;
@@ -127,6 +154,17 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 	private int mDrawLeft;
 	private Bitmap mDrawBitmap;
+	private Bitmap mTile;
+	private int mBookShelfPattern;
+	private boolean mBookShelfPatternSelect;
+	private int mThumbnailTopSpace;
+	private int mThumbnailBottomSpace;
+	private int mFilenameBottomSpace;
+	private int mBookShelfBrightLevel;
+	private int mBookShelfEdgeLevel;
+	private boolean mBookShelfColorExtOn;
+	private boolean mBookShelfAfterCircleOn;
+	private boolean mBookShelfTextSplitOn;
 
 	private String[][][] mText;
 
@@ -135,6 +173,30 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private DrawNoticeListener mDrawNoticeListener = null;
 
 	private boolean mChangeLayout = false;
+	SharedPreferences sharedPreferences;
+
+	private static final int[] SetBookShelfPatternName =
+		// 本棚の画像
+		{ R.drawable.tana01
+		, R.drawable.tana02
+		, R.drawable.tana03
+		, R.drawable.tana04
+		, R.drawable.tana05
+		, R.drawable.tana06
+		, R.drawable.tana07
+		, R.drawable.tana08 };
+
+	private static String[] BookShelfBmpFile = {
+		// カスタム画像
+		DEF.KEY_BOOKSHELFBMPFILE1,
+		DEF.KEY_BOOKSHELFBMPFILE2,
+		DEF.KEY_BOOKSHELFBMPFILE3,
+		DEF.KEY_BOOKSHELFBMPFILE4,
+		DEF.KEY_BOOKSHELFBMPFILE5,
+		DEF.KEY_BOOKSHELFBMPFILE6,
+		DEF.KEY_BOOKSHELFBMPFILE7,
+		DEF.KEY_BOOKSHELFBMPFILE8
+	};
 
 	// コンストラクタ
 	public FileListArea(Context context, DrawNoticeListener listener) {
@@ -143,10 +205,19 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		mBitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mBitmapPaint.setTypeface(Typeface.DEFAULT);
 		mBitmapPaint.setTextAlign(Paint.Align.CENTER);
+		mBitmapPaint.setFilterBitmap(true);
+		mBitmapPaintS = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mBitmapPaintS.setTypeface(Typeface.DEFAULT);
+		mBitmapPaintS.setTextAlign(Paint.Align.CENTER);
+		mBitmapPaintS.setFilterBitmap(true);
 		mFillPaint = new Paint();
 		mFillPaint.setStyle(Style.FILL);
+		mFillPaintS = new Paint();
+		mFillPaintS.setStyle(Style.FILL);
 		mLinePaint = new Paint();
 		mLinePaint.setStyle(Style.STROKE);
+		mLinePaintS = new Paint();
+		mLinePaintS.setStyle(Style.STROKE);
 		mNamePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mNamePaint.setTypeface(Typeface.DEFAULT);
 		mInfoPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -161,6 +232,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 		mContext = context;
 		mDrawNoticeListener = listener;
+
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 	}
 
 	@Override
@@ -204,6 +277,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 		if (mItemHeight <= 0) {
 			return;
+		}
+		if (!mThumbFlag) {
+			// サムネイル表示しない場合は無効にする
+			mBookShelfPatternSelect = false;
 		}
 		// 先頭項目の位置
 		int ypos = mTopPos;
@@ -249,8 +326,16 @@ public class FileListArea extends ListArea implements Handler.Callback {
     				color = DEF.margeColor(mCurColor, color, 48, 96);
     			}
 
-				mFillPaint.setColor(color);
-				canvas.drawRect(x, y, x + mItemWidth - BORDER_WIDTH, y + mItemHeight, mFillPaint);
+				if (!mBookShelfPatternSelect || fd.getMarker() || isTouchDraw || isCursorDraw) {
+					mFillPaint.setColor(color);
+					canvas.drawRect(x, y, x + mItemWidth - BORDER_WIDTH, y + mItemHeight, mFillPaint);
+				}
+				else {
+					// ビットマップの透明度を変更する
+					int brightlevel = (int)(255f * (float)mBookShelfBrightLevel / 100);
+					mBitmapPaintS.setAlpha(brightlevel);
+					canvas.drawBitmap(mTile, x , y , mBitmapPaintS);
+				}
 
 				if (isTouchDraw || isCursorDraw) {
 					int mh = mItemMargin / 2;
@@ -265,6 +350,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				short exttype = fd.getExtType();
 				x = baseX + mDrawLeft + ix * mItemWidth + (mItemWidth - mIconWidth) / 2;
 				y = baseY + ypos + mItemMargin;
+				if (mBookShelfPatternSelect) {
+					// 本棚の表示時は表示開始位置をずらす(外枠の分も加算)
+					y += mThumbnailTopSpace + 1;
+				}
 
 				if (type == FileData.FILETYPE_PARENT) {
 					color = mDirColor;
@@ -294,14 +383,15 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							break;
 					}
 				}
-				mNamePaint.setColor(color);
 				mLinePaint.setColor(color);
 				mLinePaint.setStrokeWidth(3);
 
 				if (mThumbFlag) {
 					if (type == FileData.FILETYPE_ARC || type == FileData.FILETYPE_PDF || type == FileData.FILETYPE_IMG || type == FileData.FILETYPE_DIR || type == FileData.FILETYPE_EPUB) {
 						// ビットマップ表示
-						canvas.drawRect(x - 1, y - 1, x + mIconWidth, y + mIconHeight, mLinePaint);
+						if (!mBookShelfPatternSelect) {
+							canvas.drawRect(x - 1, y - 1, x + mIconWidth, y + mIconHeight, mLinePaint);
+						}
 
 						Bitmap bmMark = null;
 						if (type == FileData.FILETYPE_DIR) {
@@ -356,6 +446,16 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 							mSrcRect.set(0, 0, width, height);
 							mDstRect.set(x + dstX, y + dstY, x + dstX + dstWidth, y + dstY + dstHeight);
+							if (mBookShelfPatternSelect) {
+								// サムネイルに影をつけるためサムネイルと同じサイズの影の効果を追加したダミーの画像を先に表示する
+								mFillPaintS.setColor(0xFF000000);
+								mFillPaintS.setShadowLayer(SHELF_SHADOW_EFFECT, SHELF_SHADOW_SIZE, SHELF_SHADOW_SIZE, 0xFF000000/*0xFF808080*/);
+								canvas.drawRect(x + dstX, y + dstY, x + dstX + dstWidth , y + dstY + dstHeight , mFillPaintS);
+								// サムネイルの外枠を描画する
+								mLinePaintS.setColor(0xFF808080);
+								mLinePaintS.setStrokeWidth(1);
+								canvas.drawRect(x + dstX - 1, y + dstY - 1, x + dstX + dstWidth + 1 , y + dstY + dstHeight + 1 , mLinePaintS);
+							}
 							canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mBitmapPaint);
 
 							if (bmMark != null) {
@@ -373,13 +473,34 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							int text_y = y + (mIconHeight + mLoadingSize) / 2 - mLoadingSize / 4;
 
 							// 中央
-							mBitmapPaint.setStrokeWidth(1.0f);
-							mBitmapPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-							mBitmapPaint.setColor(Color.DKGRAY);
-							canvas.drawText(str, text_x + 1, text_y + 1, mBitmapPaint);
+							if (mBookShelfPatternSelect) {
+								// 縁取りを先に表示
+								if (mBookShelfEdgeLevel > 0) {
+									mBitmapPaint.setStrokeWidth(mBookShelfEdgeLevel);
+									mBitmapPaint.setStyle(Paint.Style.STROKE);
+									mBitmapPaint.setColor(mBseColor);
+									canvas.drawText(str, text_x, text_y, mBitmapPaint);
+								}
+								// 後から文字を表示
+								if (mBookShelfColorExtOn) {
+									// 本棚用の色
+									mBitmapPaint.setColor(mBsfColor);
+								}
+								else {
+									mBitmapPaint.setColor(color);
+								}
+								mBitmapPaint.setStyle(Paint.Style.FILL);
+								canvas.drawText(str, text_x, text_y, mBitmapPaint);
+							}
+							else {
+								mBitmapPaint.setStrokeWidth(1.0f);
+								mBitmapPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+								mBitmapPaint.setColor(Color.DKGRAY);
+								canvas.drawText(str, text_x + 1, text_y + 1, mBitmapPaint);
 
-							mBitmapPaint.setColor(color);
-							canvas.drawText(str, text_x, text_y, mBitmapPaint);
+								mBitmapPaint.setColor(color);
+								canvas.drawText(str, text_x, text_y, mBitmapPaint);
+							}
 
 							if (bmMark != null) {
 								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH, mBitmapPaint);
@@ -402,7 +523,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							}
 							// 未読・既読で色を変える
 							bm = ImageAccess.setColor(bm, mLinePaint.getColor());
-							canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
+							if (!mBookShelfPatternSelect) {
+								canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
+							}
 						}
 						int dstWidth = bm.getWidth();
 						int dstHeight = bm.getHeight();
@@ -489,10 +612,31 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					}
 				}
 
+				if (mBookShelfPatternSelect) {
+					// 本棚の表示時は文字の表示開始位置をずらす(縁取りと外枠の分も加算)
+					y += mThumbnailBottomSpace + (int)((float)mBookShelfEdgeLevel / 2 + 0.5f) + 1;
+				}
 				if (mText[0][index] != null) {
 					x += mIconWidth / 2;
 					y += mIconHeight + mItemMargin;
 					for (int i = 0; i < mText[0][index].length; i++) {
+						if (mBookShelfPatternSelect) {
+							// 縁取りの文字を先に表示
+							if (mBookShelfEdgeLevel > 0) {
+								mNamePaint.setColor(mBseColor);
+								mNamePaint.setStrokeWidth(mBookShelfEdgeLevel);
+								mNamePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+								canvas.drawText(mText[0][index][i], x, y + mTileAscent, mNamePaint);
+							}
+						}
+						// 後から文字を表示
+						if (mBookShelfPatternSelect && mBookShelfColorExtOn) {
+							mNamePaint.setColor(mBsfColor);
+						}
+						else {
+							mNamePaint.setColor(color);
+						}
+						mNamePaint.setStyle(Paint.Style.FILL);
 						canvas.drawText(mText[0][index][i], x, y + mTileAscent, mNamePaint);
 						y += mTileSize + mTileDescent;
 					}
@@ -502,18 +646,66 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 					if (mText[1][index] != null) {
 						for (int i = 0; i < mText[1][index].length; i++) {
+							if (mBookShelfPatternSelect) {
+								// 縁取りの文字を先に表示
+								if (mBookShelfEdgeLevel > 0) {
+									mInfoPaint.setColor(mBseColor);
+									mInfoPaint.setStrokeWidth(mBookShelfEdgeLevel);
+									mInfoPaint.setStyle(Paint.Style.STROKE);
+									canvas.drawText(mText[1][index][i], x, y + mTileAscent, mInfoPaint);
+								}
+							}
+							if (mBookShelfPatternSelect && mBookShelfColorExtOn) {
+								mInfoPaint.setColor(mBsfColor);
+							}
+							else {
+								mInfoPaint.setColor(mInfColor);
+							}
+							mInfoPaint.setStyle(Paint.Style.FILL);
 							canvas.drawText(mText[1][index][i], x, y + mTileAscent, mInfoPaint);
 							y += mTileSize + mTileDescent;
 						}
 					}
 					if (mText[2][index] != null) {
 						for (int i = 0; i < mText[2][index].length; i++) {
+							if (mBookShelfPatternSelect) {
+								// 縁取りの文字を先に表示
+								if (mBookShelfEdgeLevel > 0) {
+									mInfoPaint.setColor(mBseColor);
+									mInfoPaint.setStrokeWidth(mBookShelfEdgeLevel);
+									mInfoPaint.setStyle(Paint.Style.STROKE);
+									canvas.drawText(mText[2][index][i], x + mBookShelfEdgeLevel, y + mBookShelfEdgeLevel + mTileAscent, mInfoPaint);
+								}
+							}
+							if (mBookShelfPatternSelect && mBookShelfColorExtOn) {
+								mInfoPaint.setColor(mBsfColor);
+							}
+							else {
+								mInfoPaint.setColor(mInfColor);
+							}
+							mInfoPaint.setStyle(Paint.Style.FILL);
 							canvas.drawText(mText[2][index][i], x, y + mTileAscent, mInfoPaint);
 							y += mTileSize + mTileDescent;
 						}
 					}
 					if (mText[3][index] != null) {
 						for (int i = 0; i < mText[3][index].length; i++) {
+							if (mBookShelfPatternSelect) {
+								// 縁取りの文字を先に表示
+								if (mBookShelfEdgeLevel > 0) {
+									mInfoPaint.setColor(mBseColor);
+									mInfoPaint.setStrokeWidth(mBookShelfEdgeLevel);
+									mInfoPaint.setStyle(Paint.Style.STROKE);
+									canvas.drawText(mText[3][index][i], x + mBookShelfEdgeLevel, y + mBookShelfEdgeLevel + mTileAscent, mInfoPaint);
+								}
+							}
+							if (mBookShelfPatternSelect && mBookShelfColorExtOn) {
+								mInfoPaint.setColor(mBsfColor);
+							}
+							else {
+								mInfoPaint.setColor(mInfColor);
+							}
+							mInfoPaint.setStyle(Paint.Style.FILL);
 							canvas.drawText(mText[3][index][i], x, y + mTileAscent, mInfoPaint);
 							y += mTileSize + mTileDescent;
 						}
@@ -542,6 +734,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			listnum = mFileList.size();
 		}
 
+		if (!mThumbFlag) {
+			// サムネイル表示しない場合は無効にする
+			mBookShelfPatternSelect = false;
+		}
 		mNamePaint.setTextAlign(Paint.Align.LEFT);
 		mInfoPaint.setTextAlign(Paint.Align.LEFT);
 
@@ -585,8 +781,16 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			else if (isCursorDraw) {
 				color = DEF.margeColor(mCurColor, color, 48, 96);
 			}
-			mFillPaint.setColor(color);
-			canvas.drawRect(x, y, x + cx, y + itemHeight, mFillPaint);
+			if (!mBookShelfPatternSelect || fd.getMarker() || isTouchDraw || isCursorDraw) {
+				mFillPaint.setColor(color);
+				canvas.drawRect(x, y, x + cx, y + itemHeight, mFillPaint);
+			}
+			else {
+				// ビットマップの透明度を変更する
+				int brightlevel = (int)(255f * (float)mBookShelfBrightLevel / 100);
+				mBitmapPaintS.setAlpha(brightlevel);
+				canvas.drawBitmap(mTile, x , y , mBitmapPaintS);
+			}
 
 			if (isTouchDraw || isCursorDraw) {
 				int mh = mItemMargin / 2;
@@ -600,7 +804,12 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 			// 項目区切り
 			mFillPaint.setColor(mBdrColor);
-			canvas.drawRect(x, y + itemHeight, x + cx, y + itemHeight + BORDER_HEIGHT, mFillPaint);
+			int bx = x;
+			if (mBookShelfPatternSelect) {
+				// 本棚の表示時は項目区切りの開始位置をずらす
+				bx = x + mItemWidth;
+			}
+			canvas.drawRect(bx, y + itemHeight, x + cx, y + itemHeight + BORDER_HEIGHT, mFillPaint);
 			if (type == FileData.FILETYPE_PARENT) {
 				color = mDirColor;
 			}
@@ -637,6 +846,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 			x = baseX + mItemMargin;
 			y = baseY + ypos + mItemMargin;
+			if (mBookShelfPatternSelect) {
+				// 本棚の表示時は表示開始位置をずらす(外枠の分も加算)
+				y += mThumbnailTopSpace + 1;
+			}
 			if (mThumbFlag) {
                 int iconHeight = mListIconHeight;
                 int iconWidth = mIconWidth * iconHeight / mIconHeight;
@@ -644,7 +857,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 				if (type == FileData.FILETYPE_ARC || type == FileData.FILETYPE_PDF || type == FileData.FILETYPE_IMG || type == FileData.FILETYPE_DIR || type == FileData.FILETYPE_EPUB) {
 					// ビットマップ表示
-                    canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
+					if (!mBookShelfPatternSelect) {
+	                    canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
+	                }
 
 					Bitmap bmMark = null;
 					if (type == FileData.FILETYPE_DIR) {
@@ -697,6 +912,16 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 						mSrcRect.set(0, 0, width, height);
 						mDstRect.set(x + dstX, y +dstY, x + dstX + dstWidth, y + dstY + dstHeight);
+						if (mBookShelfPatternSelect) {
+							// サムネイルに影をつけるためサムネイルと同じサイズの影の効果を追加したダミーの画像を先に表示する
+							mFillPaintS.setColor(0xFF000000);
+							mFillPaintS.setShadowLayer(SHELF_SHADOW_EFFECT, SHELF_SHADOW_SIZE, SHELF_SHADOW_SIZE, 0xFF000000/*0xFF808080*/);
+							canvas.drawRect(x + dstX, y + dstY, x + dstX + dstWidth , y + dstY + dstHeight , mFillPaintS);
+							// サムネイルの外枠を描画する
+							mLinePaintS.setColor(0xFF808080);
+							mLinePaintS.setStrokeWidth(1);
+							canvas.drawRect(x + dstX - 1, y + dstY - 1, x + dstX + dstWidth + 1 , y + dstY + dstHeight + 1 , mLinePaintS);
+						}
 						canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mBitmapPaint);
 
 						if (bmMark != null) {
@@ -713,13 +938,34 @@ public class FileListArea extends ListArea implements Handler.Callback {
                         int text_y = y + (iconHeight + loadingSize) / 2 - loadingSize / 4;
 
 						// 中央
-						mBitmapPaint.setStrokeWidth(1.0f);
-						mBitmapPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-						mBitmapPaint.setColor(Color.DKGRAY);
-						canvas.drawText(str, text_x + 1, text_y + 1, mBitmapPaint);
+						if (mBookShelfPatternSelect) {
+							// 縁取りを先に表示
+							if (mBookShelfEdgeLevel > 0) {
+								mBitmapPaint.setStrokeWidth(mBookShelfEdgeLevel);
+								mBitmapPaint.setStyle(Paint.Style.STROKE);
+								mBitmapPaint.setColor(mBseColor);
+								canvas.drawText(str, text_x, text_y, mBitmapPaint);
+							}
+							// 後から文字を表示
+							if (mBookShelfColorExtOn) {
+								// 本棚用の色
+								mBitmapPaint.setColor(mBsfColor);
+							}
+							else {
+								mBitmapPaint.setColor(color);
+							}
+							mBitmapPaint.setStyle(Paint.Style.FILL);
+							canvas.drawText(str, text_x, text_y, mBitmapPaint);
+						}
+						else {
+							mBitmapPaint.setStrokeWidth(1.0f);
+							mBitmapPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+							mBitmapPaint.setColor(Color.DKGRAY);
+							canvas.drawText(str, text_x + 1, text_y + 1, mBitmapPaint);
 
-						mBitmapPaint.setColor(Color.WHITE);
-						canvas.drawText(str, text_x, text_y, mBitmapPaint);
+							mBitmapPaint.setColor(Color.WHITE);
+							canvas.drawText(str, text_x, text_y, mBitmapPaint);
+						}
 
 						if (bmMark != null) {
                             canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH, mBitmapPaint);
@@ -761,10 +1007,13 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					mSrcRect.set(0, 0, dstWidth, dstHeight);
 					mDstRect.set(x + dstX, y + dstY, x + dstX + (int)(dstWidth * dsMin), y + dstY + (int)(dstHeight * dsMin));
 					canvas.drawBitmap(bm, mSrcRect, mDstRect, mBitmapPaint);
-					if ((fd.getState() >= 0) && (fd.getMaxpage() > 0)) {
+					if ((fd.getState() >= 0) && (fd.getMaxpage() > 0) || (fd.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 						// 読書率を描画
 						// 読書率
 						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
+						if (fd.getState() == -2) {
+							rate = 1;
+						}
 						// 文字サイズ
 						float fontsize = Math.min(mTitleSize, mInfoSize);
 						Paint paint = new Paint();
@@ -801,7 +1050,14 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
 
 						// 読書率の文字列を描画
-						String str = (int)(rate * 100) + "%";
+						String str;
+						if (rate == 1) {
+							Resources res = mContext.getResources();
+							str = res.getString(R.string.kidoku);
+						}
+						else {
+							str = (int)(rate * 100) + "%";
+						}
 						paint.setShader(null);
 						paint.setStyle(Paint.Style.STROKE);
 						paint.setStrokeWidth(2.0f);
@@ -853,10 +1109,13 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	}
 
 	private void drawPagerate(Canvas canvas, FileData file, int width, int height, int x, int y, int color) {
-		if ((file.getState() >= 0) && (file.getMaxpage() > 0)) {
+		if ((file.getState() >= 0) && (file.getMaxpage() > 0) || (file.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 			// 読書率を描画
 			// 読書率
 			float rate = (float)(file.getState() + 1) / (float)file.getMaxpage();
+			if (file.getState() == -2) {
+				rate = 1;
+			}
 			// 文字サイズ
 			float fontsize = Math.min(mTitleSize, mInfoSize);
 			Paint paint = new Paint();
@@ -893,7 +1152,14 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
 
 			// 読書率の文字列を描画
-			String str = (int)(rate * 100) + "%";
+			String str;
+			if (rate == 1) {
+				Resources res = mContext.getResources();
+				str = res.getString(R.string.kidoku);
+			}
+			else {
+				str = (int)(rate * 100) + "%";
+			}
 			paint.setShader(null);
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setStrokeWidth(2.0f);
@@ -960,7 +1226,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	}
 
 	// 描画設定
-	public void setDrawColor(int clr_dir, int clr_img, int clr_bef, int clr_now, int clr_aft, int clr_bak, int clr_cur, int clr_mrk, int clr_bdr, int clr_inf, int clr_rrb) {
+	public void setDrawColor(int clr_dir, int clr_img, int clr_bef, int clr_now, int clr_aft, int clr_bak, int clr_cur, int clr_mrk, int clr_bdr, int clr_inf, int clr_rrb, int clr_bsf, int clr_bse) {
 		mDirColor = clr_dir;
 		mImgColor = clr_img;
 		mBefColor = clr_bef;
@@ -972,6 +1238,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		mMrkColor = clr_mrk;
 		mInfColor = clr_inf;
 		mBdrColor = clr_bdr;
+		mBsfColor = clr_bsf;
+		mBseColor = clr_bse;
 		mLinePaint.setColor(clr_bdr);
 
 		mChangeLayout = true;
@@ -1107,6 +1375,27 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		int columnNum = 0;
 		int rowNum = 0;
 		int listSize = 0;
+		mBookShelfPatternSelect = false;
+		short mBookShelfHeight = 0;
+
+		// 本棚の選択の番号
+		mBookShelfPattern = SetBookShelfActivity.getBookShelfPattern(sharedPreferences);
+		// サムネイルの上の空白
+		mThumbnailTopSpace = SetBookShelfActivity.getmThumbnailTopSpace(sharedPreferences);
+		// サムネイルの下とファイル名の間の空白
+		mThumbnailBottomSpace = SetBookShelfActivity.getmThumbnailBottomSpace(sharedPreferences);
+		// ファイル名の下の空白
+		mFilenameBottomSpace = SetBookShelfActivity.getmFilenameBottomSpace(sharedPreferences);
+		// 本棚の輝度
+		mBookShelfBrightLevel = SetBookShelfActivity.getmBookShelfBrightLevel(sharedPreferences);
+		// 文字の縁取りの幅
+		mBookShelfEdgeLevel = SetBookShelfActivity.getBookShelfEdgeLevel(sharedPreferences);
+		// 文字の色を本棚の色にするかどうか
+		mBookShelfColorExtOn = SetBookShelfActivity.getBookShelfColorExtOn(sharedPreferences);
+		// 既読時に円を表示させるかどうか
+		mBookShelfAfterCircleOn = SetBookShelfActivity.getBookShelfAfterCircleOn(sharedPreferences);
+		// ファイル名の分割表示で行数を倍にするかどうか
+		mBookShelfTextSplitOn = SetBookShelfActivity.getBookShelfTextSplitOn(sharedPreferences);
 
 		if (mFileList != null && mAreaWidth != 0 && mAreaHeight != 0) {
 			// 項目数
@@ -1148,6 +1437,18 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				}
 				height += mItemMargin * 2;
 				disprange = mAreaHeight / height + 2;
+				// 本棚のサイズを追加
+				if (mThumbFlag) {
+					// タイルモードのサムネイルとの比率を計算してサイズを得る
+					mItemWidth = (short)(mIconWidth * mListIconHeight / mIconHeight +  mItemMargin);
+					mItemHeight = (short)mListIconHeight;
+					// 本棚の高さを得る
+					mBookShelfHeight = mItemHeight;
+					if (mBookShelfPattern > 0) {
+						// サムネイルの上下と外枠のサイズだけ広げる
+						mBookShelfHeight += mThumbnailBottomSpace + mThumbnailTopSpace + 2;
+					}
+				}
 			}
 			else {
 				width = mIconWidth + mItemMargin * 2;
@@ -1161,18 +1462,79 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				rowNum = (listSize + (columnNum - 1)) / columnNum;
 
 				// 項目の高さ(タイルは固定)
-				mItemHeight = (short)(mIconHeight + (mTileSize + mTileDescent) * mMaxLines + mItemMargin * 3);
+				int split = (mBookShelfTextSplitOn) ? 2 : 1;
+				mItemHeight = (short)(mIconHeight + (mTileSize + mTileDescent) * mMaxLines * split + mItemMargin * 3);
 				Logcat.d(logLevel,"開始します. mTileSize=" + mTileSize + ", mTileDescent=" + mTileDescent + ", mMaxLines=" + mMaxLines);
 				disprange = (int)(Math.ceil((double) mAreaHeight / (mItemHeight + 2))) * columnNum;
 				Logcat.d(logLevel,"開始します. disprange=" + disprange + ", mAreaHeight=" + mAreaHeight + ", mItemHeight=" + mItemHeight + ", columnNum=" + columnNum);
+				// 本棚の高さを得る
+				mBookShelfHeight = mItemHeight;
+				if (mBookShelfPattern > 0) {
+					// サムネイルの上下と文字の下と外枠と縁取りのサイズだけ広げる
+					mBookShelfHeight += mThumbnailBottomSpace + mFilenameBottomSpace + mThumbnailTopSpace + mBookShelfEdgeLevel + 2;
+				}
+				// 項目の幅
+				mItemWidth = (short)(mAreaWidth / columnNum);
 			}
-
-			// 項目の幅
-			mItemWidth = (short)(mAreaWidth / columnNum);
 
 			// タイル表示中の左余白(割り切れない部分の補正)
 			mDrawLeft = (mAreaWidth - (mItemWidth * columnNum)) / 2;
 
+			if (mThumbFlag) {
+				// サムネイルがオンの場合
+				Resources res = mContext.getResources();
+				Bitmap bm = null;
+				Canvas canvas = new Canvas();
+				short mMSizeW = mItemWidth;
+				short mMSizeH = mBookShelfHeight;
+				// 縦1ドット足りないので補正
+				mMSizeH++;
+
+				if (mBookShelfPattern >= 9 && mBookShelfPattern <= 17) {
+					// カスタム画像の場合
+					// SharedPreferencesから読み出す
+					int index = mBookShelfPattern - 9;
+					String file = sharedPreferences.getString(BookShelfBmpFile[index], "");
+					if (!file.equals("")) {
+						// ファイルが登録されていれば
+						try {
+							// ファイルを読み出してビットマップへ展開する
+							FileInputStream fis = new FileInputStream(file);
+							bm = BitmapFactory.decodeStream(fis);
+							fis.close();
+							// リサイズして登録
+							mTile = bm.createScaledBitmap(bm, mMSizeW, mMSizeH, true);
+							// 本棚を有効にする
+							mBookShelfPatternSelect = true;
+							// 本棚の高さに補正する
+							mItemHeight = mBookShelfHeight;
+						} catch (Exception e) {
+							Toast.makeText(mContext, R.string.ErrorCustomFile, Toast.LENGTH_SHORT).show();
+						}
+					}
+				}
+				else if (mBookShelfPattern > 0) {
+					// 登録されている本棚の画像の場合
+					try {
+						// 登録済みのデータを取ってくる
+						Drawable drawable = ResourcesCompat.getDrawable(res, SetBookShelfPatternName[mBookShelfPattern - 1], null);
+						int w = drawable.getIntrinsicWidth();
+						int h = drawable.getIntrinsicHeight();
+						// Bitmapへ変換
+						bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_4444);
+						canvas.setBitmap(bm);
+						drawable.setBounds(0, 0, w, h);
+						drawable.draw(canvas);
+						// リサイズして登録
+						mTile = Bitmap.createScaledBitmap(bm, mMSizeW, mMSizeH, true);
+						// 本棚を有効にする
+						mBookShelfPatternSelect = true;
+						// 本棚の高さに補正する
+						mItemHeight = mBookShelfHeight;
+					} catch (Exception e) {
+					}
+				}
+			}
 			// リストサイズ
 			super.setListSize(listSize, columnNum, rowNum, disprange, isRefresh);
 		}
@@ -1265,6 +1627,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
                 height = mListIconHeight;
 			}
 			height += mItemMargin * 2;
+			if (mBookShelfPatternSelect) {
+				// サムネイルの上下と外枠のサイズだけ広げる
+				height += mThumbnailBottomSpace + mThumbnailTopSpace + 2;
+			}
 		}
 		else {
 			// タイルの時はサイズが決まっている
