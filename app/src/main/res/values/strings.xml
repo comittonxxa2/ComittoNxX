@@ -791,6 +791,42 @@
     <string name="MesTapHelpMes">Tap to set up the dialog, then press the back key to exit</string>
     <string name="SettingTapClick">Type of tap operation</string>
     <string name="MesUpscaling">Screen updating</string>
+    <string name="BookShelf00">No selection</string>
+    <string name="BookShelf01">Bookshelf 1</string>
+    <string name="BookShelf02">Bookshelf 2</string>
+    <string name="BookShelf03">Bookshelf 3</string>
+    <string name="BookShelf04">Bookshelf 4</string>
+    <string name="BookShelf05">Bookshelf 5</string>
+    <string name="BookShelf06">Bookshelf 6</string>
+    <string name="BookShelf07">Bookshelf 7</string>
+    <string name="BookShelf08">Bookshelf 8</string>
+    <string name="BookShelfcustom1">Custom Image 1</string>
+    <string name="BookShelfcustom2">Custom Image 2</string>
+    <string name="BookShelfcustom3">Custom Image 3</string>
+    <string name="BookShelfcustom4">Custom Image 4</string>
+    <string name="BookShelfcustom5">Custom Image 5</string>
+    <string name="BookShelfcustom6">Custom Image 6</string>
+    <string name="BookShelfcustom7">Custom Image 7</string>
+    <string name="BookShelfcustom8">Custom Image 8</string>
+    <string name="kidoku">Done</string>
+    <string name="ErrorSaveCustomFile">Failed to save custom image</string>
+    <string name="SaveCustomFile">Custom image saved</string>
+    <string name="SaveCustomFileStart">Saving custom image</string>
+    <string name="ErrorCustomFile">Custom image failed to load</string>    <string name="ErrorDeleteCustomFile">Custom image deletion failed</string>
+    <string name="DeleteCustomFile">Custom images removed</string>
+    <string name="LoadingBookShelfFile">Loading images</string>
+
+    <string name="BookShelf000">No sele</string>
+    <string name="BookShelf001">ction</string>
+    <string name="BookShelfcustom00">Custom</string>
+    <string name="BookShelfcustom01">Image 1</string>
+    <string name="BookShelfcustom02">Image 2</string>
+    <string name="BookShelfcustom03">Image 3</string>
+    <string name="BookShelfcustom04">Image 4</string>
+    <string name="BookShelfcustom05">Image 5</string>
+    <string name="BookShelfcustom06">Image 6</string>
+    <string name="BookShelfcustom07">Image 7</string>
+    <string name="BookShelfcustom08">Image 8</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
