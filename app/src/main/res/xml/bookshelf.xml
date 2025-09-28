@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Bookshelf selection" >
+        <src.comitton.config.BookShelfSelectPreference
+            android:dialogMessage="Please select a bookshelf"
+            android:dialogTitle="Bookshelf selection"
+            android:key="BookShelfPattern"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Bookshelf selection" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Bookshelf display parameters" >
+        <src.comitton.config.seekbar.ThumbnailTopSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Space above the thumbnail"
+            android:key="ThumbnailTopSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Space above the thumbnail" />
+        <src.comitton.config.seekbar.ThumbnailBottomSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Space between the bottom of the thumbnail and the top of the filename"
+            android:key="ThumbnailBottomSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Space between the bottom of the thumbnail and the top of the filename" />
+        <src.comitton.config.seekbar.FilenameBottomSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Space under the file name"
+            android:key="FilenameBottomSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Space under the file name" />
+        <src.comitton.config.seekbar.BookShelfBrightLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Bookshelf brightness settings"
+            android:key="BookShelfBrightLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Bookshelf brightness settings" />
+        <src.comitton.config.seekbar.BookShelfEdgeLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Bookshelf text border width"
+            android:key="BookShelfEdgeLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Bookshelf text border width" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookShelfColorExtOn"
+            android:summary="Check this box if you do not want the text color to be the unread/read/read color."
+            android:title="Change the text color to the bookshelf color" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookShelfAfterCircleOn"
+            android:summary="Check to display a circle when a message has been read."
+            android:title="Show circle when marked as read" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookShelfTextSplitOn"
+            android:summary="Check this box to prevent the lower half of the file name from being hidden when splitting it."
+            android:title="Double the number of lines in split filename display" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Remove custom bookshelf image" >
+        <src.comitton.config.BookShelfDeletePreference
+            android:dialogMessage="Choose a custom image"
+            android:dialogTitle="Select a custom image to delete"
+            android:key="BookShelfDelete"
+            android:negativeButtonText="@null"
+            android:summary="Deleting a registered custom image"
+            android:title="Remove custom bookshelf image" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Registering a custom bookshelf image" >
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivity1"
+            android:title="Select a file for Custom Image 1"
+            android:summary="Register custom bookshelf image 1" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="0" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit2"
+            android:title="Select a file for Custom Image 2"
+            android:summary="Register custom bookshelf image 2" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="1" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit3"
+            android:title="Select a file for Custom Image 3"
+            android:summary="Register custom bookshelf image 3" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="2" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit4"
+            android:title="Select a file for Custom Image 4"
+            android:summary="Register custom bookshelf image 4" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="3" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit5"
+            android:title="Select a file for Custom Image 5"
+            android:summary="Register custom bookshelf image 5" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="4" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit6"
+            android:title="Select a file for Custom Image 6"
+            android:summary="Register custom bookshelf image 6" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="5" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit7"
+            android:title="Select a file for Custom Image 7"
+            android:summary="Register custom bookshelf image 7" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="6" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit8"
+            android:title="Select a file for Custom Image 8"
+            android:summary="Register custom bookshelf image 8" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="7" />
+            </intent>
+        </PreferenceScreen>
+    </PreferenceCategory>
+</PreferenceScreen>

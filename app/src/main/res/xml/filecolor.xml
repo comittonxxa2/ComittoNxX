@@ -121,6 +121,20 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Toolbar Button Color" />
+        <src.comitton.config.color.ColorBsfSetting
+            android:dialogMessage="Please Select Color."
+            android:dialogTitle="Bookshelf Text Color"
+            android:key="BsfRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Bookshelf Text Color" />
+        <src.comitton.config.color.ColorBseSetting
+            android:dialogMessage="Please Select Color."
+            android:dialogTitle="Bookshelf Text Border Color"
+            android:key="BseRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Bookshelf Text Border Color" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

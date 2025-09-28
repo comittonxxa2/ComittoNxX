@@ -26,6 +26,14 @@
                 android:targetClass="src.comitton.config.SetFileColorActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="SetBookShelfActivity"
+            android:title="Bookshelf management"
+            android:summary="Setting the bookshelf display." >
+            <intent
+                android:targetClass="src.comitton.config.SetBookShelfActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Image &amp; Text Viewer Settings" >
         <PreferenceScreen
