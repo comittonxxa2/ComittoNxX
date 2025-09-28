@@ -212,6 +212,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int mTibColor;
 	private int mTldColor;
 	private int mTlbColor;
+	private int mBsfColor;
+	private int mBseColor;
 
 	private boolean mTapExpand; // タップで展開
 
@@ -440,7 +442,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		mListScreenView.mToolbarArea.setDisplay(mToolbarShow, mToolbarSize, mToolbarLabel, mTldColor, mTlbColor);
 
-		mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor);
+		mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor, mBsfColor, mBseColor);
 		mListScreenView.setDrawInfo(mFontTile, mFontMain, mFontSub, mItemMargin, mShowExt, mSplitFilename, mMaxLines);
 		mListScreenView.setListType(mListType);
 		mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode); // ソート状態を設定
@@ -1185,6 +1187,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mTxtColor = SetFileColorActivity.getTxtColor(mSharedPreferences);
 		mInfColor = SetFileColorActivity.getInfColor(mSharedPreferences);
 		mBakColor = SetFileColorActivity.getBakColor(mSharedPreferences);
+		mBsfColor = SetFileColorActivity.getBsfColor(mSharedPreferences);
+		mBseColor = SetFileColorActivity.getBseColor(mSharedPreferences);
 
 		mTitColor = SetFileColorActivity.getTitColor(mSharedPreferences);
 		mTibColor = SetFileColorActivity.getTibColor(mSharedPreferences);
@@ -1282,6 +1286,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			return true;
 		}
 		if (mRrbColor != SetFileColorActivity.getRrbColor(mSharedPreferences)) {
+			return true;
+		}
+		if (mBsfColor != SetFileColorActivity.getBsfColor(mSharedPreferences)) {
+			return true;
+		}
+		if (mBseColor != SetFileColorActivity.getBseColor(mSharedPreferences)) {
 			return true;
 		}
 		if (mImgColor != SetFileColorActivity.getImgColor(mSharedPreferences)) {
