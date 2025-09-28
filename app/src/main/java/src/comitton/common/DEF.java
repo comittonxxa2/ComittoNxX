@@ -387,6 +387,8 @@ public class DEF {
 	public static final String KEY_IMGCOLOR = "ImgColor";
 	public static final String KEY_INFCOLOR = "InfColor";
 	public static final String KEY_BAKCOLOR = "BakColor";
+	public static final String KEY_BSFCOLOR = "BsfColor";
+	public static final String KEY_BSECOLOR = "BseColor";
 
 	public static final String KEY_TXTRGB = "TxtRGB";
 	public static final String KEY_DIRRGB = "DirRGB";
@@ -403,6 +405,8 @@ public class DEF {
 	public static final String KEY_TIBRGB = "TibRGB";
 	public static final String KEY_TLDRGB = "TldRGB";
 	public static final String KEY_TLBRGB = "TlbRGB";
+	public static final String KEY_BSFRGB = "BsfRGB";
+	public static final String KEY_BSERGB = "BseRGB";
 
 	// public static final String KEY_TITLECLR = "TitleColor";
 	// public static final String KEY_TOOLBCLR = "ToolbarColor";
@@ -597,6 +601,16 @@ public class DEF {
 	public static final String KEY_MarginRange = "MarginRange";
 	public static final String KEY_MarginLimit = "MarginLimit";
 
+	public static final String KEY_THUMBNAILTOPSPACE = "ThumbnailTopSpace";
+	public static final String KEY_THUMBNAILBOTTOMSPACE = "ThumbnailBottomSpace";
+	public static final String KEY_FILENAMEBOTTOMSPACE = "FilenameBottomSpace";
+
+	public static final String KEY_BOOKSHELFBRIGHTLEVEL = "BookShelfBrightLevel";
+	public static final String KEY_BOOKSHELFEDGELEVEL = "BookShelfEdgeLevel";
+	public static final String KEY_BOOKSHELFCOLOREXTON = "BookShelfColorExtOn";
+	public static final String KEY_BOOKSHELFAFTERCURCLEON = "BookShelfAfterCircleOn";
+	public static final String KEY_BOOKSHELFTEXTSPLITON = "BookShelfTextSplitOn";
+
 	// スケーリング設定
 	public static final String KEY_ALGOMODE = "AlgoMode";
 
@@ -767,6 +781,16 @@ public class DEF {
 	public static final String KEY_PROFILE_COLORING_04 = "ProfileColoring4";
 	public static final String KEY_PROFILE_COLORING_05 = "ProfileColoring5";
 
+	public static final String KEY_BOOKSHELFPATTERN = "BookShelfPattern";
+	public static final String KEY_BOOKSHELFBMPFILE1 = "BookShelfBmpFile1";
+	public static final String KEY_BOOKSHELFBMPFILE2 = "BookShelfBmpFile2";
+	public static final String KEY_BOOKSHELFBMPFILE3 = "BookShelfBmpFile3";
+	public static final String KEY_BOOKSHELFBMPFILE4 = "BookShelfBmpFile4";
+	public static final String KEY_BOOKSHELFBMPFILE5 = "BookShelfBmpFile5";
+	public static final String KEY_BOOKSHELFBMPFILE6 = "BookShelfBmpFile6";
+	public static final String KEY_BOOKSHELFBMPFILE7 = "BookShelfBmpFile7";
+	public static final String KEY_BOOKSHELFBMPFILE8 = "BookShelfBmpFile8";
+
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
 	public static final int DEFAULT_QUALITY = 1; //画質を優先する
@@ -804,6 +828,7 @@ public class DEF {
 	public static final int DEFAULT_AUTOPLAY = 2; // 1.5sec(0.5 * (5 + 1))
 	public static final boolean DEF_SAVEPAGE = true; // ページ移動時にしおりを保存
 	public static final int DEFAULT_TAPPATTERN = 0; // タッチ位置のパターン:左右分割
+	public static final int DEFAULT_BOOKSHELFPATTERN = 0; // 本棚のパターン
 	public static final int DEFAULT_TAPRATE = 4; // 50% : 50%
 	public static final boolean DEFAULT_CHGPAGE = true; // タップ操作の入替え:YES(縦書き、漫画)
 	public static final boolean DEFAULT_PREVREV = true; // 前ページに戻った時に逆から表示
@@ -862,6 +887,17 @@ public class DEF {
 	public static final int DEFAULT_MarginLimit_Overkill = 50; // 違う色の出現回数の許容する割合(最強設定)
 	public static final int DEFAULT_MarginLimit = 20; // 違う色の出現回数の許容する割合(デフォルト設定)
 	public static final int MAX_MarginLimit = 50;	// 違う色の出現回数の許容する割合(最大数)
+
+	public static final int DEFAULT_THUMBNAILTOPSPACE = 5;
+	public static final int MAX_THUMBNAILTOPSPACE = 100;
+	public static final int DEFAULT_THUMBNAILBOTTOMSPACE = 5;
+	public static final int MAX_THUMBNAILBOTTOMSPACE = 100;
+	public static final int DEFAULT_FILENAMEBOTTOMSPACE = 5;
+	public static final int MAX_FILENAMEBOTTOMSPACE = 100;
+	public static final int DEFAULT_BOOKSHELFBRIGHTLEVEL = 100;
+	public static final int MAX_BOOKSHELFBRIGHTLEVEL = 100;
+	public static final int DEFAULT_BOOKSHELFEDGELEVEL = 5;
+	public static final int MAX_BOOKSHELFEDGELEVEL = 10;
 
 	public static final int MAX_SCROLL = 9;
 	public static final int MAX_CLICKAREA = 100;
