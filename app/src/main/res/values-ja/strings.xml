@@ -791,5 +791,41 @@
     <string name="MesTapHelpMes">タップしてダイアログから設定を行い、バックキーで終了</string>
     <string name="SettingTapClick">タップ操作の種類</string>
     <string name="MesUpscaling">画面更新中</string>
+    <string name="BookShelf00">選択なし</string>
+    <string name="BookShelf01">本棚1</string>
+    <string name="BookShelf02">本棚2</string>
+    <string name="BookShelf03">本棚3</string>
+    <string name="BookShelf04">本棚4</string>
+    <string name="BookShelf05">本棚5</string>
+    <string name="BookShelf06">本棚6</string>
+    <string name="BookShelf07">本棚7</string>
+    <string name="BookShelf08">本棚8</string>
+    <string name="BookShelfcustom1">カスタム画像1</string>
+    <string name="BookShelfcustom2">カスタム画像2</string>
+    <string name="BookShelfcustom3">カスタム画像3</string>
+    <string name="BookShelfcustom4">カスタム画像4</string>
+    <string name="BookShelfcustom5">カスタム画像5</string>
+    <string name="BookShelfcustom6">カスタム画像6</string>
+    <string name="BookShelfcustom7">カスタム画像7</string>
+    <string name="BookShelfcustom8">カスタム画像8</string>
+    <string name="kidoku">既読</string>
+    <string name="ErrorSaveCustomFile">カスタム画像の保存に失敗しました</string>
+    <string name="SaveCustomFile">カスタム画像を保存しました</string>
+    <string name="SaveCustomFileStart">カスタム画像を保存中です</string>
+    <string name="ErrorCustomFile">カスタム画像の読み込みに失敗しました</string>    <string name="ErrorDeleteCustomFile">カスタム画像の削除に失敗しました</string>
+    <string name="DeleteCustomFile">カスタム画像を削除しました</string>
+    <string name="LoadingBookShelfFile">画像の読み込み中です</string>
+
+    <string name="BookShelf000">選択</string>
+    <string name="BookShelf001">なし</string>
+    <string name="BookShelfcustom00">カスタム</string>
+    <string name="BookShelfcustom01">画像1</string>
+    <string name="BookShelfcustom02">画像2</string>
+    <string name="BookShelfcustom03">画像3</string>
+    <string name="BookShelfcustom04">画像4</string>
+    <string name="BookShelfcustom05">画像5</string>
+    <string name="BookShelfcustom06">画像6</string>
+    <string name="BookShelfcustom07">画像7</string>
+    <string name="BookShelfcustom08">画像8</string>
 
 </resources>
