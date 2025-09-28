@@ -180,8 +180,16 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = "";
 			mSummary2 = mContext.getString(R.string.srngSumm2);
 		}
-		else if (mKey.equals(DEF.KEY_MarginLevel)) {
+		else if (mKey.equals(DEF.KEY_MarginLevel) || mKey.equals(DEF.KEY_BOOKSHELFEDGELEVEL)) {
 			mSummary1 = "";
+			mSummary2 = "";
+		}
+		else if (mKey.equals(DEF.KEY_THUMBNAILTOPSPACE) || mKey.equals(DEF.KEY_THUMBNAILBOTTOMSPACE) || mKey.equals(DEF.KEY_FILENAMEBOTTOMSPACE)) {
+			mSummary1 = mContext.getString(R.string.unitSumm1);
+			mSummary2 = "";
+		}
+		else if (mKey.equals(DEF.KEY_BOOKSHELFBRIGHTLEVEL)) {
+			mSummary1 = mContext.getString(R.string.srngSumm2);
 			mSummary2 = "";
 		}
 		else {
@@ -294,8 +302,11 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		else if (mKey.equals(DEF.KEY_MarginStart)) {
 			strSummary = String.valueOf((float)num / 10) + mSummary2;
 		}
-		else if (mKey.equals(DEF.KEY_MarginLevel)) {
+		else if (mKey.equals(DEF.KEY_MarginLevel) || mKey.equals(DEF.KEY_BOOKSHELFEDGELEVEL)) {
 			strSummary = String.valueOf(num);
+		}
+		else if (mKey.equals(DEF.KEY_THUMBNAILTOPSPACE) || mKey.equals(DEF.KEY_THUMBNAILBOTTOMSPACE) || mKey.equals(DEF.KEY_FILENAMEBOTTOMSPACE) || mKey.equals(DEF.KEY_BOOKSHELFBRIGHTLEVEL)) {
+			strSummary = String.valueOf(num) + " " + mSummary1;
 		}
 		else {
 			strSummary = DEF.getSizeStr(num, mSummary1, mSummary2);
