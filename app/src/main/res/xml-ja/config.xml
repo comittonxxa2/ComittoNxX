@@ -25,6 +25,14 @@
                 android:targetClass="src.comitton.config.SetFileColorActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="SetBookShelfActivity"
+            android:title="本棚の管理"
+            android:summary="本棚の表示に関する設定を行う" >
+            <intent
+                android:targetClass="src.comitton.config.SetBookShelfActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="イメージ＆テキスト表示画面" >
         <PreferenceScreen

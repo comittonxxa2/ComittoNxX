@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="本棚の選択" >
+        <src.comitton.config.BookShelfSelectPreference
+            android:dialogMessage="本棚を選択してください"
+            android:dialogTitle="本棚の選択"
+            android:key="BookShelfPattern"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="本棚の選択" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="本棚の表示のパラメータ" >
+        <src.comitton.config.seekbar.ThumbnailTopSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="サムネイルの上の空白"
+            android:key="ThumbnailTopSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="サムネイルの上の空白" />
+        <src.comitton.config.seekbar.ThumbnailBottomSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="サムネイルの下とファイル名の上の間の空白"
+            android:key="ThumbnailBottomSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="サムネイルの下とファイル名の上の間の空白" />
+        <src.comitton.config.seekbar.FilenameBottomSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="ファイル名の下の空白"
+            android:key="FilenameBottomSpace"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="ファイル名の下の空白" />
+        <src.comitton.config.seekbar.BookShelfBrightLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="本棚の明るさ設定"
+            android:key="BookShelfBrightLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="本棚の明るさ設定" />
+        <src.comitton.config.seekbar.BookShelfEdgeLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="本棚の文字の縁取りの幅"
+            android:key="BookShelfEdgeLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="本棚の文字の縁取りの幅" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookShelfColorExtOn"
+            android:summary="文字の色を未読/既読/読書中の色にしない場合にチェックを入れる"
+            android:title="文字の色を本棚用の色にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookShelfAfterCircleOn"
+            android:summary="既読時の円を表示する場合にチェックを入れる"
+            android:title="既読時の円を表示する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookShelfTextSplitOn"
+            android:summary="ファイル名の分割表示で下半分の表示が隠れないようにする場合にチェックを入れる"
+            android:title="ファイル名の分割表示で行数を倍にする" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="本棚のカスタム画像の削除" >
+        <src.comitton.config.BookShelfDeletePreference
+            android:dialogMessage="カスタム画像を選択してください"
+            android:dialogTitle="削除するカスタム画像の選択"
+            android:key="BookShelfDelete"
+            android:negativeButtonText="@null"
+            android:summary="登録済みのカスタム画像を削除する"
+            android:title="カスタム画像の削除" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="本棚のカスタム画像の登録" >
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivity1"
+            android:title="カスタム画像1ファイルの選択"
+            android:summary="本棚のカスタム画像1の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="0" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit2"
+            android:title="カスタム画像2ファイルの選択"
+            android:summary="本棚のカスタム画像2の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="1" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit3"
+            android:title="カスタム画像3ファイルの選択"
+            android:summary="本棚のカスタム画像3の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="2" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit4"
+            android:title="カスタム画像4ファイルの選択"
+            android:summary="本棚のカスタム画像4の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="3" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit5"
+            android:title="カスタム画像5ファイルの選択"
+            android:summary="本棚のカスタム画像5の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="4" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit6"
+            android:title="カスタム画像6ファイルの選択"
+            android:summary="本棚のカスタム画像6の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="5" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit7"
+            android:title="カスタム画像7ファイルの選択"
+            android:summary="本棚のカスタム画像7の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="6" />
+            </intent>
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookShelfFileSelectActivit8"
+            android:title="カスタム画像8ファイルの選択"
+            android:summary="本棚のカスタム画像8の登録を行う" >
+            <intent
+                android:targetClass="src.comitton.config.BookShelfFileSelectActivity"
+                android:targetPackage="@string/application_id" >
+                <extra android:name="i" android:value="7" />
+            </intent>
+        </PreferenceScreen>
+    </PreferenceCategory>
+</PreferenceScreen>

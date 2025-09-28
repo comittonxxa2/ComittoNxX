@@ -121,6 +121,20 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="ツールバーのボタン色" />
+        <src.comitton.config.color.ColorBsfSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="本棚のテキスト色"
+            android:key="BsfRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="本棚のテキスト色" />
+        <src.comitton.config.color.ColorBseSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="本棚のテキストの縁取りの色"
+            android:key="BseRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="本棚のテキストの縁取りの色" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
