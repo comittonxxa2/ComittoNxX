@@ -219,6 +219,16 @@
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetBookShelfActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.BookShelfFileSelectActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
