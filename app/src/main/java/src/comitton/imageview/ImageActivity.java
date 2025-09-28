@@ -353,6 +353,31 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mOldMenu;
 	private int mLoupeSize;
 
+	private boolean mGrayBackup;
+	private boolean mColoringBackup;
+	private boolean mInvertBackup;
+	private boolean mMoireBackup;
+	private int mSharpenBackup;
+	private int mBrightBackup;
+	private int mGammaBackup;
+	private int mContrastBackup;
+	private int mHueBackup;
+	private int mSaturationBackup;
+	private int mRotateBackup;
+	private boolean mReverseOrderBackup;
+	private boolean mChgPageBackup;
+	private int mPageWayBackup;
+	private int mScrlWayBackup;
+	private boolean mTopSingleBackup;
+	private int mBkLightBackup;
+	private int mAlgoModeBackup;
+	private int mDispModeBackup;
+	private int mScaleModeBackup;
+	private int mMgnCutBackup;
+	private int mMgnCutColorBackup;
+	private int mPinchScaleBackup;
+	private int mDisplayPositionBackup;
+
 	private boolean mHidden;
 	private boolean mDelShare;
 	private boolean mFlickPage;
@@ -867,6 +892,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (mNoiseSwitch != null) {
 			mNoiseSwitch.recordPause(true);
 		}
+		// アクティビティ一時停止時に保存
+		SaveCurrentSetting();
 		Logcat.v(logLevel, "終了します.");
 	}
 
@@ -5212,6 +5239,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 			ReadSetting(sharedPreferences);
+			// 他アクティビティからの復帰通知時に元に戻す
+			LoadCurrentSetting();
 
 			if ((mImmEnable || mImmForce)  && mSdkVersion >= 19) {
 				int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
@@ -5221,9 +5250,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 
 			mImageView.setImageBitmap(null);
+
+			// 表示のコンフィグレーション
 			setViewConfig();
+			// 画面サイズの更新
 			mImageView.updateScreenSize();
-			// mImageView.setScaleMode(mScaleMode);
 
 			// 色とサイズを指定
 			mGuideView.setColor(mTopColor1, mTopColor2, mMgnColor);
@@ -5240,6 +5271,21 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// }
 			// mFileList = new ImageFileList(mUriPath, mFileName, mFileSort);
 			setBitmapImage();
+
+			// スケーリングを元に戻す
+			// 描画スレッド停止
+			mImageView.lockDraw();
+			synchronized (mImageView) {
+				// スケーリング変更
+				mPinchScale = mPinchScaleSel;
+				mImageMgr.setImageScale(mPinchScale);
+				// イメージ拡大縮小
+				ImageScaling();
+			}
+			// ビットマップを調整
+			this.updateOverSize(true);
+			// 描画スレッド開始
+			mImageView.update(true);
 		}
 		else if (requestCode == DEF.REQUEST_FILE) {
 			setBitmapImage();
@@ -6029,6 +6075,62 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 
 
+	}
+
+	// アクティビティ一時停止時に保存される
+	private void SaveCurrentSetting() {
+		mGrayBackup = mGray;
+		mColoringBackup = mColoring;
+		mInvertBackup = mInvert;
+		mMoireBackup = mMoire;
+		mSharpenBackup = mSharpen;
+		mBrightBackup = mBright;
+		mGammaBackup = mGamma;
+		mContrastBackup = mContrast;
+		mHueBackup = mHue;
+		mSaturationBackup = mSaturation;
+		mRotateBackup = mRotate;
+		mReverseOrderBackup = mReverseOrder;
+		mChgPageBackup = mChgPage;
+		mPageWayBackup = mPageWay;
+		mScrlWayBackup = mScrlWay;
+		mTopSingleBackup = mTopSingle;
+		mBkLightBackup = mBkLight;
+		mAlgoModeBackup = mAlgoMode;
+		mDispModeBackup = mDispMode;
+		mScaleModeBackup = mScaleMode;
+		mMgnCutBackup = mMgnCut;
+		mMgnCutColorBackup = mMgnCutColor;
+		mPinchScaleBackup = mPinchScaleSel;
+		mDisplayPositionBackup = mDisplayPosition;
+	}
+
+	// 他アクティビティからの復帰通知時に元に戻す
+	private void LoadCurrentSetting() {
+		mGray = mGrayBackup;
+		mColoring = mColoringBackup;
+		mInvert = mInvertBackup;
+		mMoire = mMoireBackup;
+		mSharpen = mSharpenBackup;
+		mBright = mBrightBackup;
+		mGamma = mGammaBackup;
+		mContrast = mContrastBackup;
+		mHue = mHueBackup;
+		mSaturation = mSaturationBackup;
+		mRotate = mRotateBackup;
+		mReverseOrder = mReverseOrderBackup;
+		mChgPage = mChgPageBackup;
+		mPageWay = mPageWayBackup;
+		mScrlWay = mScrlWayBackup;
+		mTopSingle = mTopSingleBackup;
+		mBkLight = mBkLightBackup;
+		mAlgoMode = mAlgoModeBackup;
+		mDispMode = mDispModeBackup;
+		mScaleMode = mScaleModeBackup;
+		mMgnCut = mMgnCutBackup;
+		mMgnCutColor = mMgnCutColorBackup;
+		mPinchScaleSel = mPinchScaleBackup;
+		mDisplayPosition = mDisplayPositionBackup;
 	}
 
 	// 起動時のページ情報に戻す
