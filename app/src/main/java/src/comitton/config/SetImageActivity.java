@@ -604,6 +604,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		return flag;
 	}
 
+	public static boolean getViewPause(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_VIEWPAUSE, false);
+		return flag;
+	}
+
 	public static boolean getFitDual(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FITDUAL, true);
