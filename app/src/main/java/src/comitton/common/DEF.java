@@ -486,6 +486,7 @@ public class DEF {
 	public static final String KEY_SHARPEN = "Sharpen";
 	public static final String KEY_NOTICE = "Notice";
 	public static final String KEY_NOSLEEP = "NoSleep";
+	public static final String KEY_VIEWPAUSE = "ViewPause";
 	public static final String KEY_CHGPAGE = "ChgPage";
 	public static final String KEY_CHGFLICK = "ChgFlick";
 	public static final String KEY_ORGWIDTHTWICE = "OrgWidthTwice";
