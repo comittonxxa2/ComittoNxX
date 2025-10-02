@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetTextActivity;
 import src.comitton.fileaccess.WorkStream;
 import src.comitton.fileview.data.FileData;
 import src.comitton.imageview.TouchPanelView;
@@ -14,6 +15,7 @@ import src.comitton.common.GuideView;
 import src.comitton.common.GuideView.UpdateListener;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -44,6 +46,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
 
 public class MyTextView extends SurfaceView implements Handler.Callback, SurfaceHolder.Callback, UpdateListener, Runnable {
 	private static final String TAG = "MyTextView";
@@ -196,6 +199,8 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 
 	private boolean mViewTapSw = false;
 
+	private static SharedPreferences mSharedPreferences;
+
 	private float[] mShiftX = { 0.0f, 0.65f, 0.2f, 0.05f, 0.0f, 0.3f, 0.0f, 0.0f, 0.0f, -0.7f, -0.15f};
 	private float[] mShiftY = { 0.0f, 0.5f, 0.1f, 0.10f, 0.1f, 0.5f, -0.03f, 0.03f, 0.0f, 0.0f, -0.30f};
 // TODO 半角対応
@@ -207,6 +212,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 
 		mActivity = activity;
 		new TouchPanelView(activity, 2);
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
 		mHolder = getHolder();
 		// デフォルト設定が有効になってしまう(RGB565になる)可能性があるためRGBA_8888を設定する
 		mHolder.setFormat(PixelFormat.RGBA_8888);
@@ -554,6 +560,9 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 			// タップ操作の設定を表示
 			TouchPanelView.SetViewArea(mDispWidth, mDispHeight);
 			TouchPanelView.Drawmain(canvas);
+			if (SetTextActivity.getViewPause(mSharedPreferences)) {
+				lockDraw();
+			}
 		}
 
 //		if (mPseLand == true) {
