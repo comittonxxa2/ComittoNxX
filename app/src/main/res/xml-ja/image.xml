@@ -1,287 +1,292 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="起動時状態の設定" >
+    <PreferenceCategory android:title="Initial Settings" >
         <ListPreference
-            android:defaultValue="2"
-            android:dialogTitle="サイズ調整方法"
+            android:defaultValue="5"
+            android:dialogTitle="Initial Scale Mode"
             android:entries="@array/scale_name_list"
             android:entryValues="@array/scale_value_list"
             android:key="IniScale"
             android:summary="dummy"
-            android:title="サイズ調整方法" />
+            android:title="Initial Scale Mode" />
         <ListPreference
             android:defaultValue="1"
-            android:dialogTitle="見開きモード"
+            android:dialogTitle="Initial View Mode"
             android:entries="@array/initview_name_list"
             android:entryValues="@array/initview_value_list"
             android:key="InitView"
             android:summary="dummy"
-            android:title="見開きモード" />
+            android:title="Initial View Mode" />
         <ListPreference
-            android:defaultValue="2"
-            android:dialogTitle="画像補間方式"
+            android:defaultValue="4"
+            android:dialogTitle="Image Interpolation"
             android:entries="@array/algomode_name_list"
             android:entryValues="@array/algomode_value_list"
             android:key="AlgoMode"
             android:summary="dummy"
-            android:title="画像補間方式" />
+            android:title="Image Interpolation" />
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="余白の削除"
+            android:dialogTitle="Remove the margin"
             android:entries="@array/mgncut_name_list"
             android:entryValues="@array/mgncut_value_list"
             android:key="MarginCut"
             android:summary="dummy"
-            android:title="余白の削除" />
+            android:title="Strength to remove the margin." />
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="余白の削除対象の色"
+            android:dialogTitle="Color to remove margin"
             android:entries="@array/mgncut_color_name_list"
             android:entryValues="@array/mgncut_color_value_list"
             android:key="MarginCutColor"
             android:summary="dummy"
-            android:title="余白の削除対象の色" />
+            android:title="Color to remove margin" />
         <PreferenceScreen
             android:key="SetMarginCutActivity"
-            android:title="余白の削除の詳細設定"
-            android:summary="余白の削除に関するパラメータを設定する" >
+            android:title="Advanced settings for remove the margin"
+            android:summary="Set parameters for remove the margin." >
             <intent
                 android:targetClass="src.comitton.config.SetMarginCutActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="画面の表示位置"
+            android:dialogTitle="Display position on screen"
             android:entries="@array/display_position_name_list"
             android:entryValues="@array/display_position_value_list"
             android:key="DisplayPosition"
             android:summary="dummy"
-            android:title="画面の表示位置" />
+            android:title="Display position on screen" />
 <!--
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="Sharpen"
-            android:title="画像のシャープ化" />
+            android:title="Sharpen image" />
 -->
     </PreferenceCategory>
-    <PreferenceCategory android:title="表示関連の設定（＊はテキストと共通の設定）" >
+    <PreferenceCategory android:title="Display Settings" >
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="Notice"
-            android:summary="イメージ表示画面を一旦閉じたあと有効"
-            android:title="通知領域を非表示にする" />
+            android:summary="Required Restart"
+            android:title="Hide the Notification Area" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="NoSleep"
-            android:summary="イメージ表示画面を一旦閉じたあと有効"
-            android:title="スリープさせない" />
+            android:summary="Required Restart"
+            android:title="Not To Sleep" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ViewPause"
+            android:summary="(during a test)Check if the screen flashes when a dialog/overlay is displayed."
+            android:title="Pause drawing when a dialog/overlay is displayed*" />
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="表示方向"
+            android:dialogTitle="Screen Orientation"
             android:entries="@array/rotate_name_list"
             android:entryValues="@array/rotate_value_list"
             android:key="ViewRota"
             android:summary="dummy"
-            android:title="表示方向" />
+            android:title="Screen orientation" />
         <ListPreference
             android:defaultValue="1"
-            android:dialogTitle="書庫内ファイルのソート"
+            android:dialogTitle="Show Image Order"
             android:entries="@array/filesort_name_list"
             android:entryValues="@array/filesort_value_list"
             android:key="FileSort"
             android:summary="dummy"
-            android:title="書庫内ファイルのソート" />
+            android:title="Show Image Order" />
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="ページをめくる方向"
+            android:dialogTitle="Turning the Page Direction"
             android:entries="@array/pageway_name_list"
             android:entryValues="@array/pageway_value_list"
             android:key="PageWay"
             android:summary="dummy"
-            android:title="ページをめくる方向" />
+            android:title="Turning the Page Direction" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="NoExpand"
-            android:summary="元の画像サイズ以上に拡大しない"
-            android:title="拡大しない" />
+            android:summary="Not expand beyond original size"
+            android:title="Not Expand" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="FitDual"
-            android:summary="並べて表示のとき高さが小さい画像を大きい方に合わせて拡大します"
-            android:title="並べて表示で高さを揃える" />
+            android:summary="Adjust the height of the dual view"
+            android:title="Adjust Height" />
         <ListPreference
             android:defaultValue="4"
-            android:dialogTitle="ルーペ表示の拡大率"
+            android:dialogTitle="Magnification of the Loupe"
             android:entries="@array/zoomsize_name_list"
             android:entryValues="@array/zoomsize_value_list"
             android:key="ZoomType"
             android:summary="dummy"
-            android:title="ルーペ表示の拡大率" />
+            android:title="Magnification of the Loupe" />
         <CheckBoxPreference
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="CMargin"
-            android:summary="並べて表示のとき画像の間に余白を空ける"
-            android:title="中央に余白を表示" />
+            android:summary="Insert Margin in the middle of Dual View"
+            android:title="Center Margin" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="CShadow"
-            android:summary="並べて表示のとき画像の中央に影を描画する"
-            android:title="中央に影を描画" />
+            android:summary="Draw a shadow in the middle of Dual View"
+            android:title="Draw Shadow" />
         <ListPreference
             android:defaultValue="1"
-            android:dialogTitle="ページめくりのエフェクト"
+            android:dialogTitle="Page turning effect"
             android:entries="@array/effect_name_list"
             android:entryValues="@array/effect_value_list"
             android:key="EffectList"
             android:summary="dummy"
-            android:title="ページめくりのエフェクト" />
+            android:title="Page turning effect" />
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="画像の初期表示位置"
+            android:dialogTitle="First Image Position"
             android:entries="@array/viewpt_name_list"
             android:entryValues="@array/viewpt_value_list"
             android:key="ViewPt"
             android:summary="dummy"
-            android:title="画像の初期表示位置＊" />
+            android:title="First Image Position(*)" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="PrevRev"
-            android:summary="前ページに戻る時、横方向の表示位置を初期表示位置の反対にします"
-            android:title="前ページ位置を左右反転＊" />
+            android:summary="To return to the previous page is opposed to the horizontal display position"
+            android:title="PrevPage to Reverse Position(*)" />
         <src.comitton.config.PageNumberPreference
-            android:dialogTitle="ページ番号表示"
+            android:dialogTitle="Page Number"
             android:key="PageNumber"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="ページ番号表示" />
+            android:title="Page Number" />
         <src.comitton.config.TimeAndBatteryPreference
-            android:dialogTitle="時刻と充電表示"
+            android:dialogTitle="Time and Battery"
             android:key="TimeAndBattery"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="時刻と充電表示＊" />
+            android:title="Time and Buttery(*)" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="操作関連の設定（＊はテキストと共通の設定）" >
+    <PreferenceCategory android:title="Operation Settings" >
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ReturnListView"
-            android:summary="ホームボタンで画面を閉じたりスタンバイ状態から復帰するときにビューアが固まる場合にチェックを入れる"
-            android:title="画面が裏に入った場合にリスト一覧へ戻る＊" />
+            android:summary="Check this box if the viewer freezes when closing the screen with the home button or returning from standby mode."
+            android:title="Return to list view when the screen is turned to the back＊" />
         <CheckBoxPreference
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="ConfirmBack"
-            android:summary="戻るボタンで画面を閉じるときに確認メッセージを表示する"
-            android:title="戻るボタンで確認表示＊" />
+            android:summary="Display a confirmation message when you exit via the back button."
+            android:title="Confirmation on exit(*)" />
         <ListPreference
-            android:defaultValue="1"
-            android:dialogTitle="最終/先頭ページでの動作"
+            android:defaultValue="2"
+            android:dialogTitle="Operation in last/top page"
             android:entries="@array/lastpage_name_list"
             android:entryValues="@array/lastpage_value_list"
             android:key="LastPage"
             android:summary="dummy"
-            android:title="最終/先頭ページでの動作＊" />
+            android:title="Operation in last/top page(*)" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="SavePage"
-            android:summary="終了操作をせずにアプリが停止した場合も読んだ位置が記録される"
-            android:title="ページ移動時にしおり保存" />
+            android:summary="Record the reading position even if the app has stopped."
+            android:title="Save each at page move" />
         <ListPreference
             android:defaultValue="0"
-            android:dialogTitle="スクロール方向"
+            android:dialogTitle="Direction of the scroll"
             android:entries="@array/scroll_name_list"
             android:entryValues="@array/scroll_value_list"
             android:key="ScrlWay"
             android:summary="dummy"
-            android:title="音量ボタン等でのスクロール方向" />
+            android:title="Volume button to scroll in the direction." />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="DelShare"
-            android:summary="イメージ表示画面終了時に共有で使用した一時ファイルを削除する"
-            android:title="共有用一時ファイルを削除する" />
+            android:summary="Delete the temporary files for sharing at the end of the Image Viewer."
+            android:title="Delete Temporary File" />
         <src.comitton.config.OperationPreference
-            android:dialogMessage="ページめくりするタップ位置を選択してください\n（&lt;:次ページ、&gt;:前ページ）"
-            android:dialogTitle="タップ位置のパターン"
+            android:dialogMessage="Please select the location tap page turning.\n(&lt;:Next Page, &gt;:Prev Page)"
+            android:dialogTitle="Pattern of tap position"
             android:key="TapPattern"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="タップ操作のパターン＊" />
+            android:title="Pattern of tap position" />
         <CheckBoxPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="ChgPage"
-            android:summary="チェックにより画面左:次ページ/画面右:前ページの移動になります"
-            android:title="タップ操作の入替え＊" />
-        <!-- CheckBoxPreference
+            android:summary="When checked, the right of the screen will move to the previous page."
+            android:title="Swap the tap operation(*)" />
+        <!--CheckBoxPreference
             android:defaultValue="false"
             android:key="OldPageSel"
-            android:summary="チェックにより画面下部をドラッグする方式のページ選択になります"
-            android:title="旧タイプのページ選択＊" /-->
+            android:summary="When checked, the page selection method will be to drag the bottom of the screen."
+            android:title="Old type selection page(*)" /-->
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="VibFlag"
-            android:summary="イメージの操作・選択により振動させる"
-            android:title="振動を有効にする＊" />
+            android:summary="Vibrate according to the operation"
+            android:title="Vibrate by operation(*)" />
         <ListPreference
             android:defaultValue="1"
-            android:dialogTitle="音量ボタンでのページめくり"
+            android:dialogTitle="Operation by Vol Key"
             android:entries="@array/volkey_name_list"
             android:entryValues="@array/volkey_value_list"
             android:key="VolKey"
             android:summary="dummy"
-            android:title="音量ボタンでのページめくり＊" />
+            android:title="Operation by Vol Key(*)" />
         <CheckBoxPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="TapScrl"
-            android:summary="タップでスクロールも行う"
-            android:title="タップでのスクロール＊" />
+            android:summary="Also perform scroll by tapping."
+            android:title="Scrolling with the tap(*)" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="FlickPage"
-            android:summary="フリックでページめくりする"
-            android:title="フリックでページめくり＊" />
+            android:summary="move to next / prev page by flicking."
+            android:title="Move page with the flick(*)" />
         <CheckBoxPreference
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="FlickEdge"
-            android:summary="ページ端からフリックを開始したしたときのみページめくりする"
-            android:title="ページ端からフリック＊" />
+            android:summary="To page turning only when you flick from the edge of the page."
+            android:title="Flick from the edge(*)" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ChgFlick"
-            android:summary="チェックにより表紙方向へのフリックが前ページの移動になります"
-            android:title="フリック操作の入替え＊" />
+            android:summary="When checked, the flick in the direction of the front cover will move to the previous page."
+            android:title="Swap the flick operation(*)" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ScrollNext"
-            android:summary="スクロール操作で前後のページへ移動を可能とする"
-            android:title="スクロールで前後のページへ移動" />
+            android:summary="Allows you to move to the previous or next page by scrolling"
+            android:title="Scroll to the next page" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ViewNextPage"
-            android:summary="スクロール操作で前後のページへ移動が有効の時、スクロール量が0でも左右に表示領域が余っているときに次のページを表示する"
-            android:title="次のページを表示" />
+            android:summary="When scrolling to the next page is enabled, the next page will be displayed the next page when there is free display area to the side even if the scroll amount is 0."
+            android:title="Display next pages" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="NextPageFilter"
-            android:summary="次のページを表示する時、グラデーションを表示する"
-            android:title="グラデーションを表示" />
+            android:summary="Show gradation when displaying the next page"
+            android:title="Show gradation" />
         <ListPreference
             android:defaultValue="2"
-            android:dialogTitle="ページ選択方法"
+            android:dialogTitle="Page select operation"
             android:entries="@array/pagesel_name_list"
             android:entryValues="@array/pagesel_value_list"
             android:key="PageSelect"
             android:summary="dummy"
-            android:title="ページ選択方法" />
+            android:title="Page select operation(*)" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ChgPageKey"
-            android:summary="チェックにより表紙方向キー(右表紙なら右キー)が前ページの移動になります"
-            android:title="左右キー操作の入替え＊" />
+            android:summary="When checked, Key to cover direction(if left cover then left key) will move to the previous page."
+            android:title="Swap the LR key operation(*)" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="ヘルプ" >
+    <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="ImageHelp"
-            android:summary="設定項目についてのヘルプを表示します。"
-            android:title="設定項目の説明" >
+            android:summary="Displays the help for these settings."
+            android:title="Description of the item" >
         </PreferenceScreen>
     </PreferenceCategory>
 </PreferenceScreen>
