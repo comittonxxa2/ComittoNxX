@@ -358,10 +358,67 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		super.onNewIntent(intent);
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.v(logLevel, "開始します");
-		// レジューム起動をクリア(念のためクリアしておく)
-		mSavedInstanceState = null;
-		// Intentからメインを起動(onNewIntent)
-		MainProcess(intent, false);
+		if (CheckCustomUrlScheme(intent)) {
+			// カスタムURLスキームが設定されていれば
+			// レジューム起動をクリア(念のためクリアしておく)
+			mSavedInstanceState = null;
+			// Intentからメインを起動(onNewIntent)
+			MainProcess(intent, false);
+		}
+		else {
+			// ショートカットの内容が入る
+			String path = intent.getStringExtra("Path");
+			String server = intent.getStringExtra("Server");
+			int serverSelect = intent.getIntExtra("ServerSelect", -2);
+			// レジュームから復帰かどうかを調べる
+			if (mSharedPreferences.getBoolean("Resume", false)) {
+				Logcat.v(logLevel, "レジュームから復帰");
+				// レジュームから復帰(SharedPreferences)
+				path = mSharedPreferences.getString("ResumePath", "");
+				server = mSharedPreferences.getString("ResumeServer", "");
+				serverSelect = mSharedPreferences.getInt("ResumeServerSelect", -2);
+				// 取り出したら用済みなのでのレジューム内容を破棄する
+				Editor ed = mSharedPreferences.edit();
+				ed.remove("ResumePath");
+				ed.remove("ResumeServer");
+				ed.remove("ResumeServerSelect");
+				ed.remove("Resume");
+				ed.apply();
+			}
+			Logcat.d(logLevel, "path=" + path + ", server=" + server + ", serverSelect=" + serverSelect);
+
+			if (path == null || !path.isEmpty()) {
+				mPath = path;
+			}
+
+			// サーバーパス
+			if (serverSelect != -2) {
+				// サーバー選択が有効だった場合
+				if (mServer.select(serverSelect)) {
+					mURI = mServer.getURI();
+				}
+			}
+			else if (server != null && !server.isEmpty()) {
+				// サーバー名が設定されていれば
+				if (mServer.select(server)) {
+					// サーバー名が有効だった場合
+					mURI = mServer.getURI();
+				}
+				else {
+					// サーバー名が無効だった場合はファイルパスをnullにする
+					mPath = null;
+					Resources res = getResources();
+					Toast.makeText(this, res.getString(R.string.svNotFound), Toast.LENGTH_LONG).show();
+				}
+			}
+
+			if (mPath == null || mPath.isEmpty()) {
+				// ファイルパスがnull又は空白だった場合はローカルパスにする
+				mServer.select(DEF.INDEX_LOCAL);
+				mPath = mServer.getPath();
+				mURI = mServer.getURI();
+			}
+		}
 	}
 
 	// メインの起動
@@ -373,6 +430,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 設定の読込
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor ed = mSharedPreferences.edit();
+		// 起動失敗の回数をカウントしてしきい値に達したらリセットを入れるのは副作用が大きいのでコメントアウトにしてみた
+		/*
 		try {
 			mInitialize = mSharedPreferences.getInt(DEF.KEY_INITIALIZE, 0);
 			if (mInitialize >= 3) {
@@ -394,6 +453,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		catch (Exception e){
 			Logcat.d(logLevel, "", e);
 		}
+		*/
 
 		mActivity = this;
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
@@ -651,15 +711,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 		}
 
-		// サーバパス
+		// サーバーパス
 		if (serverSelect != -2) {
+			// サーバー選択が有効だった場合
 			if (mServer.select(serverSelect)) {
 				mURI = mServer.getURI();
 			}
 		} else if (server != null && !server.isEmpty()) {
+			// サーバー名が設定されていれば
 			if (mServer.select(server)) {
+				// サーバー名が有効だった場合
 				mURI = mServer.getURI();
 			} else {
+				// サーバー名が無効だった場合はファイルパスを空白にする
 				mPath = "";
 				Resources res = getResources();
 				Toast.makeText(this, res.getString(R.string.svNotFound), Toast.LENGTH_LONG).show();
@@ -691,6 +755,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String cursor = intent.getStringExtra("Cursor");
 
 		if (mPath == null || mPath.isEmpty()) {
+			// ファイルパスがnull又は空白だった場合はローカルパスにする
 			mServer.select(DEF.INDEX_LOCAL);
 			mURI = mServer.getURI();
 			mPath = mServer.getPath();
@@ -786,6 +851,24 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// GitHubに新しいバージョンがリリースされているか確認する
 		mInformation.checkRecentRelease(mHandler, false);
+	}
+
+	static boolean CheckCustomUrlScheme(Intent intent) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.v(logLevel, "カスタムURLスキームのチェック.");
+		String hostname = null;
+		String accesskey = null;
+		if (intent.ACTION_VIEW.equals(intent.getAction())) {
+			Uri uri = intent.getData();
+			if	(uri != null)	{
+				hostname = uri.getHost();
+				accesskey = uri.getQueryParameter("key");
+			}
+		}
+		if (hostname != null && accesskey != null)	{
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -2291,7 +2374,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 			case DEF.MESSAGE_RESETLOCAL:{
 				Logcat.d(logLevel, "ローカルのパスリセットのダイアログを表示します.");
-				int serverindex = mSelectRecord.getServer(); // サーバのキーインデックス
+				int serverindex = mSelectRecord.getServer(); // サーバーのキーインデックス
 				ServerSelect server = new ServerSelect(mSharedPreferences, this);
 
 				dialogBuilder.setMessage(R.string.resetLocal);
@@ -2318,8 +2401,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				break;
 			}
 			case DEF.MESSAGE_EDITSERVER:{
-				Logcat.d(logLevel, "サーバ情報の編集ダイアログを表示します.");
-				int serverindex = mSelectRecord.getServer(); // サーバのキーインデックス
+				Logcat.d(logLevel, "サーバー情報の編集ダイアログを表示します.");
+				int serverindex = mSelectRecord.getServer(); // サーバーのキーインデックス
 				mEditServerDialog = new EditServerDialog(mActivity, R.style.MyDialog, serverindex, new EditServerDialog.SearchListener() {
 					@Override
 					public void onSearch(int accessType, String name, String host, String user, String pass, String path, String provider, String dispName) {
@@ -2440,7 +2523,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// res.getString(R.string.helpMenu
 		// )).setIcon(android.R.drawable.ic_menu_help);
 
-		// // サーバを選択
+		// // サーバーを選択
 		// menu.add(0, DEF.MENU_SERVER, Menu.NONE,
 		// res.getString(R.string.selectSv)).setIcon(R.drawable.ic_menu_archive);
 		// // 更新
@@ -3665,15 +3748,15 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			mListDialog.show();
 		}
 		else if (listtype == RecordList.TYPE_SERVER) {
-			Logcat.d(logLevel, "サーバリストのアイテムが長押しされました.");
-			// サーバリストのアイテムが長押しされた
-			int serverindex = mSelectRecord.getServer(); // サーバのキーインデックス
+			Logcat.d(logLevel, "サーバーリストのアイテムが長押しされました.");
+			// サーバーリストのアイテムが長押しされた
+			int serverindex = mSelectRecord.getServer(); // サーバーのキーインデックス
 			if (serverindex == DEF.INDEX_LOCAL) {
 				Logcat.d(logLevel, "ローカルを選択しました.");
 				showDialog(DEF.MESSAGE_RESETLOCAL);
 			}
 			else {
-				Logcat.d(logLevel, "ローカル以外のサーバを選択しました.");
+				Logcat.d(logLevel, "ローカル以外のサーバーを選択しました.");
 				showDialog(DEF.MESSAGE_EDITSERVER);
 			}
 		}
@@ -3742,7 +3825,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			siori3 = res.getString(R.string.siori03_1); // ローカル上のしおり
 		}
 		else {
-			siori3 = res.getString(R.string.siori03_2); // このサーバ上のしおり
+			siori3 = res.getString(R.string.siori03_2); // このサーバー上のしおり
 		}
 		final String[] items = { siori0, siori1, siori2, siori3 };
 
@@ -3812,7 +3895,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 										}
 									}
 									else if (mServer.getSelect() != DEF.INDEX_LOCAL) {
-										// サーバのしおり削除
+										// サーバーのしおり削除
 										if (mNowItem == 2) {
 											try {
 												if (FileAccess.exists(mActivity, key, "", "")) {
@@ -4447,7 +4530,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, TextActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
@@ -4488,7 +4571,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, TextActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
@@ -4523,7 +4606,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
@@ -4553,7 +4636,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, WebViewActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
@@ -4583,7 +4666,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// Intentをつかって画面遷移する
 		Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
 		intent.putExtra("Path", DEF.relativePath(mActivity, mPath, name));					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
@@ -4613,7 +4696,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, ImageActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバ選択番号
+		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
 		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
@@ -5420,7 +5503,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			onOptionsItemSelected(item);
 		}
 		else {
-			// ディレクトリ一覧 or サーバ一覧 or ブックマーク一覧 or 履歴
+			// ディレクトリ一覧 or サーバー一覧 or ブックマーク一覧 or 履歴
 			Logcat.d(logLevel, "listtype=" + listtype);
 			RecordItem rd = mListScreenView.getRecordItem(listtype, listpos);
 
@@ -5487,10 +5570,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mThumbnail_Skip = true;
 				}
 				else {
-					mLoadListNextPath = path;
+					// サーバー選択の場合はここへやって来る
+					// ファイル名だった場合はディレクトリパスのみ取得
+					// カスタムURLスキーム起動の場合はファイル名が入ってくる可能性があるのでファイル名を削除しておく
+					// これを入れないとファイル名がサーバー選択に記録されてしまう
+					mLoadListNextPath = path.substring(0, path.lastIndexOf('/') + 1);
 				}
 
-				// サーバ選択とパス選択をファイル一覧に反映
+				// サーバー選択とパス選択をファイル一覧に反映
 				moveFileSelectFromServer(server, mLoadListNextPath);
 
 				if (listtype == RecordList.TYPE_BOOKMARK) {
@@ -5508,7 +5595,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					switchFileList(); // ファイルリストをアクティブ化
 				}
 				else if (listtype == RecordList.TYPE_SERVER) {
-					Logcat.d(logLevel, "サーバ一覧.");
+					Logcat.d(logLevel, "サーバー一覧.");
 					if (!rd.getServerName().isEmpty() || !rd.getDispName().isEmpty()) {
 						if (rd.getAccessType() == DEF.ACCESS_TYPE_PICKER) {
 							Logcat.d(logLevel, "ファイルピッカー.");
