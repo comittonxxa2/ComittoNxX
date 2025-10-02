@@ -59,6 +59,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 
+import android.app.Activity;
+import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -396,6 +398,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mNotice = false;
 	private boolean mForceNotice = false;
 	private boolean mNoSleep = false;
+	private static boolean mViewPause = false;
+	private static boolean mViewUpdate = false;
 	private boolean mChgPage = false;
 	private boolean mChgPageProfile = false;
 	private boolean mChgFlick = false;
@@ -806,12 +810,42 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			return insets;
 		});
 
+		registerActivityLifecycleCallbacks(new MyLifecycleHandler());
+
 		mListLoading = true;
 		mZipLoad = new ZipLoad(mHandler, this);
 		mZipThread = new Thread(mZipLoad);
 		mZipThread.start();
 		Logcat.d(logLevel, "終了します.");
 	}
+
+	private class MyLifecycleHandler implements Application.ActivityLifecycleCallbacks {
+		@Override
+		public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+		}
+		@Override
+		public void onActivityDestroyed(Activity activity) {
+		}
+		@Override
+		public void onActivityResumed(Activity activity) {
+			// アクティビティが表側に戻ったら描画スレッドを再開させる
+			SetViewUpdate();
+		}
+		@Override
+		public void onActivityPaused(Activity activity) {
+			// アクティビティが裏側に回ったら描画スレッドを停止させる
+			SetViewPause();
+		}
+		@Override
+		public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+		}
+		@Override
+		public void onActivityStarted(Activity activity) {
+		}
+		@Override
+		public void onActivityStopped(Activity activity) {
+		}
+    }
 
 	@Override
 	public boolean onDown(MotionEvent event) {
@@ -1320,6 +1354,25 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		// 自動生成されたメソッド・スタブ
 		return super.dispatchKeyEvent(event);
+	}
+
+	// 描画スレッドを再開
+	static void SetViewUpdate() {
+		if (mViewPause) {
+			if (!mViewUpdate) {
+				mImageView.update(true);
+				mViewUpdate = true;
+			}
+		}
+	}
+	// 描画スレッドを停止
+	static void SetViewPause() {
+		if (mViewPause) {
+			if (mViewUpdate) {
+				mImageView.lockDraw();
+				mViewUpdate = false;
+			}
+		}
 	}
 
 	String mMessage = "";
@@ -2760,7 +2813,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			else if ((result & 0x8000) != 0) {
 				// 上部選択の場合は選択リストを表示
+				SetViewPause();
 				execCommand(mCommandId[index]);
+				SetViewUpdate();
 			}
 			else if (result == 0x4000) {
 				// 戻るボタン
@@ -2769,7 +2824,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			else if (result == 0x4001) {
 				// メニューボタン
 				// 独自メニュー表示
+				SetViewPause();
 				openMenu();
+				SetViewUpdate();
 			}
 			else if (result == 0x4002 || result == 0x4003) {
 				// 先頭/末尾ボタン
@@ -4313,6 +4370,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// タップ操作の設定の編集中だった場合は解除して戻る
 			mTapEditMode = false;
 			mImageView.ViewTapSw(false);
+			SetViewUpdate();
 			return;
 		}
 		if (mGuideView.getOperationMode()) {
@@ -4782,7 +4840,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						//intent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + path));
 						Uri uri = FileProvider.getUriForFile(this,getApplicationContext().getPackageName() + ".provider", new File(path));
 						intent.putExtra(Intent.EXTRA_STREAM, uri);
+						SetViewPause();
 						startActivity(intent);
+						SetViewUpdate();
 					}
 				}
 				break;
@@ -4929,18 +4989,23 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			case DEF.MENU_TAP_PATTERN: {
 				// タップ操作のパターンのダイアログを表示させる
+				SetViewPause();
 				TouchPanelView.SetAlertDialogTag(mActivity);
+				SetViewUpdate();
 				break;
 			}
 			case DEF.MENU_TAP_CLICK: {
 				// タップ操作のクリックのダイアログを表示させる
+				SetViewPause();
 				TouchPanelView.SetAlertDialogClick(mActivity);
+				SetViewUpdate();
 				break;
 			}
 			case DEF.MENU_TAP_SETTING: {
 				if (TouchPanelView.GetEditMode()) {
 					// タップ操作の設定の編集中にする
 					mTapEditMode = true;
+					SetViewPause();
 					mImageView.ViewTapSw(true);
 				}
 				break;
@@ -5429,6 +5494,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mNotice = SetImageActivity.getNotice(sharedPreferences);
 			mForceNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 			mNoSleep = SetImageActivity.getNoSleep(sharedPreferences);
+			mViewPause = SetImageActivity.getViewPause(sharedPreferences);
 			mChgPage = SetImageText.getChgPage(sharedPreferences);
 			mChgFlick = SetImageText.getChgFlick(sharedPreferences);
 			mLastMsg = SetImageText.getLastPage(sharedPreferences);

@@ -2,6 +2,7 @@ package src.comitton.imageview;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetImageActivity;
 import src.comitton.fileview.view.DrawNoticeListener;
 import src.comitton.jni.CallImgLibrary;
 import src.comitton.common.GuideView;
@@ -9,6 +10,7 @@ import src.comitton.common.GuideView.UpdateListener;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -29,6 +31,8 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import androidx.preference.PreferenceManager;
 
 public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, UpdateListener, DrawNoticeListener, Callback, Runnable {
 	private static final String TAG = "MyImageView";
@@ -143,7 +147,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private int mCurrentPage = 0;
 	private boolean mPageLock = false;
 
-	private int mThreadWaitLoop = 0;
+	private static int mThreadWaitLoop = 0;
 
 	// ルーペ表示
 	private int mZoomMode = ZOOM_NONE;
@@ -164,6 +168,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	private boolean mViewTapSw = false;
 
+	private static SharedPreferences mSharedPreferences;
+
 	public MyImageView(Activity activity) {
 		super(activity);
 		mActivity = activity;
@@ -173,6 +179,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mWorkRect = new Rect();
 		mHandler = new Handler(this);
 		new TouchPanelView(activity, 1);
+
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
 
 		requestFocus();
 		mHolder = getHolder();
@@ -258,8 +266,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		updateNotify();
 	}
 
-	private boolean mDrawLock;
-	public void lockDraw() {
+	private static boolean mDrawLock;
+	public static void lockDraw() {
 		mThreadWaitLoop = 0;
 		mDrawLock = true;
 	}
@@ -1037,6 +1045,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				// タップ操作の設定を表示
 				TouchPanelView.SetViewArea(mDispWidth, mDispHeight);
 				TouchPanelView.Drawmain(canvas);
+				if (SetImageActivity.getViewPause(mSharedPreferences)) {
+					lockDraw();
+				}
 			}
 		}
 	}
