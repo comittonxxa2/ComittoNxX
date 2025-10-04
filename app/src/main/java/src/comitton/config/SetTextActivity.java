@@ -469,12 +469,6 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		return flag;
 	}
 
-	public static boolean getViewPause(SharedPreferences sharedPreferences){
-		boolean flag;
-		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_VIEWPAUSE, false);
-		return flag;
-	}
-
 	public static boolean getCenterMargin(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_TX_CMARGIN, true);

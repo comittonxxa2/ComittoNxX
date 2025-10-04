@@ -66,7 +66,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		, R.string.lsort03		// 新しい順(ディレクトリ混在)
 		, R.string.lsort04		// 新しい順(ディレクトリ分離)
 		, R.string.lsort05		// 古い順(ディレクトリ混在)
-		, R.string.lsort06 };	// 古い順(ディレクトリ分離)
+		, R.string.lsort06		// 古い順(ディレクトリ分離)
+		, R.string.lsort07		// シャッフル(ディレクトリ混在)
+		, R.string.lsort08 };	// シャッフル(ディレクトリ分離)
 	public static final int[] FileSortName =
 		{ R.string.fsort00		// ソートなし
 		, R.string.fsort01		// ファイル名-昇順
