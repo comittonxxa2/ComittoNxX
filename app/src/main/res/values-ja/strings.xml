@@ -9,9 +9,9 @@
     <string name="aboutText">about.html</string>
     <string name="topMenu">カスタマイズメニュー</string>
     <string name="tguide00">画面方向切替</string>
-    <string name="tguide01">余白削除</string>
-    <string name="tguide02">見開き設定</string>
-    <string name="tguide03">表示サイズ</string>
+    <string name="tguide01">余白の削除</string>
+    <string name="tguide02">見開きモード</string>
+    <string name="tguide03">サイズ調整方法</string>
     <string name="selalgo00">最近傍補間</string>
     <string name="selalgo01">双一次補間</string>
     <string name="selalgo02">双一次補間(二段階)</string>
@@ -149,8 +149,8 @@
     <string name="hueMenu">色相(%)</string>
     <string name="saturationMenu">彩度(%)</string>
     <string name="bklightMenu">バックライト(%)</string>
-    <string name="mgnCutMenu">余白削除</string>
-    <string name="mgnCutColorMenu">余白削除の色</string>
+    <string name="mgnCutMenu">余白の削除</string>
+    <string name="mgnCutColorMenu">余白の削除対象の色</string>
     <string name="DisplayPositionMenu">画面の表示位置</string>
     <string name="imgRotaMenu">画像の回転</string>
     <string name="imgConfMenu">画像表示設定</string>
@@ -265,7 +265,7 @@
     <string name="opeTitle">操作選択</string>
     <string name="ope00">未読にする</string>
     <string name="ope01">既読にする</string>
-    <string name="ope02">ディレクトリ内のイメージ表示</string>
+    <string name="ope02">最後に読んだページを開く</string>
     <string name="ope03">ファイル削除</string>
     <string name="ope04">ダウンロード</string>
     <string name="ope05">ファイルの展開</string>
@@ -308,6 +308,8 @@
     <string name="flSort2">Name</string>
     <string name="flSort3">Date(D)</string>
     <string name="flSort4">Date</string>
+    <string name="flSort5">Shuffle(D)</string>
+    <string name="flSort6">Shuffle</string>
     <string name="pixSumm1">制限なし</string>
     <string name="pixSumm2">ドット</string>
     <string name="scrlSumm1"></string>
@@ -343,6 +345,8 @@
     <string name="lsort04">新しい順(ディレクトリ分離)</string>
     <string name="lsort05">古い順(ディレクトリ混在)</string>
     <string name="lsort06">古い順(ディレクトリ分離)</string>
+    <string name="lsort07">シャッフル(ディレクトリ混在)</string>
+    <string name="lsort08">シャッフル(ディレクトリ分離)</string>
     <string name="rsort00">パス(昇順)</string>
     <string name="rsort01">パス(降順)</string>
     <string name="rsort02">名前(昇順)</string>

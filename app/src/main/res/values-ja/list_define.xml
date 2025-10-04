@@ -57,6 +57,8 @@
         <item>新しい順(ディレクトリ分離)</item>
         <item>古い順(ディレクトリ混在)</item>
         <item>古い順(ディレクトリ分離)</item>
+        <item>シャッフル(ディレクトリ混在)</item>
+        <item>シャッフル(ディレクトリ分離)</item>
     </string-array>
     <string-array name="zipsort_value_list">
         <item>0</item>
@@ -66,6 +68,8 @@
         <item>4</item>
         <item>5</item>
         <item>6</item>
+        <item>7</item>
+        <item>8</item>
     </string-array>
     <string-array name="thumsize_name_list">
         <item>最小</item>
