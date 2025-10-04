@@ -45,11 +45,6 @@
             android:key="txNoSleep"
             android:summary="Required Restart"
             android:title="Not To Sleep" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="txViewPause"
-            android:summary="(during a test)Check if the screen flashes when a dialog/overlay is displayed."
-            android:title="Pause drawing when a dialog/overlay is displayed*" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Screen Orientation"
