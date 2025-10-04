@@ -739,6 +739,12 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 				case 6:
 					name = res.getString(R.string.flSort4);
 					break;
+				case 7:
+					name = res.getString(R.string.flSort5);
+					break;
+				case 8:
+					name = res.getString(R.string.flSort6);
+					break;
 			}
 			switch (sorttype) {
 				case 3:
