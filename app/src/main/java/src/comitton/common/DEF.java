@@ -337,6 +337,8 @@ public class DEF {
 	public static final int ZIPSORT_NEWSEP = 4; // 新しい順(ディレクトリ分離)
 	public static final int ZIPSORT_OLDMGR = 5; // 古い順(ディレクトリ混在)
 	public static final int ZIPSORT_OLDSEP = 6; // 古い順(ディレクトリ分離)
+	public static final int ZIPSORT_SHUFFLEMGR = 7; // シャッフル(ディレクトリ混在)
+	public static final int ZIPSORT_SHUFFLESEP = 8; // シャッフル(ディレクトリ分離)
 
 	// ファイル拡張子
 	public static final String EXTENSION_SETTING = ".set";
@@ -486,7 +488,6 @@ public class DEF {
 	public static final String KEY_SHARPEN = "Sharpen";
 	public static final String KEY_NOTICE = "Notice";
 	public static final String KEY_NOSLEEP = "NoSleep";
-	public static final String KEY_VIEWPAUSE = "ViewPause";
 	public static final String KEY_CHGPAGE = "ChgPage";
 	public static final String KEY_CHGFLICK = "ChgFlick";
 	public static final String KEY_ORGWIDTHTWICE = "OrgWidthTwice";
