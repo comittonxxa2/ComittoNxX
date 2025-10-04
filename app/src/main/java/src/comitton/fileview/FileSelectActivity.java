@@ -3259,17 +3259,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			if (mListDialog != null) {
 				return;
 			}
-			items = new String[6];
+			items = new String[8];
 			items[0] = res.getString(R.string.lsort01);
 			items[1] = res.getString(R.string.lsort02);
 			items[2] = res.getString(R.string.lsort03);
 			items[3] = res.getString(R.string.lsort04);
 			items[4] = res.getString(R.string.lsort05);
 			items[5] = res.getString(R.string.lsort06);
+			items[6] = res.getString(R.string.lsort07);
+			items[7] = res.getString(R.string.lsort08);
 			mListDialog = new ListDialog(this, R.style.MyDialog, title, items, mSortMode - 1, new ListSelectListener() {
 				@Override
 				public void onSelectItem(int item) {
-					if (item >= 0 && item < 6) {
+					if (item >= 0 && item < 8) {
 						// ソートに反映
 						mSortMode = item + 1;
 						sortList(RecordList.TYPE_FILELIST);
@@ -4229,6 +4231,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// リストにソートを反映
 			mFileList.setMode(mSortMode);
 			mListScreenView.setListSortType(listtype, mSortMode); // タイトル更新
+			// リストの内容設定
+			if (mFileList.getFileList() != null) {
+				mListScreenView.setFileList(mFileList.getFileList(), false);
+			}
 			mListScreenView.notifyUpdate(listtype);
 
 			Editor ed = mSharedPreferences.edit();
