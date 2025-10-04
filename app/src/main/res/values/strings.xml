@@ -9,9 +9,9 @@
     <string name="aboutText">about.html</string>
     <string name="topMenu">Customized Menu</string>
     <string name="tguide00">Screen direction</string>
-    <string name="tguide01">Cut Margin</string>
-    <string name="tguide02">Facing Pages</string>
-    <string name="tguide03">Display Size</string>
+    <string name="tguide01">Remove white space</string>
+    <string name="tguide02">Double-page spread mode</string>
+    <string name="tguide03">How to adjust the size</string>
     <string name="selalgo00">Nearest Neighbor</string>
     <string name="selalgo01">Bi-Linear</string>
     <string name="selalgo02">Bi-Linear(2 Step)</string>
@@ -149,7 +149,7 @@
     <string name="hueMenu">Hue(%)</string>
     <string name="saturationMenu">Saturation(%)</string>
     <string name="bklightMenu">Backlight(%)</string>
-    <string name="mgnCutMenu">Remove white margin</string>
+    <string name="mgnCutMenu">Remove white space</string>
     <string name="mgnCutColorMenu">Color to remove margin</string>
     <string name="DisplayPositionMenu">Display position on screen</string>
     <string name="imgRotaMenu">Image Rotate</string>
@@ -265,7 +265,7 @@
     <string name="opeTitle">Operations</string>
     <string name="ope00">Set to Unread</string>
     <string name="ope01">Set to Read</string>
-    <string name="ope02">Show Image of Directory</string>
+    <string name="ope02">Open the last page read</string>
     <string name="ope03">Delete</string>
     <string name="ope04">Download</string>
     <string name="ope05">Expand File</string>
@@ -308,6 +308,8 @@
     <string name="flSort2">Name</string>
     <string name="flSort3">Date(D)</string>
     <string name="flSort4">Date</string>
+    <string name="flSort5">Shuffle(D)</string>
+    <string name="flSort6">Shuffle</string>
     <string name="pixSumm1">No Limit</string>
     <string name="pixSumm2">pixels</string>
     <string name="scrlSumm1">x</string>
@@ -343,6 +345,8 @@
     <string name="lsort04">New Date (Separate Dir)</string>
     <string name="lsort05">Old Date (Marge Dir)</string>
     <string name="lsort06">Old Date (Separate Dir)</string>
+    <string name="lsort07">Shuffle (Marge Dir)</string>
+    <string name="lsort08">Shuffle (Separate Dir)</string>
     <string name="rsort00">Path(Ascending)</string>
     <string name="rsort01">Path(Descending)</string>
     <string name="rsort02">Name(Ascending)</string>

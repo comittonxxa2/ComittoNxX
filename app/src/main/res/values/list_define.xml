@@ -57,6 +57,8 @@
         <item>New Date (Separate Dir)</item>
         <item>Old Date (Marge Dir)</item>
         <item>Old Date (Separate Dir)</item>
+        <item>Shuffle (Marge Dir)</item>
+        <item>Shuffle (Separate Dir)</item>
     </string-array>
     <string-array name="zipsort_value_list">
         <item>0</item>
@@ -66,6 +68,8 @@
         <item>4</item>
         <item>5</item>
         <item>6</item>
+        <item>7</item>
+        <item>8</item>
     </string-array>
     <string-array name="thumsize_name_list">
         <item>Tiny</item>
