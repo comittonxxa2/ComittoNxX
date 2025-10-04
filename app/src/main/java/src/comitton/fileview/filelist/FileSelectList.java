@@ -130,7 +130,43 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mSortMode = mode;
 		if (mFileList != null) {
 			// ソートあり設定の場合
-			Collections.sort(mFileList, new MyComparator());
+			if (mSortMode == DEF.ZIPSORT_SHUFFLESEP || mSortMode == DEF.ZIPSORT_SHUFFLEMGR) {
+				// シャッフル
+				ArrayList<FileData> par_list = new ArrayList<FileData>();
+				ArrayList<FileData> all_list = new ArrayList<FileData>();
+				ArrayList<FileData> dir_list = new ArrayList<FileData>();
+				ArrayList<FileData> file_list = new ArrayList<FileData>();
+				// ディレクトリとファイルを分離
+				for (int i = 0; i < mFileList.size(); i++) {
+					if (mFileList.get(i).getType() == FileData.FILETYPE_PARENT) {
+						par_list.add(mFileList.get(i));
+					}
+					else if (mFileList.get(i).getType() == FileData.FILETYPE_DIR) {
+						dir_list.add(mFileList.get(i));
+						all_list.add(mFileList.get(i));
+					}
+					else {
+						file_list.add(mFileList.get(i));
+						all_list.add(mFileList.get(i));
+					}
+				}
+				// 別々にシャッフル
+				Collections.shuffle(dir_list);
+				Collections.shuffle(file_list);
+				Collections.shuffle(all_list);
+				// マージ
+				mFileList = new ArrayList<FileData>(par_list);
+				if (mSortMode == DEF.ZIPSORT_SHUFFLESEP) {
+					mFileList.addAll(dir_list);
+					mFileList.addAll(file_list);
+				}
+				else {
+					mFileList.addAll(all_list);
+				}
+			}
+			else {
+				Collections.sort(mFileList, new MyComparator());
+			}
 		}
 	}
 
@@ -749,7 +785,43 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		// sort
 		if (mSortMode != 0) {
 			// ソートあり設定の場合
-			Collections.sort(fileList, new MyComparator());
+			if (mSortMode == DEF.ZIPSORT_SHUFFLESEP || mSortMode == DEF.ZIPSORT_SHUFFLEMGR) {
+				// シャッフル
+				ArrayList<FileData> par_list = new ArrayList<FileData>();
+				ArrayList<FileData> all_list = new ArrayList<FileData>();
+				ArrayList<FileData> dir_list = new ArrayList<FileData>();
+				ArrayList<FileData> file_list = new ArrayList<FileData>();
+				// ディレクトリとファイルを分離
+				for (int i = 0; i < fileList.size(); i++) {
+					if (fileList.get(i).getType() == FileData.FILETYPE_PARENT) {
+						par_list.add(fileList.get(i));
+					}
+					else if (fileList.get(i).getType() == FileData.FILETYPE_DIR) {
+						dir_list.add(fileList.get(i));
+						all_list.add(fileList.get(i));
+					}
+					else {
+						file_list.add(fileList.get(i));
+						all_list.add(fileList.get(i));
+					}
+				}
+				// 別々にシャッフル
+				Collections.shuffle(dir_list);
+				Collections.shuffle(file_list);
+				Collections.shuffle(all_list);
+				// マージ
+				fileList = new ArrayList<FileData>(par_list);
+				if (mSortMode == DEF.ZIPSORT_SHUFFLESEP) {
+					fileList.addAll(dir_list);
+					fileList.addAll(file_list);
+				}
+				else {
+					fileList.addAll(all_list);
+				}
+			}
+			else {
+				Collections.sort(fileList, new MyComparator());
+			}
 		}
 
 		if (thread.isInterrupted()) {
