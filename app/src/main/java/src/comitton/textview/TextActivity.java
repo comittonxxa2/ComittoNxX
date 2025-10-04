@@ -47,8 +47,6 @@ import src.comitton.textview.TextManager.MidashiData;
 import src.comitton.common.GuideView;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -208,8 +206,6 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private boolean mNotice;
 	private boolean mForceNotice = false;
 	private boolean mNoSleep;
-	private static boolean mViewPause = false;
-	private static boolean mViewUpdate = false;
 	private boolean mChgPage;
 	private boolean mChgPageKey;
 	private boolean mChgFlick;
@@ -610,39 +606,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			return insets;
 		});
 
-		registerActivityLifecycleCallbacks(new MyLifecycleHandler());
-
 		mReadBreak = false;
 		return;
 	}
-
-	private class MyLifecycleHandler implements Application.ActivityLifecycleCallbacks {
-		@Override
-		public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-		}
-		@Override
-		public void onActivityDestroyed(Activity activity) {
-		}
-		@Override
-		public void onActivityResumed(Activity activity) {
-			// アクティビティが表側に戻ったら描画スレッドを再開させる
-			SetViewUpdate();
-		}
-		@Override
-		public void onActivityPaused(Activity activity) {
-			// アクティビティが裏側に回ったら描画スレッドを停止させる
-			SetViewPause();
-		}
-		@Override
-		public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-		}
-		@Override
-		public void onActivityStarted(Activity activity) {
-		}
-		@Override
-		public void onActivityStopped(Activity activity) {
-		}
-    }
 
 	@Override
 	public boolean onDown(MotionEvent event) {
@@ -1141,25 +1107,6 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 		mHandler.sendMessageAtTime(mReadTimerMsg, NextTime);
 		return (true);
-	}
-
-	// 描画スレッドを再開
-	static void SetViewUpdate() {
-		if (mViewPause) {
-			if (!mViewUpdate) {
-				mTextView.update(true);
-				mViewUpdate = true;
-			}
-		}
-	}
-	// 描画スレッドを停止
-	static void SetViewPause() {
-		if (mViewPause) {
-			if (mViewUpdate) {
-				mTextView.lockDraw();
-				mViewUpdate = false;
-			}
-		}
 	}
 
 	String mMessage = "";
@@ -1909,9 +1856,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			int index = (result & 0x7FFF);
 			if ((result & 0x8000) != 0) {
 				// 上部選択の場合は選択リストを表示
-				SetViewPause();
 				showSelectList(index);
-				SetViewUpdate();
 			}
 			else if (result == 0x4000) {
 				// 戻るボタン
@@ -1920,9 +1865,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			else if (result == 0x4001) {
 				// メニューボタン
 				// 独自メニュー表示
-				SetViewPause();
 				openMenu();
-				SetViewUpdate();
 			}
 			else if (result == 0x4002 || result == 0x4003) {
 				int mPageWay = DEF. PAGEWAY_RIGHT;
@@ -2750,7 +2693,6 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			// タップ操作の設定の編集中だった場合は解除して戻る
 			mTapEditMode = false;
 			mTextView.ViewTapSw(false);
-			SetViewUpdate();
 			return;
 		}
 		if (mGuideView.getOperationMode()) {
@@ -3151,23 +3093,18 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			}
 			case DEF.MENU_TAP_PATTERN: {
 				// タップ操作のパターンのダイアログを表示させる
-				SetViewPause();
 				TouchPanelView.SetAlertDialogTag(mActivity);
-				SetViewUpdate();
 				break;
 			}
 			case DEF.MENU_TAP_CLICK: {
 				// タップ操作のクリックのダイアログを表示させる
-				SetViewPause();
 				TouchPanelView.SetAlertDialogClick(mActivity);
-				SetViewUpdate();
 				break;
 			}
 			case DEF.MENU_TAP_SETTING: {
 				if (TouchPanelView.GetEditMode()) {
 					// タップ操作の設定の編集中にする
 					mTapEditMode = true;
-					SetViewPause();
 					mTextView.ViewTapSw(true);
 				}
 				break;
@@ -3643,7 +3580,6 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mNotice = SetTextActivity.getNotice(sharedPreferences);
 		mForceNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		mNoSleep = SetTextActivity.getNoSleep(sharedPreferences);
-		mViewPause = SetTextActivity.getViewPause(sharedPreferences);
 		mCMargin = SetTextActivity.getCenterMargin(sharedPreferences);
 		mCShadow = SetTextActivity.getCenterShadow(sharedPreferences);
 		mEffect = SetTextActivity.getEffect(sharedPreferences);
