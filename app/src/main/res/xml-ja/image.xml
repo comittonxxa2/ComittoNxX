@@ -75,11 +75,6 @@
             android:key="NoSleep"
             android:summary="イメージ表示画面を一旦閉じたあと有効"
             android:title="スリープさせない" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="ViewPause"
-            android:summary="(テスト中)ダイアログ/オーバーレイ表示時に画面が点滅する場合にチェックを入れる"
-            android:title="ダイアログ/オーバーレイで描画を一時停止する＊" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="表示方向"
