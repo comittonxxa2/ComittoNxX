@@ -477,6 +477,7 @@ public class DEF {
 
 	public static final String KEY_FORCENAVIGATIONBAR = "ForceHideNavigationBar";
 	public static final String KEY_FORCESTATUSBAR = "ForceHideStatusBar";
+	public static final String KEY_ENCRYPTION = "encryption";
 
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
@@ -521,6 +522,7 @@ public class DEF {
 	public static final String KEY_RETURNKLISTVIEW = "ReturnListView";
 	public static final String KEY_CONFIRMBACK = "ConfirmBack";
 	public static final String KEY_CLEARTOP = "ClearTop";
+	public static final String KEY_KEEPSORTSHUFFLE = "KeepSortShuffle";
 	public static final String KEY_HISTNUM = "RLSave3";
 	public static final String KEY_EXTENSION = "Extension";
 	public static final String KEY_SPLIT_FILENAME = "SplitFilename";
@@ -612,6 +614,42 @@ public class DEF {
 	public static final String KEY_BOOKSHELFCOLOREXTON = "BookShelfColorExtOn";
 	public static final String KEY_BOOKSHELFAFTERCURCLEON = "BookShelfAfterCircleOn";
 	public static final String KEY_BOOKSHELFTEXTSPLITON = "BookShelfTextSplitOn";
+
+	public static final String KEY_CORNERENDIENABLE = "CornerEndIEnable";
+	public static final String KEY_CORNERENDIWIDTHLEVEL = "CornerEndIWidthLevel";
+	public static final String KEY_CORNERENDIHEIGHTLEVEL = "CornerEndIHeightLevel";
+	public static final String KEY_CORNEREND_I_TAP_01 = "CornerEndITap01";
+	public static final String KEY_CORNEREND_I_TAP_02 = "CornerEndITap02";
+	public static final String KEY_CORNEREND_I_TAP_03 = "CornerEndITap03";
+	public static final String KEY_CORNEREND_I_TAP_04 = "CornerEndITap04";
+	public static final String KEY_CORNEREND_I_TAP_05 = "CornerEndITap05";
+	public static final String KEY_CORNEREND_I_TAP_06 = "CornerEndITap06";
+	public static final String KEY_CORNEREND_I_TAP_07 = "CornerEndITap07";
+	public static final String KEY_CORNEREND_I_TAP_08 = "CornerEndITap08";
+	public static final String KEY_CORNEREND_I_TAP_09 = "CornerEndITap09";
+	public static final String KEY_CORNEREND_I_TAP_10 = "CornerEndITap10";
+	public static final String KEY_CORNEREND_I_TAP_11 = "CornerEndITap11";
+	public static final String KEY_CORNEREND_I_TAP_12 = "CornerEndITap12";
+	public static final String KEY_CORNEREND_I_TAP_13 = "CornerEndITap13";
+	public static final String KEY_CORNEREND_I_TAP_14 = "CornerEndITap14";
+
+	public static final String KEY_CORNERENDTENABLE = "CornerEndTEnable";
+	public static final String KEY_CORNERENDTWIDTHLEVEL = "CornerEndTWidthLevel";
+	public static final String KEY_CORNERENDTHEIGHTLEVEL = "CornerEndTHeightLevel";
+	public static final String KEY_CORNEREND_T_TAP_01 = "CornerEndTTap01";
+	public static final String KEY_CORNEREND_T_TAP_02 = "CornerEndTTap02";
+	public static final String KEY_CORNEREND_T_TAP_03 = "CornerEndTTap03";
+	public static final String KEY_CORNEREND_T_TAP_04 = "CornerEndTTap04";
+	public static final String KEY_CORNEREND_T_TAP_05 = "CornerEndTTap05";
+	public static final String KEY_CORNEREND_T_TAP_06 = "CornerEndTTap06";
+	public static final String KEY_CORNEREND_T_TAP_07 = "CornerEndTTap07";
+	public static final String KEY_CORNEREND_T_TAP_08 = "CornerEndTTap08";
+	public static final String KEY_CORNEREND_T_TAP_09 = "CornerEndTTap09";
+	public static final String KEY_CORNEREND_T_TAP_10 = "CornerEndTTap10";
+	public static final String KEY_CORNEREND_T_TAP_11 = "CornerEndTTap11";
+	public static final String KEY_CORNEREND_T_TAP_12 = "CornerEndTTap12";
+	public static final String KEY_CORNEREND_T_TAP_13 = "CornerEndTTap13";
+	public static final String KEY_CORNEREND_T_TAP_14 = "CornerEndTTap14";
 
 	// スケーリング設定
 	public static final String KEY_ALGOMODE = "AlgoMode";
@@ -1978,6 +2016,57 @@ public class DEF {
 		, DEF.KEY_CODE_F_CUSTOMKEY08
 		, DEF.KEY_CODE_F_CUSTOMKEY09
 		, DEF.KEY_CODE_F_CUSTOMKEY10 };
+
+	public static final int DEFAULT_CORNERENDLEVEL = 25;
+	public static final int MAX_CORNERENDLEVEL = 50;
+
+	public static final String[] CornerEndKeyIIdName =
+		{ DEF.KEY_CORNEREND_I_TAP_01
+		, DEF.KEY_CORNEREND_I_TAP_02
+		, DEF.KEY_CORNEREND_I_TAP_03
+		, DEF.KEY_CORNEREND_I_TAP_04
+		, DEF.KEY_CORNEREND_I_TAP_05
+		, DEF.KEY_CORNEREND_I_TAP_06
+		, DEF.KEY_CORNEREND_I_TAP_07
+		, DEF.KEY_CORNEREND_I_TAP_08
+		, DEF.KEY_CORNEREND_I_TAP_09
+		, DEF.KEY_CORNEREND_I_TAP_10
+		, DEF.KEY_CORNEREND_I_TAP_11
+		, DEF.KEY_CORNEREND_I_TAP_12
+		, DEF.KEY_CORNEREND_I_TAP_13
+		, DEF.KEY_CORNEREND_I_TAP_14 };
+
+	public static final String[] CornerEndKeyTIdName =
+		{ DEF.KEY_CORNEREND_T_TAP_01
+		, DEF.KEY_CORNEREND_T_TAP_02
+		, DEF.KEY_CORNEREND_T_TAP_03
+		, DEF.KEY_CORNEREND_T_TAP_04
+		, DEF.KEY_CORNEREND_T_TAP_05
+		, DEF.KEY_CORNEREND_T_TAP_06
+		, DEF.KEY_CORNEREND_T_TAP_07
+		, DEF.KEY_CORNEREND_T_TAP_08
+		, DEF.KEY_CORNEREND_T_TAP_09
+		, DEF.KEY_CORNEREND_T_TAP_10
+		, DEF.KEY_CORNEREND_T_TAP_11
+		, DEF.KEY_CORNEREND_T_TAP_12
+		, DEF.KEY_CORNEREND_T_TAP_13
+		, DEF.KEY_CORNEREND_T_TAP_14 };
+
+	public static final int[] CornerEndTitleName =
+		{ R.string.CornerEndTitle00
+		, R.string.CornerEndTitle01
+		, R.string.CornerEndTitle02
+		, R.string.CornerEndTitle03
+		, R.string.CornerEndTitle04
+		, R.string.CornerEndTitle05
+		, R.string.CornerEndTitle06
+		, R.string.CornerEndTitle07
+		, R.string.CornerEndTitle08
+		, R.string.CornerEndTitle09
+		, R.string.CornerEndTitle10
+		, R.string.CornerEndTitle11
+		, R.string.CornerEndTitle12
+		, R.string.CornerEndTitle13 };
 
 	public static final int[] ColorList = {Color.rgb(0, 0, 0) // 0
 			, Color.rgb(255, 255, 255) // 1
