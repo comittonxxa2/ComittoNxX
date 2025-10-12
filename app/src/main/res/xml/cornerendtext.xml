@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Assign actions to the corners or edges as tap areas" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="CornerEndTEnable"
+            android:summary="The tap pattern is only valid in the system settings."
+            android:title="Enable tap" />
+        <src.comitton.config.seekbar.CornerEndWidthTextLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Ratio of left and right tap areas"
+            android:key="CornerEndTWidthLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Ratio of left and right tap areas" />
+        <src.comitton.config.seekbar.CornerEndHeightTextLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="Ratio of top and bottom tap areas"
+            android:key="CornerEndTHeightLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Ratio of top and bottom tap areas" />
+    </PreferenceCategory>
+</PreferenceScreen>

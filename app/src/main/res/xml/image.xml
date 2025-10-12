@@ -276,6 +276,14 @@
             android:key="ChgPageKey"
             android:summary="When checked, Key to cover direction(if left cover then left key) will move to the previous page."
             android:title="Swap the LR key operation(*)" />
+        <PreferenceScreen
+            android:key="CornerEndSet"
+            android:title="Assign actions to the corners or edges as tap areas,"
+            android:summary="Assigning touch operations" >
+            <intent
+                android:targetClass="src.comitton.config.SetCornerEndImageViewerActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

@@ -218,6 +218,13 @@
             android:key="ThumbMargin"
             android:summary="dummy"
             android:title="Margin cut from thumbnails" />
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="false"
+            android:key="KeepSortShuffle"
+            android:summary="When shuffling sorting, the shuffled content is kept until the list is updated or the sort mode is changed."
+            android:title="Keep shuffled sorting" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
