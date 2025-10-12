@@ -5,17 +5,25 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
 import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -24,6 +32,8 @@ import android.os.Environment;
 import android.preference.DialogPreference;
 import android.preference.ListPreference;
 import androidx.preference.PreferenceManager;
+
+import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -34,6 +44,8 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -42,7 +54,7 @@ import android.widget.Toast;
 
 public class ExportSettingPreference extends DialogPreference implements OnItemClickListener, OnClickListener {
 	private Context mContext;
-	private SharedPreferences mSp;
+	private static SharedPreferences mSp;
 
 	private String mNoName = "(No Name)";
 
@@ -50,7 +62,12 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 	private EditText mEditView;
 	private TextView mMsgView;
 	private ListView mListView;
+	private CheckBox mCheckbox;
 	private ExportSettingPreference.ItemArrayAdapter mItemArrayAdapter;
+	private static String androidId;
+	private static byte[] mAesKey = null;
+	private static String mStrAesKey;
+	private static boolean mEncryption;
 
 	private static final int LAYOUT_PADDING = 10;
 
@@ -60,10 +77,12 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 		mSp = PreferenceManager.getDefaultSharedPreferences(context);
 		setSummary(getSummary().toString().replace("[sdcard]", "[" + Environment.getExternalStorageDirectory().getAbsolutePath() + "]"));
 
+		androidId = Settings.Secure.getString(mContext.getContentResolver(), "android_id");
 	}
 
 	@Override
 	protected View onCreateDialogView() {
+		mEncryption = DEF.getBoolean(mSp, DEF.KEY_ENCRYPTION, false);
 		LinearLayout layout = new LinearLayout(mContext);
 		layout.setOrientation(LinearLayout.VERTICAL);
 
@@ -75,14 +94,28 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 		mListView = new ListView(mContext);
 		mListView.setScrollingCacheEnabled(false);
 		mListView.setOnItemClickListener(this);
+		mCheckbox = new CheckBox(mContext);
+		mCheckbox.setText(R.string.selectEncryption);
+		mCheckbox.setChecked(mEncryption);
 		updateImportList();
 
 		layout.addView(mMsgView, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		layout.addView(mEditView, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		layout.addView(mListView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		layout.addView(mCheckbox, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
 		String str = (String) getDialogMessage();
 		mMsgView.setText(str);
+
+		mCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+			@Override
+			public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+				mEncryption = isChecked;
+				SharedPreferences.Editor editor = mSp.edit();
+				editor.putBoolean(DEF.KEY_ENCRYPTION, isChecked);
+				editor.apply();
+			}
+		});
 
 		return layout;
 	}
@@ -135,6 +168,66 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 		};
 	}
 
+	// 暗号鍵を作成
+	private void MakeAes() {
+		try {
+			// 16進数文字列をBigIntegerに変換
+			BigInteger bigInt = new BigInteger(androidId, 16);
+			// BigIntegerをバイト配列に変換
+			byte[] byteArray = bigInt.toByteArray();
+			// 暗号鍵を作成
+			mAesKey = new byte[16];
+			int offset = 0;
+			if (byteArray.length > 8) {
+				// BigIntegerは最上位に0が埋まる場合があるので取り除く
+				offset = 1;
+			}
+			for (int i = 0; i < 8; i++) {
+				// androidIdは8バイトなので補完する
+				mAesKey[i] = byteArray[i + offset];
+				// 後半を反転で埋める
+				mAesKey[i + 8] = (byte)~byteArray[i + offset];
+			}
+			SecretKeySpec sks = new SecretKeySpec(mAesKey,0,16,"AES");
+			Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			// 暗号化
+			c.init(Cipher.ENCRYPT_MODE, sks);
+			Charset charset = StandardCharsets.UTF_8;
+			// BASE64エンコード
+			byte[] encbyte = Base64.getMimeEncoder().encode(mAesKey);
+			// 文字列へ変換(これを設定ファイルの先頭へ保存する)
+			mStrAesKey = new String(encbyte, charset);
+		} catch (Exception e) {
+		}
+	}
+	// 暗号化
+	private static String EncAes(String encstr) {
+		String enc = null;
+		if (mEncryption) {
+			// 暗号化オプションが有効の場合
+			try {
+				// 暗号化
+				SecretKeySpec sks = new SecretKeySpec(mAesKey,0,16,"AES");
+				Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+				c.init(Cipher.ENCRYPT_MODE, sks);
+				byte input[] = encstr.getBytes();
+				byte encrypted[] = c.doFinal(input);
+				Charset charset = StandardCharsets.UTF_8;
+				// BASE64エンコード
+				byte[] a = Base64.getEncoder().encode(encrypted);
+				// 文字列へ変換
+				enc = new String(a, charset);
+			} catch (Exception e) {
+				// 暗号化に失敗した場合はそのまま返す
+				enc = encstr;
+			}
+		}
+		else {
+			// 暗号化しない場合はそのまま返す
+			enc = encstr;
+		}
+		return enc;
+	}
 
 	@Override
 	public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
@@ -164,6 +257,8 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 			OutputStreamWriter sw;
 			BufferedWriter bw;
 
+			MakeAes();
+
 			try {
 				// ファイルオープン
 				os = new FileOutputStream(filepath, false);
@@ -182,6 +277,11 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 					Set<String> keys = keyMap.keySet();
 					// キーをソートする
 					keys = new TreeSet<String>(keys);
+					if (mEncryption) {
+						// 先頭へ暗号鍵を保存
+						bw.write(mStrAesKey);
+						bw.newLine();
+					}
 					for (String key : keys) {
 						if (!DEF.checkExportKey(key)) {
 							continue;
@@ -204,7 +304,8 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 						} else {
 							continue;
 						}
-						bw.write(line);
+						// 暗号化
+						bw.write(EncAes(line));
 						bw.newLine();
 					}
 				}

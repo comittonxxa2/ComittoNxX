@@ -5,10 +5,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
@@ -50,6 +56,7 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 	private TextView mMsgView;
 	private ListView mListView;
 	private ItemArrayAdapter mItemArrayAdapter;
+	private static byte[] mAesKey = null;
 
 	private static final int LAYOUT_PADDING = 10;
 
@@ -145,6 +152,38 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
         };
     }
 
+	// 設定ファイルの先頭の文字列をデコード
+	private static boolean DecAesKey(String encstr) {
+		try {
+			// BASE64デコードして暗号鍵を取得する
+			mAesKey = Base64.getDecoder().decode(encstr);
+		} catch (Exception e) {
+			// 先頭の文字列が識別できなかった場合はエラーを返す
+			return false;
+		}
+		return true;
+	}
+	// 復号化
+	private static String DecAes(String decstr) {
+		String dec = null;
+		try {
+			// BASE64デコード
+			byte[] byteArray = Base64.getDecoder().decode(decstr);
+			// 復号化
+			SecretKeySpec sks = new SecretKeySpec(mAesKey,0,16,"AES");
+			Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			c.init(Cipher.DECRYPT_MODE, sks);
+			byte output[] = c.doFinal(byteArray);
+			// 文字列を取り出す
+			Charset charset = StandardCharsets.UTF_8;
+			dec = new String(output,charset);
+		} catch (Exception e) {
+			// 復号化に失敗した場合はそのまま返す(暗号化されていない場合はここへ飛んでくる)
+			dec = decstr;
+		}
+		return dec;
+	}
+
 	@Override
 	public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
 		if (parent == mListView) {
@@ -209,7 +248,21 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 
 				// ファイル読み込み
 				String line;
+				boolean first = false;
 				while ((line = br.readLine()) != null) {
+					// 復号化
+					if (!first) {
+						first = true;
+						// 設定ファイルの先頭の文字列をデコード
+						if (!DecAesKey(line)) {
+							// 先頭の文字列のデコードに失敗した場合は次の処理を行わせる
+							line = DecAes(line);
+						}
+					}
+					else {
+						// 先頭以外の場合
+						line = DecAes(line);
+					}
 					// 種別取得
 					char valuetype = line.charAt(0);
 					// '='の前後をキーと値にする
