@@ -832,6 +832,25 @@
     <string name="BookShelfcustom07">Image 7</string>
     <string name="BookShelfcustom08">Image 8</string>
 
+    <string name="CornerEndTitle">Assigning touch operations (highest priority from top</string>
+
+    <string name="CornerEndTitle00">Single tap on the top left corner</string>
+    <string name="CornerEndTitle01">Single tap on the top right corner</string>
+    <string name="CornerEndTitle02">Single tap on the bottom left corner</string>
+    <string name="CornerEndTitle03">Single tap on the bottom right corner</string>
+    <string name="CornerEndTitle04">Single tap on the left edge</string>
+    <string name="CornerEndTitle05">Single tap on the right edge</string>
+    <string name="CornerEndTitle06">Single tap on the top edge</string>
+    <string name="CornerEndTitle07">Single tap on the bottom edge</string>
+    <string name="CornerEndTitle08">Double tap</string>
+    <string name="CornerEndTitle09">Single tap on the top left</string>
+    <string name="CornerEndTitle10">Single tap on the top right</string>
+    <string name="CornerEndTitle11">Single tap on the bottom left</string>
+    <string name="CornerEndTitle12">Single tap on the bottom right</string>
+    <string name="CornerEndTitle13">Single tap</string>
+
+    <string name="selectEncryption">Encrypt the contents of the configuration file</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
