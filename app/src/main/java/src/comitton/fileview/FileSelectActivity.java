@@ -232,6 +232,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int mShowRenMenu;
 	private boolean mEpubViewer;
 	private boolean mEpubThumb;
+	private boolean mKeepSortShuffle;
 
 	private int mImageDispMode;
 	private int mTextDispMode;
@@ -772,7 +773,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// ファイルリスト
 		mFileList = new FileSelectList(mHandler, this, mSharedPreferences);
-		mFileList.setMode(mSortMode);
+		mFileList.setMode(mSortMode, mKeepSortShuffle);
 
 		SafFileAccess.InitRelativePath();
 		mFileList.FlushFileList();
@@ -1309,6 +1310,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mParentMove = SetFileListActivity.getParentMove(mSharedPreferences);
 		mShowDelMenu = SetFileListActivity.getFileDelMenu(mSharedPreferences);
 		mShowRenMenu = SetFileListActivity.getFileRenMenu(mSharedPreferences);
+		mKeepSortShuffle = SetFileListActivity.getKeepSortShuffle(mSharedPreferences);
 
 		mHidden = SetCommonActivity.getHiddenFile(mSharedPreferences);
 
@@ -4229,7 +4231,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 
 			// リストにソートを反映
-			mFileList.setMode(mSortMode);
+			mFileList.setMode(mSortMode, mKeepSortShuffle);
 			mListScreenView.setListSortType(listtype, mSortMode); // タイトル更新
 			// リストの内容設定
 			if (mFileList.getFileList() != null) {
