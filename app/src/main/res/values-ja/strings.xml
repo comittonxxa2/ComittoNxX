@@ -832,4 +832,22 @@
     <string name="BookShelfcustom07">画像7</string>
     <string name="BookShelfcustom08">画像8</string>
 
+    <string name="CornerEndTitle">タップ操作の割り当て(上から順に優先順位が高い)</string>
+
+    <string name="CornerEndTitle00">左上隅をシングルタップ</string>
+    <string name="CornerEndTitle01">右上隅をシングルタップ</string>
+    <string name="CornerEndTitle02">左下隅をシングルタップ</string>
+    <string name="CornerEndTitle03">右下隅をシングルタップ</string>
+    <string name="CornerEndTitle04">左端をシングルタップ</string>
+    <string name="CornerEndTitle05">右端をシングルタップ</string>
+    <string name="CornerEndTitle06">上端をシングルタップ</string>
+    <string name="CornerEndTitle07">下端をシングルタップ</string>
+    <string name="CornerEndTitle08">ダブルタップ</string>
+    <string name="CornerEndTitle09">左上をシングルタップ</string>
+    <string name="CornerEndTitle10">右上をシングルタップ</string>
+    <string name="CornerEndTitle11">左下をシングルタップ</string>
+    <string name="CornerEndTitle12">右下をシングルタップ</string>
+    <string name="CornerEndTitle13">シングルタップ</string>
+
+    <string name="selectEncryption">設定ファイルの中身を暗号化する</string>
 </resources>
