@@ -47,6 +47,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 	private ArrayList<FileData> mFileList = null;
 	private ArrayList<FileData> m2FileList = null;
+	private ArrayList<FileData> m3FileList = null;
 
 	private String mURI;
 	private String mPath;
@@ -54,12 +55,15 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private String mUser;
 	private String mPass;
 	private int mSortMode = 0;
+	private int mSortModeOld = -1;
 	private boolean mParentMove;
 	private boolean mHidden;
 	private boolean mFilter;
 	private boolean mApplyDir;
 	private String mMarker;
 	private boolean mEpubViewer;
+	private boolean mKeepSortShuffle;
+	private static boolean mKeepShuffle = false;
 
 	public LoadingDialog mDialog;
 	private static CustomProgressDialog mProgressDialog;
@@ -126,42 +130,57 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	}
 
 	// ソートモード
-	public void setMode(int mode) {
+	public void setMode(int mode, boolean keep) {
 		mSortMode = mode;
+		if (mSortMode != mSortModeOld) {
+			// モードが変化したらシャッフルの保持を解除
+			mKeepShuffle = false;
+		}
+		mSortModeOld = mSortMode;
+		mKeepSortShuffle = keep;
 		if (mFileList != null) {
 			// ソートあり設定の場合
 			if (mSortMode == DEF.ZIPSORT_SHUFFLESEP || mSortMode == DEF.ZIPSORT_SHUFFLEMGR) {
-				// シャッフル
-				ArrayList<FileData> par_list = new ArrayList<FileData>();
-				ArrayList<FileData> all_list = new ArrayList<FileData>();
-				ArrayList<FileData> dir_list = new ArrayList<FileData>();
-				ArrayList<FileData> file_list = new ArrayList<FileData>();
-				// ディレクトリとファイルを分離
-				for (int i = 0; i < mFileList.size(); i++) {
-					if (mFileList.get(i).getType() == FileData.FILETYPE_PARENT) {
-						par_list.add(mFileList.get(i));
+				if (!mKeepSortShuffle || mKeepSortShuffle && !mKeepShuffle) {
+					mKeepShuffle = true;
+					// シャッフル
+					ArrayList<FileData> par_list = new ArrayList<FileData>();
+					ArrayList<FileData> all_list = new ArrayList<FileData>();
+					ArrayList<FileData> dir_list = new ArrayList<FileData>();
+					ArrayList<FileData> file_list = new ArrayList<FileData>();
+					// ディレクトリとファイルを分離
+					for (int i = 0; i < mFileList.size(); i++) {
+						if (mFileList.get(i).getType() == FileData.FILETYPE_PARENT) {
+							par_list.add(mFileList.get(i));
+						}
+						else if (mFileList.get(i).getType() == FileData.FILETYPE_DIR) {
+							dir_list.add(mFileList.get(i));
+							all_list.add(mFileList.get(i));
+						}
+						else {
+							file_list.add(mFileList.get(i));
+							all_list.add(mFileList.get(i));
+						}
 					}
-					else if (mFileList.get(i).getType() == FileData.FILETYPE_DIR) {
-						dir_list.add(mFileList.get(i));
-						all_list.add(mFileList.get(i));
+					// 別々にシャッフル
+					Collections.shuffle(dir_list);
+					Collections.shuffle(file_list);
+					Collections.shuffle(all_list);
+					// マージ
+					mFileList = new ArrayList<FileData>(par_list);
+					if (mSortMode == DEF.ZIPSORT_SHUFFLESEP) {
+						mFileList.addAll(dir_list);
+						mFileList.addAll(file_list);
 					}
 					else {
-						file_list.add(mFileList.get(i));
-						all_list.add(mFileList.get(i));
+						mFileList.addAll(all_list);
 					}
-				}
-				// 別々にシャッフル
-				Collections.shuffle(dir_list);
-				Collections.shuffle(file_list);
-				Collections.shuffle(all_list);
-				// マージ
-				mFileList = new ArrayList<FileData>(par_list);
-				if (mSortMode == DEF.ZIPSORT_SHUFFLESEP) {
-					mFileList.addAll(dir_list);
-					mFileList.addAll(file_list);
+					// シャッフルの値を保存
+					m3FileList = mFileList;
 				}
 				else {
-					mFileList.addAll(all_list);
+					// シャッフルの値を取り出す
+					mFileList = m3FileList;
 				}
 			}
 			else {
@@ -277,6 +296,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	public static void FlushFileList()
 	{
 		mCacheFile = false;
+		// リストの内容を更新したらシャッフルの保持を解除
+		mKeepShuffle = false;
 	}
 
 	private void SetBreakProgressDialogThread() {
@@ -786,37 +807,46 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		if (mSortMode != 0) {
 			// ソートあり設定の場合
 			if (mSortMode == DEF.ZIPSORT_SHUFFLESEP || mSortMode == DEF.ZIPSORT_SHUFFLEMGR) {
-				// シャッフル
-				ArrayList<FileData> par_list = new ArrayList<FileData>();
-				ArrayList<FileData> all_list = new ArrayList<FileData>();
-				ArrayList<FileData> dir_list = new ArrayList<FileData>();
-				ArrayList<FileData> file_list = new ArrayList<FileData>();
-				// ディレクトリとファイルを分離
-				for (int i = 0; i < fileList.size(); i++) {
-					if (fileList.get(i).getType() == FileData.FILETYPE_PARENT) {
-						par_list.add(fileList.get(i));
+				if (!mKeepSortShuffle || mKeepSortShuffle && !mKeepShuffle) {
+					mKeepShuffle = true;
+					// シャッフル
+					ArrayList<FileData> par_list = new ArrayList<FileData>();
+					ArrayList<FileData> all_list = new ArrayList<FileData>();
+					ArrayList<FileData> dir_list = new ArrayList<FileData>();
+					ArrayList<FileData> file_list = new ArrayList<FileData>();
+					// ディレクトリとファイルを分離
+					for (int i = 0; i < fileList.size(); i++) {
+						if (fileList.get(i).getType() == FileData.FILETYPE_PARENT) {
+							par_list.add(fileList.get(i));
+						}
+						else if (fileList.get(i).getType() == FileData.FILETYPE_DIR) {
+							dir_list.add(fileList.get(i));
+							all_list.add(fileList.get(i));
+						}
+						else {
+							file_list.add(fileList.get(i));
+							all_list.add(fileList.get(i));
+						}
 					}
-					else if (fileList.get(i).getType() == FileData.FILETYPE_DIR) {
-						dir_list.add(fileList.get(i));
-						all_list.add(fileList.get(i));
+					// 別々にシャッフル
+					Collections.shuffle(dir_list);
+					Collections.shuffle(file_list);
+					Collections.shuffle(all_list);
+					// マージ
+					fileList = new ArrayList<FileData>(par_list);
+					if (mSortMode == DEF.ZIPSORT_SHUFFLESEP) {
+						fileList.addAll(dir_list);
+						fileList.addAll(file_list);
 					}
 					else {
-						file_list.add(fileList.get(i));
-						all_list.add(fileList.get(i));
+						fileList.addAll(all_list);
 					}
-				}
-				// 別々にシャッフル
-				Collections.shuffle(dir_list);
-				Collections.shuffle(file_list);
-				Collections.shuffle(all_list);
-				// マージ
-				fileList = new ArrayList<FileData>(par_list);
-				if (mSortMode == DEF.ZIPSORT_SHUFFLESEP) {
-					fileList.addAll(dir_list);
-					fileList.addAll(file_list);
+					// シャッフルの値を保存
+					m3FileList = fileList;
 				}
 				else {
-					fileList.addAll(all_list);
+					// シャッフルの値を取り出す
+					fileList = m3FileList;
 				}
 			}
 			else {
