@@ -248,6 +248,14 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="上下の余白サイズ" />
+        <PreferenceScreen
+            android:key="CornerEndSet"
+            android:title="四隅と端をタップエリアにして動作を割り当て"
+            android:summary="タップ操作の割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetCornerEndTextViewerActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

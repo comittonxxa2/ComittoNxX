@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="四隅と端をタップエリアにして動作を割り当て" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="CornerEndIEnable"
+            android:summary="タップ操作のパターンがシステム設定のみ有効"
+            android:title="タップを有効" />
+        <src.comitton.config.seekbar.CornerEndWidthImageLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="左右のタップエリアの割合"
+            android:key="CornerEndIWidthLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="左右のタップエリアの割合" />
+        <src.comitton.config.seekbar.CornerEndHeightImageLevelSeekbar
+            android:dialogMessage=""
+            android:dialogTitle="上下のタップエリアの割合"
+            android:key="CornerEndIHeightLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="上下のタップエリアの割合" />
+    </PreferenceCategory>
+</PreferenceScreen>
