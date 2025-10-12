@@ -6,6 +6,8 @@ import static androidx.core.content.ContextCompat.getSystemService;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetCornerEndImageViewerActivity;
+import src.comitton.config.SetCornerEndTextViewerActivity;
 import src.comitton.textview.TextActivity;
 
 import android.graphics.Bitmap;
@@ -83,6 +85,9 @@ public class TouchPanelView extends View {
 	private static int mHeight;
 	private static int tapindex = -1;
 	private static int tappattern = 0;
+	private static int tapcornerendindex = 0;
+	private static int tapcornerenddoubleindex = 0;
+	private static boolean tapcornerendmode = false;
 	private static String text;
 	private static float x,y;
 	private static Context mContext;
@@ -1085,7 +1090,30 @@ public class TouchPanelView extends View {
 		int data = -1;
 		if (tappattern == 0) {
 			// パターンが未設定の場合
-			data = -1;
+			if (GetCornetEndParameter(Enable) != 0) {
+				// 四隅と端のタップ操作が有効の場合
+				if (tapcornerendmode) {
+					// ダブルタップが有効の場合
+					if (mode == 1) {
+						// シングルタップ
+						data = tapcornerendindex;
+					}
+					else if (mode == 2) {
+						// ダブルタップ
+						data = tapcornerenddoubleindex;
+					}
+				}
+				else {
+					if (mode == 1) {
+						// シングルタップ
+						data = tapcornerendindex;
+					}
+				}
+			}
+			if (data == 0) {
+				// システム設定の場合は未設定にする
+				data = -1;
+			}
 		}
 		else if (tapindex == -1) {
 			// 座標が未定の場合
@@ -1121,11 +1149,270 @@ public class TouchPanelView extends View {
 		return data;
 	}
 
+	private static final int Enable = 0;
+	private static final int Width = 1;
+	private static final int Height = 2;
+	private static final int TopLeftCorner = 3;
+	private static final int TopRightCorner = 4;
+	private static final int BottomLeftCorner = 5;
+	private static final int BottomRightCorner = 6;
+	private static final int LeftEnd = 7;
+	private static final int RightEnd = 8;
+	private static final int TopEnd = 9;
+	private static final int BottomEnd = 10;
+	private static final int DoubleTap = 11;
+	private static final int TopLeft = 12;
+	private static final int TopRight = 13;
+	private static final int BottomLeft = 14;
+	private static final int BottomRight = 15;
+	private static final int SingleTap = 16;
+
+	// 四隅と端のタップ操作のパラメータ読み出しでイメージビューアとテキストビューアで振り分ける
+	private static int GetCornetEndParameter(int index) {
+		int data = 0;
+		switch (index) {
+			case Enable:
+				if (mMode == 1) {
+					data = (SetCornerEndImageViewerActivity.getCornerEndEnable(mSharedPreferences)) ? 1 : 0;
+				}
+				else if (mMode == 2) {
+					data = (SetCornerEndTextViewerActivity.getCornerEndEnable(mSharedPreferences)) ? 1 : 0;
+				}
+				break;
+			case Width:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getCornerEndWidthLevel(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getCornerEndWidthLevel(mSharedPreferences);
+				}
+				break;
+			case Height:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getCornerEndHeightLevel(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getCornerEndHeightLevel(mSharedPreferences);
+				}
+				break;
+			case TopLeftCorner:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getTopLeftCornerTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getTopLeftCornerTap(mSharedPreferences);
+				}
+				break;
+			case TopRightCorner:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getTopRightCornerTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getTopRightCornerTap(mSharedPreferences);
+				}
+				break;
+			case BottomLeftCorner:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getBottomLeftCornerTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getBottomLeftCornerTap(mSharedPreferences);
+				}
+				break;
+			case BottomRightCorner:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getBottomRightCornerTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getBottomRightCornerTap(mSharedPreferences);
+				}
+				break;
+			case LeftEnd:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getLeftEndTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getLeftEndTap(mSharedPreferences);
+				}
+				break;
+			case RightEnd:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getRightEndTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getRightEndTap(mSharedPreferences);
+				}
+				break;
+			case TopEnd:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getTopEndTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getTopEndTap(mSharedPreferences);
+				}
+				break;
+			case BottomEnd:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getBottomEndTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getBottomEndTap(mSharedPreferences);
+				}
+				break;
+			case DoubleTap:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getDoubleTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getDoubleTap(mSharedPreferences);
+				}
+				break;
+			case TopLeft:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getTopLeftTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getTopLeftTap(mSharedPreferences);
+				}
+				break;
+			case TopRight:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getTopRightTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getTopRightTap(mSharedPreferences);
+				}
+				break;
+			case BottomLeft:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getBottomLeftTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getBottomLeftTap(mSharedPreferences);
+				}
+				break;
+			case BottomRight:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getBottomRightTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getBottomRightTap(mSharedPreferences);
+				}
+				break;
+			case SingleTap:
+				if (mMode == 1) {
+					data = SetCornerEndImageViewerActivity.getSingleTap(mSharedPreferences);
+				}
+				else if (mMode == 2) {
+					data = SetCornerEndTextViewerActivity.getSingleTap(mSharedPreferences);
+				}
+				break;
+		}
+		return data;
+	}
+
+	// 四隅と端のタップ操作のチェック
+	private static void CheckCornetEnd(int x, int y, int width, int height) {
+		if (GetCornetEndParameter(Enable) != 0) {
+			// 四隅と端のタップ操作が有効の場合
+			float cornerendwidthlevelmin = (float)GetCornetEndParameter(Width) / 100;
+			float cornerendwidthlevelmax = (100 - (float)GetCornetEndParameter(Width)) / 100;
+			float cornerendheightlevelmin = (float)GetCornetEndParameter(Height) / 100;
+			float cornerendheightlevelmax = (100 - (float)GetCornetEndParameter(Height)) / 100;
+			// あらかじめ設定なしに設定しておく
+			tapcornerendindex = -1;
+			tapcornerenddoubleindex = -1;
+			tapcornerendmode = false;
+			// 優先順位の高い順に範囲をチェックする
+			if (GetCornetEndParameter(TopLeftCorner) != 1 && x < (width * cornerendwidthlevelmin) && y < (height * cornerendheightlevelmin)) {
+				// 設定が無反応以外で範囲内なら
+				// 左上隅
+				tapcornerendindex = GetCornetEndParameter(TopLeftCorner);
+			}
+			if (GetCornetEndParameter(TopRightCorner) != 1 && x >= (width * cornerendwidthlevelmax) && y < (height * cornerendheightlevelmin) && tapcornerendindex == -1) {
+				// 左上隅が設定なしで設定が無反応以外で範囲内なら
+				// 右上隅
+				tapcornerendindex = GetCornetEndParameter(TopRightCorner);
+			}
+			if (GetCornetEndParameter(BottomLeftCorner) != 1 && x < (width * cornerendwidthlevelmin) && y >= (height * cornerendheightlevelmax) && tapcornerendindex == -1) {
+				// 右上隅が設定なしで設定が無反応以外で範囲内なら
+				// 左下隅
+				tapcornerendindex = GetCornetEndParameter(BottomLeftCorner);
+			}
+			if (GetCornetEndParameter(BottomRightCorner) != 1 && x >= (width * cornerendwidthlevelmax) && y >= (height * cornerendheightlevelmax) && tapcornerendindex == -1) {
+				// 左下隅が設定なしで設定が無反応以外で範囲内なら
+				// 右下隅
+				tapcornerendindex = GetCornetEndParameter(BottomRightCorner);
+			}
+			if (GetCornetEndParameter(LeftEnd) != 1 && x < (width * cornerendwidthlevelmin) && tapcornerendindex == -1) {
+				// 右下隅が設定なしで設定が無反応以外で範囲内なら
+				// 左端
+				tapcornerendindex = GetCornetEndParameter(LeftEnd);
+			}
+			if (GetCornetEndParameter(RightEnd) != 1 && x >= (width * cornerendwidthlevelmax) && tapcornerendindex == -1) {
+				// 左端が設定なしで設定が無反応以外で範囲内なら
+				// 右端
+				tapcornerendindex = GetCornetEndParameter(RightEnd);
+			}
+			if (GetCornetEndParameter(TopEnd) != 1 && y < (height * cornerendheightlevelmin) && tapcornerendindex == -1) {
+				// 右端が設定なしで設定が無反応以外で範囲内なら
+				// 上端
+				tapcornerendindex = GetCornetEndParameter(TopEnd);
+			}
+			if (GetCornetEndParameter(BottomEnd) != 1 && y >= (height * cornerendheightlevelmax) && tapcornerendindex == -1) {
+				// 上端が設定なしで設定が無反応以外で範囲内なら
+				// 下端
+				tapcornerendindex = GetCornetEndParameter(BottomEnd);
+			}
+			if (GetCornetEndParameter(DoubleTap) != 1 && tapcornerendindex == - 1) {
+				// 下端が設定なしで設定が無反応以外で範囲内なら
+				// ダブルタップ
+				tapcornerenddoubleindex = GetCornetEndParameter(DoubleTap);
+				// シングルタップ動作は無反応に設定
+				tapcornerendindex = -1;
+				if (tapcornerenddoubleindex > 1) {
+					// 設定が有効なら
+					tapcornerendmode = true;
+				}
+			}
+			if (GetCornetEndParameter(TopLeft) != 1 && x < (width / 2) && y < (height / 2) && tapcornerendindex == -1) {
+				// ダブルタップが設定なしで設定が無反応以外で範囲内なら
+				// 左上
+				tapcornerendindex = GetCornetEndParameter(TopLeft);
+			}
+			if (GetCornetEndParameter(TopRight) != 1 && x >= (width / 2) && y < (height / 2)  && tapcornerendindex == -1) {
+				// 左上が設定なしで設定が無反応以外で範囲内なら
+				// 右上
+				tapcornerendindex = GetCornetEndParameter(TopRight);
+			}
+			if (GetCornetEndParameter(BottomLeft) != 1 && x < (width / 2) && y >= (height / 2) && tapcornerendindex == -1) {
+				// 右上が設定なしで設定が無反応以外で範囲内なら
+				// 左下
+				tapcornerendindex = GetCornetEndParameter(BottomLeft);
+			}
+			if (GetCornetEndParameter(BottomRight) != 1 && x >= (width / 2) && y >= (height / 2) && tapcornerendindex == -1) {
+				// 左下が設定なしで設定が無反応以外で範囲内なら
+				// 右下
+				tapcornerendindex = GetCornetEndParameter(BottomRight);
+			}
+			if (tapcornerendindex == -1) {
+				// 右下が設定なしなら
+				// シングルタップ
+				tapcornerendindex = GetCornetEndParameter(SingleTap);
+			}
+		}
+		else {
+			// 四隅と端のタップ操作のチェックが無効だった場合
+			tapindex = -1;
+		}
+	}
+
 	// タッチパネルの座標から範囲を計算して番号を取得
 	public static void SetTouchPosition(int x, int y, int width, int height) {
 		switch (tappattern) {
 			case 0:
-				tapindex = -1;
+				// 四隅と端のタップ操作のチェック
+				CheckCornetEnd(x, y, width, height);
 				break;
 			case 1:
 				if (x >= 0 && x < (width / 2) && y >= 0 && y < (height / 2)) {

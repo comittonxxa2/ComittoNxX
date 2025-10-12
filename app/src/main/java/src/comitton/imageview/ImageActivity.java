@@ -601,6 +601,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	private GestureDetectorCompat mDetector;
 	private boolean mDoubleTapMode = false;
+	private boolean mDoubleTapGuardOn = false;
 	private boolean mAutoRepeatCheck = false;
 	private boolean mPinchScaleSetting = false;
 
@@ -1371,8 +1372,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_TOUCH_ZOOM:
 //				Logcat.d(logLevel, "msg=" + msg.what + ", arg1=" + msg.arg1 + ", count" + mLongTouchCount);
 
-				if (mLongTouchCount == msg.arg1) {
+				if (mLongTouchCount == msg.arg1 && !mDoubleTapGuardOn) {
 					// 最新のタイマーの時だけ処理
+					// ダブルタップの処理があった場合は長押しと判断されてしまうので無視する
 					if (mTouchFirst) {
 						if (mVibFlag) {
 							// 振動
@@ -2552,6 +2554,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 					else if (t < 100) {
 						// タップによるページめくりとスクロールを優先させるため100ミリ秒未満はアクション操作をスキップさせる
+						// ここでダブルタップのガードフラグをクリア
+						mDoubleTapGuardOn = false;
 					}
 					else {
 						// タップのスクロール
@@ -2571,7 +2575,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mOperation = TOUCH_NONE;
 					mPinchOn = false;
 					mPinchDown = false;
-
+					mDoubleTapGuardOn = false;
 					// 上部/下部選択中の状態解除
 					mGuideView.eventTouchCancel();
 					// ページ選択中解除
@@ -2596,11 +2600,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							if (TouchPanelView.GetTouchPositionData(2) > 0) {
 								// ダブルタップが有効の場合は外部設定を有効にする
 								mDoubleTapMode = true;
+								// ダブルタップのガードフラグをセット
+								mDoubleTapGuardOn = true;
 							}
 							else {
 								// シングルタップのみの場合
 								// タッチパネル設定が有効な場合
 								mDoubleTapMode = false;
+								mDoubleTapGuardOn = false;
 								SetTouchPanelCommand(1);
 							}
 						}
