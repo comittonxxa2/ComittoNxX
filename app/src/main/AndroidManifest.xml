@@ -229,6 +229,16 @@
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetCornerEndImageViewerActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetCornerEndTextViewerActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
