@@ -143,6 +143,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private static final int LIST_PROFILE3 = 28;
 	private static final int LIST_PROFILE4 = 29;
 	private static final int LIST_PROFILE5 = 30;
+	private static final int LIST_PROFILE6 = 36;
+	private static final int LIST_PROFILE7 = 37;
+	private static final int LIST_PROFILE8 = 38;
+	private static final int LIST_PROFILE9 = 39;
+	private static final int LIST_PROFILE10 = 40;
 
 	private static final int CLICKGUARD = 32;
 
@@ -187,7 +192,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			LIST_PROFILE2,	// プロファイル2
 			LIST_PROFILE3,	// プロファイル3
 			LIST_PROFILE4,	// プロファイル4
-			LIST_PROFILE5	// プロファイル5
+			LIST_PROFILE5,	// プロファイル5
+			LIST_PROFILE6,	// プロファイル6
+			LIST_PROFILE7,	// プロファイル7
+			LIST_PROFILE8,	// プロファイル8
+			LIST_PROFILE9,	// プロファイル9
+			LIST_PROFILE10	// プロファイル10
 	};
 
 	private final int[] COMMAND_ID =
@@ -227,7 +237,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		DEF.MENU_PROFILE2,	// プロファイル2
 		DEF.MENU_PROFILE3,	// プロファイル3
 		DEF.MENU_PROFILE4,	// プロファイル4
-		DEF.MENU_PROFILE5	// プロファイル5
+		DEF.MENU_PROFILE5,	// プロファイル5
+		DEF.MENU_PROFILE6,	// プロファイル6
+		DEF.MENU_PROFILE7,	// プロファイル7
+		DEF.MENU_PROFILE8,	// プロファイル8
+		DEF.MENU_PROFILE9,	// プロファイル9
+		DEF.MENU_PROFILE10	// プロファイル10
 	};
 	private final int[] COMMAND_RES =
 	{
@@ -266,7 +281,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.Profile2,		// プロファイル2
 		R.string.Profile3,		// プロファイル3
 		R.string.Profile4,		// プロファイル4
-		R.string.Profile5		// プロファイル5
+		R.string.Profile5,		// プロファイル5
+		R.string.Profile6,		// プロファイル6
+		R.string.Profile7,		// プロファイル7
+		R.string.Profile8,		// プロファイル8
+		R.string.Profile9,		// プロファイル9
+		R.string.Profile10		// プロファイル10
 	};
 	private int[] mCommandId;
 	private String[] mCommandStr;
@@ -404,6 +424,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mReturnListView;
 	private boolean mConfirmBack;
 	private boolean mFitDual = true;
+	private boolean mZoomOff = false;
 	private boolean mCMargin = false;
 	private boolean mCShadow = false;
 	private boolean mPrevRev = false;
@@ -655,7 +676,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mTouchPoint[i] = new PointF();
 		}
 		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 32);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 			// ステータスバーとナビゲーションバーの高さを求めるための準備を行う
 			WindowMetrics windowMetrics = this.getWindowManager().getCurrentWindowMetrics();
 			insets = windowMetrics.getWindowInsets().getInsetsIgnoringVisibility(WindowInsets.Type.systemBars());
@@ -711,7 +732,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mGuideView.setColor(mTopColor1, mTopColor2, mMgnColor);
 		mGuideView.setGuideSize(mClickArea, mTapPattern, mTapRate, mChgPage, mOldMenu);
 
-		mProfileWord = new String[5];
+		mProfileWord = new String[10];
 
 		// 初期値を読み出す
 		mProfileWord[0] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_01, "");
@@ -719,6 +740,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mProfileWord[2] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_03, "");
 		mProfileWord[3] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_04, "");
 		mProfileWord[4] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_05, "");
+		mProfileWord[5] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_06, "");
+		mProfileWord[6] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_07, "");
+		mProfileWord[7] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_08, "");
+		mProfileWord[8] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_09, "");
+		mProfileWord[9] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_10, "");
 
 		// 上部メニューの設定を読み込み
 		loadTopMenuState();
@@ -793,19 +819,21 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// 自分のIDからViewのIDを取得する
 		View contentView = findViewById(android.R.id.content);
 		ViewGroup rootView = (ViewGroup)contentView.getRootView();
-		// ナビゲーションバーの表示更新を検出するためリスナーをセット
-		rootView.setOnApplyWindowInsetsListener((view, insets) -> {
-			// ナビゲーションバーの情報を取得
-			boolean isVisible = insets.isVisible(WindowInsets.Type.navigationBars());
-			if (isVisible) {
-				// ナビゲーションバーが表示されている場合の処理
-				mHideNavigationBar = false;
-			} else {
-				// ナビゲーションバーが非表示の場合の処理
-				mHideNavigationBar = true;
-			}
-			return insets;
-		});
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+			// ナビゲーションバーの表示更新を検出するためリスナーをセット
+			rootView.setOnApplyWindowInsetsListener((view, insets) -> {
+				// ナビゲーションバーの情報を取得
+				boolean isVisible = insets.isVisible(WindowInsets.Type.navigationBars());
+				if (isVisible) {
+					// ナビゲーションバーが表示されている場合の処理
+					mHideNavigationBar = false;
+				} else {
+					// ナビゲーションバーが非表示の場合の処理
+					mHideNavigationBar = true;
+				}
+				return insets;
+			});
+		}
 
 		mListLoading = true;
 		mZipLoad = new ZipLoad(mHandler, this);
@@ -1372,7 +1400,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_TOUCH_ZOOM:
 //				Logcat.d(logLevel, "msg=" + msg.what + ", arg1=" + msg.arg1 + ", count" + mLongTouchCount);
 
-				if (mLongTouchCount == msg.arg1 && !mDoubleTapGuardOn) {
+				if (mLongTouchCount == msg.arg1 && !mDoubleTapGuardOn && !mZoomOff) {
 					// 最新のタイマーの時だけ処理
 					// ダブルタップの処理があった場合は長押しと判断されてしまうので無視する
 					if (mTouchFirst) {
@@ -2382,29 +2410,29 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			if (action == MotionEvent.ACTION_DOWN) {
 				// IMMERSIVEモードの発動時にタッチ処理を無視する(スワイプでバーを表示させるときに重なるのを防ぐ)
 				int navibar_height = 0;
-				int statusibar_height = 0;
-				if (mSdkVersion >= 19) {
+				int statusbar_height = 0;
+				if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 					// ナビゲーションバーの高さを得る
 					if (mImageView.getHeight() < mImageView.getWidth()) {
 						// 横向きの場合
 						navibar_height = insets.right;
-						statusibar_height = insets.left;
+						statusbar_height = insets.left;
 					}
 					else {
 						// 縦向きの場合
 						navibar_height = insets.bottom;
-						statusibar_height = insets.top;
+						statusbar_height = insets.top;
 					}
 				}
 				else {
-					statusibar_height = mImmCancelRange;
+					statusbar_height = mImmCancelRange;
 					navibar_height = mImmCancelRange;
 				}
 				if (mHideNavigationBar) {
 					// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
 					navibar_height = CLICKGUARD;
 				}
-				if (y <= statusibar_height || y >= cy - navibar_height) {
+				if (y <= statusbar_height || y >= cy - navibar_height) {
 					mImmCancel = true;
 				}
 			}
@@ -2429,15 +2457,28 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (!mClickGuard) {
 						// ジェスチャーナビゲーションモードで画面下からのスワイプだった場合は無視する
 						int navibar_height = 0;
-						if (mSdkVersion >= 19) {
+						int statusbar_height = 0;
+						if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 							// ナビゲーションバーの高さを得る
 							if (mImageView.getHeight() < mImageView.getWidth()) {
 								// 横向きの場合
 								navibar_height = insets.right;
+								if (!mImmEnable && !mImmForce) {
+									statusbar_height = insets.left;
+								}
 							}
 							else {
 								// 縦向きの場合
 								navibar_height = insets.bottom;
+								if (!mImmEnable && !mImmForce) {
+									statusbar_height = insets.top;
+								}
+							}
+						}
+						else {
+							navibar_height = mImmCancelRange;
+							if (!mImmEnable && !mImmForce) {
+								statusbar_height = mImmCancelRange;
 							}
 						}
 						if (navibar_height == 0) {
@@ -2446,9 +2487,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						}
 						if (mHideNavigationBar) {
 							// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
-							navibar_height = CLICKGUARD;
+							navibar_height = mImmCancelRange;
 						}
-						if ((y >= cy - navibar_height) && isGestureNavigationEnabled(mActivity) == 2 && (!mImmForce && !mImmEnable)) {
+						if ((y >= cy + statusbar_height - navibar_height) && isGestureNavigationEnabled(mActivity) == 2 && (!mImmForce && !mImmEnable)) {
 							mClickGuard = true;
 						}
 					}
@@ -3567,6 +3608,26 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// プロファイル5
 				execCommand(DEF.MENU_PROFILE5);
 				break;
+			case DEF.TAP_PROFILE6:
+				// プロファイル6
+				execCommand(DEF.MENU_PROFILE6);
+				break;
+			case DEF.TAP_PROFILE7:
+				// プロファイル7
+				execCommand(DEF.MENU_PROFILE7);
+				break;
+			case DEF.TAP_PROFILE8:
+				// プロファイル8
+				execCommand(DEF.MENU_PROFILE8);
+				break;
+			case DEF.TAP_PROFILE9:
+				// プロファイル9
+				execCommand(DEF.MENU_PROFILE9);
+				break;
+			case DEF.TAP_PROFILE10:
+				// プロファイル10
+				execCommand(DEF.MENU_PROFILE10);
+				break;
 			case DEF.TAP_EXIT_VIEWER:
 				finishActivity(true);
 				break;
@@ -3691,7 +3752,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// プロファイル登録
 				title = res.getString(R.string.SetProfileMenu);
 				// カーソルに色を付けない
-				selIndex = 5;
+				selIndex = 10;
 				nItem = SetImageActivity.SetProfileName.length;
 				items = new String[nItem];
 				for (int i = 0; i < nItem; i++) {
@@ -3709,7 +3770,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// プロファイル削除
 				title = res.getString(R.string.DelProfileMenu);
 				// カーソルに色を付けない
-				selIndex = 5;
+				selIndex = 10;
 				nItem = SetImageActivity.SetProfileName.length;
 				items = new String[nItem];
 				for (int i = 0; i < nItem; i++) {
@@ -4055,7 +4116,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		nItem = COMMAND_ID.length;
 		items = new String[nItem];
 		for (int i = 0; i < nItem; i++) {
-			if (COMMAND_INDEX[i] >= LIST_PROFILE1 && COMMAND_INDEX[i] <= LIST_PROFILE5) {
+			if (COMMAND_INDEX[i] >= LIST_PROFILE1 && COMMAND_INDEX[i] <= LIST_PROFILE5)
+			{
 				// プロファイルの場合は個別対応
 				if (mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1].equals("")) {
 					// 中身が未定義ならデフォルト設定
@@ -4064,6 +4126,17 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				else {
 					items[i] = mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1];
+				}
+			}
+			else  if (COMMAND_INDEX[i] >= LIST_PROFILE6 && COMMAND_INDEX[i] <= LIST_PROFILE10) {
+				// プロファイルの場合は個別対応
+				if (mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE6 + 5].equals("")) {
+					// 中身が未定義ならデフォルト設定
+					Logcat.d(logLevel, "中身が未定義ならデフォルト設定");
+					items[i] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+				}
+				else {
+					items[i] = mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE6 + 5];
 				}
 			}
 			else {
@@ -4140,6 +4213,17 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							}
 							else {
 								mCommandStr[count] = mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE1];
+							}
+						}
+						else if (COMMAND_INDEX[i] >= LIST_PROFILE6 && COMMAND_INDEX[i] <= LIST_PROFILE10) {
+							// プロファイルの場合は個別対応
+							if (mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE6 + 5].equals("")) {
+								// 中身が未定義ならデフォルト設定
+								Logcat.d(logLevel, "中身が未定義ならデフォルト設定");
+								mCommandStr[count] = res.getString(COMMAND_RES[i]).replaceAll("\\(%\\)", "");
+							}
+							else {
+								mCommandStr[count] = mProfileWord[COMMAND_INDEX[i] - LIST_PROFILE6 + 5];
 							}
 						}
 						else {
@@ -4475,6 +4559,42 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		else {
 			mMenuDialog.addItem(DEF.MENU_PROFILE5, mProfileWord[4]);
+		}
+
+		if (mProfileWord[5].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE6, res.getString(R.string.Profile6) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE6, mProfileWord[5]);
+		}
+		if (mProfileWord[6].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE7, res.getString(R.string.Profile7) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE7, mProfileWord[6]);
+		}
+		if (mProfileWord[7].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE8, res.getString(R.string.Profile8) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE8, mProfileWord[7]);
+		}
+		if (mProfileWord[8].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE9, res.getString(R.string.Profile9) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE9, mProfileWord[8]);
+		}
+		if (mProfileWord[9].equals("")) {
+			// 中身が未定義ならデフォルト設定
+			mMenuDialog.addItem(DEF.MENU_PROFILE10, res.getString(R.string.Profile10) + res.getString(R.string.undefineprofile));
+		}
+		else {
+			mMenuDialog.addItem(DEF.MENU_PROFILE10, mProfileWord[9]);
 		}
 
 		// 一時設定
@@ -4932,6 +5052,26 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			case DEF.MENU_PROFILE5: {
 				LoadProfile(4);
+				break;
+			}
+			case DEF.MENU_PROFILE6: {
+				LoadProfile(5);
+				break;
+			}
+			case DEF.MENU_PROFILE7: {
+				LoadProfile(6);
+				break;
+			}
+			case DEF.MENU_PROFILE8: {
+				LoadProfile(7);
+				break;
+			}
+			case DEF.MENU_PROFILE9: {
+				LoadProfile(8);
+				break;
+			}
+			case DEF.MENU_PROFILE10: {
+				LoadProfile(9);
 				break;
 			}
 			case DEF.MENU_TAP_PATTERN: {
@@ -5441,6 +5581,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mLastMsg = SetImageText.getLastPage(sharedPreferences);
 			mSavePage = SetImageText.getSavePage(sharedPreferences);
 			mFitDual = SetImageActivity.getFitDual(sharedPreferences);
+			mZoomOff = SetImageActivity.getZoomOff(sharedPreferences);
 			mCMargin = SetImageActivity.getCenterMargin(sharedPreferences);
 			mCShadow = SetImageActivity.getCenterShadow(sharedPreferences);
 			mNoExpand = SetImageActivity.getNoExpand(sharedPreferences);
@@ -6358,6 +6499,141 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_05, mDisplayPosition);
 				break;
+			case 5:
+				ed.putString(DEF.KEY_PROFILE_WORD_06, mProfileWord[5]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_06, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_COLORING_06, mColoring);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_06, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_06, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_06, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_06, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_06, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_06, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_06, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_06, mSaturation);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_06, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_06, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_06, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_06, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_06, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_06, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_06, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_06, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_06, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_06, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_06, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_06, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_06, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_06, mDisplayPosition);
+				break;
+			case 6:
+				ed.putString(DEF.KEY_PROFILE_WORD_07, mProfileWord[6]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_07, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_COLORING_07, mColoring);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_07, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_07, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_07, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_07, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_07, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_07, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_07, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_07, mSaturation);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_07, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_07, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_07, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_07, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_07, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_07, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_07, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_07, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_07, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_07, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_07, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_07, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_07, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_07, mDisplayPosition);
+				break;
+			case 7:
+				ed.putString(DEF.KEY_PROFILE_WORD_08, mProfileWord[7]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_08, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_COLORING_08, mColoring);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_08, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_08, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_08, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_08, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_08, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_08, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_08, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_08, mSaturation);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_08, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_08, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_08, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_08, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_08, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_08, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_08, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_08, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_08, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_08, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_08, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_08, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_08, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_08, mDisplayPosition);
+				break;
+			case 8:
+				ed.putString(DEF.KEY_PROFILE_WORD_09, mProfileWord[8]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_09, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_COLORING_09, mColoring);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_09, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_09, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_09, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_09, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_09, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_09, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_09, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_09, mSaturation);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_09, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_09, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_09, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_09, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_09, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_09, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_09, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_09, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_09, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_09, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_09, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_09, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_09, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_09, mDisplayPosition);
+				break;
+			case 9:
+				ed.putString(DEF.KEY_PROFILE_WORD_10, mProfileWord[9]);
+				ed.putBoolean(DEF.KEY_PROFILE_GRAY_10, mGray);
+				ed.putBoolean(DEF.KEY_PROFILE_COLORING_10, mColoring);
+				ed.putBoolean(DEF.KEY_PROFILE_INVERT_10, mInvert);
+				ed.putBoolean(DEF.KEY_PROFILE_MOIRE_10, mMoire);
+				ed.putInt(DEF.KEY_PROFILE_SHARPEN_10, mSharpen);
+				ed.putInt(DEF.KEY_PROFILE_BRIGHT_10, mBright);
+				ed.putInt(DEF.KEY_PROFILE_GAMMA_10, mGamma);
+				ed.putInt(DEF.KEY_PROFILE_CONTRAST_10, mContrast);
+				ed.putInt(DEF.KEY_PROFILE_HUE_10, mHue);
+				ed.putInt(DEF.KEY_PROFILE_SATURATION_10, mSaturation);
+				ed.putInt(DEF.KEY_PROFILE_ROTATE_10, mRotate);
+				ed.putBoolean(DEF.KEY_PROFILE_REVERSE_10, mReverseOrder);
+				ed.putBoolean(DEF.KEY_PROFILE_CHGPAGE_10, mChgPage);
+				ed.putInt(DEF.KEY_PROFILE_PAGEWAY_10, mPageWay);
+				ed.putInt(DEF.KEY_PROFILE_SCRLWAY_10, mScrlWay);
+				ed.putBoolean(DEF.KEY_PROFILE_TOPSINGLE_10, mTopSingle);
+				ed.putInt(DEF.KEY_PROFILE_BKLIGHT_10, mBkLight);
+				ed.putInt(DEF.KEY_PROFILE_ALGOMODE_10, mAlgoMode);
+				ed.putInt(DEF.KEY_PROFILE_DISPMODE_10, mDispMode);
+				ed.putInt(DEF.KEY_PROFILE_SCALEMODE_10, mScaleMode);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUT_10, mMgnCut);
+				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_10, mMgnCutColor);
+				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_10, mPinchScale);
+				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_10, mDisplayPosition);
+				break;
 		}
 		ed.apply();
 	}
@@ -6519,6 +6795,161 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_05, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_05, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				break;
+			case 5:
+				if (mProfileWord[5].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_06, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_06, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_06, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_06, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_06, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_06, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_06, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_06, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_06, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_06, SetImageActivity.getSaturation(mSharedPreferences));
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_06, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_06, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_06, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_06, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_06, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_06, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_06, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_06, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_06, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_06, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_06, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_06, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_06, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_06, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				break;
+			case 6:
+				if (mProfileWord[6].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_07, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_07, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_07, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_07, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_07, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_07, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_07, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_07, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_07, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_07, SetImageActivity.getSaturation(mSharedPreferences));
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_07, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_07, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_07, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_07, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_07, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_07, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_07, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_07, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_07, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_07, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_07, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_07, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_07, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_07, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				break;
+			case 7:
+				if (mProfileWord[7].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_08, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_08, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_08, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_08, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_08, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_08, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_08, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_08, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_08, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_08, SetImageActivity.getSaturation(mSharedPreferences));
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_08, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_08, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_08, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_08, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_08, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_08, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_08, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_08, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_08, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_08, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_08, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_08, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_08, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_08, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				break;
+			case 8:
+				if (mProfileWord[8].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_09, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_09, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_09, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_09, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_09, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_09, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_09, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_09, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_09, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_09, SetImageActivity.getSaturation(mSharedPreferences));
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_09, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_09, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_09, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_09, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_09, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_09, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_09, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_09, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_09, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_09, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_09, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_09, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_09, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_09, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				break;
+			case 9:
+				if (mProfileWord[9].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				// ロードに失敗した場合は元の値を入れる
+				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_10, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_10, SetImageActivity.getGray(mSharedPreferences));
+				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_10, SetImageActivity.getInvert(mSharedPreferences));
+				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_10, SetImageActivity.getMoire(mSharedPreferences));
+				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_10, SetImageActivity.getSharpen(mSharedPreferences));
+				mBright = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BRIGHT_10, SetImageActivity.getBright(mSharedPreferences));
+				mGamma = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GAMMA_10, SetImageActivity.getGamma(mSharedPreferences));
+				mContrast = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_CONTRAST_10, SetImageActivity.getContrast(mSharedPreferences));
+				mHue = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_HUE_10, SetImageActivity.getHue(mSharedPreferences));
+				mSaturation = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SATURATION_10, SetImageActivity.getSaturation(mSharedPreferences));
+				mRotate = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ROTATE_10, mRotate);
+				mReverseOrderProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_REVERSE_10, mReverseOrder);
+				mChgPageProfile = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHGPAGE_10, SetImageText.getChgPage(mSharedPreferences));
+				mPageWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PAGEWAY_10, SetImageActivity.getPageWay(mSharedPreferences));
+				mScrlWay = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCRLWAY_10, SetImageActivity.getScrlWay(mSharedPreferences));
+				mTopSingle = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_TOPSINGLE_10, SetImageActivity.getTopSingle(mSharedPreferences));
+				mBkLight = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BKLIGHT_10, SetImageActivity.getBkLight(mSharedPreferences));
+				mAlgoMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_ALGOMODE_10, SetImageActivity.getAlgoMode(mSharedPreferences));
+				mDispMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPMODE_10, SetImageActivity.getInitView(mSharedPreferences));
+				mScaleMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCALEMODE_10, SetImageActivity.getIniScale(mSharedPreferences));
+				mMgnCut = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUT_10, SetImageActivity.getMgnCut(mSharedPreferences));
+				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_10, SetImageActivity.getMgnCutColor(mSharedPreferences));
+				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_10, SetImageActivity.getPinScale(mSharedPreferences));
+				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_10, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				break;
 		}
 		if (mReverseOrder != mReverseOrderProfile) {
@@ -6729,6 +7160,166 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_05);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_05);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_05);
+				break;
+			case 5:
+				if (mProfileWord[5].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[5] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_06);
+				ed.remove(DEF.KEY_PROFILE_GRAY_06);
+				ed.remove(DEF.KEY_PROFILE_COLORING_06);
+				ed.remove(DEF.KEY_PROFILE_INVERT_06);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_06);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_06);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_06);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_06);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_06);
+				ed.remove(DEF.KEY_PROFILE_HUE_06);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_06);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_06);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_06);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_06);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_06);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_06);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_06);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_06);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_06);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_06);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_06);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_06);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_06);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_06);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_06);
+				break;
+			case 6:
+				if (mProfileWord[6].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[6] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_07);
+				ed.remove(DEF.KEY_PROFILE_GRAY_07);
+				ed.remove(DEF.KEY_PROFILE_COLORING_07);
+				ed.remove(DEF.KEY_PROFILE_INVERT_07);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_07);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_07);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_07);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_07);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_07);
+				ed.remove(DEF.KEY_PROFILE_HUE_07);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_07);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_07);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_07);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_07);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_07);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_07);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_07);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_07);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_07);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_07);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_07);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_07);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_07);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_07);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_07);
+				break;
+			case 7:
+				if (mProfileWord[7].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[7] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_08);
+				ed.remove(DEF.KEY_PROFILE_GRAY_08);
+				ed.remove(DEF.KEY_PROFILE_COLORING_08);
+				ed.remove(DEF.KEY_PROFILE_INVERT_08);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_08);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_08);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_08);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_08);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_08);
+				ed.remove(DEF.KEY_PROFILE_HUE_08);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_08);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_08);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_08);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_08);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_08);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_08);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_08);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_08);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_08);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_08);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_08);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_08);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_08);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_08);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_08);
+				break;
+			case 8:
+				if (mProfileWord[8].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[8] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_09);
+				ed.remove(DEF.KEY_PROFILE_GRAY_09);
+				ed.remove(DEF.KEY_PROFILE_COLORING_09);
+				ed.remove(DEF.KEY_PROFILE_INVERT_09);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_09);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_09);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_09);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_09);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_09);
+				ed.remove(DEF.KEY_PROFILE_HUE_09);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_09);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_09);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_09);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_09);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_09);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_09);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_09);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_09);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_09);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_09);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_09);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_09);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_09);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_09);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_09);
+				break;
+			case 9:
+				if (mProfileWord[9].equals("")) {
+					// 登録されていなければ戻る
+					return;
+				}
+				mProfileWord[9] = "";
+				ed.remove(DEF.KEY_PROFILE_WORD_10);
+				ed.remove(DEF.KEY_PROFILE_GRAY_10);
+				ed.remove(DEF.KEY_PROFILE_COLORING_10);
+				ed.remove(DEF.KEY_PROFILE_INVERT_10);
+				ed.remove(DEF.KEY_PROFILE_MOIRE_10);
+				ed.remove(DEF.KEY_PROFILE_SHARPEN_10);
+				ed.remove(DEF.KEY_PROFILE_BRIGHT_10);
+				ed.remove(DEF.KEY_PROFILE_GAMMA_10);
+				ed.remove(DEF.KEY_PROFILE_CONTRAST_10);
+				ed.remove(DEF.KEY_PROFILE_HUE_10);
+				ed.remove(DEF.KEY_PROFILE_SATURATION_10);
+				ed.remove(DEF.KEY_PROFILE_ROTATE_10);
+				ed.remove(DEF.KEY_PROFILE_REVERSE_10);
+				ed.remove(DEF.KEY_PROFILE_CHGPAGE_10);
+				ed.remove(DEF.KEY_PROFILE_PAGEWAY_10);
+				ed.remove(DEF.KEY_PROFILE_SCRLWAY_10);
+				ed.remove(DEF.KEY_PROFILE_TOPSINGLE_10);
+				ed.remove(DEF.KEY_PROFILE_BKLIGHT_10);
+				ed.remove(DEF.KEY_PROFILE_ALGOMODE_10);
+				ed.remove(DEF.KEY_PROFILE_DISPMODE_10);
+				ed.remove(DEF.KEY_PROFILE_SCALEMODE_10);
+				ed.remove(DEF.KEY_PROFILE_MGNCUT_10);
+				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_10);
+				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_10);
+				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_10);
 				break;
 		}
 		ed.apply();

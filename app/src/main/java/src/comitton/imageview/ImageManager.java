@@ -4020,8 +4020,9 @@ public class ImageManager extends InputStream implements Runnable {
 				Logcat.v(logLevel, "PDFファイルを開きます. filename=" + mFileList[page].name);
 				//ページ番号を指定してPdfRenderer.Pageインスタンスを取得する。
 				PdfRenderer.Page pdfPage = mPdfRenderer.openPage(page);
-				int Outwidth = pdfPage.getWidth() / sampleSize;
-				int Outheight = pdfPage.getHeight()/ sampleSize;
+				// サムネイル画像が崩れる可能性があるのでそのまま返す
+				int Outwidth = pdfPage.getWidth();// / sampleSize;
+				int Outheight = pdfPage.getHeight();/// sampleSize;
 
 				//PdfRenderer.Pageの情報を使って空の描画用Bitmapインスタンスを作成する。
 				bm = Bitmap.createBitmap(pdfPage.getWidth() , pdfPage.getHeight() , Config.ARGB_8888);

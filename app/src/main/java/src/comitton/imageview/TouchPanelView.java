@@ -108,6 +108,7 @@ public class TouchPanelView extends View {
 	private static LinearLayout mMainLayout;
 	private static boolean keyboardoff = false;
 	private static InputMethodManager mInputMethodManager;
+	private static String[] mProfileWord;
 
 	// キーボード表示を制御するためのオブジェクト
 	InputMethodManager inputMethodManager;
@@ -230,6 +231,11 @@ public class TouchPanelView extends View {
 		true,
 		true,
 		true,
+		true,
+		true,
+		true,	//	110
+		true,
+		true,
 	};
 
 	// タッチパネル設定に有効な項目をtrueにする(テキストビューア)
@@ -343,6 +349,11 @@ public class TouchPanelView extends View {
 		false,
 		false,
 		true,
+		false,
+		false,
+		false,	//	110
+		false,
+		false,
 	};
 
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル
@@ -457,6 +468,11 @@ public class TouchPanelView extends View {
 		R.string.Profile4,		// プロファイル4
 		R.string.Profile5,		// プロファイル5
 		R.string.ToolbarExitViewer,
+		R.string.Profile6,		// プロファイル6
+		R.string.Profile7,		// プロファイル7
+		R.string.Profile8,		// プロファイル8
+		R.string.Profile9,		// プロファイル9
+		R.string.Profile10,		// プロファイル10
 	};
 
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル
@@ -946,6 +962,21 @@ public class TouchPanelView extends View {
 		dialog.show();
 	}
 
+	private static void SetProfileWord() {
+		mProfileWord = new String[10];
+		// 初期値を読み出す
+		mProfileWord[0] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_01, "");
+		mProfileWord[1] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_02, "");
+		mProfileWord[2] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_03, "");
+		mProfileWord[3] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_04, "");
+		mProfileWord[4] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_05, "");
+		mProfileWord[5] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_06, "");
+		mProfileWord[6] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_07, "");
+		mProfileWord[7] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_08, "");
+		mProfileWord[8] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_09, "");
+		mProfileWord[9] = mSharedPreferences.getString(DEF.KEY_PROFILE_WORD_10, "");
+	}
+
 	// タッチパネル設定のアラートダイアログを表示
 	public static void SetAlertDialog(Activity activity) {
 
@@ -962,6 +993,7 @@ public class TouchPanelView extends View {
 		}
 		int checkedItem = 0;
 		final int[] loop = {0};
+		SetProfileWord();
 		String[] items_temp = new String[HardwareKeyName.length];
 		// タッチパネル設定に有効な項目を取り出して格納する
 		for (int i = 0; i < HardwareKeyName.length; i++) {
@@ -970,6 +1002,12 @@ public class TouchPanelView extends View {
 				if (ImgEnable[i]) {
 					// 有効な項目のみ格納する
 					items_temp[loop[0]] = activity.getResources().getString(HardwareKeyName[i]);
+					if (i >= DEF.TAP_PROFILE1 && i <= DEF.TAP_PROFILE5 && !mProfileWord[i - DEF.TAP_PROFILE1].equals("")) {
+						items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE1];
+					}
+					if (i >= DEF.TAP_PROFILE6 && i <= DEF.TAP_PROFILE10 && !mProfileWord[i - DEF.TAP_PROFILE6 + 5].equals("")) {
+						items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE6 + 5];
+					}
 					if (checkedItem_temp == i) {
 						// 初期選択したいラジオボタンのインデックスが有効な項目と一致した場合は有効な通し番号に置き換える
 						checkedItem = loop[0];
@@ -1970,9 +2008,18 @@ public class TouchPanelView extends View {
 		textpaintstroke.setStyle(Paint.Style.STROKE);
 		textpaintstroke.setStrokeWidth(2);
 
+		SetProfileWord();
 		Resources res = mContext.getResources();
 		// テキストを取り出す
-		text = res.getString(HardwareKeyName[index]);
+		if (index >= DEF.TAP_PROFILE1 && index <= DEF.TAP_PROFILE5 && !mProfileWord[index - DEF.TAP_PROFILE1].equals("")) {
+			text = mProfileWord[index - DEF.TAP_PROFILE1];
+		}
+		else if (index >= DEF.TAP_PROFILE6 && index <= DEF.TAP_PROFILE10 && !mProfileWord[index - DEF.TAP_PROFILE6 + 5].equals("")) {
+			text = mProfileWord[index - DEF.TAP_PROFILE6 + 5];
+		}
+		else {
+			text = res.getString(HardwareKeyName[index]);
+		}
 
 		// 最初にStaticLayoutを作る
 		// widthは描画領域の幅
