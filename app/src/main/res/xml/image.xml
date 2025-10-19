@@ -109,6 +109,11 @@
             android:key="FitDual"
             android:summary="Adjust the height of the dual view"
             android:title="Adjust Height" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ZoomOff"
+            android:summary="Check this box if you want to stop the loupe display."
+            android:title="Stop Loupe display" />
         <ListPreference
             android:defaultValue="4"
             android:dialogTitle="Magnification of the Loupe"
