@@ -159,6 +159,11 @@
     <string name="Profile3">プロファイル3</string>
     <string name="Profile4">プロファイル4</string>
     <string name="Profile5">プロファイル5</string>
+    <string name="Profile6">プロファイル6</string>
+    <string name="Profile7">プロファイル7</string>
+    <string name="Profile8">プロファイル8</string>
+    <string name="Profile9">プロファイル9</string>
+    <string name="Profile10">プロファイル10</string>
     <string name="SetProfileMenu">プロファイルの登録</string>
     <string name="DelProfileMenu">プロファイルの削除</string>
     <string name="DelProfileName">%sの削除</string>
