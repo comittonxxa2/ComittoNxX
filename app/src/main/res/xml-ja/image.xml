@@ -109,6 +109,11 @@
             android:key="FitDual"
             android:summary="並べて表示のとき高さが小さい画像を大きい方に合わせて拡大します"
             android:title="並べて表示で高さを揃える" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ZoomOff"
+            android:summary="ルーペ表示を止めたい場合にチェックを入れる"
+            android:title="ルーペ表示を止める" />
         <ListPreference
             android:defaultValue="4"
             android:dialogTitle="ルーペ表示の拡大率"
