@@ -157,7 +157,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		, R.string.Profile2
 		, R.string.Profile3
 		, R.string.Profile4
-		, R.string.Profile5 };
+		, R.string.Profile5
+		, R.string.Profile6
+		, R.string.Profile7
+		, R.string.Profile8
+		, R.string.Profile9
+		, R.string.Profile10 };
 
 	Resources mResources;
 
@@ -607,6 +612,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	public static boolean getFitDual(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FITDUAL, true);
+		return flag;
+	}
+
+	public static boolean getZoomOff(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_ZOOMOFF, false);
 		return flag;
 	}
 

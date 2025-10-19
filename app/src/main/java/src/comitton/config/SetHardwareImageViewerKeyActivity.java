@@ -105,6 +105,20 @@ public class SetHardwareImageViewerKeyActivity extends PreferenceActivity implem
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
 
+		String[] mProfileWord = new String[10];
+
+		// 初期値を読み出す
+		mProfileWord[0] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_01, "");
+		mProfileWord[1] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_02, "");
+		mProfileWord[2] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_03, "");
+		mProfileWord[3] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_04, "");
+		mProfileWord[4] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_05, "");
+		mProfileWord[5] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_06, "");
+		mProfileWord[6] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_07, "");
+		mProfileWord[7] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_08, "");
+		mProfileWord[8] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_09, "");
+		mProfileWord[9] = sharedPreferences.getString(DEF.KEY_PROFILE_WORD_10, "");
+
 		final int[] loop = {0};
 		String[] items_temp = new String[mTpView.HardwareKeyName.length];
 		// タッチパネル設定に有効な項目を取り出して格納する
@@ -113,6 +127,12 @@ public class SetHardwareImageViewerKeyActivity extends PreferenceActivity implem
 			if (mTpView.ImgEnable[i]) {
 				// 有効な項目のみ格納する
 				items_temp[loop[0]] = this.getResources().getString(mTpView.HardwareKeyName[i]);
+				if (i >= DEF.TAP_PROFILE1 && i <= DEF.TAP_PROFILE5 && !mProfileWord[i - DEF.TAP_PROFILE1].equals("")) {
+					items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE1];
+				}
+				if (i >= DEF.TAP_PROFILE6 && i <= DEF.TAP_PROFILE10 && !mProfileWord[i - DEF.TAP_PROFILE6 + 5].equals("")) {
+					items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE6 + 5];
+				}
 				loop[0]++;
 			}
 		}
