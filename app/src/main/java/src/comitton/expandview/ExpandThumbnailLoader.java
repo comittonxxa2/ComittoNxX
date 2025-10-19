@@ -271,11 +271,14 @@ public class ExpandThumbnailLoader extends ThumbnailLoader implements Runnable {
 		FileData data = mFiles.get(index);
 		int filetype = data.getType();
 		// 拡張子分の文字列長がない
+		// PDFファイルの展開時にサムネイル表示ができなくなるのでコメントアウトにする
+		/*
 		if (filetype != FileData.FILETYPE_IMG) {
 			// 対象外のファイル
 			CallImgLibrary.ThumbnailSetNone(mID, index);
 			return true;
 		}
+		*/
 
 		Bitmap bm = null;
 		String filepath = mUriPath + ":" + data.getName();
