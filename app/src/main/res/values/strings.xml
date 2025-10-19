@@ -159,6 +159,11 @@
     <string name="Profile3">Profile3</string>
     <string name="Profile4">Profile4</string>
     <string name="Profile5">Profile5</string>
+    <string name="Profile6">Profile6</string>
+    <string name="Profile7">Profile7</string>
+    <string name="Profile8">Profile8</string>
+    <string name="Profile9">Profile9</string>
+    <string name="Profile10">Profile10</string>
     <string name="SetProfileMenu">Register Profile</string>
     <string name="DelProfileMenu">Delete Profile</string>
     <string name="DelProfileName">Delete %s</string>
