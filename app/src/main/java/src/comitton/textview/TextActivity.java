@@ -390,7 +390,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mActivity = this;
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
 		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 32);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 			// ステータスバーとナビゲーションバーの高さを求めるための準備を行う
 			WindowMetrics windowMetrics = this.getWindowManager().getCurrentWindowMetrics();
 			insets = windowMetrics.getWindowInsets().getInsetsIgnoringVisibility(WindowInsets.Type.systemBars());
@@ -592,19 +592,21 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// 自分のIDからViewのIDを取得する
 		View contentView = findViewById(android.R.id.content);
 		ViewGroup rootView = (ViewGroup)contentView.getRootView();
-		// ナビゲーションバーの表示更新を検出するためリスナーをセット
-		rootView.setOnApplyWindowInsetsListener((view, insets) -> {
-			// ナビゲーションバーの情報を取得
-			boolean isVisible = insets.isVisible(WindowInsets.Type.navigationBars());
-			if (isVisible) {
-				// ナビゲーションバーが表示されている場合の処理
-				mHideNavigationBar = false;
-			} else {
-				// ナビゲーションバーが非表示の場合の処理
-				mHideNavigationBar = true;
-			}
-			return insets;
-		});
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+			// ナビゲーションバーの表示更新を検出するためリスナーをセット
+			rootView.setOnApplyWindowInsetsListener((view, insets) -> {
+				// ナビゲーションバーの情報を取得
+				boolean isVisible = insets.isVisible(WindowInsets.Type.navigationBars());
+				if (isVisible) {
+					// ナビゲーションバーが表示されている場合の処理
+					mHideNavigationBar = false;
+				} else {
+					// ナビゲーションバーが非表示の場合の処理
+					mHideNavigationBar = true;
+				}
+				return insets;
+			});
+		}
 
 		mReadBreak = false;
 		return;
@@ -1498,7 +1500,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				// IMMERSIVEモードの発動時にタッチ処理を無視する(スワイプでバーを表示させるときに重なるのを防ぐ)
 				int navibar_height = 0;
 				int statusibar_height = 0;
-				if (mSdkVersion >= 19) {
+				if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 					// ナビゲーションバーの高さを得る
 					if (mTextView.getHeight() < mTextView.getWidth()) {
 						// 横向きの場合
@@ -1545,15 +1547,28 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					if (!mClickGuard) {
 						// ジェスチャーナビゲーションモードで画面下からのスワイプだった場合は無視する
 						int navibar_height = 0;
-						if (mSdkVersion >= 19) {
+						int statusbar_height = 0;
+						if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 							// ナビゲーションバーの高さを得る
 							if (mTextView.getHeight() < mTextView.getWidth()) {
 								// 横向きの場合
 								navibar_height = insets.right;
+								if (!mImmEnable && !mImmForce) {
+									statusbar_height = insets.left;
+								}
 							}
 							else {
 								// 縦向きの場合
 								navibar_height = insets.bottom;
+								if (!mImmEnable && !mImmForce) {
+									statusbar_height = insets.top;
+								}
+							}
+						}
+						else {
+							navibar_height = mImmCancelRange;
+							if (!mImmEnable && !mImmForce) {
+								statusbar_height = mImmCancelRange;
 							}
 						}
 						if (navibar_height == 0) {
@@ -1564,7 +1579,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
 							navibar_height = CLICKGUARD;
 						}
-						if ((y >= cy - navibar_height) && isGestureNavigationEnabled(mActivity) == 2 && (!mImmForce && !mImmEnable)) {
+						if ((y >= cy + statusbar_height - navibar_height) && isGestureNavigationEnabled(mActivity) == 2 && (!mImmForce && !mImmEnable)) {
 							mClickGuard = true;
 						}
 					}
@@ -1573,7 +1588,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					else if (mTapEditMode) {
 					}
 					else {
-						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, (mImmEnable || mImmForce) ? false : true);
+						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, true);
 					}
 
 					mPageMode = false;
@@ -1590,19 +1605,16 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 						else if (mPageSelect == PAGE_SLIDE) {
 							if (mClickArea <= x && x <= cx - mClickArea) {
 								// ページ選択開始
-								mCurrentPage = mTextView.getPage(); // 現在ページ取得
-
 								int sel = GuideView.GUIDE_BCENTER;
 								mSelectPage = mCurrentPage;
 								mGuideView.setGuideIndex(sel);
 
 								mPageMode = true;
-								mGuideView.setPageColor(mTopColor1);
-								if (mPageSelect == 0) {
-									mGuideView.setPageText(mTextMgr.createPageStr(mSelectPage, mUriFilePath));
-								}
 								mPageModeIn = true;
 							}
+						}
+						else {
+							mSelectPage = mCurrentPage;
 						}
 						// 下部押下
 						if (mClickGuard) {
@@ -1610,8 +1622,15 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 						else if (mTapEditMode) {
 						}
 						else {
-							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_BOTTOM); // ロングタッチのタイマー開始
-							mOperation = TOUCH_COMMAND;
+							if (!mClickGuard) {
+								startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_BOTTOM); // ロングタッチのタイマー開始
+								mOperation = TOUCH_COMMAND;
+
+								mGuideView.eventTouchDown((int)x, (int)y, cx, cy, true);
+								// 文書情報を表示
+								mGuideView.setPageText(mTextMgr.createPageStr(mSelectPage, mUriFilePath));
+								mGuideView.setPageColor(mTopColor1);
+							}
 						}
 					}
 					else if (y < mClickArea) {
@@ -1656,7 +1675,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				{
 					Logcat.v(logLevel, "ACTION_MOVE");
 					// 移動位置設定
-					if (mTapEditMode) {
+					if (mClickGuard) {
+					}
+					else if (mTapEditMode) {
 					}
 					else {
 						// タップのスクロール
@@ -1832,12 +1853,13 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// 選択されたコマンド
 		int result = mGuideView.eventTouchUp((int)x, (int)y);
 
+		// 情報表示クリア
+		mGuideView.setPageText(null);
+		mGuideView.setPageColor(Color.argb(0, 0, 0, 0));
+		mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
+
 		if (mPageMode) {
 			// ページ選択モード終了
-			mGuideView.setPageText(null);
-			mGuideView.setPageColor(Color.argb(0, 0, 0, 0));
-			mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
-
 			if (mPageSelect == PAGE_SLIDE) {
 				if (y > cy - mClickArea) {
 					if (mPageSelect == 0 || x < mClickArea || x > cx - mClickArea) {
@@ -1854,7 +1876,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		}
 		if (result != -1) {
 			int index = (result & 0x7FFF);
-			if ((result & 0x8000) != 0) {
+			if (mTapEditMode) {
+			}
+			else if ((result & 0x8000) != 0) {
 				// 上部選択の場合は選択リストを表示
 				showSelectList(index);
 			}
@@ -2005,10 +2029,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			y = cy - event.getX();
 			x = event.getY();
 		}
-
-		mGuideView.eventTouchMove((int)x, (int)y);
-
 		if (mOperation == TOUCH_COMMAND) {
+			// 移動位置設定
+			mGuideView.eventTouchMove((int)x, (int)y);
 			if (this.mPageMode && mPageSelect == PAGE_SLIDE) {
 				// スライドページ選択中
 				int sel = GuideView.GUIDE_NOSEL;
@@ -2053,37 +2076,41 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 						}
 						sel = GuideView.GUIDE_BCENTER;
 					}
-
-					String strPage = mTextMgr.createPageStr(mSelectPage, mUriFilePath);
-					// String strOld = mPageView.getText().toString();
-					String strOld = mGuideView.getPageText();
-					if (!strPage.equals(strOld)) {
-						if (mCurrentPage - 1 <= mSelectPage && mSelectPage <= mCurrentPage + 1) {
-							// ページ変更時に振動
-							startVibrate();
-						}
-						mGuideView.setPageText(strPage);
-					}
-					mGuideView.setPageColor(mTopColor1);
 					mPageModeIn = true;
 				}
 				else {
 					mPageModeIn = false;
 				}
+
+				String strPage = mTextMgr.createPageStr(mSelectPage, mUriFilePath);
+				String strOld = mGuideView.getPageText();
+				if (!strPage.equals(strOld)) {
+					if (mCurrentPage - 1 <= mSelectPage && mSelectPage <= mCurrentPage + 1) {
+						// ページ変更時に振動
+						startVibrate();
+					}
+					mGuideView.setPageText(strPage);
+				}
+				mGuideView.setPageColor(mTopColor1);
 				// 選択に反映
 				mGuideView.setGuideIndex(sel);
 			}
 		}
 		else if (mOperation == TOUCH_OPERATION) {
-			// ページ戻or進、スクロール処理
-			if (this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
-				// タッチ後に範囲を超えて移動した場合はスクロールモードへ
-				this.mTouchFirst = false;
-				mLongTouchCount ++;
-				mTextView.scrollStart(mTouchBeginX, mTouchBeginY, RANGE_FLICK, mScroll);
+			// 移動位置設定
+			mGuideView.eventTouchMove((int)x, (int)y);
+			if (mLongTouchMode) {
 			}
+			else {
+				// ページ戻or進、スクロール処理
+				if (this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
+					// タッチ後に範囲を超えて移動した場合はスクロールモードへ
+					this.mTouchFirst = false;
+					mLongTouchCount ++;
+					mTextView.scrollStart(mTouchBeginX, mTouchBeginY, RANGE_FLICK, mScroll);
+				}
 
-			if (!this.mTouchFirst) {
+				if (!this.mTouchFirst) {
 					// スクロールモード
 					// スクロール中のフラグをセット
 					this.mTouchMove = true;
@@ -2101,84 +2128,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					if (mTouchPointNum < MAX_TOUCHPOINT) {
 						mTouchPointNum ++;
 					}
-			}
-		}
-
-		mPageMode = false;
-		mTouchPointNum = 0;
-
-		// 慣性スクロールの停止
-		mTouchThrough = mTextView.scrollStop();
-
-		if (y > cy - mClickArea) {
-			if (mTapEditMode) {
-			}
-			else if (mPageSelect == PAGE_SLIDE) {
-				if (mClickArea <= x && x <= cx - mClickArea) {
-					// ページ選択開始
-					mCurrentPage = mTextView.getPage(); // 現在ページ取得
-
-					int sel = GuideView.GUIDE_BCENTER;
-					mSelectPage = mCurrentPage;
-					mGuideView.setGuideIndex(sel);
-	
-					mPageMode = true;
-//					mPageView.setText(mFileList.createPageStr(mSelectPage));
-//					mPageView.setBackgroundColor(mTopColor1);
-					mGuideView.setPageColor(mTopColor1);
-					if (mPageSelect == 0) {
-						mGuideView.setPageText(mTextMgr.createPageStr(mSelectPage, mUriFilePath));
-					}
-					mPageModeIn = true;
 				}
 			}
-			// 下部押下
-			if (mTapEditMode) {
-			}
-			else {
-				startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_BOTTOM); // ロングタッチのタイマー開始
-				mOperation = TOUCH_COMMAND;
-			}
 		}
-		else if (y < mClickArea) {
-			// 上部押下
-			if (mTapEditMode) {
-			}
-			else {
-				startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
-				mOperation = TOUCH_COMMAND;
-			}
-		}
-		else {
-			// 操作モード
-			if (mTapEditMode) {
-			}
-			else if (TouchPanelView.GetTouchPositionData(3) > 0) {
-				// 長押しタップの場合
-				// タッチパネル設定が有効な場合
-				startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
-			}
-			else {
-				mOperation = TOUCH_OPERATION;
-					mTouchPoint[0].x = x;
-				mTouchPoint[0].y = y;
-				mTouchPointTime[0] = SystemClock.uptimeMillis();
-				mTouchPointNum = 1;
-//				mTouchTime = SystemClock.uptimeMillis();	// フリックの判定に
-				// フリックを検出できなくなるのでコメントアウトにする
-				/*
-				mTouchDrawLeft = (int)mTextView.getDrawLeft();
-				*/
-//				mTouchFirstX = x;
-			}
-		}
-
-		// スワイプを検出できなくなるのでコメントアウトにする
-		/*
-		this.mTouchFirst = true;
-		*/
-		this.mTouchBeginX = x;
-		this.mTouchBeginY = y;
 	}
 
 	// タップが前/次どちらか判定
