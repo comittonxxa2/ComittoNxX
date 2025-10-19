@@ -878,10 +878,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			}
 			else if (mSortMode == DEF.ZIPSORT_FILESEP || mSortMode == DEF.ZIPSORT_NEWSEP || mSortMode == DEF.ZIPSORT_OLDSEP) {
 				// IMAGEとZIPのソート優先度は同じにする
-				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT) {
+				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT || type1 == FileData.FILETYPE_PDF || type1 == FileData.FILETYPE_EPUB) {
 					type1 = FileData.FILETYPE_ARC;
 				}
-				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT) {
+				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_EPUB) {
 					type2 = FileData.FILETYPE_ARC;
 				}
 
