@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Random;
 
 import jp.dip.muracoro.comittonx.R;
 
@@ -16,6 +17,7 @@ import src.comitton.dialog.LoadingDialog;
 import src.comitton.imageview.ImageManager;
 import src.comitton.textview.TextManager;
 import src.comitton.config.SetTextActivity;
+import src.comitton.config.SetSortActivity;
 import src.comitton.imageview.MyImageView;
 import src.comitton.dialog.CustomProgressDialog;
 
@@ -54,16 +56,18 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private String mUriPath;
 	private String mUser;
 	private String mPass;
-	private int mSortMode = 0;
+	private static int mSortMode = 0;
 	private int mSortModeOld = -1;
+	private static int mSortModeOld2 = -1;
 	private boolean mParentMove;
 	private boolean mHidden;
 	private boolean mFilter;
 	private boolean mApplyDir;
 	private String mMarker;
 	private boolean mEpubViewer;
-	private boolean mKeepSortShuffle;
+	private static boolean mKeepSortShuffle;
 	private static boolean mKeepShuffle = false;
+	private static boolean mKeepShuffle2 = false;
 
 	public LoadingDialog mDialog;
 	private static CustomProgressDialog mProgressDialog;
@@ -108,12 +112,41 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static Thread mMultiThread = null;
 	private static Handler mainHandler;
 	private static boolean threadstartcheck = false;
+	private static int mSoftImageFile;
+	private static int mSoftDirFile;
+	private static int mSoftTextFile;
+	private static int mSoftCompFile;
+	private static int mSoftPdfFile;
+	private static int mSoftEpubFile;
+	private static int mSoftOtherFile;
+	private static boolean mSoftDirTop;
+	private static int mSoftFileTop;
+	private static int mSoftImageFileOld = -1;
+	private static int mSoftDirFileOld = -1;
+	private static int mSoftTextFileOld = -1;
+	private static int mSoftCompFileOld = -1;
+	private static int mSoftPdfFileOld = -1;
+	private static int mSoftEpubFileOld = -1;
+	private static int mSoftOtherFileOld = -1;
+	private static int mSpecificSoftMode;
+	private static Random random;
+	private static int random_data1[];
+	private static int random_data2[];
+	private static int mRandowCount = 0;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
 		mHandler = new Handler(this);
 		mActivity = activity;
 		mSp = sp;
+		random = new Random();
+		random_data1 = new int[10000];
+		random_data2 = new int[10000];
+		// シャッフル用の乱数を作成
+		for (int i = 0; i < 10000; i++) {
+			random_data1[i] = random.nextInt(10000);
+			random_data2[i] = random.nextInt(10000);
+		}
 	}
 
 	// パス
@@ -129,12 +162,88 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mPass = pass;
 	}
 
+	private static void SortOptionReset() {
+		mSoftDirFileOld = -1;
+		mSoftImageFileOld = -1;
+		mSoftTextFileOld = -1;
+		mSoftCompFileOld = -1;
+		mSoftPdfFileOld = -1;
+		mSoftEpubFileOld = -1;
+		mSoftOtherFileOld = -1;
+	}
+
+	// ファイル別ソート
+	private static void SoftFileOption(ArrayList<FileData> List) {
+		// ファイル別のソートオプションを読み込む
+		mSoftDirFile = SetSortActivity.getSoftDirFile(mSp);
+		mSoftImageFile = SetSortActivity.getSoftImageFile(mSp);
+		mSoftTextFile = SetSortActivity.getSoftTextFile(mSp);
+		mSoftCompFile = SetSortActivity.getSoftCompFile(mSp);
+		mSoftPdfFile = SetSortActivity.getSoftPdfFile(mSp);
+		mSoftEpubFile = SetSortActivity.getSoftEpubFile(mSp);
+		mSoftOtherFile = SetSortActivity.getSoftOtherFile(mSp);
+		mSoftDirTop = SetSortActivity.getSoftDirTop(mSp);
+		mSoftFileTop = SetSortActivity.getSoftFileTop(mSp);
+
+		if (mSoftDirFile == 0 && mSoftImageFile == 0 && mSoftTextFile == 0 && mSoftCompFile == 0 && mSoftPdfFile == 0 && mSoftEpubFile == 0 && mSoftOtherFile == 0 && mSoftDirTop == false && mSoftFileTop == 0) {
+			// 設定されていなければ戻る
+			return;
+		}
+
+		try {
+			// 乱数を生成する際に落ちる可能性があるのでtry～catchで囲む
+			if (!mKeepSortShuffle || mKeepSortShuffle && !mKeepShuffle2) {
+				mKeepShuffle2 = true;
+				// シャッフルのパターンを更新する場合
+				// シャッフル用の乱数を作成
+				for (int i = 0; i < 10000; i++) {
+					random_data1[i] = random.nextInt(10000);
+					random_data2[i] = random.nextInt(10000);
+				}
+				// 更新をリセット
+				SortOptionReset();
+			}
+			if (mSortMode != mSortModeOld2) {
+				// ソートオプションが更新された場合
+				// 更新をリセット
+				SortOptionReset();
+			}
+			mSortModeOld2 = mSortMode;
+			if (mSortMode == 0) {
+				// ソート無しの場合はシャッフルを毎回実行させないため一回のみ
+				if (mSoftDirFile != mSoftDirFileOld || mSoftImageFile != mSoftImageFile || mSoftTextFile != mSoftTextFileOld || mSoftCompFile != mSoftCompFileOld || mSoftPdfFile != mSoftPdfFileOld || mSoftEpubFile != mSoftEpubFileOld || mSoftOtherFile != mSoftOtherFile) {
+					// ファイル別のソートオプションが更新された場合
+					// ソート実行
+					Collections.sort(List, new SpecificComparator());
+				}
+				// 更新
+				mSoftDirFileOld = mSoftDirFile;
+				mSoftImageFileOld = mSoftImageFile;
+				mSoftTextFileOld = mSoftTextFile;
+				mSoftCompFileOld = mSoftCompFile;
+				mSoftPdfFileOld = mSoftPdfFile;
+				mSoftEpubFileOld = mSoftEpubFile;
+				mSoftOtherFileOld = mSoftOtherFile;
+			}
+			else {
+				// ソート有りの場合はあらかじめソートされているので毎回実行
+				// 毎回同じ乱数を発生させるためシャッフル位置をリセット
+				mRandowCount = 0;
+				// ソート実行
+				Collections.sort(List, new SpecificComparator());
+			}
+		}
+		catch (Exception e) {
+		}
+	}
+
 	// ソートモード
 	public void setMode(int mode, boolean keep) {
 		mSortMode = mode;
 		if (mSortMode != mSortModeOld) {
 			// モードが変化したらシャッフルの保持を解除
 			mKeepShuffle = false;
+			mKeepShuffle2 = false;
 		}
 		mSortModeOld = mSortMode;
 		mKeepSortShuffle = keep;
@@ -186,6 +295,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			else {
 				Collections.sort(mFileList, new MyComparator());
 			}
+			// ファイル別ソート
+			SoftFileOption(mFileList);
 		}
 	}
 
@@ -298,6 +409,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mCacheFile = false;
 		// リストの内容を更新したらシャッフルの保持を解除
 		mKeepShuffle = false;
+		mKeepShuffle2 = false;
 	}
 
 	private void SetBreakProgressDialogThread() {
@@ -853,6 +965,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				Collections.sort(fileList, new MyComparator());
 			}
 		}
+		// ファイル別ソート
+		SoftFileOption(fileList);
 
 		if (thread.isInterrupted()) {
 			// 処理中断
@@ -911,6 +1025,155 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			return 0;
 		}
 	}
+
+	// ファイル別ソートの比較
+	public static class SpecificComparator implements Comparator<FileData> {
+		public int compare(FileData file1, FileData file2) {
+
+			int result;
+			// ディレクトリ/ファイルタイプ
+			int type1 = file1.getType();
+			int type2 = file2.getType();
+			// 親ディレクトリは一番にする
+			if (type1 == FileData.FILETYPE_PARENT || type2 == FileData.FILETYPE_PARENT) {
+				return type1 - type2;
+			}
+			else if (mSortMode == DEF.ZIPSORT_FILESEP || mSortMode == DEF.ZIPSORT_NEWSEP || mSortMode == DEF.ZIPSORT_OLDSEP) {
+				// IMAGEとZIPのソート優先度は同じにする
+				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT || type1 == FileData.FILETYPE_PDF || type1 == FileData.FILETYPE_EPUB) {
+					type1 = FileData.FILETYPE_ARC;
+				}
+				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_EPUB) {
+					type2 = FileData.FILETYPE_ARC;
+				}
+
+				result = type1 - type2;
+				if (result != 0) {
+					return result;
+				}
+			}
+			// ここまで同じ処理にする
+
+			type1 = file1.getType();
+			type2 = file2.getType();
+			// ディレクトリを先頭に集める場合
+			if (mSoftDirTop && (type1 == FileData.FILETYPE_DIR || type2 == FileData.FILETYPE_DIR)) {
+				return type1 - type2;
+			}
+			else {
+				// 該当ファイルを先頭に集める場合
+				if (mSoftFileTop == 1 && type1 == FileData.FILETYPE_DIR || mSoftFileTop == 2 && type1 == FileData.FILETYPE_ARC || mSoftFileTop == 3 && type1 == FileData.FILETYPE_IMG || mSoftFileTop == 4 && type1 == FileData.FILETYPE_PDF || mSoftFileTop == 5 && type1 == FileData.FILETYPE_EPUB || mSoftFileTop == 6 && type1 == FileData.FILETYPE_TXT || mSoftFileTop == 7 && type1 != FileData.FILETYPE_DIR && type1 != FileData.FILETYPE_ARC && type1 != FileData.FILETYPE_IMG && type1 != FileData.FILETYPE_PDF && type1 != FileData.FILETYPE_TXT && type1 != FileData.FILETYPE_EPUB) {
+					// 該当すれば親ディレクトリの次にする
+					type1 = FileData.FILETYPE_SORT;
+				}
+				if (mSoftFileTop == 1 && type2 == FileData.FILETYPE_DIR || mSoftFileTop == 2 && type2 == FileData.FILETYPE_ARC || mSoftFileTop == 3 && type2 == FileData.FILETYPE_IMG || mSoftFileTop == 4 && type2 == FileData.FILETYPE_PDF || mSoftFileTop == 5 && type2 == FileData.FILETYPE_EPUB || mSoftFileTop == 6 && type2 == FileData.FILETYPE_TXT || mSoftFileTop == 7 && type2 != FileData.FILETYPE_DIR && type2 != FileData.FILETYPE_ARC && type2 != FileData.FILETYPE_IMG && type2 != FileData.FILETYPE_PDF && type2 != FileData.FILETYPE_TXT && type2 != FileData.FILETYPE_EPUB) {
+					// 該当すれば親ディレクトリの次にする
+					type2 = FileData.FILETYPE_SORT;
+				}
+				result = type1 - type2;
+				if (result != 0) {
+					// 比較対象があれば戻る
+					return result;
+				}
+			}
+
+			type1 = file1.getType();
+			type2 = file2.getType();
+
+			mSpecificSoftMode = -1;
+
+			if (mSoftDirFile != 0 && (type1 == FileData.FILETYPE_DIR || type2 == FileData.FILETYPE_DIR)) {
+				// ディレクトリだった場合
+				mSpecificSoftMode = mSoftDirFile;
+			}
+			else if (mSoftCompFile != 0 && (type1 == FileData.FILETYPE_ARC || type2 == FileData.FILETYPE_ARC)) {
+				// 圧縮ファイルだった場合
+				mSpecificSoftMode = mSoftCompFile;
+			}
+			else if (mSoftImageFile != 0 && (type1 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_IMG)) {
+				// 画像ファイルだった場合
+				mSpecificSoftMode = mSoftImageFile;
+			}
+			else if (mSoftPdfFile != 0 && (type1 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_PDF)) {
+				// PDFファイルだった場合
+				mSpecificSoftMode = mSoftPdfFile;
+			}
+			else if (mSoftEpubFile != 0 && (type1 == FileData.FILETYPE_EPUB || type2 == FileData.FILETYPE_EPUB)) {
+				// EPUBだった場合
+				mSpecificSoftMode = mSoftEpubFile;
+			}
+			else if (mSoftTextFile != 0 && (type1 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_TXT)) {
+				// テキストファイルだった場合
+				mSpecificSoftMode = mSoftTextFile;
+			}
+			else if (mSoftOtherFile != 0 && (type1 != FileData.FILETYPE_DIR && type2 != FileData.FILETYPE_DIR && type1 != FileData.FILETYPE_ARC && type2 != FileData.FILETYPE_ARC && type1 != FileData.FILETYPE_IMG && type2 != FileData.FILETYPE_IMG && type1 != FileData.FILETYPE_PDF && type2 != FileData.FILETYPE_PDF && type1 != FileData.FILETYPE_TXT && type2 != FileData.FILETYPE_TXT && type1 != FileData.FILETYPE_EPUB && type2 != FileData.FILETYPE_EPUB)) {
+				// その他のファイルだった場合
+				mSpecificSoftMode = mSoftOtherFile;
+			}
+			float val1 = 0;
+			float val2 = 0;
+
+			switch (mSpecificSoftMode) {
+				case DEF.SPECIFICSORT_FILEACSEND:
+					// ファイル名(昇順)
+					return DEF.compareFileName(file1.getName(), file2.getName());
+				case DEF.SPECIFICSORT_FILEDESSEND:
+					// ファイル名(降順)
+					return DEF.compareFileName(file2.getName(), file1.getName());
+				case DEF.SPECIFICSORT_NEWDATE:
+				{
+					// 新しい順
+					long val = file2.getDate() - file1.getDate();
+					return val == 0 ? 0 : (val > 0 ? 1 : -1);
+				}
+				case DEF.SPECIFICSORT_OLDDATE:
+				{
+					// 古い順
+					long val = file1.getDate() - file2.getDate();
+					return val == 0 ? 0 : (val > 0 ? 1 : -1);
+				}
+				case DEF.SPECIFICSORT_SHUFFLE:
+				{
+					// 乱数をシャッフルの要素に割り当てる
+					int random1 = random_data1[mRandowCount % 10000];
+					int random2 = random_data2[mRandowCount % 10000];
+					mRandowCount++;
+					int val = random2 - random1;
+					return val == 0 ? 0 : (val > 0 ? 1 : -1);
+				}
+				case DEF.SPECIFICSORT_READINGHIGH:
+				{
+					// 読書中の割合が多い順
+					val1 = 0;
+					if (file1.getState() >= 0 && file1.getMaxpage() > 0) {
+						val1 = (float)(file1.getState() + 1) / (float)file1.getMaxpage();
+					}
+					val2 = 0;
+					if (file2.getState() >= 0 && file2.getMaxpage() > 0) {
+						val2 = (float)(file2.getState() + 1) / (float)file2.getMaxpage();
+					}
+					float val = val2 - val1;
+					return val == 0 ? 0 : (val > 0 ? 1 : -1);
+				}
+				case DEF.SPECIFICSORT_READINGLOW:
+				{
+					// 読書中の割合が少ない順
+					val1 = 100;
+					if (file1.getState() >= 0 && file1.getMaxpage() > 0) {
+						val1 = (float)(file1.getState() + 1) / (float)file1.getMaxpage();
+					}
+					val2 = 100;
+					if (file2.getState() >= 0 && file2.getMaxpage() > 0) {
+						val2 = (float)(file2.getState() + 1) / (float)file2.getMaxpage();
+					}
+					float val = val1 - val2;
+					return val == 0 ? 0 : (val > 0 ? 1 : -1);
+				}
+			}
+			return 0;
+		}
+	}
+
 	
 	private void sendResult(boolean result, Thread thread) {
 		Resources res = mActivity.getResources();
