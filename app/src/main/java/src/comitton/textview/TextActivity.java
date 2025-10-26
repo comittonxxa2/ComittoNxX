@@ -41,6 +41,7 @@ import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.imageview.PageSelectListener;
 import src.comitton.noise.NoiseSwitch;
+import src.comitton.imageview.ImageActivity;
 import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.TouchPanelView;
 import src.comitton.textview.TextManager.MidashiData;
@@ -438,6 +439,8 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mNoiseSwitch.recordStart();
 		}
 
+		ImageActivity.SetOrientationEventListener(mActivity, mViewRota);
+
 		mTextView = new MyTextView(this);
 		mGuideView = new GuideView(this);
 		FrameLayout layout = new FrameLayout(this);
@@ -688,6 +691,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		if (mNoiseSwitch != null) {
 			mNoiseSwitch.recordPause(true);
 		}
+		ImageActivity.SetOrientationEventListenerDisable();
 	}
 
 	/**
@@ -702,6 +706,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mTextView.breakMessage(false);
 			mTextView.update(true);
 		}
+		ImageActivity.SetOrientationEventListenerEnable();
 	}
 
 	/**
@@ -3332,6 +3337,18 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				onSelectMenuDialog(DEF.MENU_EDIT_TOOLBAR);
 				break;
 			}
+			case DEF.TOOLBAR_PROFILE1:
+			case DEF.TOOLBAR_PROFILE2:
+			case DEF.TOOLBAR_PROFILE3:
+			case DEF.TOOLBAR_PROFILE4:
+			case DEF.TOOLBAR_PROFILE5:
+			case DEF.TOOLBAR_PROFILE6:
+			case DEF.TOOLBAR_PROFILE7:
+			case DEF.TOOLBAR_PROFILE8:
+			case DEF.TOOLBAR_PROFILE9:
+			case DEF.TOOLBAR_PROFILE10:
+				// 何もしない
+				break;
 		}
 	}
 
