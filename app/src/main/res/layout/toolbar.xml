@@ -289,6 +289,77 @@
                 android:background="@null"
                 android:tint="@color/grey1" />
 
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile1"
+                android:src="@drawable/profile1"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile2"
+                android:src="@drawable/profile2"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile3"
+                android:src="@drawable/profile3"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile4"
+                android:src="@drawable/profile4"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile5"
+                android:src="@drawable/profile5"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile6"
+                android:src="@drawable/profile6"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile7"
+                android:src="@drawable/profile7"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile8"
+                android:src="@drawable/profile8"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile9"
+                android:src="@drawable/profile9"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/profile10"
+                android:src="@drawable/profile10"
+                android:layout_width="32sp"
+                android:layout_height="32sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+
         </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>
