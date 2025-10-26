@@ -632,7 +632,7 @@ public class ImageManager extends InputStream implements Runnable {
 							fl.type = FileData.getType(mActivity, fl.name);
 							fl.exttype = FileData.getExtType(mActivity, fl.name);
 							boolean use = true;
-							if (fl.type == FileData.FILETYPE_ARC || fl.type == FileData.FILETYPE_PARENT || fl.type == FileData.FILETYPE_DIR) {
+							if (fl.type == FileData.FILETYPE_ARC || fl.type == FileData.FILETYPE_PARENT || fl.type == FileData.FILETYPE_DIR || fl.type == FileData.FILETYPE_PDF || fl.type == FileData.FILETYPE_WEB) {
 								use = false;
 							}
 							else if (fl.type == FileData.FILETYPE_TXT && mOpenMode != OPENMODE_LIST && mOpenMode != OPENMODE_TEXTVIEW) {

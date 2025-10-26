@@ -83,6 +83,7 @@ import androidx.preference.PreferenceManager;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -631,6 +632,105 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private Insets insets;
 	private boolean mHideNavigationBar = false;
 
+	private static OrientationEventListener orientationEventListener;
+	private static int deviceOrientation = -1;
+
+	private static void RotateMain(AppCompatActivity activity, int orientation, int viewrota) {
+		if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+			return;
+		}
+		if (orientation >= 45 && orientation < 135) {
+			// 90度
+			if (deviceOrientation != 3) {
+				deviceOrientation = 3;
+				if (viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_AUTO || viewrota == DEF.ROTATE_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_REVERSE_LANDSCAPE) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else if (orientation >= 135 && orientation < 225) {
+			// 180度
+			if (deviceOrientation != 2) {
+				deviceOrientation = 2;
+				if (viewrota == DEF.ROTATE_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_AUTO || viewrota == DEF.ROTATE_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_REVERSE_PORTRAIT) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+		else if (orientation >= 225 && orientation < 315) {
+			// 270度
+			if (deviceOrientation != 1) {
+				deviceOrientation = 1;
+				if (viewrota == DEF.ROTATE_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_REVERSE_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_AUTO || viewrota == DEF.ROTATE_LANDSCAPE || viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else {
+			// 0度
+			if (deviceOrientation != 0) {
+				deviceOrientation = 0;
+				if (viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_REVERSE_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_AUTO || viewrota == DEF.ROTATE_PORTRAIT || viewrota == DEF.ROTATE_AUTO_REVERSE_LANDSCAPE) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+	}
+
+	public static void SetOrientationEventListener(AppCompatActivity activity, int viewrota) {
+
+		// 起動時は回転動作にならないので固定値の場合は個別で設定する
+		deviceOrientation = -1;
+		switch (viewrota) {
+			case 1:
+				RotateMain(activity, 0, viewrota);
+				break;
+			case 2:
+				RotateMain(activity ,270, viewrota);
+				break;
+			case 7:
+				RotateMain(activity, 180, viewrota);
+				break;
+			case 8:
+				RotateMain(activity, 90, viewrota);
+				break;
+		}
+		orientationEventListener = new OrientationEventListener(activity) {
+			// 傾きセンサーの角度を得る
+			public void onOrientationChanged(int orientation) {
+				RotateMain(activity, orientation, viewrota);
+			}
+		};
+	}
+
+	public static void SetOrientationEventListenerEnable() {
+		orientationEventListener.enable();
+	}
+
+	public static void SetOrientationEventListenerDisable() {
+		orientationEventListener.disable();
+	}
+
 	/**
 	 * 画面が作成された時に発生します。
 	 *
@@ -711,6 +811,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// マイク開始
 			mNoiseSwitch.recordStart();
 		}
+
+		SetOrientationEventListener(mActivity, mViewRota);
 
 		Resources res = getResources();
 		mLoadErrStr = res.getString(R.string.loaderr);
@@ -923,6 +1025,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		// アクティビティ一時停止時に保存
 		SaveCurrentSetting();
+		SetOrientationEventListenerDisable();
 		Logcat.v(logLevel, "終了します.");
 	}
 
@@ -1023,6 +1126,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
 		}
+		SetOrientationEventListenerEnable();
 		Logcat.v(logLevel, "終了します.");
 	}
 
@@ -2077,7 +2181,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		bm = ImageAccess.resizeTumbnailBitmap(bm, thumW, thumH, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE);
 		if (bm != null) {
-			ThumbnailLoader loader = new ThumbnailLoader(mActivity, "", "", null, thumbID, new ArrayList<FileData>(), thumW, thumH, 0, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE);
+			ThumbnailLoader loader = new ThumbnailLoader(mActivity, "", "", null, thumbID, new ArrayList<FileData>(), thumW, thumH, 0, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE, 0);
 			loader.deleteThumbnailCache(mFilePath, thumW, thumH);
 			loader.setThumbnailCache(mFilePath, bm);
 			Toast.makeText(this, R.string.ThumbConfigured, Toast.LENGTH_SHORT).show();
@@ -2107,7 +2211,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			bm = ImageAccess.resizeTumbnailBitmap(bm, thumW, thumH, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE);
 		}
 		if (bm != null) {
-			ThumbnailLoader loader = new ThumbnailLoader(mActivity, "", "", null, thumbID, new ArrayList<FileData>(), thumW, thumH, 0, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE);
+			ThumbnailLoader loader = new ThumbnailLoader(mActivity, "", "", null, thumbID, new ArrayList<FileData>(), thumW, thumH, 0, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE, 0);
 			loader.deleteThumbnailCache(mFilePath, thumW, thumH);
 			loader.setThumbnailCache(mFilePath, bm);
 			Toast.makeText(this, R.string.ThumbConfigured, Toast.LENGTH_SHORT).show();
@@ -5368,6 +5472,47 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				execCommand(DEF.MENU_EDIT_TOOLBAR);
 				break;
 			}
+			case DEF.TOOLBAR_PROFILE1: {
+				LoadProfile(0);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE2: {
+				LoadProfile(1);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE3: {
+				LoadProfile(2);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE4: {
+				LoadProfile(3);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE5: {
+				LoadProfile(4);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE6: {
+				LoadProfile(5);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE7: {
+				LoadProfile(6);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE8: {
+				LoadProfile(7);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE9: {
+				LoadProfile(8);
+				break;
+			}
+			case DEF.TOOLBAR_PROFILE10: {
+				LoadProfile(9);
+				break;
+			}
+
 		}
 	}
 
@@ -5395,6 +5540,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 			}
+			deviceOrientation = -1;
+			orientationEventListener.enable();
 
 			mImageView.setImageBitmap(null);
 
