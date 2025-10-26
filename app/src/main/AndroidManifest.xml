@@ -32,7 +32,7 @@
 
         <activity
             android:name="src.comitton.fileview.FileSelectActivity"
-            android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:exported="true"
             android:label="@string/app_launch_name"
             android:launchMode="singleTop"
@@ -84,14 +84,14 @@
         </activity>
         <activity
             android:name="src.comitton.imageview.ImageActivity"
-            android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.textview.TextActivity"
-            android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
@@ -99,23 +99,27 @@
         <activity
             android:name="src.comitton.expandview.ExpandActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
+            android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.helpview.HelpActivity"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.webview.WebViewActivity"
-            android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.cropimageview.CropImageActivity"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
+            android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
@@ -236,6 +240,11 @@
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCornerEndTextViewerActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetSortActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyTheme"></activity>
