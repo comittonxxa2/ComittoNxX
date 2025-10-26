@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import src.comitton.config.SetCommonActivity;
+import src.comitton.cropimageview.CropImageActivity;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
@@ -38,6 +39,8 @@ public class HelpActivity extends AppCompatActivity {
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
 
+		CropImageActivity.SetOrientationEventListener(this, sharedPreferences);
+
         // Intentを取得する
         Intent intent = getIntent();
         String url = intent.getStringExtra("Url");
@@ -47,4 +50,16 @@ public class HelpActivity extends AppCompatActivity {
         setContentView(mWebView);
 
     }
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		// バックグラウンドからフォアグランドに戻った時
+		CropImageActivity.SetOrientationEventListenerEnable();
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		CropImageActivity.SetOrientationEventListenerDisable();
+	}
 }
