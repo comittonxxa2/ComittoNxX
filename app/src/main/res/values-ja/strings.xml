@@ -390,6 +390,19 @@
     <string name="rota01">縦固定</string>
     <string name="rota02">横固定</string>
     <string name="rota03">縦固定(90°回転)</string>
+    <string name="rota04">回転あり(縦上下反転)</string>
+    <string name="rota05">回転あり(横上下反転)</string>
+    <string name="rota06">回転あり(縦横上下反転)</string>
+    <string name="rota07">縦固定(上下反転)</string>
+    <string name="rota08">横固定(上下反転)</string>
+    <string name="rotaall00">回転あり</string>
+    <string name="rotaall01">縦固定</string>
+    <string name="rotaall02">横固定</string>
+    <string name="rotaall03">回転あり(縦上下反転)</string>
+    <string name="rotaall04">回転あり(横上下反転)</string>
+    <string name="rotaall05">回転あり(縦横上下反転)</string>
+    <string name="rotaall06">縦固定(上下反転)</string>
+    <string name="rotaall07">横固定(上下反転)</string>
     <string name="loupe00">元画像サイズ</string>
     <string name="loupe01">元画像サイズの2倍</string>
     <string name="loupe02">元画像サイズの3倍</string>
@@ -654,6 +667,16 @@
     <string name="Toolbarascmode00">縦表示(テキストビュワーのみ)</string>
     <string name="Toolbarascmode01">横表示(回転)(テキストビュワーのみ)</string>
     <string name="Toolbarascmode02">縦/横併用(テキストビュワーのみ)</string>
+    <string name="ToolbarProfile1">プロファイル1</string>
+    <string name="ToolbarProfile2">プロファイル2</string>
+    <string name="ToolbarProfile3">プロファイル3</string>
+    <string name="ToolbarProfile4">プロファイル4</string>
+    <string name="ToolbarProfile5">プロファイル5</string>
+    <string name="ToolbarProfile6">プロファイル6</string>
+    <string name="ToolbarProfile7">プロファイル7</string>
+    <string name="ToolbarProfile8">プロファイル8</string>
+    <string name="ToolbarProfile9">プロファイル9</string>
+    <string name="ToolbarProfile10">プロファイル10</string>
 
     <string name="TapTOC">見出し選択</string>
     <string name="TapSearch">検索文字列設定</string>
@@ -855,4 +878,23 @@
     <string name="CornerEndTitle13">シングルタップ</string>
 
     <string name="selectEncryption">設定ファイルの中身を暗号化する</string>
+
+    <string name="ssort00">ソート表示の設定に従う</string>
+    <string name="ssort01">ファイル名(昇順)</string>
+    <string name="ssort02">ファイル名(降順)</string>
+    <string name="ssort03">新しい順</string>
+    <string name="ssort04">古い順</string>
+    <string name="ssort05">シャッフル</string>
+    <string name="ssort06">読書中の割合が多い順</string>
+    <string name="ssort07">読書中の割合が少ない順</string>
+
+    <string name="sorttop00">指定なし</string>
+    <string name="sorttop01">ディレクトリ</string>
+    <string name="sorttop02">圧縮ファイル</string>
+    <string name="sorttop03">画像ファイル</string>
+    <string name="sorttop04">PDFファイル</string>
+    <string name="sorttop05">EPUBファイル</string>
+    <string name="sorttop06">テキストファイル</string>
+    <string name="sorttop07">その他のファイル</string>
+
 </resources>

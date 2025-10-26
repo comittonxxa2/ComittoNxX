@@ -31,23 +31,63 @@
         <item>回転あり</item>
         <item>縦固定</item>
         <item>横固定</item>
+        <item>回転あり(縦上下反転)</item>
+        <item>回転あり(横上下反転)</item>
+        <item>回転あり(縦横上下反転)</item>
+        <item>縦固定(上下反転)</item>
+        <item>横固定(上下反転)</item>
     </string-array>
     <string-array name="file_rotavalue_list">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
     </string-array>
     <string-array name="rotate_name_list">
         <item>回転あり</item>
         <item>縦固定</item>
         <item>横固定</item>
         <item>縦固定(90°回転)</item>
+        <item>回転あり(縦上下反転)</item>
+        <item>回転あり(横上下反転)</item>
+        <item>回転あり(縦横上下反転)</item>
+        <item>縦固定(上下反転)</item>
+        <item>横固定(上下反転)</item>
     </string-array>
     <string-array name="rotate_value_list">
         <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
+    <string-array name="rotateall_name_list">
+        <item>回転あり</item>
+        <item>縦固定</item>
+        <item>横固定</item>
+        <item>回転あり(縦上下反転)</item>
+        <item>回転あり(横上下反転)</item>
+        <item>回転あり(縦横上下反転)</item>
+        <item>縦固定(上下反転)</item>
+        <item>横固定(上下反転)</item>
+    </string-array>
+    <string-array name="rotateall_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
     </string-array>
     <string-array name="zipsort_name_list">
         <item>ソートなし</item>
@@ -731,6 +771,46 @@
         <item>3</item>
         <item>4</item>
         <item>5</item>
+    </string-array>
+    <string-array name="sortfile_name_list">
+        <item>ソート表示の設定に従う</item>
+        <item>ファイル名(昇順)</item>
+        <item>ファイル名(降順)</item>
+        <item>新しい順</item>
+        <item>古い順</item>
+        <item>シャッフル</item>
+        <item>読書中の割合が多い順</item>
+        <item>読書中の割合が少ない順</item>
+    </string-array>
+    <string-array name="sortfile_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+    </string-array>
+    <string-array name="sorttop_name_list">
+        <item>指定なし</item>
+        <item>ディレクトリ</item>
+        <item>圧縮ファイル</item>
+        <item>画像ファイル</item>
+        <item>PDFファイル</item>
+        <item>EPUBファイル</item>
+        <item>テキストファイル</item>
+        <item>その他のファイル</item>
+    </string-array>
+    <string-array name="sorttop_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
     </string-array>
 
 </resources>
