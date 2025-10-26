@@ -227,6 +227,28 @@
             android:key="KeepSortShuffle"
             android:summary="ソートのシャッフル時にリストの更新又はソートのモードが変更されるまでシャッフル内容を保持する"
             android:title="ソートのシャッフル内容を保持" />
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="false"
+            android:key="KeepFilelistCursor"
+            android:summary="ビューア表示後にスクロール移動させない場合にチェックを入れる(再起動後に有効)"
+            android:title="リスト表示に戻る際に元の位置を保持する" />
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="false"
+            android:key="DisableListIcon"
+            android:summary="読書率のドーナツチャートを表示しない場合にチェックを入れる"
+            android:title="読書率のドーナツチャートを表示しない" />
+        <PreferenceScreen
+            android:key="SetSortFile"
+            android:title="ソート表示のファイル別設定"
+            android:summary="ファイル別に設定を行う" >
+            <intent
+                android:targetClass="src.comitton.config.SetSortActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

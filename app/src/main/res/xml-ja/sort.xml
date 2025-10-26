@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="ソート表示のパラメータ設定" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SoftDirTop"
+            android:summary="ディレクトリを先頭に表示する場合にチェックを入れる"
+            android:title="ディレクトリを先頭に集める" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="最優先で先頭に表示するファイルの種類"
+            android:entries="@array/sorttop_name_list"
+            android:entryValues="@array/sorttop_value_list"
+            android:key="SoftFileTop"
+            android:summary="dummy"
+            android:title="最優先で先頭に表示するファイルの種類" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="ソート表示のファイル別設定" >
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="ディレクトリ"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftDirFile"
+            android:summary="dummy"
+            android:title="ディレクトリ" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="圧縮ファイル"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftCompFile"
+            android:summary="dummy"
+            android:title="圧縮ファイル" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="画像ファイル"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftImageFile"
+            android:summary="dummy"
+            android:title="画像ファイル" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="PDFファイル"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftPdfFile"
+            android:summary="dummy"
+            android:title="PDFファイル" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="EPUBファイル"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftEpubFile"
+            android:summary="dummy"
+            android:title="EPUBファイル" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="テキストファイル"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftTextFile"
+            android:summary="dummy"
+            android:title="テキストファイル" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="その他のファイル"
+            android:entries="@array/sortfile_name_list"
+            android:entryValues="@array/sortfile_value_list"
+            android:key="SoftOtherFile"
+            android:summary="dummy"
+            android:title="その他のファイル" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -30,6 +30,14 @@
             android:key="ForceHideStatusBar"
             android:summary="強制的にステータスバーを非表示にする(再起動で反映)"
             android:title="すべての画面でステータスバーを表示しない" />
+        <ListPreference
+            android:defaultValue="1"
+            android:dialogTitle="表示方向(ビューア以外全て)"
+            android:entries="@array/rotateall_name_list"
+            android:entryValues="@array/rotateall_value_list"
+            android:key="ViewRotaAll"
+            android:summary="dummy"
+            android:title="表示方向(ビューア以外全て)" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="文字コード" >
