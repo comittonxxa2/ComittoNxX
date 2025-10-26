@@ -16,6 +16,7 @@ import src.comitton.common.ImageAccess;
 import src.comitton.common.Logcat;
 import src.comitton.common.TextFormatter;
 import src.comitton.config.SetBookShelfActivity;
+import src.comitton.config.SetFileListActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.view.DrawNoticeListener;
@@ -1007,7 +1008,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					mSrcRect.set(0, 0, dstWidth, dstHeight);
 					mDstRect.set(x + dstX, y + dstY, x + dstX + (int)(dstWidth * dsMin), y + dstY + (int)(dstHeight * dsMin));
 					canvas.drawBitmap(bm, mSrcRect, mDstRect, mBitmapPaint);
-					if ((fd.getState() >= 0) && (fd.getMaxpage() > 0) || (fd.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
+					if (SetFileListActivity.getDisableListIcon(sharedPreferences)) {
+						// 読書率のドーナツチャートを描画しない
+					}
+					else if ((fd.getState() >= 0) && (fd.getMaxpage() > 0) || (fd.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 						// 読書率を描画
 						// 読書率
 						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
@@ -1110,6 +1114,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 	private void drawPagerate(Canvas canvas, FileData file, int width, int height, int x, int y, int color) {
 		if ((file.getState() >= 0) && (file.getMaxpage() > 0) || (file.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
+			if (SetFileListActivity.getDisableListIcon(sharedPreferences)) {
+				// 読書率のドーナツチャートを描画しない
+				return;
+			}
 			// 読書率を描画
 			// 読書率
 			float rate = (float)(file.getState() + 1) / (float)file.getMaxpage();
