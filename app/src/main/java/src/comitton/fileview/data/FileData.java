@@ -17,15 +17,16 @@ public class FileData {
 	private static final String TAG = "FileData";
 
 	public static final short FILETYPE_PARENT = 0;
-	public static final short FILETYPE_DIR = 1;
-	public static final short FILETYPE_ARC = 2;
-	public static final short FILETYPE_IMG = 3;
-	public static final short FILETYPE_PDF = 4;
-	public static final short FILETYPE_TXT = 5;
-	public static final short FILETYPE_EPUB = 6;
-	public static final short FILETYPE_EPUB_SUB = 7;
-	public static final short FILETYPE_NONE = 8;
-	public static final short FILETYPE_WEB = 9;
+	public static final short FILETYPE_SORT = 1;
+	public static final short FILETYPE_DIR = 2;
+	public static final short FILETYPE_ARC = 3;
+	public static final short FILETYPE_IMG = 4;
+	public static final short FILETYPE_PDF = 5;
+	public static final short FILETYPE_TXT = 6;
+	public static final short FILETYPE_EPUB = 7;
+	public static final short FILETYPE_EPUB_SUB = 8;
+	public static final short FILETYPE_NONE = 9;
+	public static final short FILETYPE_WEB = 10;
 
 	public static final short EXTTYPE_NONE = 0;
 	public static final short EXTTYPE_ZIP = 1;
