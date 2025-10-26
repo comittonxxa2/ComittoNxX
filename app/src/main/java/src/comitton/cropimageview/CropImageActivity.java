@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -47,6 +49,9 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+	private static int mviewrota;
+	private static OrientationEventListener orientationEventListener;
+	private static int deviceOrientation = -1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -66,6 +71,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetOrientationEventListener(this, sharedPreferences);
 
         setContentView(R.layout.cropimage);
 
@@ -222,6 +228,114 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
             }
         }
     };
+
+	private static void RotateMain(AppCompatActivity activity, int orientation, int viewrota) {
+		if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+			return;
+		}
+		if (orientation >= 45 && orientation < 135) {
+			// 90度
+			if (deviceOrientation != 3) {
+				deviceOrientation = 3;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else if (orientation >= 135 && orientation < 225) {
+			// 180度
+			if (deviceOrientation != 2) {
+				deviceOrientation = 2;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+		else if (orientation >= 225 && orientation < 315) {
+			// 270度
+			if (deviceOrientation != 1) {
+				deviceOrientation = 1;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else {
+			// 0度
+			if (deviceOrientation != 0) {
+				deviceOrientation = 0;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+	}
+
+	public static void SetOrientationEventListener(AppCompatActivity activity, SharedPreferences sharedPreferences) {
+		// 起動時は回転動作にならないので固定値の場合は個別で設定する
+		mviewrota = SetCommonActivity.getViewRotaAll(sharedPreferences);
+		deviceOrientation = -1;
+		switch (mviewrota) {
+			case 1:
+				RotateMain(activity, 0, mviewrota);
+				break;
+			case 2:
+				RotateMain(activity ,270, mviewrota);
+				break;
+			case 6:
+				RotateMain(activity, 180, mviewrota);
+				break;
+			case 7:
+				RotateMain(activity, 90, mviewrota);
+				break;
+		}
+		orientationEventListener = new OrientationEventListener(activity) {
+			// 傾きセンサーの角度を得る
+			public void onOrientationChanged(int orientation) {
+				RotateMain(activity, orientation, mviewrota);
+			}
+		};
+	}
+
+	public static void SetOrientationEventListenerEnable() {
+		orientationEventListener.enable();
+	}
+
+	public static void SetOrientationEventListenerDisable() {
+		orientationEventListener.disable();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		// バックグラウンドからフォアグランドに戻った時
+		SetOrientationEventListenerEnable();
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		SetOrientationEventListenerDisable();
+	}
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
