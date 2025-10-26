@@ -31,23 +31,63 @@
         <item>Auto Rotate</item>
         <item>Portrait</item>
         <item>Landscape</item>
+        <item>Auto Rotate(Vertical upside down)</item>
+        <item>Auto Rotate(Horizontal upside down)</item>
+        <item>Auto Rotate(Vertical,horizontal,upside down)</item>
+        <item>Portrait(Upside down)</item>
+        <item>Landscape(Upside down)</item>
     </string-array>
     <string-array name="file_rotavalue_list">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
     </string-array>
     <string-array name="rotate_name_list">
         <item>Auto Rotate</item>
         <item>Portrait</item>
         <item>Landscape</item>
         <item>Portrait(Rotated 90deg)</item>
+        <item>Auto Rotate(Vertical upside down)</item>
+        <item>Auto Rotate(Horizontal upside down)</item>
+        <item>Auto Rotate(Vertical,horizontal,upside down)</item>
+        <item>Portrait(Upside down)</item>
+        <item>Landscape(Upside down)</item>
     </string-array>
     <string-array name="rotate_value_list">
         <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
+    <string-array name="rotateall_name_list">
+        <item>Auto Rotate</item>
+        <item>Portrait</item>
+        <item>Landscape</item>
+        <item>Auto Rotate(Vertical upside down)</item>
+        <item>Auto Rotate(Horizontal upside down)</item>
+        <item>Auto Rotate(Vertical,horizontal,upside down)</item>
+        <item>Portrait(Upside down)</item>
+        <item>Landscape(Upside down)</item>
+    </string-array>
+    <string-array name="rotateall_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
     </string-array>
     <string-array name="zipsort_name_list">
         <item>None</item>
@@ -731,6 +771,46 @@
         <item>3</item>
         <item>4</item>
         <item>5</item>
+    </string-array>
+    <string-array name="sortfile_name_list">
+        <item>Follow the sort display settings</item>
+        <item>File name (ascending)</item>
+        <item>File name (descending)</item>
+        <item>New Date</item>
+        <item>Old Date</item>
+        <item>Shuffle</item>
+        <item>Most frequently reading</item>
+        <item>Lowest percentage of reading</item>
+    </string-array>
+    <string-array name="sortfile_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+    </string-array>
+    <string-array name="sorttop_name_list">
+        <item>None</item>
+        <item>Directory</item>
+        <item>Compressed file</item>
+        <item>Image file</item>
+        <item>PDF file</item>
+        <item>EPUB file</item>
+        <item>Text file</item>
+        <item>Other files</item>
+    </string-array>
+    <string-array name="sorttop_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
     </string-array>
 
 </resources>

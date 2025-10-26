@@ -390,6 +390,19 @@
     <string name="rota01">Portrait</string>
     <string name="rota02">Landscape</string>
     <string name="rota03">Portrait(Rotated 90deg)</string>
+    <string name="rota04">Auto Rotate(Vertical upside down)</string>
+    <string name="rota05">Auto Rotate(Horizontal upside down)</string>
+    <string name="rota06">Auto Rotate(Vertical,horizontal,upside down)</string>
+    <string name="rota07">Portrait(Upside down)</string>
+    <string name="rota08">Landscape(Upside down)</string>
+    <string name="rotaall00">Auto Rotate</string>
+    <string name="rotaall01">Portrait</string>
+    <string name="rotaall02">Landscape</string>
+    <string name="rotaall03">Auto Rotate(Vertical upside down)</string>
+    <string name="rotaall04">Auto Rotate(Horizontal upside down)</string>
+    <string name="rotaall05">Auto Rotate(Vertical,horizontal,upside down)</string>
+    <string name="rotaall06">Portrait(Upside down)</string>
+    <string name="rotaall07">Landscape(Upside down)</string>
     <string name="loupe00">Original x1.0</string>
     <string name="loupe01">Original x2.0</string>
     <string name="loupe02">Original x3.0</string>
@@ -652,6 +665,16 @@
     <string name="Toolbarascmode00">Vertical</string>
     <string name="Toolbarascmode01">Horizontal</string>
     <string name="Toolbarascmode02">Blend</string>
+    <string name="ToolbarProfile1">Profile1</string>
+    <string name="ToolbarProfile2">Profile2</string>
+    <string name="ToolbarProfile3">Profile3</string>
+    <string name="ToolbarProfile4">Profile4</string>
+    <string name="ToolbarProfile5">Profile5</string>
+    <string name="ToolbarProfile6">Profile6</string>
+    <string name="ToolbarProfile7">Profile7</string>
+    <string name="ToolbarProfile8">Profile8</string>
+    <string name="ToolbarProfile9">Profile9</string>
+    <string name="ToolbarProfile10">Profile10</string>
 
     <string name="TapTOC">Select Chapter</string>
     <string name="TapSearch">Set Search Text</string>
@@ -855,6 +878,24 @@
     <string name="CornerEndTitle13">Single tap</string>
 
     <string name="selectEncryption">Encrypt the contents of the configuration file</string>
+
+    <string name="ssort00">Follow the sort display settings</string>
+    <string name="ssort01">File name (ascending)</string>
+    <string name="ssort02">File name (descending)</string>
+    <string name="ssort03">New Date</string>
+    <string name="ssort04">Old Date</string>
+    <string name="ssort05">Shuffle</string>
+    <string name="ssort06">Most frequently reading</string>
+    <string name="ssort07">Lowest percentage of reading</string>
+
+    <string name="sorttop00">None</string>
+    <string name="sorttop01">Directory</string>
+    <string name="sorttop02">Compressed file</string>
+    <string name="sorttop03">Image file</string>
+    <string name="sorttop04">PDF file</string>
+    <string name="sorttop05">EPUB file</string>
+    <string name="sorttop06">Text file</string>
+    <string name="sorttop07">Other files</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
