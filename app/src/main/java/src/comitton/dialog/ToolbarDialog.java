@@ -79,6 +79,16 @@ public class ToolbarDialog extends ImmersiveDialog implements
 	private AppCompatImageButton mBtnMenu;
 	private AppCompatImageButton mBtnConfig;
 	private AppCompatImageButton mBtnEditButton;
+	private AppCompatImageButton mBtnProfile1;
+	private AppCompatImageButton mBtnProfile2;
+	private AppCompatImageButton mBtnProfile3;
+	private AppCompatImageButton mBtnProfile4;
+	private AppCompatImageButton mBtnProfile5;
+	private AppCompatImageButton mBtnProfile6;
+	private AppCompatImageButton mBtnProfile7;
+	private AppCompatImageButton mBtnProfile8;
+	private AppCompatImageButton mBtnProfile9;
+	private AppCompatImageButton mBtnProfile10;
 
 	public ToolbarDialog(AppCompatActivity activity, @StyleRes int themeResId) {
 		super(activity, themeResId);
@@ -190,6 +200,16 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		mBtnMenu = (AppCompatImageButton) this.findViewById(R.id.menu);
 		mBtnConfig = (AppCompatImageButton) this.findViewById(R.id.config);
 		mBtnEditButton = (AppCompatImageButton) this.findViewById(R.id.edit_button);
+		mBtnProfile1 = (AppCompatImageButton) this.findViewById(R.id.profile1);
+		mBtnProfile2 = (AppCompatImageButton) this.findViewById(R.id.profile2);
+		mBtnProfile3 = (AppCompatImageButton) this.findViewById(R.id.profile3);
+		mBtnProfile4 = (AppCompatImageButton) this.findViewById(R.id.profile4);
+		mBtnProfile5 = (AppCompatImageButton) this.findViewById(R.id.profile5);
+		mBtnProfile6 = (AppCompatImageButton) this.findViewById(R.id.profile6);
+		mBtnProfile7 = (AppCompatImageButton) this.findViewById(R.id.profile7);
+		mBtnProfile8 = (AppCompatImageButton) this.findViewById(R.id.profile8);
+		mBtnProfile9 = (AppCompatImageButton) this.findViewById(R.id.profile9);
+		mBtnProfile10 = (AppCompatImageButton) this.findViewById(R.id.profile10);
 
 		mBtnBookLeft.setOnClickListener(this);
 		mBtnBookRight.setOnClickListener(this);
@@ -212,6 +232,16 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		mBtnMenu.setOnClickListener(this);
 		mBtnConfig.setOnClickListener(this);
 		mBtnEditButton.setOnClickListener(this);
+		mBtnProfile1.setOnClickListener(this);
+		mBtnProfile2.setOnClickListener(this);
+		mBtnProfile3.setOnClickListener(this);
+		mBtnProfile4.setOnClickListener(this);
+		mBtnProfile5.setOnClickListener(this);
+		mBtnProfile6.setOnClickListener(this);
+		mBtnProfile7.setOnClickListener(this);
+		mBtnProfile8.setOnClickListener(this);
+		mBtnProfile9.setOnClickListener(this);
+		mBtnProfile10.setOnClickListener(this);
 
 		boolean[] states = ToolbarEditDialog.loadToolbarState(mActivity);
 		Logcat.d(logLevel, "states[]=" + Arrays.toString(states));
@@ -389,6 +419,66 @@ public class ToolbarDialog extends ImmersiveDialog implements
 					}
 					break;
 				}
+				case DEF.TOOLBAR_PROFILE1: {
+					if (!states[i]) {
+						mBtnProfile1.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE2: {
+					if (!states[i]) {
+						mBtnProfile2.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE3: {
+					if (!states[i]) {
+						mBtnProfile3.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE4: {
+					if (!states[i]) {
+						mBtnProfile4.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE5: {
+					if (!states[i]) {
+						mBtnProfile5.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE6: {
+					if (!states[i]) {
+						mBtnProfile6.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE7: {
+					if (!states[i]) {
+						mBtnProfile7.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE8: {
+					if (!states[i]) {
+						mBtnProfile8.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE9: {
+					if (!states[i]) {
+						mBtnProfile9.setVisibility(View.GONE);
+					}
+					break;
+				}
+				case DEF.TOOLBAR_PROFILE10: {
+					if (!states[i]) {
+						mBtnProfile10.setVisibility(View.GONE);
+					}
+					break;
+				}
 			}
 		}
 	}
@@ -438,6 +528,16 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		zoom(res, mBtnMenu, ratio);
 		zoom(res, mBtnConfig, ratio);
 		zoom(res, mBtnEditButton, ratio);
+		zoom(res, mBtnProfile1, ratio);
+		zoom(res, mBtnProfile2, ratio);
+		zoom(res, mBtnProfile3, ratio);
+		zoom(res, mBtnProfile4, ratio);
+		zoom(res, mBtnProfile5, ratio);
+		zoom(res, mBtnProfile6, ratio);
+		zoom(res, mBtnProfile7, ratio);
+		zoom(res, mBtnProfile8, ratio);
+		zoom(res, mBtnProfile9, ratio);
+		zoom(res, mBtnProfile10, ratio);
 	}
 
 	private void zoom(Resources resources, ImageButton imageButton, float ratio){
@@ -521,6 +621,36 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		}
 		else if (mBtnEditButton == v) {
 			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_EDIT_TOOLBAR);
+		}
+		else if (mBtnProfile1 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE1);
+		}
+		else if (mBtnProfile2 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE2);
+		}
+		else if (mBtnProfile3 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE3);
+		}
+		else if (mBtnProfile4 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE4);
+		}
+		else if (mBtnProfile5 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE5);
+		}
+		else if (mBtnProfile6 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE6);
+		}
+		else if (mBtnProfile7 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE7);
+		}
+		else if (mBtnProfile8 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE8);
+		}
+		else if (mBtnProfile9 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE9);
+		}
+		else if (mBtnProfile10 == v) {
+			mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE10);
 		}
 
 		else {

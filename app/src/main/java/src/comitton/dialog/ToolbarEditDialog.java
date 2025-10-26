@@ -58,6 +58,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 	private SeekBar mSkbBkSize;
 
 	private ItemArrayAdapter mItemArrayAdapter;
+	private String[] mProfileWord;
 
 	private static final int[] COMMAND_DRAWABLE =
 			{
@@ -89,6 +90,16 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 					R.drawable.navi_menu,
 					R.drawable.config,
 					R.drawable.pen,
+					R.drawable.profile1,
+					R.drawable.profile2,
+					R.drawable.profile3,
+					R.drawable.profile4,
+					R.drawable.profile5,
+					R.drawable.profile6,
+					R.drawable.profile7,
+					R.drawable.profile8,
+					R.drawable.profile9,
+					R.drawable.profile10,
 			};
 
 	public static final int[] COMMAND_ID =
@@ -121,6 +132,16 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 			DEF.TOOLBAR_MENU,
 			DEF.TOOLBAR_CONFIG,
 			DEF.TOOLBAR_EDIT_TOOLBAR,
+			DEF.TOOLBAR_PROFILE1,
+			DEF.TOOLBAR_PROFILE2,
+			DEF.TOOLBAR_PROFILE3,
+			DEF.TOOLBAR_PROFILE4,
+			DEF.TOOLBAR_PROFILE5,
+			DEF.TOOLBAR_PROFILE6,
+			DEF.TOOLBAR_PROFILE7,
+			DEF.TOOLBAR_PROFILE8,
+			DEF.TOOLBAR_PROFILE9,
+			DEF.TOOLBAR_PROFILE10,
 		};
 
 	private static final boolean[] DEFAULT_VALUES =
@@ -153,6 +174,16 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 			true,			// メニューを開く
 			false,			// 設定画面を開く
 			true,			// ツールバーを編集
+			false,		// プロファイル1
+			false,		// プロファイル2
+			false,		// プロファイル3
+			false,		// プロファイル4
+			false,		// プロファイル5
+			false,		// プロファイル6
+			false,		// プロファイル7
+			false,		// プロファイル8
+			false,		// プロファイル9
+			false,		// プロファイル10
 		};
 
 	private static final int[] COMMAND_RES =
@@ -184,7 +215,17 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 					R.string.ToolbarControl,		// 画像/テキスト表示設定
 					R.string.ToolbarMenu,			// メニューを開く
 					R.string.ToolbarConfig,			// 設定画面を開く
-					R.string.ToolbarEditToolbar			// ツールバーを編集
+					R.string.ToolbarEditToolbar,	// ツールバーを編集
+					R.string.ToolbarProfile1,		// プロファイル1
+					R.string.ToolbarProfile2,		// プロファイル2
+					R.string.ToolbarProfile3,		// プロファイル3
+					R.string.ToolbarProfile4,		// プロファイル4
+					R.string.ToolbarProfile5,		// プロファイル5
+					R.string.ToolbarProfile6,		// プロファイル6
+					R.string.ToolbarProfile7,		// プロファイル7
+					R.string.ToolbarProfile8,		// プロファイル8
+					R.string.ToolbarProfile9,		// プロファイル9
+					R.string.ToolbarProfile10,		// プロファイル10
 			};
 
 	public ToolbarEditDialog(AppCompatActivity activity, @StyleRes int themeResId, int cx, int cy) {
@@ -194,10 +235,38 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 		mTitle = activity.getString(R.string.ToolbarEditTitle);
 		mStates = loadToolbarState(mActivity);
 
+		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(activity);
+		mProfileWord = new String[10];
+
+		// 初期値を読み出す
+		mProfileWord[0] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_01, "");
+		mProfileWord[1] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_02, "");
+		mProfileWord[2] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_03, "");
+		mProfileWord[3] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_04, "");
+		mProfileWord[4] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_05, "");
+		mProfileWord[5] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_06, "");
+		mProfileWord[6] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_07, "");
+		mProfileWord[7] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_08, "");
+		mProfileWord[8] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_09, "");
+		mProfileWord[9] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_10, "");
+
 		String[] items = null;
 		items = new String[COMMAND_RES.length];
 		for (int i = 0; i < COMMAND_RES.length; i++) {
-			items[i] = activity.getResources().getString(COMMAND_RES[i]);
+			if (COMMAND_ID[i] >= DEF.TOOLBAR_PROFILE1 && COMMAND_ID[i] <= DEF.TOOLBAR_PROFILE10) {
+				// プロファイル
+				if (mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1].equals("")) {
+					// 中身が未定義なら
+					items[i] = activity.getResources().getString(COMMAND_RES[i]);
+				}
+				else {
+					// 後半に中身を追加
+					items[i] = activity.getResources().getString(COMMAND_RES[i]) + " : " + mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1];
+				}
+			}
+			else {
+				items[i] = activity.getResources().getString(COMMAND_RES[i]);
+			}
 		}
 		mItems = items;
 	}
