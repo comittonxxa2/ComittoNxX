@@ -128,6 +128,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.filecolor);
 
@@ -198,6 +199,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		mSharedPreferences = getPreferenceScreen().getSharedPreferences();
 		mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
+		SetCommonActivity.SetOrientationEventListenerEnable();
 		// 色設定
 		int val = getPreset(mSharedPreferences);
 		mPreset.setSummary(getPresetSummary(val)); // プリセット
@@ -212,6 +214,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

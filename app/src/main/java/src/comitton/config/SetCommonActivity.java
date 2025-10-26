@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
@@ -19,6 +20,8 @@ import android.preference.PreferenceScreen;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.OrientationEventListener;
+import android.app.Activity;
 
 import src.comitton.config.SetCommonActivity;
 
@@ -54,9 +57,19 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		}
 	}
 
+	public static final int[] RotateName =
+		{ R.string.rotaall00		// 回転あり
+		, R.string.rotaall01		// 縦固定
+		, R.string.rotaall02		// 横固定
+		, R.string.rotaall03		// 回転あり(縦上下反転)
+		, R.string.rotaall04		// 回転あり(横上下反転)
+		, R.string.rotaall05		// 回転あり(縦横上下反転)
+		, R.string.rotaall06		// 縦固定(上下反転)
+		, R.string.rotaall07 };		// 横固定(上下反転)
 
 	private ListPreference mRotateBtn;
 	private ListPreference mCharset;
+	private ListPreference mViewRotaAll;
 
 	private EditTextPreference mPriorityWord01;
 	private EditTextPreference mPriorityWord02;
@@ -72,6 +85,9 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+
+	private static OrientationEventListener orientationEventListener;
+	private static int deviceOrientation = -1;
 
 	public static final int[] RotateBtnName =
 		{ R.string.rotabtn00	// 使用しない
@@ -96,10 +112,12 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.common);
 		mRotateBtn  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_ROTATEBTN);
 		mCharset    = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CHARSET);
+		mViewRotaAll   = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_VIEWROTAALL);
 
 		mPriorityWord01 = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_SORT_PRIORITY_WORD_01);
 		mPriorityWord02 = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_SORT_PRIORITY_WORD_02);
@@ -130,14 +148,111 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		});
 	}
 
+	private static void RotateMain(Activity activity, int orientation, int viewrota) {
+		if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+			return;
+		}
+		if (orientation >= 45 && orientation < 135) {
+			// 90度
+			if (deviceOrientation != 3) {
+				deviceOrientation = 3;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else if (orientation >= 135 && orientation < 225) {
+			// 180度
+			if (deviceOrientation != 2) {
+				deviceOrientation = 2;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+		else if (orientation >= 225 && orientation < 315) {
+			// 270度
+			if (deviceOrientation != 1) {
+				deviceOrientation = 1;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else {
+			// 0度
+			if (deviceOrientation != 0) {
+				deviceOrientation = 0;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+	}
+
+	public static void SetOrientationEventListener(Activity activity, SharedPreferences sharedPreferences) {
+		// 起動時は回転動作にならないので固定値の場合は個別で設定する
+		int viewrota = getViewRotaAll(sharedPreferences);
+		deviceOrientation = -1;
+		switch (viewrota) {
+			case 1:
+				RotateMain(activity, 0, viewrota);
+				break;
+			case 2:
+				RotateMain(activity ,270, viewrota);
+				break;
+			case 6:
+				RotateMain(activity, 180, viewrota);
+				break;
+			case 7:
+				RotateMain(activity, 90, viewrota);
+				break;
+		}
+		orientationEventListener = new OrientationEventListener(activity) {
+			// 傾きセンサーの角度を得る
+			public void onOrientationChanged(int orientation) {
+				RotateMain(activity, orientation, viewrota);
+			}
+		};
+	}
+
+	public static void SetOrientationEventListenerEnable() {
+		orientationEventListener.enable();
+	}
+
+	public static void SetOrientationEventListenerDisable() {
+		orientationEventListener.disable();
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
-		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
 		mRotateBtn.setSummary(getRotateBtnSummary(sharedPreferences));	// 回転用ボタン
 		mCharset.setSummary(getCharsetSummary(sharedPreferences));		// 文字コード
+		mViewRotaAll.setSummary(getViewRotaAllSummary(sharedPreferences));	// 画面の回転制御
 
 		mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_01, ""));
 		mPriorityWord02.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_02, ""));
@@ -149,6 +264,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		mPriorityWord08.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_08, ""));
 		mPriorityWord09.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_09, ""));
 		mPriorityWord10.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_10, ""));
+		SetOrientationEventListenerEnable();
 	}
 
 	@Override
@@ -156,6 +272,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
 
+		SetOrientationEventListenerDisable();
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -167,6 +284,10 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		else if(key.equals(DEF.KEY_CHARSET)){
 			//
 			mCharset.setSummary(getCharsetSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_VIEWROTAALL)){
+			//
+			mViewRotaAll.setSummary(getViewRotaAllSummary(sharedPreferences));
 		}
 
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_01)){
@@ -218,6 +339,14 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		return val;
 	}
 
+	public static int getViewRotaAll(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_VIEWROTAALL, "1");
+		if( val < 0 || val > RotateName.length ){
+			val = 0;
+		}
+		return val;
+	}
+
 	public static boolean getHiddenFile(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_HIDDENFILE, true);
@@ -234,6 +363,12 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	private static String getCharsetSummary(SharedPreferences sharedPreferences){
 		int val = getCharset(sharedPreferences);
 		return DEF.CharsetList[val];
+	}
+
+	private String getViewRotaAllSummary(SharedPreferences sharedPreferences){
+		int val = getViewRotaAll(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(RotateName[val]);
 	}
 
 	public static void loadSettings(SharedPreferences sharedPreferences) {

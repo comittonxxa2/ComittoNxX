@@ -16,7 +16,6 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.view.View;
 import android.view.WindowManager;
-
 import androidx.preference.PreferenceManager;
 
 public class SetImageActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
@@ -77,7 +76,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		{ R.string.rota00		// 回転あり
 		, R.string.rota01		// 縦固定
 		, R.string.rota02		// 横固定
-		, R.string.rota03 };	// 縦固定(90°回転)
+		, R.string.rota03		// 縦固定(90°回転)
+		, R.string.rota04		// 回転あり(縦上下反転)
+		, R.string.rota05		// 回転あり(横上下反転)
+		, R.string.rota06		// 回転あり(縦横上下反転)
+		, R.string.rota07		// 縦固定(上下反転)
+		, R.string.rota08 };	// 横固定(上下反転)
 	public static final int[] LoupeName =
 		{ R.string.loupe00		// 原寸x1.0
 		, R.string.loupe01		// 原寸x2.0
@@ -184,6 +188,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.image);
 		mViewRota = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_VIEWROTA);
@@ -271,12 +276,15 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 最終ページでの確認
 		mPageSel.setSummary(SetImageText.getPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
+
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -368,7 +376,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 	public static int getViewRota(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_VIEWROTA, "0");
-		if( val < 0 || val > 3 ){
+		if( val < 0 || val > RotateName.length ){
 			val = 0;
 		}
 		return val;

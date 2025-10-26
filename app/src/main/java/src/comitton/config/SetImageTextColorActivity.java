@@ -79,6 +79,7 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.imagetextcolor);
 
@@ -138,12 +139,14 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 		mHitColor.setSummary(getColorSummary(getHitColor(sharedPreferences)));	// 検索ヒット
 
 		mGradation.setSummary(getGradationSummary(sharedPreferences));	// ファイル選択画面の回転制御
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

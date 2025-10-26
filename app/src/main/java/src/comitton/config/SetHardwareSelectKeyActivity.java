@@ -42,6 +42,7 @@ public class SetHardwareSelectKeyActivity extends PreferenceActivity implements 
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.sethardwareselectkey);
 	}
@@ -52,12 +53,14 @@ public class SetHardwareSelectKeyActivity extends PreferenceActivity implements 
 		super.onResume();
 		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

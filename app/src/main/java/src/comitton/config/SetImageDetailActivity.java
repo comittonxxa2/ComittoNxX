@@ -76,6 +76,7 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.imagedetail);
 
@@ -124,12 +125,14 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		mAutoPlay.setSummary(getAutoPlaySummary(sharedPreferences));
 		mMaxThread.setSummary(getMaxThreadSummary(sharedPreferences));	// 最大スレッド数
 		mLoupeSize.setSummary(getLoupeSizeSummary(sharedPreferences));
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

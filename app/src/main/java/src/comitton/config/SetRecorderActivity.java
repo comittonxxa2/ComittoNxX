@@ -53,6 +53,7 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.recorder);
 		mHistNum = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_HISTNUM);
@@ -82,12 +83,14 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
 		mHistNum.setSummary(getHistNumSummary(sharedPreferences));		// 履歴保存件数
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

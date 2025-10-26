@@ -78,7 +78,12 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		{ R.string.rota00		// 回転あり
 		, R.string.rota01		// 縦固定
 		, R.string.rota02		// 横固定
-		, R.string.rota03 };	// 縦固定(90°回転)
+		, R.string.rota03		// 縦固定(90°回転)
+		, R.string.rota04		// 回転あり(縦上下反転)
+		, R.string.rota05		// 回転あり(横上下反転)
+		, R.string.rota06		// 回転あり(縦横上下反転)
+		, R.string.rota07		// 縦固定(上下反転)
+		, R.string.rota08 };	// 横固定(上下反転)
 	public static final int[] PaperName =
 		{ R.string.paper00		// 縦画面サイズ
 		, R.string.paper01		// 800×1280
@@ -136,6 +141,7 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.text);
 		mFontTop  = (TextFontTopSeekbar)getPreferenceScreen().findPreference(DEF.KEY_TX_FONTTOP);
@@ -267,6 +273,7 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 確認メッセージ
 		mPageSel.setSummary(SetImageText.getTxPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
 		mTimeAndBattery.setSummary(getTimeSummary(sharedPreferences));	// 時刻と充電表示
+		SetCommonActivity.SetOrientationEventListenerEnable();
 
 	}
 
@@ -274,6 +281,7 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

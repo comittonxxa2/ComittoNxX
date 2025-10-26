@@ -62,6 +62,7 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, mSharedPreferences);
 
 		addPreferencesFromResource(R.xml.cache);
 
@@ -101,12 +102,14 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 		mMemNext.setSummary(getMemNextSummary(sharedPreferences));	// 次ページ数
 		mMemPrev.setSummary(getMemPrevSummary(sharedPreferences));	// 前ページ数
 		mMemCacheStartThreshold.setSummary(getMemCacheSummary(sharedPreferences));
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

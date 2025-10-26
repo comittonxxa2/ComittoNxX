@@ -55,6 +55,7 @@ public class SetNoiseActivity extends PreferenceActivity implements OnSharedPref
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.noise);
 
@@ -94,12 +95,14 @@ public class SetNoiseActivity extends PreferenceActivity implements OnSharedPref
 		mNoiseOver.setSummary(getNoiseOverSummary(sharedPreferences));
 
 		mNoiseDec.setSummary(getNoiseDecSummary(sharedPreferences));	// 判定速度
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 

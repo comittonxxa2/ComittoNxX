@@ -74,9 +74,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		, R.string.fsort01		// ファイル名-昇順
 		, R.string.fsort02 };	// ファイル名-降順
 	public static final int[] RotateName =
-		{ R.string.rota00		// 回転あり
-		, R.string.rota01		// 縦固定
-		, R.string.rota02 };	// 横固定
+		{ R.string.rotaall00		// 回転あり
+		, R.string.rotaall01		// 縦固定
+		, R.string.rotaall02		// 横固定
+		, R.string.rotaall03		// 回転あり(縦上下反転)
+		, R.string.rotaall04		// 回転あり(横上下反転)
+		, R.string.rotaall05		// 回転あり(縦横上下反転)
+		, R.string.rotaall06		// 縦固定(上下反転)
+		, R.string.rotaall07 };		// 横固定(上下反転)
 	public static final int[] BackModeName =
 		{ R.string.bkmode00		// アプリ終了
 		, R.string.bkmode01		// 親ディレクトリ
@@ -142,6 +147,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.filelist);
 		mListRota  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LISTROTA);
@@ -210,12 +216,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mToolbarSeek.setSummary(getToolbarSeekSummary(sharedPreferences));		// ツールバー表示
 		mListThumbSeek.setSummary(getListThumbSeekSummary(sharedPreferences));		// リストサムネイルサイズ表示
 		mMenuLongTap.setSummary(getMenuLongTapSummary(sharedPreferences));
+		SetCommonActivity.SetOrientationEventListenerEnable();
 }
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 
 	}
 
@@ -307,7 +315,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	// フォントサイズ(px)
 	public static int getListRota(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_LISTROTA, "0");
-		if( val < 0 || val > 2 ){
+		if( val < 0 || val > RotateName.length ){
 			val = 0;
 		}
 		return val;
@@ -604,6 +612,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static boolean getKeepSortShuffle(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_KEEPSORTSHUFFLE, false);
+		return flag;
+	}
+
+	public static boolean getKeepFilelistCursor(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_KEEPFILELISTCURSOR, false);
+		return flag;
+	}
+
+	public static boolean getDisableListIcon(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_DISABLELISTICON, false);
 		return flag;
 	}
 

@@ -79,6 +79,7 @@ public class SetCornerEndTextViewerActivity extends PreferenceActivity implement
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		final int[] loop = {0};
 		String[] items_temp = new String[mTpView.HardwareKeyName.length];
@@ -182,12 +183,14 @@ public class SetCornerEndTextViewerActivity extends PreferenceActivity implement
 		mSingleTap.setSummary(getSingleTapSummary(sharedPreferences));
 		mCornerEndWidthLevel.setSummary(getCornerEndWidthLevelSummary(sharedPreferences));
 		mCornerEndHeightLevel.setSummary(getCornerEndHeightLevelSummary(sharedPreferences));
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

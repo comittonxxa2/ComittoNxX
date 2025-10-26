@@ -78,6 +78,7 @@ public class SetBookShelfActivity extends PreferenceActivity implements OnShared
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.bookshelf);
 		mResources = getResources();
@@ -103,12 +104,18 @@ public class SetBookShelfActivity extends PreferenceActivity implements OnShared
 		mFilenameBottomSpace.setSummary(getmFilenameBottomSpaceSummary(sharedPreferences));
 		mBookShelfBrightLevel.setSummary(getmBookShelfBrightLevelSummary(sharedPreferences));
 		mBookShelfEdgeLevel.setSummary(getBookShelfEdgeLevelSummary(sharedPreferences));
+		// カスタム画像の選択後に失敗する場合があるので再設定する
+		// 一先ず無効にしてからリスナーを再設定して有効にする
+		SetCommonActivity.SetOrientationEventListenerDisable();
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+		SetCommonActivity.SetOrientationEventListenerDisable();
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

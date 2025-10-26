@@ -106,6 +106,7 @@ public class BookShelfFileSelectActivity extends PreferenceActivity implements O
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 		// ファイル選択を開く
 		OpenFile();
 	}
@@ -232,11 +233,13 @@ public class BookShelfFileSelectActivity extends PreferenceActivity implements O
 	@Override
 	protected void onResume() {
 		super.onResume();
+		SetCommonActivity.SetOrientationEventListenerEnable();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		SetCommonActivity.SetOrientationEventListenerDisable();
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
