@@ -11,6 +11,7 @@ import jp.dip.muracoro.comittonx.R;
 
 import src.comitton.common.Logcat;
 import src.comitton.config.SetTextActivity;
+import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -117,6 +118,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private int mPage;
 	private float mPageRate;
 	private int mCurrentPage;
+	private int mType;
 
 	private ListDialog mListDialog;
 	private static CustomProgressDialog mProgressDialog;
@@ -180,6 +182,8 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		}
 
 		mActivity = this;
+		CropImageActivity.SetOrientationEventListener(mActivity, sharedPreferences);
+
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
 
 		mHandler = new Handler(this);
@@ -239,10 +243,11 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			mText = intent.getStringExtra("Text"); 			// Textファイル
 			mPage = intent.getIntExtra("Page", DEF.PAGENUMBER_UNREAD);					// 既読ページ
 			mPageRate = intent.getFloatExtra("PageRate", (float)DEF.PAGENUMBER_UNREAD);	// 既読ページ％
+			mType = intent.getIntExtra("Type", -1);
 			Logcat.d(logLevel, "onCreate: mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
 					+ ", mUser=" + mUser + ", mPass=" + mPass
 					+ ", mFileName=" + mFileName + ", mText=" + mText
-			+ ", mPage=" + mPage + ", mPageRate=" + mPageRate);
+			+ ", mPage=" + mPage + ", mPageRate=" + mPageRate + ", mType=" + mType);
 		}
 
 		setContentView(R.layout.serverview);
@@ -305,6 +310,18 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 			}
 		} );
 		//mListView.setAdapter( adapter );
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		// バックグラウンドからフォアグランドに戻った時
+		CropImageActivity.SetOrientationEventListenerEnable();
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		CropImageActivity.SetOrientationEventListenerDisable();
 	}
 
 	public class ZipLoad implements Runnable {
@@ -1225,7 +1242,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		mImageMgr.unsetBreakTrigger();
 		mThumbID = System.currentTimeMillis();
 
-		mThumbnailLoader = new ExpandThumbnailLoader(mActivity, mURI, DEF.relativePath(mActivity, mPath, mFileName), mHandler, mThumbID, mImageMgr, mFileList, mThumbSizeW, mThumbSizeH, mThumbNum, mThumbCrop, mThumbMargin);
+		mThumbnailLoader = new ExpandThumbnailLoader(mActivity, mURI, DEF.relativePath(mActivity, mPath, mFileName), mHandler, mThumbID, mImageMgr, mFileList, mThumbSizeW, mThumbSizeH, mThumbNum, mThumbCrop, mThumbMargin, mType);
 	}
 
 

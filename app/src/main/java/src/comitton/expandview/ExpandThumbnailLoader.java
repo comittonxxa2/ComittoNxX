@@ -28,10 +28,12 @@ import androidx.appcompat.app.AppCompatActivity;
 public class ExpandThumbnailLoader extends ThumbnailLoader implements Runnable {
 	private ImageManager mImageMgr = null;
 	private Thread mThread;
+	private int mType;
 
-	public ExpandThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ImageManager imagemgr, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum, int crop, int margin) {
-		super(activity, uri, path, handler, id, files, sizeW, sizeH, cachenum, crop, margin);
+	public ExpandThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ImageManager imagemgr, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum, int crop, int margin, int type) {
+		super(activity, uri, path, handler, id, files, sizeW, sizeH, cachenum, crop, margin, type);
 		mImageMgr = imagemgr;
+		mType = type;
 
 		// スレッド起動
 		mThread = new Thread(this);
@@ -271,15 +273,11 @@ public class ExpandThumbnailLoader extends ThumbnailLoader implements Runnable {
 		FileData data = mFiles.get(index);
 		int filetype = data.getType();
 		// 拡張子分の文字列長がない
-		// PDFファイルの展開時にサムネイル表示ができなくなるのでコメントアウトにする
-		/*
-		if (filetype != FileData.FILETYPE_IMG) {
+		if (filetype != FileData.FILETYPE_IMG && mType != FileData.FILETYPE_PDF) {
 			// 対象外のファイル
 			CallImgLibrary.ThumbnailSetNone(mID, index);
 			return true;
 		}
-		*/
-
 		Bitmap bm = null;
 		String filepath = mUriPath + ":" + data.getName();
 		String pathcode = DEF.makeCode(filepath, thum_cx, thum_cy);
