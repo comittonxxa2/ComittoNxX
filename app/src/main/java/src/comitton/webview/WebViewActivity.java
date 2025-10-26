@@ -17,6 +17,7 @@ import androidx.preference.PreferenceManager;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
+import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.dialog.MenuDialog.MenuSelectListener;
 import src.comitton.imageview.PageSelectListener;
@@ -89,6 +90,7 @@ public class WebViewActivity extends AppCompatActivity {
 				uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+		CropImageActivity.SetOrientationEventListener(mActivity, sharedPreferences);
 
 		// Intentを取得する
 		Intent intent = getIntent();
@@ -168,10 +170,16 @@ public class WebViewActivity extends AppCompatActivity {
 	protected void onResume() {
 		super.onResume();
 		// バックグラウンドからフォアグランドに戻った時
+		CropImageActivity.SetOrientationEventListenerEnable();
 		if (mywebView != null) {
 			// WebViewが空でなければ現在のウェブページを再表示する
 			String url = mywebView.getUrl();
 			mywebView.loadUrl(url);
 		}
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		CropImageActivity.SetOrientationEventListenerDisable();
 	}
 }
