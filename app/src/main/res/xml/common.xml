@@ -30,6 +30,14 @@
             android:key="ForceHideStatusBar"
             android:summary="Forces the status bar to be hidden (Required Restart)."
             android:title="Hide the status bar on all screens" />
+        <ListPreference
+            android:defaultValue="1"
+            android:dialogTitle="Display direction(all except viewer)"
+            android:entries="@array/rotateall_name_list"
+            android:entryValues="@array/rotateall_value_list"
+            android:key="ViewRotaAll"
+            android:summary="dummy"
+            android:title="Display direction(all except viewer)" />
     </PreferenceCategory>
 
 

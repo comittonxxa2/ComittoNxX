@@ -225,6 +225,28 @@
             android:key="KeepSortShuffle"
             android:summary="When shuffling sorting, the shuffled content is kept until the list is updated or the sort mode is changed."
             android:title="Keep shuffled sorting" />
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="false"
+            android:key="KeepFilelistCursor"
+            android:summary="Check this box if you do not want to scroll the viewer after it is displayed.(effective after restarting.)"
+            android:title="Keep original position when returning to list view" />
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="false"
+            android:key="DisableListIcon"
+            android:summary="Check this box if you do not want to display the reading rate donut chart."
+            android:title="Do not display reading rate donut chart" />
+        <PreferenceScreen
+            android:key="SetSortFile"
+            android:title="Sort display settings by file"
+            android:summary="Sort display settings by file" >
+            <intent
+                android:targetClass="src.comitton.config.SetSortActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
