@@ -112,6 +112,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.WindowManager;
+import android.view.OrientationEventListener;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
@@ -217,7 +218,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 	private boolean mTapExpand; // タップで展開
 
-	private int mListRota;
+	private static int mListRota;
 	private int mRotateBtn;
 	private boolean mListRotaChg;
 
@@ -233,6 +234,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mEpubViewer;
 	private boolean mEpubThumb;
 	private boolean mKeepSortShuffle;
+	private boolean mKeepFilelistCursor;
 
 	private int mImageDispMode;
 	private int mTextDispMode;
@@ -308,6 +310,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 	private Bundle mSavedInstanceState = null;
 
+	private static OrientationEventListener orientationEventListener;
+	private static int deviceOrientation = -1;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -335,6 +340,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	@Override
 	protected void onPause() {
 		super.onPause();
+		SetOrientationEventListenerDisable();
 		// onNewIntentが呼び出されることを想定してここで記録する
 		Editor ed = mSharedPreferences.edit();
 		ed.putString("ResumePath", mPath);
@@ -342,6 +348,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		ed.putInt("ResumeServerSelect", mServer.getSelect());
 		ed.putBoolean("Resume", true);
 		ed.apply();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+
+		SetOrientationEventListenerEnable();
 	}
 
 	@Override
@@ -480,6 +493,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 			getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
+
+		SetOrientationEventListener(mActivity, mSharedPreferences);
 
 		mHandler = new Handler(this);
 		if (mPathHistory == null) {
@@ -872,6 +887,102 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		return false;
 	}
 
+	private static void RotateMain(AppCompatActivity activity, int orientation, int viewrota) {
+		if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+			return;
+		}
+		if (orientation >= 45 && orientation < 135) {
+			// 90度
+			if (deviceOrientation != 3) {
+				deviceOrientation = 3;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else if (orientation >= 135 && orientation < 225) {
+			// 180度
+			if (deviceOrientation != 2) {
+				deviceOrientation = 2;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+		else if (orientation >= 225 && orientation < 315) {
+			// 270度
+			if (deviceOrientation != 1) {
+				deviceOrientation = 1;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+					// 横上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_LANDSCAPE || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT) {
+					// 横通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+			}
+		}
+		else {
+			// 0度
+			if (deviceOrientation != 0) {
+				deviceOrientation = 0;
+				if (viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE || viewrota == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+					// 縦上下反転
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				}
+				if (viewrota == DEF.ROTATE_ALL_AUTO || viewrota == DEF.ROTATE_ALL_PORTRAIT || viewrota == DEF.ROTATE_ALL_AUTO_REVERSE_LANDSCAPE) {
+					// 縦通常表示
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				}
+			}
+		}
+	}
+
+	public static void SetOrientationEventListener(AppCompatActivity activity, SharedPreferences sharedPreferences) {
+		// 起動時は回転動作にならないので固定値の場合は個別で設定する
+		mListRota = SetFileListActivity.getListRota(sharedPreferences);
+		deviceOrientation = -1;
+		switch (mListRota) {
+			case 1:
+				RotateMain(activity, 0, mListRota);
+				break;
+			case 2:
+				RotateMain(activity ,270, mListRota);
+				break;
+			case 6:
+				RotateMain(activity, 180, mListRota);
+				break;
+			case 7:
+				RotateMain(activity, 90, mListRota);
+				break;
+		}
+		orientationEventListener = new OrientationEventListener(activity) {
+			// 傾きセンサーの角度を得る
+			public void onOrientationChanged(int orientation) {
+				RotateMain(activity, orientation, mListRota);
+			}
+		};
+	}
+
+	public static void SetOrientationEventListenerEnable() {
+		orientationEventListener.enable();
+	}
+
+	public static void SetOrientationEventListenerDisable() {
+		orientationEventListener.disable();
+	}
+
 	/**
 	 * 画面の設定が変更された時に発生します。
 	 *
@@ -1021,7 +1132,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						} else {
 							// 次のファイルを開かない場合
 							Logcat.d(logLevel, "nextopen == CloseDialog.CLICK_CLOSE");
-							moveFileSelect(mURI, path, file, true);
+							if (!mKeepFilelistCursor) {
+								// カーソル位置を保持しない
+								moveFileSelect(mURI, path, file, true);
+							}
 						}
 					}
 				}
@@ -1086,7 +1200,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		bm = ImageAccess.resizeTumbnailBitmap(bm, thumW, thumH, ImageAccess.BMPCROP_NONE, ImageAccess.BMPMARGIN_NONE);
 		if (bm != null) {
-			ThumbnailLoader loader = new ThumbnailLoader(mActivity, "", "", null, thumbID, new ArrayList<FileData>(), thumW, thumH, 0, mThumbCrop, mThumbMargin);
+			ThumbnailLoader loader = new ThumbnailLoader(mActivity, "", "", null, thumbID, new ArrayList<FileData>(), thumW, thumH, 0, mThumbCrop, mThumbMargin, 0);
 			loader.deleteThumbnailCache(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), thumW, thumH);
 			loader.setThumbnailCache(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), bm);
 			Toast.makeText(this, R.string.ThumbConfigured, Toast.LENGTH_SHORT).show();
@@ -1311,6 +1425,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mShowDelMenu = SetFileListActivity.getFileDelMenu(mSharedPreferences);
 		mShowRenMenu = SetFileListActivity.getFileRenMenu(mSharedPreferences);
 		mKeepSortShuffle = SetFileListActivity.getKeepSortShuffle(mSharedPreferences);
+		mKeepFilelistCursor = SetFileListActivity.getKeepFilelistCursor(mSharedPreferences);
 
 		mHidden = SetCommonActivity.getHiddenFile(mSharedPreferences);
 
@@ -2774,7 +2889,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 
 		// カーソル位置設定
-		if (mLoadListCursor != null && !mLoadListCursor.isEmpty()) {
+		if (mLoadListCursor != null && !mLoadListCursor.isEmpty() && !mKeepFilelistCursor) {
 			int i;
 			ArrayList<FileData> list = mFileList.getFileList();
 
@@ -3616,7 +3731,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						}
 						else {
 							// zip/rar/pdfファイルを展開
-							expandCompFile(mFileData.getName());
+							expandCompFile(mFileData.getName(), null, mFileData.getType());
 						}
 						break;
 
@@ -4470,7 +4585,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 					if (FileData.isText(infile)) {
 						// zip内テキストファイルオープン
-						expandCompFile(fd.getName(), infile);
+						expandCompFile(fd.getName(), infile, fd.getType());
 					}
 					else {
 						// zipのイメージ表示
@@ -4492,7 +4607,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 					else if (FileData.isText(infile)) {
 						// zip内テキストファイルオープン
-						expandCompFile(fd.getName(), infile);
+						expandCompFile(fd.getName(), infile, fd.getType());
 					}
 					else if (FileData.isImage(mActivity, infile)) {
 						openCompFile(fd.getName());
@@ -4718,14 +4833,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * 圧縮ファイル展開
 	 */
 	private void expandCompFile(String comp) {
-		expandCompFile(comp, null);
+		expandCompFile(comp, null, 0);
 		return;
 	}
 
 	/**
 	 * 圧縮ファイル展開
 	 */
-	private void expandCompFile(String comp, String text) {
+	private void expandCompFile(String comp, String text,int type) {
 		// Intentをつかって画面遷移する
 		Intent intent = new Intent(FileSelectActivity.this, ExpandActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -4736,6 +4851,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Pass", mServer.getPass());
 		intent.putExtra("File", comp); // 圧縮ファイル
 		intent.putExtra("Text", text); // 圧縮ファイル内のファイル
+		intent.putExtra("Type", type); // ファイルの種類
 		startActivityForResult(intent, DEF.REQUEST_EXPAND);
 		return;
 	}

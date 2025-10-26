@@ -44,7 +44,7 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 	private boolean mOut_of_memory = false;
 
 	public FileThumbnailLoader(AppCompatActivity activity, String uri, String path, String user, String pass, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum, int filesort, boolean hidden, boolean thumbsort, int crop, int margin, boolean epubThumb) {
-		super(activity, uri, path, handler, id, files, sizeW, sizeH, cachenum, crop, margin);
+		super(activity, uri, path, handler, id, files, sizeW, sizeH, cachenum, crop, margin, 0);
 		boolean debug = false;
 		if (debug) {Log.d(TAG, "FileThumbnailLoader: 開始します. epubThumb=" + epubThumb);}
 
