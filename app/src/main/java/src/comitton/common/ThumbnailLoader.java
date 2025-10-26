@@ -54,7 +54,7 @@ public class ThumbnailLoader {
 
 	private static int mGetThumbnailPosition =  0;
 
-	public ThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum,int crop, int margin) {
+	public ThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum,int crop, int margin, int type) {
 		super();
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 

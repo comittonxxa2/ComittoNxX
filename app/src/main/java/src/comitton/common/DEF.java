@@ -255,7 +255,17 @@ public class DEF {
 	public static final int TOOLBAR_MENU = 1028;
 	public static final int TOOLBAR_CONFIG = 1029;
 	public static final int TOOLBAR_EDIT_TOOLBAR = 1030;
-	public static final int TOOLBAR_DISMISS = 1031;
+	public static final int TOOLBAR_PROFILE1 = 1031;
+	public static final int TOOLBAR_PROFILE2 = 1032;
+	public static final int TOOLBAR_PROFILE3 = 1033;
+	public static final int TOOLBAR_PROFILE4 = 1034;
+	public static final int TOOLBAR_PROFILE5 = 1035;
+	public static final int TOOLBAR_PROFILE6 = 1036;
+	public static final int TOOLBAR_PROFILE7 = 1037;
+	public static final int TOOLBAR_PROFILE8 = 1038;
+	public static final int TOOLBAR_PROFILE9 = 1039;
+	public static final int TOOLBAR_PROFILE10 = 1040;
+	public static final int TOOLBAR_DISMISS = 1100;
 
 	public static final int SHARE_SINGLE = 2001;
 	public static final int SHARE_LR = 2002;
@@ -344,6 +354,14 @@ public class DEF {
 	public static final int ZIPSORT_OLDSEP = 6; // 古い順(ディレクトリ分離)
 	public static final int ZIPSORT_SHUFFLEMGR = 7; // シャッフル(ディレクトリ混在)
 	public static final int ZIPSORT_SHUFFLESEP = 8; // シャッフル(ディレクトリ分離)
+	public static final int SPECIFICSORT_NONE = 0;
+	public static final int SPECIFICSORT_FILEACSEND = 1;
+	public static final int SPECIFICSORT_FILEDESSEND = 2;
+	public static final int SPECIFICSORT_NEWDATE = 3;
+	public static final int SPECIFICSORT_OLDDATE = 4;
+	public static final int SPECIFICSORT_SHUFFLE = 5;
+	public static final int SPECIFICSORT_READINGHIGH = 6;
+	public static final int SPECIFICSORT_READINGLOW = 7;
 
 	// ファイル拡張子
 	public static final String EXTENSION_SETTING = ".set";
@@ -452,6 +470,7 @@ public class DEF {
 
 	public static final String KEY_CHAR_DETECT = "CharDetect";
 	public static final String KEY_CHARSET = "Charset";
+	public static final String KEY_VIEWROTAALL = "ViewRotaAll";
 	public static final String KEY_SORT_BY_IGNORE_WIDTH = "SortByIgnoreWidth";
 	public static final String KEY_SORT_BY_IGNORE_CASE = "SortByIgnoreCase";
 	public static final String KEY_SORT_BY_SYMBOL = "SortBySymbol";
@@ -528,6 +547,17 @@ public class DEF {
 	public static final String KEY_CONFIRMBACK = "ConfirmBack";
 	public static final String KEY_CLEARTOP = "ClearTop";
 	public static final String KEY_KEEPSORTSHUFFLE = "KeepSortShuffle";
+	public static final String KEY_KEEPFILELISTCURSOR = "KeepFilelistCursor";
+	public static final String KEY_DISABLELISTICON = "DisableListIcon";
+	public static final String KEY_SORTDIRTOP = "SoftDirTop";
+	public static final String KEY_SORTFILETOP = "SoftFileTop";
+	public static final String KEY_SORTDIRFILE = "SoftDirFile";
+	public static final String KEY_SORTIMAGEFILE = "SoftImageFile";
+	public static final String KEY_SORTTEXTFILE = "SoftTextFile";
+	public static final String KEY_SORTCOMPFILE = "SoftCompFile";
+	public static final String KEY_SORTPDFFILE = "SoftPdfFile";
+	public static final String KEY_SORTEPUBFILE = "SoftEpubFile";
+	public static final String KEY_SORTOTHERFILE = "SoftOtherFile";
 	public static final String KEY_HISTNUM = "RLSave3";
 	public static final String KEY_EXTENSION = "Extension";
 	public static final String KEY_SPLIT_FILENAME = "SplitFilename";
@@ -2246,6 +2276,20 @@ public class DEF {
 
 	public static final int ROTATE_LANDSCAPE = 2;
 	public static final int ROTATE_PSELAND = 3;
+	public static final int ROTATE_AUTO_REVERSE_PORTRAIT = 4;
+	public static final int ROTATE_AUTO_REVERSE_LANDSCAPE = 5;
+	public static final int ROTATE_AUTO_REVERSE_PORTRAIT_LANDSCAPE = 6;
+	public static final int ROTATE_REVERSE_PORTRAIT = 7;
+	public static final int ROTATE_REVERSE_LANDSCAPE = 8;
+
+	public static final int ROTATE_ALL_AUTO = 0;
+	public static final int ROTATE_ALL_PORTRAIT = 1;
+	public static final int ROTATE_ALL_LANDSCAPE = 2;
+	public static final int ROTATE_ALL_AUTO_REVERSE_PORTRAIT = 3;
+	public static final int ROTATE_ALL_AUTO_REVERSE_LANDSCAPE = 4;
+	public static final int ROTATE_ALL_AUTO_REVERSE_PORTRAIT_LANDSCAPE = 5;
+	public static final int ROTATE_ALL_REVERSE_PORTRAIT = 6;
+	public static final int ROTATE_ALL_REVERSE_LANDSCAPE = 7;
 
 	public static final int TEXTSIZE_MESSAGE = 18;
 	public static final int TEXTSIZE_SUMMARY = 14;
