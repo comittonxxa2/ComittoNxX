@@ -50,14 +50,15 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 	private static int mviewrota;
-	private static OrientationEventListener orientationEventListener;
+	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
+	private static SharedPreferences sharedPreferences;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -294,6 +295,11 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 	public static void SetOrientationEventListener(AppCompatActivity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		mviewrota = SetCommonActivity.getViewRotaAll(sharedPreferences);
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+			// 従来の設定で回転させる
+			DEF.setRotationAll(activity, mviewrota);
+			return;
+		}
 		deviceOrientation = -1;
 		switch (mviewrota) {
 			case 1:
@@ -317,11 +323,17 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 		};
 	}
 
-	public static void SetOrientationEventListenerEnable() {
+	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.enable();
 	}
 
-	public static void SetOrientationEventListenerDisable() {
+	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.disable();
 	}
 
@@ -329,12 +341,12 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 	protected void onResume() {
 		super.onResume();
 		// バックグラウンドからフォアグランドに戻った時
-		SetOrientationEventListenerEnable();
+		SetOrientationEventListenerEnable(sharedPreferences);
 	}
 	@Override
 	protected void onPause() {
 		super.onPause();
-		SetOrientationEventListenerDisable();
+		SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
     @Override
