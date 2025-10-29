@@ -221,6 +221,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static int mListRota;
 	private int mRotateBtn;
 	private boolean mListRotaChg;
+	private static boolean mRevtRota;
 
 	private boolean mHidden;
 	private boolean mThumbSort;
@@ -310,7 +311,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 	private Bundle mSavedInstanceState = null;
 
-	private static OrientationEventListener orientationEventListener;
+	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
 
 	/** Called when the activity is first created. */
@@ -340,7 +341,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	@Override
 	protected void onPause() {
 		super.onPause();
-		SetOrientationEventListenerDisable();
+		SetOrientationEventListenerDisable(mSharedPreferences);
 		// onNewIntentが呼び出されることを想定してここで記録する
 		Editor ed = mSharedPreferences.edit();
 		ed.putString("ResumePath", mPath);
@@ -354,7 +355,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	protected void onResume() {
 		super.onResume();
 
-		SetOrientationEventListenerEnable();
+		SetOrientationEventListenerEnable(mSharedPreferences);
 	}
 
 	@Override
@@ -952,6 +953,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public static void SetOrientationEventListener(AppCompatActivity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		mListRota = SetFileListActivity.getListRota(sharedPreferences);
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+			return;
+		}
 		deviceOrientation = -1;
 		switch (mListRota) {
 			case 1:
@@ -975,11 +979,17 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		};
 	}
 
-	public static void SetOrientationEventListenerEnable() {
+	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.enable();
 	}
 
-	public static void SetOrientationEventListenerDisable() {
+	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.disable();
 	}
 
@@ -1405,6 +1415,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mTapExpand = SetFileListActivity.getTapExpand(mSharedPreferences);
 
 		mListRota = SetFileListActivity.getListRota(mSharedPreferences);
+		mRevtRota = SetCommonActivity.getReverseRotate(mSharedPreferences);
 
 		mBackMode = SetFileListActivity.getBackMode(mSharedPreferences);
 		mStartServer = SetFileListActivity.getStartServer(mSharedPreferences);
@@ -1465,7 +1476,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
-			DEF.setRotation(this, mListRota);
+			DEF.setRotationAll(this, mListRota);
 		}
 		Logcat.d(logLevel, "終了します");
 	}
@@ -1696,6 +1707,89 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		loadThumbnail(true);
 	}
 
+	// 画面の表示方向の切り替え
+	private void SetRotate() {
+		if (mListRota == DEF.ROTATE_ALL_PORTRAIT || mListRota == DEF.ROTATE_ALL_LANDSCAPE || mListRota == DEF.ROTATE_ALL_REVERSE_PORTRAIT || mListRota == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+			int rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+			switch (mListRota) {
+				case DEF.ROTATE_ALL_PORTRAIT:
+					// 縦固定の場合
+					if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横にする
+						if (mRevtRota) {
+							// 横固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+						}
+						else {
+							// 横固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+						}
+					}
+					else {
+						// 縦固定
+						rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+					}
+					break;
+				case DEF.ROTATE_ALL_LANDSCAPE:
+					// 横固定の場合
+					if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横固定
+						rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+					}
+					else {
+						// 縦にする
+						if (mRevtRota) {
+							// 縦固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+						}
+						else {
+							// 縦固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+						}
+					}
+					break;
+				case DEF.ROTATE_ALL_REVERSE_PORTRAIT:
+					// 縦固定(上下反転)の場合
+					if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横にする
+						if (mRevtRota) {
+							// 横固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+						}
+						else {
+							// 横固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+						}
+					}
+					else {
+						// 縦固定(上下反転)
+						rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+					}
+					break;
+				case DEF.ROTATE_ALL_REVERSE_LANDSCAPE:
+					// 横固定(上下反転)の場合
+					if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横固定(上下反転)
+						rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+					}
+					else {
+						// 縦にする
+						if (mRevtRota) {
+							// 縦固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+						}
+						else {
+							// 縦固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+						}
+					}
+					break;
+			}
+			setRequestedOrientation(rotate);
+			mListRotaChg = true;
+		}
+	}
+
 	private boolean mEnterDown = false;
 
 	// ハードウェアキーの設定
@@ -1820,6 +1914,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			case DEF.TAP_FILELIST_ENDAPP:
 				// アプリ終了
 				finishApplication();
+				break;
+			case DEF.TAP_FILELIST_ROTATE:
+				// リスト表示方向の切り替え
+				SetRotate();
 				break;
 			default:
 				break;
@@ -1980,19 +2078,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						else if (keycode != mRotateBtn) {
 							return true;
 						}
-						if (mListRota == DEF.ROTATE_PORTRAIT || mListRota == DEF.ROTATE_LANDSCAPE) {
-							int rotate;
-							if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-								// 横にする
-								rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-							}
-							else {
-								// 縦にする
-								rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-							}
-							setRequestedOrientation(rotate);
-							mListRotaChg = true;
-						}
+						// 画面の表示方向の切り替え
+						SetRotate();
 						return true;
 					case KeyEvent.KEYCODE_VOLUME_UP:
 					case KeyEvent.KEYCODE_PAGE_UP:
