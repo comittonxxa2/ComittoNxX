@@ -249,6 +249,14 @@
                 android:targetClass="src.comitton.config.SetSortActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="リスト表示の読書率のテキスト表示"
+            android:entries="@array/readtextsetting_name_list"
+            android:entryValues="@array/readtextsetting_value_list"
+            android:key="ReadTextSetting"
+            android:summary="dummy"
+            android:title="リスト表示の読書率のテキスト表示" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

@@ -30,6 +30,16 @@
             android:key="ForceHideStatusBar"
             android:summary="強制的にステータスバーを非表示にする(再起動で反映)"
             android:title="すべての画面でステータスバーを表示しない" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ForceTradOldViewRotate"
+            android:summary="表示方向が固定されない場合にチェックを入れる(逆方向の回転は設定不可/再起動で反映)"
+            android:title="表示方向の設定で従来の方式を使う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReverseRotate"
+            android:summary="ハードウェアキーで表示方向を切り替える時に上下を逆さにする場合にチェックを入れる(再起動で反映)"
+            android:title="表示方向の切り替え時に向きを逆にする" />
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="表示方向(ビューア以外全て)"
