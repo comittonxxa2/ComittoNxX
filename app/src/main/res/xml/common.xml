@@ -30,6 +30,16 @@
             android:key="ForceHideStatusBar"
             android:summary="Forces the status bar to be hidden (Required Restart)."
             android:title="Hide the status bar on all screens" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ForceTradOldViewRotate"
+            android:summary="Check if the display orientation is not fixed (Reverse rotation cannot be set/will be reflected upon restart)."
+            android:title="Use the traditional method for setting display orientation" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReverseRotate"
+            android:summary="Check if you want to turn the display upside down when switching the display orientation with the hardware keys (will be reflected upon restart)."
+            android:title="表示方向の切り替え時に向きを逆にする" />
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="Display direction(all except viewer)"
