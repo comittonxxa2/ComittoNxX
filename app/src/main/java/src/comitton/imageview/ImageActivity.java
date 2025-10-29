@@ -344,6 +344,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int mVolKeyMode;
 	private int mViewRota;
 	private int mRotateBtn;
+	private static boolean mRevtRota;
 	private int mVolScrl;
 	private int mScrlWay;
 	private int mScrlRngW;
@@ -603,7 +604,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mPinchEnable;
 	private long mActionMoveSkipStartTime;
 
-	private ImageActivity mActivity;
+	private static ImageActivity mActivity;
 	private SharedPreferences mSharedPreferences;
 	private float mSDensity;
 	private int mImmCancelRange;
@@ -632,7 +633,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private Insets insets;
 	private boolean mHideNavigationBar = false;
 
-	private static OrientationEventListener orientationEventListener;
+	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
 
 	private static void RotateMain(AppCompatActivity activity, int orientation, int viewrota) {
@@ -697,9 +698,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 	}
 
-	public static void SetOrientationEventListener(AppCompatActivity activity, int viewrota) {
+	public static void SetOrientationEventListener(AppCompatActivity activity, int viewrota, SharedPreferences sharedPreferences) {
 
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+			return;
+		}
 		deviceOrientation = -1;
 		switch (viewrota) {
 			case 1:
@@ -723,11 +727,17 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		};
 	}
 
-	public static void SetOrientationEventListenerEnable() {
+	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.enable();
 	}
 
-	public static void SetOrientationEventListenerDisable() {
+	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.disable();
 	}
 
@@ -812,7 +822,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mNoiseSwitch.recordStart();
 		}
 
-		SetOrientationEventListener(mActivity, mViewRota);
+		SetOrientationEventListener(mActivity, mViewRota, mSharedPreferences);
 
 		Resources res = getResources();
 		mLoadErrStr = res.getString(R.string.loaderr);
@@ -1025,7 +1035,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		// アクティビティ一時停止時に保存
 		SaveCurrentSetting();
-		SetOrientationEventListenerDisable();
+		SetOrientationEventListenerDisable(mSharedPreferences);
 		Logcat.v(logLevel, "終了します.");
 	}
 
@@ -1126,7 +1136,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
 		}
-		SetOrientationEventListenerEnable();
+		SetOrientationEventListenerEnable(mSharedPreferences);
 		Logcat.v(logLevel, "終了します.");
 	}
 
@@ -1211,6 +1221,88 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
                 uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
                 getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 			}
+		}
+	}
+
+	// 画面の表示方向の切り替え
+	public static void SetRotate(int viewrota, boolean revrota) {
+		if (viewrota == DEF.ROTATE_PORTRAIT || viewrota == DEF.ROTATE_LANDSCAPE || viewrota == DEF.ROTATE_REVERSE_PORTRAIT || viewrota == DEF.ROTATE_REVERSE_LANDSCAPE) {
+			int rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+			switch (viewrota) {
+				case DEF.ROTATE_PORTRAIT:
+					// 縦固定の場合
+					if (mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横にする
+						if (revrota) {
+							// 横固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+						}
+						else {
+							// 横固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+						}
+					}
+					else {
+						// 縦固定
+						rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+					}
+					break;
+				case DEF.ROTATE_LANDSCAPE:
+					// 横固定の場合
+					if (mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横固定
+						rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+					}
+					else {
+						// 縦にする
+						if (revrota) {
+							// 縦固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+						}
+						else {
+							// 縦固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+						}
+					}
+					break;
+				case DEF.ROTATE_REVERSE_PORTRAIT:
+					// 縦固定(上下反転)の場合
+					if (mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横にする
+						if (revrota) {
+							// 横固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+						}
+						else {
+							// 横固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+						}
+					}
+					else {
+						// 縦固定(上下反転)
+						rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+					}
+					break;
+				case DEF.ROTATE_REVERSE_LANDSCAPE:
+					// 横固定(上下反転)の場合
+					if (mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || mActivity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+						// 横固定(上下反転)
+						rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+					}
+					else {
+						// 縦にする
+						if (revrota) {
+							// 縦固定(上下反転)
+							rotate = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+						}
+						else {
+							// 縦固定
+							rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+						}
+					}
+					break;
+			}
+			mActivity.setRequestedOrientation(rotate);
 		}
 	}
 
@@ -1398,18 +1490,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						else if (event.getKeyCode() != mRotateBtn) {
 							return true;
 						}
-						if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
-							int rotate;
-							if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-								// 横にする
-								rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-							}
-							else {
-								// 縦にする
-								rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-							}
-							setRequestedOrientation(rotate);
-						}
+						mActivity.SetRotate(mViewRota, mRevtRota);
 						break;
 					}
 					default:
@@ -3732,6 +3813,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// プロファイル10
 				execCommand(DEF.MENU_PROFILE10);
 				break;
+			case DEF.TAP_SWSCREENORIENT:
+				// 表示方向の切り替え
+				mActivity.SetRotate(mViewRota, mRevtRota);
+				break;
 			case DEF.TAP_EXIT_VIEWER:
 				finishActivity(true);
 				break;
@@ -4044,7 +4129,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							boolean isPrePort = true;
 							boolean isAftPort = true;
 
-							if (prevRota == DEF.ROTATE_LANDSCAPE) {
+							if (prevRota == DEF.ROTATE_LANDSCAPE || prevRota == DEF.ROTATE_REVERSE_LANDSCAPE) {
 								isPrePort = false;
 							}
 							else if (prevRota == DEF.ROTATE_AUTO) {
@@ -4053,7 +4138,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								}
 							}
 
-							if (mViewRota == DEF.ROTATE_LANDSCAPE) {
+							if (mViewRota == DEF.ROTATE_LANDSCAPE || mViewRota == DEF.ROTATE_REVERSE_LANDSCAPE) {
 								isAftPort = false;
 							}
 
@@ -5751,6 +5836,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPseLand = false;
 			}
 
+			mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
 			mVolKeyMode = SetImageText.getVolKey(sharedPreferences); // 音量キー操作
 			mTapPattern = SetImageText.getTapPattern(sharedPreferences); // タップパターン
 			mTapRate = SetImageText.getTapRate(sharedPreferences); // タップの比率
