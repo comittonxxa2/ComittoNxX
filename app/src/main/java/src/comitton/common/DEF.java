@@ -502,6 +502,9 @@ public class DEF {
 	public static final String KEY_FORCENAVIGATIONBAR = "ForceHideNavigationBar";
 	public static final String KEY_FORCESTATUSBAR = "ForceHideStatusBar";
 	public static final String KEY_ENCRYPTION = "encryption";
+	public static final String KEY_FORCETRADDISPLAYOLDVIEWROTATE = "ForceTradOldViewRotate";
+	public static final String KEY_READTEXTSETTING = "ReadTextSetting";
+	public static final String KEY_REVERSEROTARE = "ReverseRotate";
 
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
@@ -1261,6 +1264,10 @@ public class DEF {
 	public static final int ALIGN_CENTER = 1;
 	public static final int ALIGN_BOTTOM = 2;
 
+	public static final int READTEXTNORMAL = 0;
+	public static final int READTEXTNONE = 1;
+	public static final int READTEXTAFTERDATESIZE = 2;
+
 	public static final String KEY_TAP_I_PATTERN_NUMBER = "TapPatINum";
 	public static final String KEY_TAP_T_PATTERN_NUMBER = "TapPatTNum";
 
@@ -1516,6 +1523,7 @@ public class DEF {
 	public static final int TAP_PROFILE8 = 110;		// プロファイル8
 	public static final int TAP_PROFILE9 = 111;		// プロファイル9
 	public static final int TAP_PROFILE10 = 112;		// プロファイル10
+	public static final int TAP_SWSCREENORIENT = 113;	// 表示方向の切り替え
 
 	// イメージビューア用のタップ操作の初期値
 	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
@@ -1887,6 +1895,7 @@ public class DEF {
 	public static final int TAP_FILELIST_REFRESH = 14;
 	public static final int TAP_FILELIST_CHANGELISTMODE = 15;
 	public static final int TAP_FILELIST_ENDAPP = 16;
+	public static final int TAP_FILELIST_ROTATE = 17;
 
 	public static final String KEY_CUSTOMKEY_TITLE_01 = "Customkeytitle01";
 	public static final String KEY_CUSTOMKEY_TITLE_02 = "Customkeytitle02";
@@ -2461,6 +2470,40 @@ public class DEF {
 			if (way == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
 				return true;
 			}
+		} else if (rotate == DEF.ROTATE_REVERSE_PORTRAIT) {
+			// 縦固定(上下反転)
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+			if (way == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+				return true;
+			}
+		} else if (rotate == DEF.ROTATE_REVERSE_LANDSCAPE) {
+			// 横固定(上下反転)
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+			if (way == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+				return true;
+			}
+		} else {
+			// 回転あり
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+		}
+		return false;
+	}
+
+	static public boolean setRotationAll(Activity act, int rotate) {
+		int way = act.getRequestedOrientation();
+		// 回転制御
+		if (rotate == DEF.ROTATE_ALL_PORTRAIT) {
+			// 縦固定
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		} else if (rotate == DEF.ROTATE_ALL_LANDSCAPE) {
+			// 横固定
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+		} else if (rotate == DEF.ROTATE_ALL_REVERSE_PORTRAIT) {
+			// 縦固定(上下反転)
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+		} else if (rotate == DEF.ROTATE_ALL_REVERSE_LANDSCAPE) {
+			// 横固定(上下反転)
+			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
 		} else {
 			// 回転あり
 			act.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
