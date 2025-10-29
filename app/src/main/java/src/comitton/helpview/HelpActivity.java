@@ -19,12 +19,13 @@ public class HelpActivity extends AppCompatActivity {
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+	private static SharedPreferences sharedPreferences;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -55,11 +56,11 @@ public class HelpActivity extends AppCompatActivity {
 	protected void onResume() {
 		super.onResume();
 		// バックグラウンドからフォアグランドに戻った時
-		CropImageActivity.SetOrientationEventListenerEnable();
+		CropImageActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 	@Override
 	protected void onPause() {
 		super.onPause();
-		CropImageActivity.SetOrientationEventListenerDisable();
+		CropImageActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 }
