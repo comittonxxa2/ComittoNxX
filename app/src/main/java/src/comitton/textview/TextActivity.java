@@ -185,6 +185,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private int mVolKeyMode = VOLKEY_DOWNTONEXT;
 	private int mViewRota;
 	private int mRotateBtn;
+	private static boolean mRevtRota;
 	private int mVolScrl;
 	private int mScrlRngW;
 	private int mScrlRngH;
@@ -439,7 +440,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mNoiseSwitch.recordStart();
 		}
 
-		ImageActivity.SetOrientationEventListener(mActivity, mViewRota);
+		ImageActivity.SetOrientationEventListener(mActivity, mViewRota, mSharedPreferences);
 
 		mTextView = new MyTextView(this);
 		mGuideView = new GuideView(this);
@@ -691,7 +692,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		if (mNoiseSwitch != null) {
 			mNoiseSwitch.recordPause(true);
 		}
-		ImageActivity.SetOrientationEventListenerDisable();
+		ImageActivity.SetOrientationEventListenerDisable(mSharedPreferences);
 	}
 
 	/**
@@ -706,7 +707,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mTextView.breakMessage(false);
 			mTextView.update(true);
 		}
-		ImageActivity.SetOrientationEventListenerEnable();
+		ImageActivity.SetOrientationEventListenerEnable(mSharedPreferences);
 	}
 
 	/**
@@ -1025,18 +1026,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 						else if (event.getKeyCode() != mRotateBtn) {
 							return true;
 						}
-						if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
-							int rotate;
-							if (getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-								// 横にする
-								rotate = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-							}
-							else {
-								// 縦にする
-								rotate = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-							}
-							setRequestedOrientation(rotate);
-						}
+						ImageActivity.SetRotate(mViewRota, mRevtRota);
 						break;
 					default:
 						break;
@@ -2530,7 +2520,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							boolean isPrePort = true;
 							boolean isAftPort = true;
 
-							if (prevRota == DEF.ROTATE_LANDSCAPE) {
+							if (prevRota == DEF.ROTATE_LANDSCAPE || prevRota == DEF.ROTATE_REVERSE_LANDSCAPE) {
 								isPrePort = false;
 							}
 							else if (prevRota == DEF.ROTATE_AUTO) {
@@ -2541,7 +2531,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 								}
 							}
 
-							if (mViewRota == DEF.ROTATE_LANDSCAPE) {
+							if (mViewRota == DEF.ROTATE_LANDSCAPE || mViewRota == DEF.ROTATE_REVERSE_LANDSCAPE) {
 								isAftPort = false;
 							}
 
@@ -2705,9 +2695,9 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// 音操作
 		mMenuDialog.addItem(DEF.MENU_NOISE, res.getString(R.string.noiseMenu), FileSelectActivity.GetRecordSw());
 		// 画面回転
-		if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
-			mMenuDialog.addItem(DEF.MENU_ROTATE, res.getString(R.string.rotateMenu));
-		}
+		// if (mViewRota == DEF.ROTATE_PORTRAIT || mViewRota == DEF.ROTATE_LANDSCAPE) {
+		mMenuDialog.addItem(DEF.MENU_ROTATE, res.getString(R.string.rotateMenu));
+		// }
 
 		mMenuDialog.addSection(res.getString(R.string.settingSec));
 		// テキスト表示設定
@@ -3543,6 +3533,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 		mDispMode = SetTextActivity.getInitView(sharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
 		mViewRota = SetTextActivity.getViewRota(sharedPreferences);
+		mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
 		mScaleMode = SetTextActivity.getIniScale(sharedPreferences);
 		mAscMode = SetTextActivity.getAscMode(sharedPreferences);
 
