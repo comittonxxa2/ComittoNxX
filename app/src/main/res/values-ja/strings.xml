@@ -164,6 +164,7 @@
     <string name="Profile8">プロファイル8</string>
     <string name="Profile9">プロファイル9</string>
     <string name="Profile10">プロファイル10</string>
+    <string name="SwitchingScreenOrientation">表示方向の切り替え</string>
     <string name="SetProfileMenu">プロファイルの登録</string>
     <string name="DelProfileMenu">プロファイルの削除</string>
     <string name="DelProfileName">%sの削除</string>
@@ -707,6 +708,7 @@
     <string name="hardwarekey14">リスト表示更新</string>
     <string name="hardwarekey15">リストモード切替</string>
     <string name="hardwarekey16">アプリ終了</string>
+    <string name="hardwarekey17">表示方向の切り替え</string>
 
     <string name="imageviwerhardwarekeytitle">イメージビューアのハードウェアキーの割り当て</string>
     <string name="textviewerhardwarekeytitle">テキストビューアのハードウェアキーの割り当て</string>
@@ -896,5 +898,9 @@
     <string name="sorttop05">EPUBファイル</string>
     <string name="sorttop06">テキストファイル</string>
     <string name="sorttop07">その他のファイル</string>
+
+    <string name="readtext00">通常表示</string>
+    <string name="readtext01">表示しない</string>
+    <string name="readtext02">日付サイズの後へ表示</string>
 
 </resources>
