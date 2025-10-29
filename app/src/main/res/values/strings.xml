@@ -164,6 +164,7 @@
     <string name="Profile8">Profile8</string>
     <string name="Profile9">Profile9</string>
     <string name="Profile10">Profile10</string>
+    <string name="SwitchingScreenOrientation">Switching the display orientation</string>
     <string name="SetProfileMenu">Register Profile</string>
     <string name="DelProfileMenu">Delete Profile</string>
     <string name="DelProfileName">Delete %s</string>
@@ -705,6 +706,7 @@
     <string name="hardwarekey14">Update list display</string>
     <string name="hardwarekey15">Toggle list mode</string>
     <string name="hardwarekey16">Exiting the app</string>
+    <string name="hardwarekey17">Switching display direction</string>
 
     <string name="imageviwerhardwarekeytitle">Image Viewer hardware key assignment"</string>
     <string name="textviewerhardwarekeytitle">Text Viewer hardware key assignment</string>
@@ -896,6 +898,10 @@
     <string name="sorttop05">EPUB file</string>
     <string name="sorttop06">Text file</string>
     <string name="sorttop07">Other files</string>
+
+    <string name="readtext00">Normal display</string>
+    <string name="readtext01">Not displayed</string>
+    <string name="readtext02">Displayed after the date size</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
