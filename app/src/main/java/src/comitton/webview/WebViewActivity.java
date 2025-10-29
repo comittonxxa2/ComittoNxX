@@ -39,6 +39,7 @@ public class WebViewActivity extends AppCompatActivity {
 	private boolean mNoSleep = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+	private static SharedPreferences sharedPreferences;
 
 	// ファイル情報
 	/** 選択したサーバのインデックス */
@@ -72,7 +73,7 @@ public class WebViewActivity extends AppCompatActivity {
 		// タイトル非表示
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -170,7 +171,7 @@ public class WebViewActivity extends AppCompatActivity {
 	protected void onResume() {
 		super.onResume();
 		// バックグラウンドからフォアグランドに戻った時
-		CropImageActivity.SetOrientationEventListenerEnable();
+		CropImageActivity.SetOrientationEventListenerEnable(sharedPreferences);
 		if (mywebView != null) {
 			// WebViewが空でなければ現在のウェブページを再表示する
 			String url = mywebView.getUrl();
@@ -180,6 +181,6 @@ public class WebViewActivity extends AppCompatActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		CropImageActivity.SetOrientationEventListenerDisable();
+		CropImageActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 }
