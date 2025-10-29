@@ -106,16 +106,17 @@ public class SetBookShelfActivity extends PreferenceActivity implements OnShared
 		mBookShelfEdgeLevel.setSummary(getBookShelfEdgeLevelSummary(sharedPreferences));
 		// カスタム画像の選択後に失敗する場合があるので再設定する
 		// 一先ず無効にしてからリスナーを再設定して有効にする
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

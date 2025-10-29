@@ -112,14 +112,15 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 		mVolScrl.setSummary(getVolScrlSummary(sharedPreferences));
 		mEffectTime.setSummary(getEffectTimeSummary(sharedPreferences));
 		mMomentMode.setSummary(getMomentModeSummary(sharedPreferences));
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

@@ -95,14 +95,15 @@ public class SetNoiseActivity extends PreferenceActivity implements OnSharedPref
 		mNoiseOver.setSummary(getNoiseOverSummary(sharedPreferences));
 
 		mNoiseDec.setSummary(getNoiseDecSummary(sharedPreferences));	// 判定速度
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

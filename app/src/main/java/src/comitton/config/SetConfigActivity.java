@@ -70,14 +70,15 @@ public class SetConfigActivity extends PreferenceActivity implements OnSharedPre
 		super.onResume();
 		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

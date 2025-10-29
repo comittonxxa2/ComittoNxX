@@ -86,8 +86,9 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
-	private static OrientationEventListener orientationEventListener;
+	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
+	private static SharedPreferences sharedPreferences;
 
 	public static final int[] RotateBtnName =
 		{ R.string.rotabtn00	// 使用しない
@@ -98,7 +99,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -213,6 +214,11 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	public static void SetOrientationEventListener(Activity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		int viewrota = getViewRotaAll(sharedPreferences);
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+			// 従来の設定で回転させる
+			DEF.setRotationAll(activity, viewrota);
+			return;
+		}
 		deviceOrientation = -1;
 		switch (viewrota) {
 			case 1:
@@ -236,11 +242,17 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		};
 	}
 
-	public static void SetOrientationEventListenerEnable() {
+	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.enable();
 	}
 
-	public static void SetOrientationEventListenerDisable() {
+	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
+		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+			return;
+		}
 		orientationEventListener.disable();
 	}
 
@@ -264,7 +276,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		mPriorityWord08.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_08, ""));
 		mPriorityWord09.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_09, ""));
 		mPriorityWord10.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_10, ""));
-		SetOrientationEventListenerEnable();
+		SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
@@ -272,7 +284,8 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
 
-		SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -440,6 +453,18 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	public static boolean getForceHideStatusBar(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FORCESTATUSBAR, false);
+		return flag;
+	}
+
+	public static boolean getForceTradOldViewRotate(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FORCETRADDISPLAYOLDVIEWROTATE, false);
+		return flag;
+	}
+
+	public static boolean getReverseRotate(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_REVERSEROTARE, false);
 		return flag;
 	}
 

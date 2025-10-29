@@ -103,6 +103,7 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 		true,
 		true,
 		true,
+		true,
 	};
 
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル
@@ -125,6 +126,7 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 		R.string.hardwarekey14,		// リスト表示更新
 		R.string.hardwarekey15,		// リストモード切替
 		R.string.hardwarekey16,		// アプリ終了
+		R.string.hardwarekey17,		// リスト表示方向の切り替え
 	};
 
 	@SuppressWarnings("deprecation")
@@ -304,14 +306,15 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 		mCustom09Key.setSummary(getCustom09KeySummary(sharedPreferences));
 		mCustom10Key.setSummary(getCustom10KeySummary(sharedPreferences));
 
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

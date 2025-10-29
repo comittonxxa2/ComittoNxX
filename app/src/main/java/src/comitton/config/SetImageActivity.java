@@ -277,14 +277,15 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 最終ページでの確認
 		mPageSel.setSummary(SetImageText.getPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
 
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

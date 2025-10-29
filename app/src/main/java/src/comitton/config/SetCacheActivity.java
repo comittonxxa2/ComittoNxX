@@ -102,14 +102,15 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 		mMemNext.setSummary(getMemNextSummary(sharedPreferences));	// 次ページ数
 		mMemPrev.setSummary(getMemPrevSummary(sharedPreferences));	// 前ページ数
 		mMemCacheStartThreshold.setSummary(getMemCacheSummary(sharedPreferences));
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

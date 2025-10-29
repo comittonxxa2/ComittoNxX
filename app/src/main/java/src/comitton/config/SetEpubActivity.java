@@ -21,12 +21,13 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
+	private static SharedPreferences sharedPreferences;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -48,14 +49,14 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 	@Override
 	protected void onResume() {
 		super.onResume();
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

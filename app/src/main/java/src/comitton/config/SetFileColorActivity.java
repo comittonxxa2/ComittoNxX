@@ -199,7 +199,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		mSharedPreferences = getPreferenceScreen().getSharedPreferences();
 		mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(mSharedPreferences);
 		// 色設定
 		int val = getPreset(mSharedPreferences);
 		mPreset.setSummary(getPresetSummary(val)); // プリセット
@@ -214,7 +214,8 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		mSharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(mSharedPreferences);
 
 	}
 

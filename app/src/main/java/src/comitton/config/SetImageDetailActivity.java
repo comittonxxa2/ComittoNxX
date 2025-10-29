@@ -125,14 +125,15 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		mAutoPlay.setSummary(getAutoPlaySummary(sharedPreferences));
 		mMaxThread.setSummary(getMaxThreadSummary(sharedPreferences));	// 最大スレッド数
 		mLoupeSize.setSummary(getLoupeSizeSummary(sharedPreferences));
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

@@ -273,7 +273,7 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 確認メッセージ
 		mPageSel.setSummary(SetImageText.getTxPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
 		mTimeAndBattery.setSummary(getTimeSummary(sharedPreferences));	// 時刻と充電表示
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 
 	}
 
@@ -281,7 +281,8 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

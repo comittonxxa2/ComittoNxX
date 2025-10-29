@@ -233,13 +233,13 @@ public class BookShelfFileSelectActivity extends PreferenceActivity implements O
 	@Override
 	protected void onResume() {
 		super.onResume();
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

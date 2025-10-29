@@ -81,14 +81,15 @@ public class SetMarginCutActivity extends PreferenceActivity implements OnShared
 		mMarginStart.setSummary(getMarginStartSummary(sharedPreferences));
 		mMarginRange.setSummary(getMarginRangeSummary(sharedPreferences));
 		mMarginLimit.setSummary(getMarginLimitSummary(sharedPreferences));
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

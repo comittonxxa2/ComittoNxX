@@ -83,14 +83,15 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
 		mHistNum.setSummary(getHistNumSummary(sharedPreferences));		// 履歴保存件数
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 

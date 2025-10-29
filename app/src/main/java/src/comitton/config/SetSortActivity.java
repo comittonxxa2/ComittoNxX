@@ -96,14 +96,15 @@ public class SetSortActivity extends PreferenceActivity implements OnSharedPrefe
 		mSoftEpubFile.setSummary(getSoftEpubFileSummary(sharedPreferences));
 		mSoftOtherFile.setSummary(getSoftOtherFileSummary(sharedPreferences));
 
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

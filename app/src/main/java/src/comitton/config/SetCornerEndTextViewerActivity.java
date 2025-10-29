@@ -183,14 +183,15 @@ public class SetCornerEndTextViewerActivity extends PreferenceActivity implement
 		mSingleTap.setSummary(getSingleTapSummary(sharedPreferences));
 		mCornerEndWidthLevel.setSummary(getCornerEndWidthLevelSummary(sharedPreferences));
 		mCornerEndHeightLevel.setSummary(getCornerEndHeightLevelSummary(sharedPreferences));
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

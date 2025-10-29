@@ -55,6 +55,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 
 	private ThumbnailPreference mThumbnail;
 
+	private ListPreference mReadTextSetting;
+
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
@@ -127,6 +129,10 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 			, R.string.mgncut03		// 強
 			, R.string.mgncut04		// 特上
 			, R.string.mgncut05 };		// 最強
+	public static final int[] ReadTextName =
+			{ R.string.readtext00		// 通常表示
+			, R.string.readtext01		// 表示なし
+			, R.string.readtext02 };	// 日付サイズの後へ表示
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -170,6 +176,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mToolbarSeek = (ToolbarSeekbar)getPreferenceScreen().findPreference(DEF.KEY_TOOLBARSEEK);
 		mListThumbSeek = (ListThumbSeekbar)getPreferenceScreen().findPreference(DEF.KEY_LISTTHUMBSEEK);
 		mMenuLongTap   = (MenuLongTapSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MENULONGTAP);
+		mReadTextSetting = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READTEXTSETTING);
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FILEHELP);
@@ -216,14 +223,16 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mToolbarSeek.setSummary(getToolbarSeekSummary(sharedPreferences));		// ツールバー表示
 		mListThumbSeek.setSummary(getListThumbSeekSummary(sharedPreferences));		// リストサムネイルサイズ表示
 		mMenuLongTap.setSummary(getMenuLongTapSummary(sharedPreferences));
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		mReadTextSetting.setSummary(getReadTextSettingSummary(sharedPreferences));
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 }
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 
@@ -308,6 +317,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		else if(key.equals(DEF.KEY_MENULONGTAP)){
 			// 長押し時間
 			mMenuLongTap.setSummary(getMenuLongTapSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_READTEXTSETTING)){
+			mReadTextSetting.setSummary(getReadTextSettingSummary(sharedPreferences));
 		}
 	}
 
@@ -627,6 +639,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static int getReadTextSetting(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_READTEXTSETTING, "0");
+		if(val < 0 || val >= ReadTextName.length){
+			val = 0;
+		}
+		return val;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
@@ -767,5 +787,11 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		Resources res = getResources();
 		String summ1 = res.getString(R.string.msecSumm1);
 		return	DEF.getMSecStr100(val, summ1);
+	}
+
+	private String getReadTextSettingSummary(SharedPreferences sharedPreferences){
+		int val = getReadTextSetting(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(ReadTextName[val]);
 	}
 }

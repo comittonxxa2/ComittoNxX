@@ -139,14 +139,15 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 		mHitColor.setSummary(getColorSummary(getHitColor(sharedPreferences)));	// 検索ヒット
 
 		mGradation.setSummary(getGradationSummary(sharedPreferences));	// ファイル選択画面の回転制御
-		SetCommonActivity.SetOrientationEventListenerEnable();
+		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SetCommonActivity.SetOrientationEventListenerDisable();
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 
 	}
 
