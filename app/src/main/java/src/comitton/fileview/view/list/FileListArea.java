@@ -1095,10 +1095,25 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					canvas.drawText(mInfoSep[index][i], x, y + ty + mInfoAscent, mInfoPaint);
 					ty += (mInfoSize + mInfoDescent);
 				}
+				if (SetFileListActivity.getReadTextSetting(sharedPreferences) == DEF.READTEXTAFTERDATESIZE) {
+					// 日付とサイズの後に表示する場合
+					// 縦座標を減らす
+					ty -= (mInfoSize + mInfoDescent);
+					// テキスト幅を加算
+					x += mReadPaint.measureText(mInfoSep[index][mInfoSep[index].length - 1] + " ");
+					mReadPaint.setColor(color);
+					mReadPaint.setTextSize(mInfoSize);
+					canvas.drawText(mReadInfo[index], x, y + ty + mInfoAscent, mReadPaint);
+				}
 
-				mReadPaint.setColor(color);
-				mReadPaint.setTextSize(mInfoSize);
-				canvas.drawText(mReadInfo[index], x, y + ty + mInfoAscent, mReadPaint);
+				if (SetFileListActivity.getReadTextSetting(sharedPreferences) == DEF.READTEXTNONE || SetFileListActivity.getReadTextSetting(sharedPreferences) == DEF.READTEXTAFTERDATESIZE) {
+					// 表示なしと日付とサイズの後に表示する場合は何もしない
+				}
+				else {
+					mReadPaint.setColor(color);
+					mReadPaint.setTextSize(mInfoSize);
+					canvas.drawText(mReadInfo[index], x, y + ty + mInfoAscent, mReadPaint);
+				}
 			}
 
 //			if (mIconHeight > ty) {
@@ -1628,8 +1643,12 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				}
 			}
 
+			int readinfosize = 1;
+			if (SetFileListActivity.getReadTextSetting(sharedPreferences) == DEF.READTEXTNONE || SetFileListActivity.getReadTextSetting(sharedPreferences) == DEF.READTEXTAFTERDATESIZE) {
+				readinfosize = 0;
+			}
 			// 項目高さを求める
-			height = (mTitleSize + mTitleDescent) * mTitleSep[index].length + (mInfoSize + mInfoDescent) * (mInfoSep[index].length + 1);
+			height = (mTitleSize + mTitleDescent) * mTitleSep[index].length + (mInfoSize + mInfoDescent) * (mInfoSep[index].length + readinfosize);
 			// ビットマップ表示のサイズ確保
             if (mThumbFlag && height < mListIconHeight) {
                 height = mListIconHeight;
