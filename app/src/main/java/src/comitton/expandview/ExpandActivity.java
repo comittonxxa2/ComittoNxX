@@ -227,7 +227,10 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 //			mTextPageDual = false;
 //		}
 
+		// 個別の表示方向を設定するためコメントアウトにする
+		/*
 		DEF.setRotation(this, mListRota);
+		*/
 
 		// Intentを取得する
 		Intent intent = getIntent();
@@ -316,12 +319,12 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	protected void onResume() {
 		super.onResume();
 		// バックグラウンドからフォアグランドに戻った時
-		CropImageActivity.SetOrientationEventListenerEnable();
+		CropImageActivity.SetOrientationEventListenerEnable(mSharedPreferences);
 	}
 	@Override
 	protected void onPause() {
 		super.onPause();
-		CropImageActivity.SetOrientationEventListenerDisable();
+		CropImageActivity.SetOrientationEventListenerDisable(mSharedPreferences);
 	}
 
 	public class ZipLoad implements Runnable {
