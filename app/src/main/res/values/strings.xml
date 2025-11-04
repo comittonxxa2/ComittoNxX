@@ -125,6 +125,7 @@
     <string name="tapClick02">Long press</string>
     <string name="tapSettingMenu">Setup of tap operation</string>
     <string name="CustonkeySettingMenu">Setup of custon key</string>
+    <string name="FloatingIconSettingMenu">Setup of floating icon</string>
     <string name="downloadCountMenu">Number of Downloads</string>
     <string name="licenseMenu">License</string>
     <string name="noiseMenu">Operation by noise</string>
@@ -902,6 +903,20 @@
     <string name="readtext00">Normal display</string>
     <string name="readtext01">Not displayed</string>
     <string name="readtext02">Displayed after the date size</string>
+
+    <string name="enablefloatingicon">Enable Floating Toolbar</string>
+    <string name="editfloatingicon">Edit item</string>
+    <string name="directionfloatingicon">Icon connection direction</string>
+    <string name="sizefloatingicon">Size(%)</string>
+    <string name="horizontalfloatingicon">Horizontal position(%)</string>
+    <string name="verticalfloatingicon">Vertical position(%)</string>
+    <string name="transparencyfloatingicon">Background Transparency(%)</string>
+
+    <string name="floatingicondir00">Vertical direction</string>
+    <string name="floatingicondir01">Horizontal direction</string>
+    <string name="floatingdot">dot</string>
+
+    <string name="openfloatingiconsetting">Open settings dialog</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
