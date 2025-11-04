@@ -125,6 +125,7 @@
     <string name="tapClick02">長押しタップ</string>
     <string name="tapSettingMenu">タップ操作の設定</string>
     <string name="CustonkeySettingMenu">カスタムキーの設定</string>
+    <string name="FloatingIconSettingMenu">フローティングアイコンの設定</string>
     <string name="downloadCountMenu">ダウンロード数</string>
     <string name="licenseMenu">ライセンス情報</string>
     <string name="noiseMenu">音での操作</string>
@@ -902,5 +903,19 @@
     <string name="readtext00">通常表示</string>
     <string name="readtext01">表示しない</string>
     <string name="readtext02">日付サイズの後へ表示</string>
+
+    <string name="enablefloatingicon">フローティングアイコンを有効</string>
+    <string name="editfloatingicon">項目を編集</string>
+    <string name="directionfloatingicon">アイコンの連結の向き</string>
+    <string name="sizefloatingicon">サイズ(%)</string>
+    <string name="horizontalfloatingicon">横の位置(%)</string>
+    <string name="verticalfloatingicon">縦の位置(%)</string>
+    <string name="transparencyfloatingicon">背景の透明度(%)</string>
+
+    <string name="floatingicondir00">縦方向</string>
+    <string name="floatingicondir01">横方向</string>
+    <string name="floatingdot">ドット</string>
+
+    <string name="openfloatingiconsetting">設定ダイアログを開く</string>
 
 </resources>
