@@ -7,7 +7,10 @@ import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetFileColorActivity;
 import src.comitton.cropimageview.CropImageActivity;
+import src.comitton.dialog.FloatingIconDialog;
+import src.comitton.dialog.FloatingIconDialog.FloatingIconListenerInterface;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.config.SetCacheActivity;
@@ -42,6 +45,7 @@ import src.comitton.dialog.MenuDialog.MenuSelectListener;
 import src.comitton.dialog.ImageConfigDialog.ImageConfigListenerInterface;
 import src.comitton.dialog.TabDialogFragment;
 import src.comitton.dialog.TextInputDialog;
+import src.comitton.dialog.FloatingIconEditDialog;
 import src.comitton.dialog.CustomProgressDialog;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.FileSelectActivity;
@@ -71,6 +75,7 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.PointF;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -81,6 +86,7 @@ import android.os.Vibrator;
 import androidx.preference.PreferenceManager;
 
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
@@ -90,7 +96,9 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import src.comitton.common.ImageAccess;
@@ -498,7 +506,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private String mLoadErrStr;
 
 	// 画面を構成する View の保持
-	private static MyImageView mImageView = null;
+	public static MyImageView mImageView = null;
 	private GuideView mGuideView = null;
 	private boolean mKeepGuide = false;
 	// フリック判定用
@@ -622,16 +630,28 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private PageSelectDialog mPageDlg = null;
 	private PageThumbnail mThumbDlg = null;
 
+	private FloatingIconDialog mFloatingIconDialog;
+
 	private GestureDetectorCompat mDetector;
 	private boolean mDoubleTapMode = false;
 	private boolean mDoubleTapGuardOn = false;
 	private boolean mAutoRepeatCheck = false;
 	private boolean mPinchScaleSetting = false;
 
+	private int mFloatingIconSize;
+	private int mFloatingIconHorizontal;
+	private int mFloatingIconVertical;
+	private int mFloatingIconTransparency;
+	private int mFloatingIconDirectionMode;
+	private boolean mFloatingIconEnable;
+
+	private	ImageButton[] imageButtons = null;
+
 	private int mResult = 0;
 	private Context context;
 	private Insets insets;
 	private boolean mHideNavigationBar = false;
+	private static FrameLayout layout;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -833,7 +853,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		mImageView = new MyImageView(this);
 		mGuideView = new GuideView(this);
-		FrameLayout layout = new FrameLayout(this);
+		layout = new FrameLayout(this);
 		layout.addView(mImageView);
 		setContentView(layout);
 
@@ -946,6 +966,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				return insets;
 			});
 		}
+
+		// フローティングアイコンの表示を遅延実行させる
+		startViewTimer(DEF.HMSG_EVENT_FLOATINGICON_RESET);
 
 		mListLoading = true;
 		mZipLoad = new ZipLoad(mHandler, this);
@@ -1324,6 +1347,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// Configuration config = getResources().getConfiguration();
 		// mIsLandscape = (config.orientation ==
 		// Configuration.ORIENTATION_LANDSCAPE);
+
+		// フローティングアイコンの表示を遅延実行させる
+		startViewTimer(DEF.HMSG_EVENT_FLOATINGICON_RESET);
 
 		if (mBitmapLoading) {
 			return;
@@ -1905,6 +1931,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// トースト表示させる
 				Resources res = mActivity.getResources();
 				Toast.makeText(this, res.getString(R.string.cancelloadpage), Toast.LENGTH_SHORT).show();
+				break;
+			case DEF.HMSG_EVENT_FLOATINGICON:
+				ExecFloatingIconCommand(FloatingIconEditDialog.COMMAND_ID[msg.arg1]);
+				break;
+			case DEF.HMSG_EVENT_FLOATINGICON_RESET:
+				// フローティングアイコンをセット
+				AddButton(layout, mActivity);
 				break;
 		}
 		return false;
@@ -4802,6 +4835,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMenuDialog.addItem(DEF.MENU_TAP_CLICK, res.getString(R.string.tapClickMenu));
 		mMenuDialog.addItem(DEF.MENU_TAP_SETTING, res.getString(R.string.tapSettingMenu));
 		mMenuDialog.addItem(DEF.MENU_CUSTOMKEY_SETTING, res.getString(R.string.CustonkeySettingMenu));
+		mMenuDialog.addItem(DEF.MENU_FLOATINGICON_SETTING, res.getString(R.string.FloatingIconSettingMenu));
 		// バージョン情報
 		mMenuDialog.addItem(DEF.MENU_ABOUT, res.getString(R.string.aboutMenu));
 
@@ -5284,7 +5318,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.MENU_CUSTOMKEY_SETTING:
 				TouchPanelView.SetAlertDialogCustom(mActivity);
 				break;
-			
+			case DEF.MENU_FLOATINGICON_SETTING:
+				showFloatingIconDialog(DEF.MENU_IMGCONF);
+				break;
+
 			default: {
 				if (id >= DEF.MENU_DIR_TREE) {
 					onSelectPage(id - DEF.MENU_DIR_TREE);
@@ -5877,6 +5914,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			// アクセス状態表示
 			mAccessLamp = SetImageDetailActivity.getAccessLamp(sharedPreferences);
+			mFloatingIconSize = FloatingIconDialog.getSize(sharedPreferences);
+			mFloatingIconHorizontal = FloatingIconDialog.getHorizontal(sharedPreferences);
+			mFloatingIconVertical = FloatingIconDialog.getVertical(sharedPreferences);
+			mFloatingIconTransparency = FloatingIconDialog.getTransparency(sharedPreferences);
+			mFloatingIconDirectionMode = FloatingIconDialog.getDirectionMode(sharedPreferences);
+			mFloatingIconEnable = FloatingIconDialog.getEnable(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -7561,6 +7604,287 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	public static void UpdateTouchPanelData() {
 		if (mImageView != null) {
 			mImageView.ViewTapSw(true);
+		}
+	}
+
+	private void showFloatingIconDialog(int command_id) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
+
+		if (mFloatingIconDialog != null) {
+			return;
+		}
+		mFloatingIconDialog = new FloatingIconDialog(this, R.style.MyDialog, command_id, false, this, mHandler);
+
+		mFloatingIconDialog.setConfig(mFloatingIconDirectionMode, mFloatingIconSize, mFloatingIconHorizontal, mFloatingIconVertical, mFloatingIconTransparency, mFloatingIconEnable);
+		mFloatingIconDialog.setFloatingIconListner(new FloatingIconListenerInterface() {
+			@Override
+			public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable) {
+				// 選択状態を通知
+				boolean ischange = false;
+				// 変更があるかを確認(適用後のキャンセルの場合も含む)
+				if (mFloatingIconSize != size || mFloatingIconHorizontal != horizontal || mFloatingIconVertical != vertical || mFloatingIconTransparency != transparency || mFloatingIconDirectionMode != directionmode || mFloatingIconEnable != enable) {
+					ischange = true;
+				}
+				mFloatingIconSize = size;
+				mFloatingIconHorizontal = horizontal;
+				mFloatingIconVertical = vertical;
+				mFloatingIconTransparency = transparency;
+				mFloatingIconDirectionMode = directionmode;
+				mFloatingIconEnable = enable;
+				if (ischange) {
+					// 変更があった場合
+					AddButton(layout, mActivity);
+					// 設定を保存
+					Editor ed = mSharedPreferences.edit();
+					ed.putInt(DEF.KEY_FLOATINGICONSIZE, mFloatingIconSize);
+					ed.putInt(DEF.KEY_FLOATINGICONHORIZENTIAL, mFloatingIconHorizontal);
+					ed.putInt(DEF.KEY_FLOATINGICONVIRTICAL, mFloatingIconVertical);
+					ed.putInt(DEF.KEY_FLOATINGICONTRANSPARENCY, mFloatingIconTransparency);
+					ed.putInt(DEF.KEY_FLOATINGICONDIRECTIONMODE, mFloatingIconDirectionMode);
+					ed.putBoolean(DEF.KEY_FLOATINGICONENABLE, mFloatingIconEnable);
+					ed.apply();
+				}
+			}
+
+			@Override
+			public void onClose() {
+				// 終了
+				mFloatingIconDialog = null;
+			}
+		});
+		mFloatingIconDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
+	}
+
+	// dpをピクセルへ変換
+	private int dpToPx(int dpValue) {
+		float density = getResources().getDisplayMetrics().density;
+		return (int) (dpValue * density + 0.5f);
+	}
+
+	// フローティングアイコンをセット
+	public void AddButton(FrameLayout layout, AppCompatActivity activity) {
+		// レイアウトの領域を準備
+		FrameLayout.LayoutParams[] iconParamsAll;
+		// アイコンの数を取得
+		int length = FloatingIconEditDialog.GetStatusLength(this);
+		iconParamsAll = new FrameLayout.LayoutParams[length];
+		// アイコンのサイズをdpで指定
+		// 16ドットと空白×2だけ確保する
+		int sizeInPx = dpToPx(mFloatingIconSize + 10 + 16);
+		// アイコンの間に空白を入れる
+		int paddingInPx = dpToPx(5);
+		// アイコンの色を取得
+		int forecolor = SetFileColorActivity.getFifColor(mSharedPreferences);
+		// アイコンの背景色を取得
+		int backcolor = (int)((100 - (float)mFloatingIconTransparency) / 100 * 255) << 24 | SetFileColorActivity.getFibColor(mSharedPreferences) & 0xFFFFFF;
+		// アイコンの表示開始位置を設定
+		int cx = mImageView.getWidth();
+		int cy = mImageView.getHeight();
+		// 画面外の表示開始位置になるのを防止するためアイコン1つ分の領域を確保する
+		int heightmargin = (int)((float)((cy - sizeInPx) * mFloatingIconVertical) / 100);
+		int widthmargin = (int)((float)((cx - sizeInPx) * mFloatingIconHorizontal) / 100);
+		// 設定を取得
+		boolean[] mStates = FloatingIconEditDialog.loadToolbarState(this);
+		// 以前に表示していたフローティングアイコンを消す
+		// 範囲外をアクセスする可能性があるためtry～catchで囲む
+		try {
+			for (int i = 0; i < FloatingIconEditDialog.COMMAND_DRAWABLE.length; i++) {
+				if (imageButtons[i] != null) {
+					imageButtons[i].setVisibility(View.GONE);
+				}
+			}
+		}
+		catch (Exception e) {
+		}
+		// アイコンの数だけ領域を確保
+		imageButtons = new ImageButton[length];
+
+		if (mFloatingIconEnable) {
+			// フローティングアイコンが有効の場合
+			ViewGroup.LayoutParams layoutParams;
+			// フローティングアイコンを描画
+			for (int i = 0; i < length; i++) {
+				iconParamsAll[i] = new FrameLayout.LayoutParams(
+					FrameLayout.LayoutParams.WRAP_CONTENT,
+					FrameLayout.LayoutParams.WRAP_CONTENT
+				);
+				// 左上に配置
+		        iconParamsAll[i].gravity = Gravity.TOP | Gravity.LEFT;
+				if (mFloatingIconDirectionMode == 0) {
+					// 縦方向
+					// アイコンのサイズだけ座標をずらす
+					iconParamsAll[i].topMargin = heightmargin + i * sizeInPx;
+					iconParamsAll[i].leftMargin = widthmargin;
+				}
+				else {
+					// 横方向
+					// アイコンのサイズだけ座標をずらす
+					iconParamsAll[i].topMargin = heightmargin;
+					iconParamsAll[i].leftMargin = widthmargin + i * sizeInPx;
+				}
+				imageButtons[i] = new ImageButton(activity);
+				// 色と座標を設定
+				imageButtons[i].setColorFilter(forecolor);
+				imageButtons[i].setBackgroundColor(backcolor);
+				imageButtons[i].setLayoutParams(iconParamsAll[i]);
+				layout.addView(imageButtons[i]);
+				// レイアウトを取得
+				layoutParams = imageButtons[i].getLayoutParams();
+				// リサイズのピクセル数を設定
+				layoutParams.width = sizeInPx;
+				layoutParams.height = sizeInPx;
+				// 余白を設定
+				imageButtons[i].setPadding(paddingInPx, paddingInPx, paddingInPx, paddingInPx);
+				imageButtons[i].setLayoutParams(layoutParams);
+				// アイコンをリサイズする
+				imageButtons[i].setScaleType(ImageButton.ScaleType.FIT_XY);
+			}
+			int count = 0;
+			for (int i = 0; i < FloatingIconEditDialog.COMMAND_DRAWABLE.length; i++) {
+				int finali = i;
+				if (mStates[i] && mFloatingIconEnable) {
+					// フローティングアイコンの画像を登録
+					imageButtons[count].setImageResource(FloatingIconEditDialog.COMMAND_DRAWABLE[i]);
+					// フローティングアイコンのクリックイベントを実行
+		            imageButtons[count].setOnClickListener(v -> {
+						Message message = new Message();
+						message.what = DEF.HMSG_EVENT_FLOATINGICON;
+						message.arg1 = finali;
+						mHandler.sendMessage(message);
+					});
+					count++;
+				}
+			}
+		}
+	}
+
+	// フローティングアイコンのクリックイベント
+	private void ExecFloatingIconCommand(int index) {
+		switch (index) {
+			case DEF.FLOATING_LEFTMOST:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARLEFTMOST);
+				break;
+			case DEF.FLOATING_LEFT100:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARLEFT100);
+				break;
+			case DEF.FLOATING_LEFT10:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARLEFT10);
+				break;
+			case DEF.FLOATING_LEFT1:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARLEFT1);
+				break;
+			case DEF.FLOATING_RIGHT1:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARRIGHT1);
+				break;
+			case DEF.FLOATING_RIGHT10:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARRIGHT10);
+				break;
+			case DEF.FLOATING_RIGHT100:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARRIGHT100);
+				break;
+			case DEF.FLOATING_RIGHTMOST:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARRIGHTMOST);
+				break;
+			case DEF.FLOATING_BOOK_LEFT:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARBOOKLEFT);
+				break;
+			case DEF.FLOATING_BOOK_RIGHT:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARBOOKRIGHT);
+				break;
+			case DEF.FLOATING_BOOKMARK_LEFT:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARBOOKMARKLEFT);
+				break;
+			case DEF.FLOATING_BOOKMARK_RIGHT:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARBOOKMARKRIGHT);
+				break;
+			case DEF.FLOATING_THUMB_SLIDER:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARTHUMBSLIDER);
+				break;
+			case DEF.FLOATING_DIR_TREE:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARDIRTREE);
+				break;
+			case DEF.FLOATING_FAVORITE:
+				execCommand(DEF.MENU_SELBOOKMARK);
+				break;
+			case DEF.FLOATING_ADD_FAVORITE:
+				execCommand(DEF.MENU_ADDBOOKMARK);
+				break;
+			case DEF.FLOATING_SHARE:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARSHARE);
+				break;
+			case DEF.FLOATING_ROTATE:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARROTATE);
+				break;
+			case DEF.FLOATING_ROTATE_IMAGE:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARROTATEIMAGE);
+				break;
+			case DEF.FLOATING_SELECT_THUMB:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARSELECTTHUM);
+				break;
+			case DEF.FLOATING_TRIM_THUMB:
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARTRIMTHUMB);
+				break;
+			case DEF.FLOATING_CONTROL:
+				execCommand(DEF.MENU_IMGCONF);
+				break;
+			case DEF.FLOATING_MENU:
+				// ページ番号入力が開いていたら閉じる
+				if (PageSelectDialog.mIsOpened) {
+					mPageDlg.dismiss();
+				}
+				// サムネイルページ選択が開いていたら閉じる
+				if (PageThumbnail.mIsOpened) {
+					mThumbDlg.dismiss();
+				}
+				openMenu();
+				break;
+			case DEF.FLOATING_CONFIG:
+				// ページ番号入力が開いていたら閉じる
+				if (PageSelectDialog.mIsOpened) {
+					mPageDlg.dismiss();
+				}
+				// サムネイルページ選択が開いていたら閉じる
+				if (PageThumbnail.mIsOpened) {
+					mThumbDlg.dismiss();
+				}
+				execCommand(DEF.MENU_SETTING);
+				break;
+			case DEF.FLOATING_EDIT_FLOATING:
+				// 編集ダイアログ表示
+	            FloatingIconEditDialog dialog = new FloatingIconEditDialog(mActivity, R.style.MyDialog, mImageView.getWidth(), mImageView.getHeight(), mHandler);
+				dialog.show();
+				break;
+			case DEF.FLOATING_PROFILE1:
+				LoadProfile(0);
+				break;
+			case DEF.FLOATING_PROFILE2:
+				LoadProfile(1);
+				break;
+			case DEF.FLOATING_PROFILE3:
+				LoadProfile(2);
+				break;
+			case DEF.FLOATING_PROFILE4:
+				LoadProfile(3);
+				break;
+			case DEF.FLOATING_PROFILE5:
+				LoadProfile(4);
+				break;
+			case DEF.FLOATING_PROFILE6:
+				LoadProfile(5);
+				break;
+			case DEF.FLOATING_PROFILE7:
+				LoadProfile(6);
+				break;
+			case DEF.FLOATING_PROFILE8:
+				LoadProfile(7);
+				break;
+			case DEF.FLOATING_PROFILE9:
+				LoadProfile(8);
+				break;
+			case DEF.FLOATING_PROFILE10:
+				LoadProfile(9);
+				break;
 		}
 	}
 
