@@ -135,6 +135,20 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="本棚のテキストの縁取りの色" />
+        <src.comitton.config.color.ColorFifSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="フローティングアイコンの色"
+            android:key="FifRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="フローティングアイコンの色" />
+        <src.comitton.config.color.ColorFibSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="フローティングアイコンの背景色"
+            android:key="FibRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="フローティングアイコンの背景色" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
