@@ -126,6 +126,8 @@ public class DEF {
 	public static final int HMSG_EVENT_SCROLL_NEXT = 212;
 	public static final int HMSG_EVENT_LOADING_NEXT = 213;
 	public static final int HMSG_EVENT_LONG_TAP = 214;
+	public static final int HMSG_EVENT_FLOATINGICON = 215;
+	public static final int HMSG_EVENT_FLOATINGICON_RESET = 216;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -213,6 +215,7 @@ public class DEF {
 	public static final int MENU_PROFILE8 = Menu.FIRST + 72;
 	public static final int MENU_PROFILE9 = Menu.FIRST + 73;
 	public static final int MENU_PROFILE10 = Menu.FIRST + 74;
+	public static final int MENU_FLOATINGICON_SETTING = Menu.FIRST + 75;
 	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
@@ -224,6 +227,7 @@ public class DEF {
 	public static final int MENU_LICENSE = Menu.FIRST + 105;
 
 	public static final String KEY_PAGE_SELECT_TOOLBAR = "PageSelectToolbar";
+	public static final String KEY_FLOATINGICON_TOOLBAR = "FloatingIconToolbar";
 	public static final int TOOLBAR_LEFTMOST = 1001;
 	public static final int TOOLBAR_LEFT100 = 1002;
 	public static final int TOOLBAR_LEFT10 = 1003;
@@ -270,6 +274,46 @@ public class DEF {
 	public static final int SHARE_SINGLE = 2001;
 	public static final int SHARE_LR = 2002;
 
+	public static final int FLOATING_LEFTMOST = 1001;
+	public static final int FLOATING_LEFT100 = 1002;
+	public static final int FLOATING_LEFT10 = 1003;
+	public static final int FLOATING_LEFT1 = 1004;
+	public static final int FLOATING_RIGHT1 = 1005;
+	public static final int FLOATING_RIGHT10 = 1006;
+	public static final int FLOATING_RIGHT100 = 1007;
+	public static final int FLOATING_RIGHTMOST = 1008;
+	public static final int FLOATING_PAGE_RESET = 1009;
+	public static final int FLOATING_BOOK_LEFT = 1010;
+	public static final int FLOATING_BOOK_RIGHT = 1011;
+	public static final int FLOATING_BOOKMARK_LEFT = 1012;
+	public static final int FLOATING_BOOKMARK_RIGHT = 1013;
+	public static final int FLOATING_THUMB_SLIDER = 1014;
+	public static final int FLOATING_DIR_TREE = 1015;
+	public static final int FLOATING_TOC = 1016;
+	public static final int FLOATING_FAVORITE = 1017;
+	public static final int FLOATING_ADD_FAVORITE = 1018;
+	public static final int FLOATING_SEARCH = 1019;
+	public static final int FLOATING_SHARE = 1020;
+	public static final int FLOATING_SHARE_LEFT_PAGE = 1021;
+	public static final int FLOATING_SHARE_RIGHT_PAGE = 1022;
+	public static final int FLOATING_ROTATE = 1023;
+	public static final int FLOATING_ROTATE_IMAGE = 1024;
+	public static final int FLOATING_SELECT_THUMB = 1025;
+	public static final int FLOATING_TRIM_THUMB = 1026;
+	public static final int FLOATING_CONTROL = 1027;
+	public static final int FLOATING_MENU = 1028;
+	public static final int FLOATING_CONFIG = 1029;
+	public static final int FLOATING_EDIT_FLOATING = 1030;
+	public static final int FLOATING_PROFILE1 = 1031;
+	public static final int FLOATING_PROFILE2 = 1032;
+	public static final int FLOATING_PROFILE3 = 1033;
+	public static final int FLOATING_PROFILE4 = 1034;
+	public static final int FLOATING_PROFILE5 = 1035;
+	public static final int FLOATING_PROFILE6 = 1036;
+	public static final int FLOATING_PROFILE7 = 1037;
+	public static final int FLOATING_PROFILE8 = 1038;
+	public static final int FLOATING_PROFILE9 = 1039;
+	public static final int FLOATING_PROFILE10 = 1040;
 
 	public static final int READ_REQUEST_CODE = 42;
 	public static final int WRITE_REQUEST_CODE = 43;
@@ -414,6 +458,8 @@ public class DEF {
 	public static final String KEY_BAKCOLOR = "BakColor";
 	public static final String KEY_BSFCOLOR = "BsfColor";
 	public static final String KEY_BSECOLOR = "BseColor";
+	public static final String KEY_FIFCOLOR = "FifColor";
+	public static final String KEY_FIBCOLOR = "FibColor";
 
 	public static final String KEY_TXTRGB = "TxtRGB";
 	public static final String KEY_DIRRGB = "DirRGB";
@@ -432,6 +478,8 @@ public class DEF {
 	public static final String KEY_TLBRGB = "TlbRGB";
 	public static final String KEY_BSFRGB = "BsfRGB";
 	public static final String KEY_BSERGB = "BseRGB";
+	public static final String KEY_FIFRGB = "FifRGB";
+	public static final String KEY_FIBRGB = "FibRGB";
 
 	// public static final String KEY_TITLECLR = "TitleColor";
 	// public static final String KEY_TOOLBCLR = "ToolbarColor";
@@ -709,6 +757,13 @@ public class DEF {
 
 	public static final String KEY_CUSTOM_URL_SCHEME_KEY = "CustomUrlSchemeAuthenticationKey";
 	public static final String KEY_SMB_MODE = "ComittoNMode";
+
+	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
+	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
+	public static final String KEY_FLOATINGICONHORIZENTIAL = "FloatingIconHoraizential";
+	public static final String KEY_FLOATINGICONVIRTICAL = "FloatingIconVertical";
+	public static final String KEY_FLOATINGICONTRANSPARENCY = "FloatingIconTransParency";
+	public static final String KEY_FLOATINGICONENABLE = "FloatingIconEnable";
 
 	// プロファイル設定
 	public static final String KEY_PROFILE_WORD_01 = "Profile1";
@@ -1091,6 +1146,12 @@ public class DEF {
 	public static final int DEFAULT_MarginLimit_Overkill = 50; // 違う色の出現回数の許容する割合(最強設定)
 	public static final int DEFAULT_MarginLimit = 20; // 違う色の出現回数の許容する割合(デフォルト設定)
 	public static final int MAX_MarginLimit = 50;	// 違う色の出現回数の許容する割合(最大数)
+
+	public static final int DEFAULT_FLOATINGICONSIZE = 16;
+	public static final int DEFAULT_FLOATINGICONHORIZENTIAL = 100;
+	public static final int DEFAULT_FLOATINGICONVIRTICAL = 50;
+	public static final int DEFAULT_FLOATINGICONTRANSPARENCY = 50;
+	public static final int DEFAULT_FLOATINGICONDIRECTIONMODE = 0;
 
 	public static final int DEFAULT_THUMBNAILTOPSPACE = 5;
 	public static final int MAX_THUMBNAILTOPSPACE = 100;
