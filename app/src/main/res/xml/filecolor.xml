@@ -135,6 +135,20 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Bookshelf Text Border Color" />
+        <src.comitton.config.color.ColorFifSetting
+            android:dialogMessage="Please Select Color."
+            android:dialogTitle="Floating Icon Color"
+            android:key="FifRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Floating Icon Color" />
+        <src.comitton.config.color.ColorFibSetting
+            android:dialogMessage="Please Select Color."
+            android:dialogTitle="Floating icon background color"
+            android:key="FibRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Floating icon background color" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

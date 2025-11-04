@@ -165,6 +165,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Time and Buttery(*)" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="FloatingIconEnable"
+            android:summary="Uncheck if you want to disable the floating icon(Used when the pull-down menu and floating icon overlap by mistake)."
+            android:title="Enable floating icon" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Operation Settings" >
         <CheckBoxPreference
