@@ -907,6 +907,7 @@
     <string name="enablefloatingicon">フローティングアイコンを有効</string>
     <string name="editfloatingicon">項目を編集</string>
     <string name="directionfloatingicon">アイコンの連結の向き</string>
+    <string name="cursorfloatingicon">フローティングアイコンの座標を直接指定</string>
     <string name="sizefloatingicon">サイズ(%)</string>
     <string name="horizontalfloatingicon">横の位置(%)</string>
     <string name="verticalfloatingicon">縦の位置(%)</string>
@@ -917,5 +918,7 @@
     <string name="floatingdot">ドット</string>
 
     <string name="openfloatingiconsetting">設定ダイアログを開く</string>
+    <string name="openfloatingiconcursor">十字アイコンを表示</string>
+    <string name="SettingCursorClick">タップして十字アイコン移動、バックキーで終了</string>
 
 </resources>
