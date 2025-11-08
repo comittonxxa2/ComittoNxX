@@ -8,6 +8,9 @@ import src.comitton.common.DEF;
 import src.comitton.config.SetImageActivity;
 import src.comitton.dialog.ListDialog.ListSelectListener;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.imageview.ImageActivity;
+import src.comitton.imageview.MyImageView;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -16,6 +19,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,6 +59,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private Button mBtnOK;
 	private Button mBtnEditFloatingIcon;
 	private Button mBtnDirectionFloatingIcon;
+	private Button mBtnCursorFloatingIcon;
 
 	private String mDirectionModeTitle;
 	private TextView mDummyText1;
@@ -62,9 +67,12 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 	private boolean mEnable;
 	private int mSize;
-	private int mHorizontal;
-	private int mVertical;
+	private static int mHorizontal;
+	private static int mVertical;
 	private int mTransparency;
+
+	private static int mHorizontalNow;
+	private static int mVerticalNow;
 
 	private String mSizeStr;
 	private String mHorizontalStr;
@@ -123,6 +131,19 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		mEnable = enable;
 	}
 
+	public static void SetFloatingIconCursor(int horizontal, int vertical) {
+		mHorizontal = horizontal;
+		mVertical = vertical;
+	}
+
+	public static int GetHorizontal()	{
+		return mHorizontalNow;
+	}
+
+	public static int GetVertical() {
+		return mVerticalNow;
+	}
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
 		super.onCreateView(inflater, container, savedInstanceState);
@@ -151,6 +172,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 			mBtnEditFloatingIcon = mBtnEditFloatingIcon != null ? mBtnEditFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_editfloatingicon);
 			mBtnDirectionFloatingIcon = mBtnDirectionFloatingIcon != null ? mBtnDirectionFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_directionfloatingicon);
+			mBtnCursorFloatingIcon = mBtnCursorFloatingIcon != null ? mBtnCursorFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_cursorfloatingicon);
 
 		}
 
@@ -183,9 +205,11 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 		if (mBtnEditFloatingIcon != null) mBtnEditFloatingIcon.setText(R.string.openfloatingiconsetting);
 		if (mBtnDirectionFloatingIcon != null) mBtnDirectionFloatingIcon.setText(mDirectionModeItems[mDirectionMode]);
+		if (mBtnCursorFloatingIcon != null) mBtnCursorFloatingIcon.setText(R.string.openfloatingiconcursor);
 
 		if (mBtnEditFloatingIcon != null) mBtnEditFloatingIcon.setOnClickListener(this);
 		if (mBtnDirectionFloatingIcon != null) mBtnDirectionFloatingIcon.setOnClickListener(this);
+		if (mBtnCursorFloatingIcon != null) mBtnCursorFloatingIcon.setOnClickListener(this);
 
 		mBtnOK = (Button) mView.findViewById(R.id.btn_ok);
 		mBtnApply = (Button) mView.findViewById(R.id.btn_apply);
@@ -194,6 +218,11 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		mBtnOK.setOnClickListener(this);
 		mBtnApply.setOnClickListener(this);
 		mBtnRevert.setOnClickListener(this);
+
+		// 十字アイコン移動前のバックアップの書き戻しを通知(十字アイコン移動時のみ有効)
+		Message message = new Message();
+		message.what = DEF.HMSG_EVENT_FLOATINGICON_BACKUPRESTORE;
+		mHandler.sendMessage(message);
 
 		return mView;
 	}
@@ -293,6 +322,15 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 			showSelectList(SELLIST_VIEW_MODE);
 			return;
 		}
+		if (mBtnCursorFloatingIcon == v) {
+			// ダイアログを閉じる
+			this.dismiss();
+			// 十字アイコンの設定を通知
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_FLOATINGICON_CURSOR;
+			mHandler.sendMessage(message);
+			return;
+		}
 
 		int select = CLICK_REVERT;
 
@@ -360,11 +398,13 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private String getHorizontialStr(int progress) {
 		String str;
 		str = String.valueOf(progress) + "%";
+		mHorizontalNow = progress;
 		return str;
 	}
 	private String getVerticalStr(int progress) {
 		String str;
 		str = String.valueOf(progress) + "%";
+		mVerticalNow = progress;
 		return str;
 	}
 	private String getTransparencyStr(int progress) {
