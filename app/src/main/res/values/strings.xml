@@ -907,6 +907,7 @@
     <string name="enablefloatingicon">Enable Floating Toolbar</string>
     <string name="editfloatingicon">Edit item</string>
     <string name="directionfloatingicon">Icon connection direction</string>
+    <string name="cursorfloatingicon">Specify the coordinates of the floating icon directly</string>
     <string name="sizefloatingicon">Size(%)</string>
     <string name="horizontalfloatingicon">Horizontal position(%)</string>
     <string name="verticalfloatingicon">Vertical position(%)</string>
@@ -917,6 +918,8 @@
     <string name="floatingdot">dot</string>
 
     <string name="openfloatingiconsetting">Open settings dialog</string>
+    <string name="openfloatingiconcursor">Show cross icon</string>
+    <string name="SettingCursorClick">Tap to move the cross icon, then press the back key to exit</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
