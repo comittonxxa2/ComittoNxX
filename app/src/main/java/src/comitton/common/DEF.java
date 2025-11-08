@@ -128,6 +128,8 @@ public class DEF {
 	public static final int HMSG_EVENT_LONG_TAP = 214;
 	public static final int HMSG_EVENT_FLOATINGICON = 215;
 	public static final int HMSG_EVENT_FLOATINGICON_RESET = 216;
+	public static final int HMSG_EVENT_FLOATINGICON_CURSOR = 217;
+	public static final int HMSG_EVENT_FLOATINGICON_BACKUPRESTORE = 218;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -139,6 +141,7 @@ public class DEF {
 	public static final int INTERVAL_PAGE = 1;
 	public static final int INTERVAL_ATTENUATE = 10;
 	public static final int INTERVAL_MOMENTIUM = 10;
+	public static final int INTERVAL_FLOATINGICON = 500;	// Milliseconds
 
 	public static final int MENU_HELP = Menu.FIRST + 0;
 	public static final int MENU_SETTING = Menu.FIRST + 1;
