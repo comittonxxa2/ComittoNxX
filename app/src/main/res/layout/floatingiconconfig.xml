@@ -57,6 +57,23 @@
 				android:textSize="17sp" />
 
 			<TextView
+				android:id="@+id/label_cursorfloatingicon"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="8sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/cursorfloatingicon" />
+
+			<Button
+				android:id="@+id/btn_cursorfloatingicon"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:textSize="17sp" />
+
+			<TextView
 				android:id="@+id/label_sizefloatingicon"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
