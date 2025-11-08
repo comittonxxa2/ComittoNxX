@@ -163,6 +163,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private boolean mIsBackDraw = false;
 
 	private boolean mViewTapSw = false;
+	private boolean mViewFloatingIconSw = false;
 
 	public MyImageView(Activity activity) {
 		super(activity);
@@ -1037,6 +1038,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				// タップ操作の設定を表示
 				TouchPanelView.SetViewArea(mDispWidth, mDispHeight);
 				TouchPanelView.Drawmain(canvas);
+			}
+			if (mViewFloatingIconSw) {
+				TouchPanelView.FloatingIconDrawmain(canvas, mDispWidth, mDispHeight);
 			}
 		}
 	}
@@ -3211,6 +3215,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	public void ViewTapSw(boolean sw) {
 		mViewTapSw = sw;
+		updateNotify();
+	}
+
+	public void ViewFloatingIconCursorSw(boolean sw) {
+		mViewFloatingIconSw = sw;
 		updateNotify();
 	}
 }

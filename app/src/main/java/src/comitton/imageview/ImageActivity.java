@@ -613,7 +613,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private long mActionMoveSkipStartTime;
 
 	private static ImageActivity mActivity;
-	private SharedPreferences mSharedPreferences;
+	private static SharedPreferences mSharedPreferences;
 	private float mSDensity;
 	private int mImmCancelRange;
 	private boolean mImmCancel;
@@ -638,20 +638,28 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mAutoRepeatCheck = false;
 	private boolean mPinchScaleSetting = false;
 
-	private int mFloatingIconSize;
-	private int mFloatingIconHorizontal;
-	private int mFloatingIconVertical;
-	private int mFloatingIconTransparency;
-	private int mFloatingIconDirectionMode;
-	private boolean mFloatingIconEnable;
+	private static int mFloatingIconSize;
+	private static int mFloatingIconHorizontal;
+	private static int mFloatingIconVertical;
+	private static int mFloatingIconHorizontalBackup;
+	private static int mFloatingIconVerticalBackup;
+	private static int mFloatingIconTransparency;
+	private static int mFloatingIconDirectionMode;
+	private static boolean mFloatingIconEnable;
 
-	private	ImageButton[] imageButtons = null;
+	private static ImageButton[] imageButtons = null;
 
 	private int mResult = 0;
 	private Context context;
 	private Insets insets;
 	private boolean mHideNavigationBar = false;
 	private static FrameLayout layout;
+	private boolean mFloatingIconInit = false;
+	private static boolean mFloatingIconSetting = false;
+	private static boolean mFloatingIconCursorSw = false;
+	private static boolean mFloatingIconCursorRestore = false;
+	private int cursorx;
+	private int cursory;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -969,6 +977,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		// フローティングアイコンの表示を遅延実行させる
 		startViewTimer(DEF.HMSG_EVENT_FLOATINGICON_RESET);
+		// 念のため画像読み込み終了時にも実行させる
+		mFloatingIconInit = false;
 
 		mListLoading = true;
 		mZipLoad = new ZipLoad(mHandler, this);
@@ -1350,6 +1360,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		// フローティングアイコンの表示を遅延実行させる
 		startViewTimer(DEF.HMSG_EVENT_FLOATINGICON_RESET);
+		// 念のため画像読み込み終了時にも実行させる
+		mFloatingIconInit = false;
 
 		if (mBitmapLoading) {
 			return;
@@ -1811,6 +1823,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						mNextPage = -1;
 					}
 				}
+				if (!mFloatingIconInit) {
+					// 念のため画像読み込み終了時にも実行させる
+					mFloatingIconInit = true;
+					// フローティングアイコンをセット
+					AddButton(layout, mActivity);
+				}
 				return true;
 
 			case DEF.HMSG_ERROR:
@@ -1938,6 +1956,29 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_FLOATINGICON_RESET:
 				// フローティングアイコンをセット
 				AddButton(layout, mActivity);
+				break;
+			case DEF.HMSG_EVENT_FLOATINGICON_CURSOR:
+				// 十字アイコンの設定の通知があった場合
+				// 十字アイコン移動前に縦と横の座標をバックアップ
+				mFloatingIconHorizontalBackup = mFloatingIconHorizontal;
+				mFloatingIconVerticalBackup = mFloatingIconVertical;
+				// 十字アイコン移動のモードにする
+				mFloatingIconCursorRestore = true;
+				// 画面の輝度を下げる描画を行う
+				mFloatingIconCursorSw = true;
+				mImageView.ViewFloatingIconCursorSw(true);
+				// 縦と横の割合から十字アイコンの座標を求めて表示
+				PutViewFloatingIconCursor();
+				break;
+			case DEF.HMSG_EVENT_FLOATINGICON_BACKUPRESTORE:
+				// 十字アイコン移動前のバックアップの書き戻しの通知があった場合
+				if (mFloatingIconCursorRestore) {
+					// 十字アイコン移動のモードだった場合はバックアップから書き戻す
+					mFloatingIconCursorRestore = false;
+					FloatingIconDialog.SetFloatingIconCursor(mFloatingIconHorizontalBackup, mFloatingIconVerticalBackup);
+					mFloatingIconHorizontal = mFloatingIconHorizontalBackup;
+					mFloatingIconVertical = mFloatingIconVerticalBackup;
+				}
 				break;
 		}
 		return false;
@@ -2713,7 +2754,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 					if (mClickGuard) {
 					}
-					else if (mTapEditMode) {
+					else if (mTapEditMode || mFloatingIconCursorSw) {
 					}
 					else {
 						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, true);
@@ -2728,7 +2769,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (y >= cy - mClickArea) {
 						if (mClickGuard) {
 						}
-						else if (mTapEditMode) {
+						else if (mTapEditMode || mFloatingIconCursorSw) {
 						}
 						else if (mPageSelect == PAGE_SLIDE) {
 							if (mClickArea <= x && x <= cx - mClickArea) {
@@ -2747,7 +2788,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// 下部押下
 						if (mClickGuard) {
 						}
-						else if (mTapEditMode) {
+						else if (mTapEditMode || mFloatingIconCursorSw) {
 						}
 						else {
 							if (!mClickGuard) {
@@ -2763,7 +2804,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 					else if (y <= mClickArea) {
 						// 上部押下
-						if (mTapEditMode) {
+						if (mTapEditMode || mFloatingIconCursorSw) {
 						}
 						else {
 							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
@@ -2773,7 +2814,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					else {
 						// 操作モード
 						mOperation = TOUCH_OPERATION;
-						if (mTapEditMode) {
+						if (mTapEditMode || mFloatingIconCursorSw) {
 						}
 						else {
 							if (TouchPanelView.GetTouchPositionData(3) > 0) {
@@ -2808,6 +2849,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					long nowactiontime = SystemClock.uptimeMillis();
 					int t = (int) (nowactiontime - mActionMoveSkipStartTime);
 					if (mClickGuard) {
+					}
+					else if (mFloatingIconCursorSw) {
+						// 十字アイコンを表示
+						SetViewFloatingIconCursor(x, y);
 					}
 					else if (mTapEditMode) {
 					}
@@ -2850,7 +2895,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (mOperation == TOUCH_OPERATION) {
 						Logcat.v(logLevel, "通常タップ");
 						// ■■■ タップ終了なら
-						if (mTapEditMode) {
+						if (mFloatingIconCursorSw) {
+							// 十字アイコンを表示
+							SetViewFloatingIconCursor(x, y);
+						}
+						else if (mTapEditMode) {
 							// タップ操作の設定ダイアログを表示させる
 							TouchPanelView.SetAlertDialog(mActivity);
 						}
@@ -2999,6 +3048,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mGuideView.setPageText(null);
 		mGuideView.setPageColor(Color.argb(0, 0, 0, 0));
 		mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
+
+		if (mFloatingIconCursorSw) {
+			// 十字アイコンを表示
+			SetViewFloatingIconCursor(x, y);
+			return;
+		}
 
 		if (mPageMode) {
 			// ページ選択モード終了
@@ -3230,7 +3285,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			y = cy - event.getX();
 			x = event.getY();
 		}
-		if (mOperation == TOUCH_COMMAND) {
+		if (mFloatingIconCursorSw) {
+			// 十字アイコンを表示
+			SetViewFloatingIconCursor(x, y);
+		}
+		else if (mTapEditMode) {
+		}
+		else if (mOperation == TOUCH_COMMAND) {
 			// 移動位置設定
 			mGuideView.eventTouchMove((int)x, (int)y);
 			if (mPageMode && mPageSelect == PAGE_SLIDE) {
@@ -4626,6 +4687,19 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// タップ操作の設定の編集中だった場合は解除して戻る
 			mTapEditMode = false;
 			mImageView.ViewTapSw(false);
+			return;
+		}
+		if (mFloatingIconCursorSw) {
+			// 十字アイコンの表示中だった場合は解除して戻る
+			// 画面の表示を戻す
+			mFloatingIconCursorSw = false;
+			mImageView.ViewFloatingIconCursorSw(false);
+			// 十字アイコンの座標から縦と横の割合を求める
+			GetViewFloatingIconCursor();
+			// フローティングアイコンをセット
+			AddButton(layout, mActivity);
+			// ダイアログを再表示する
+			showFloatingIconDialog(DEF.MENU_IMGCONF);
 			return;
 		}
 		if (mGuideView.getOperationMode()) {
@@ -6296,6 +6370,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// ローディング表示進行
 			NextTime += DEF.INTERVAL_LOADING_NEXT;
 		}
+		else if (event == DEF.HMSG_EVENT_FLOATINGICON_RESET) {
+			NextTime += DEF.INTERVAL_FLOATINGICON;
+		}
 		else {
 			NextTime += DEF.INTERVAL_DEFAULT;
 		}
@@ -7614,6 +7691,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (mFloatingIconDialog != null) {
 			return;
 		}
+		mFloatingIconSetting = true;
 		mFloatingIconDialog = new FloatingIconDialog(this, R.style.MyDialog, command_id, false, this, mHandler);
 
 		mFloatingIconDialog.setConfig(mFloatingIconDirectionMode, mFloatingIconSize, mFloatingIconHorizontal, mFloatingIconVertical, mFloatingIconTransparency, mFloatingIconEnable);
@@ -7632,9 +7710,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mFloatingIconTransparency = transparency;
 				mFloatingIconDirectionMode = directionmode;
 				mFloatingIconEnable = enable;
+				// 戻す場合にも表示更新を適用
+				AddButton(layout, mActivity);
 				if (ischange) {
 					// 変更があった場合
-					AddButton(layout, mActivity);
 					// 設定を保存
 					Editor ed = mSharedPreferences.edit();
 					ed.putInt(DEF.KEY_FLOATINGICONSIZE, mFloatingIconSize);
@@ -7650,7 +7729,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			@Override
 			public void onClose() {
 				// 終了
+				mFloatingIconSetting = false;
 				mFloatingIconDialog = null;
+				// 終了の場合にも表示更新を適用
+				AddButton(layout, mActivity);
 			}
 		});
 		mFloatingIconDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
@@ -7664,6 +7746,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// フローティングアイコンをセット
 	public void AddButton(FrameLayout layout, AppCompatActivity activity) {
+		if (mFloatingIconCursorSw) {
+			// 十字アイコンの設定中はフローティングアイコンをセットしない
+			PutViewFloatingIconCursorNow();
+			return;
+		}
 		// レイアウトの領域を準備
 		FrameLayout.LayoutParams[] iconParamsAll;
 		// アイコンの数を取得
@@ -7682,8 +7769,17 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		int cx = mImageView.getWidth();
 		int cy = mImageView.getHeight();
 		// 画面外の表示開始位置になるのを防止するためアイコン1つ分の領域を確保する
-		int heightmargin = (int)((float)((cy - sizeInPx) * mFloatingIconVertical) / 100);
-		int widthmargin = (int)((float)((cx - sizeInPx) * mFloatingIconHorizontal) / 100);
+		int heightmargin;
+		int widthmargin;
+		if (mFloatingIconSetting) {
+			// フローティングアイコンの設定中はダイアログの値を参照する
+			heightmargin = (int)((float)((cy - sizeInPx) * FloatingIconDialog.GetVertical()) / 100);
+			widthmargin = (int)((float)((cx - sizeInPx) * FloatingIconDialog.GetHorizontal()) / 100);
+		}
+		else {
+			heightmargin = (int)((float)((cy - sizeInPx) * mFloatingIconVertical) / 100);
+			widthmargin = (int)((float)((cx - sizeInPx) * mFloatingIconHorizontal) / 100);
+		}
 		// 設定を取得
 		boolean[] mStates = FloatingIconEditDialog.loadToolbarState(this);
 		// 以前に表示していたフローティングアイコンを消す
@@ -7886,6 +7982,132 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				LoadProfile(9);
 				break;
 		}
+	}
+
+	// 十字アイコンの座標から縦と横の割合を求める
+	private void GetViewFloatingIconCursor() {
+		int cx = mImageView.getWidth();
+		int cy = mImageView.getHeight();
+		int sizeInPx = dpToPx(mFloatingIconSize + 10 + 16);
+		// 縦の十字アイコンの中心分だけ上側へシフトした値と画面端からアイコン1つ分の領域を引いた値の割合を求める
+		mFloatingIconVertical = (int)(((float)(cursory - sizeInPx / 2) / (float)(cy - sizeInPx)) * 100);
+		// 十字アイコンの中心以下の座標の場合は端にする
+		if (cursory < sizeInPx / 2) mFloatingIconVertical = 0;
+		// 割合が100%を超えたらリミッタを掛ける
+		if (mFloatingIconVertical > 100) mFloatingIconVertical = 100;
+		// 横の十字アイコンの中心分だけ左側へシフトした値と画面端からアイコン1つ分の領域を引いた値の割合を求める
+		mFloatingIconHorizontal = (int)(((float)(cursorx - sizeInPx / 2) / (float)(cx - sizeInPx)) * 100);
+		// 十字アイコンの中心以下の座標の場合は端にする
+		if (cursorx < sizeInPx / 2) mFloatingIconHorizontal = 0;
+		// 割合が100%を超えたらリミッタを掛ける
+		if (mFloatingIconHorizontal > 100) mFloatingIconHorizontal = 100;
+	}
+
+	// 縦と横の割合から十字アイコンの座標を求めて表示
+	private void PutViewFloatingIconCursor() {
+		int cx = mImageView.getWidth();
+		int cy = mImageView.getHeight();
+		int sizeInPx = dpToPx(mFloatingIconSize + 10 + 16);
+		// 縦の十字アイコンの中心分だけ下側へシフトした値と画面端からアイコン1つ分の領域を引いた値の割合から十字アイコンの縦座標を求める
+		float y = (float)((cy - sizeInPx) * FloatingIconDialog.GetVertical()) / 100 + sizeInPx / 2;
+		// 横の十字アイコンの中心分だけ右側へシフトした値と画面端からアイコン1つ分の領域を引いた値の割合から十字アイコンの横座標を求める
+		float x = (float)((cx - sizeInPx) * FloatingIconDialog.GetHorizontal()) / 100 + sizeInPx / 2;
+		// 十字アイコンを表示
+		SetViewFloatingIconCursor(x, y);
+	}
+
+	// 再表示の場合は設定途中の縦と横の割合から十字アイコンの座標を求めて表示
+	private void PutViewFloatingIconCursorNow() {
+		int cx = mImageView.getWidth();
+		int cy = mImageView.getHeight();
+		int sizeInPx = dpToPx(mFloatingIconSize + 10 + 16);
+		// 縦の十字アイコンの中心分だけ下側へシフトした値と画面端からアイコン1つ分の領域を引いた値の割合から十字アイコンの縦座標を求める
+		float y = (float)((cy - sizeInPx) * mFloatingIconVertical) / 100 + sizeInPx / 2;
+		// 横の十字アイコンの中心分だけ右側へシフトした値と画面端からアイコン1つ分の領域を引いた値の割合から十字アイコンの横座標を求める
+		float x = (float)((cx - sizeInPx) * mFloatingIconHorizontal) / 100 + sizeInPx / 2;
+		// 十字アイコンを表示
+		SetViewFloatingIconCursor(x, y);
+	}
+
+	// 十字アイコンを表示
+	public void SetViewFloatingIconCursor(float x, float y) {
+		cursorx = (int)x;
+		cursory = (int)y;
+		// 再表示の場合に備えて割合を計算する
+		GetViewFloatingIconCursor();
+		// レイアウトの領域を準備
+		FrameLayout.LayoutParams[] iconParamsAll;
+		// アイコンの数を取得
+		iconParamsAll = new FrameLayout.LayoutParams[1];
+		// アイコンのサイズをdpで指定
+		// 16ドットと空白×2だけ確保する
+		int sizeInPx = dpToPx(mFloatingIconSize + 10 + 16);
+		// アイコンの間に空白を入れる
+		int paddingInPx = dpToPx(5);
+		// アイコンの色を設定
+		int forecolor = 0xffffffff;
+		// アイコンの背景色を設定
+		int backcolor = 0x00000000;
+		// アイコンの表示開始位置を設定
+		int cx = mImageView.getWidth();
+		int cy = mImageView.getHeight();
+		// 縦の座標は十字アイコンの中心なのでアイコンのサイズ半分だけ上側へシフトする
+		int heightmargin = (int)y - sizeInPx / 2;
+		// 上側の範囲外の場合は端にする
+		if (heightmargin < 0) heightmargin = 0;
+		// 下側の画面外の表示開始位置になるのを防止するためアイコン1つ分の領域を確保する
+		if (heightmargin > cy - sizeInPx) heightmargin = cy - sizeInPx;
+		// 横の座標は十字アイコンの中心なのでアイコンのサイズ半分だけ左側へシフトする
+		int widthmargin = (int)x - sizeInPx / 2;
+		// 左側の範囲外の場合は端にする
+		if (widthmargin < 0) widthmargin = 0;
+		// 右端の画面外の表示開始位置になるのを防止するためアイコン1つ分の領域を確保する
+		if (widthmargin > cx - sizeInPx) widthmargin = cx - sizeInPx;
+		// 設定を取得
+		boolean[] mStates = FloatingIconEditDialog.loadToolbarState(this);
+		// 以前に表示していたフローティングアイコンを消す
+		// 範囲外をアクセスする可能性があるためtry～catchで囲む
+		try {
+			for (int i = 0; i < FloatingIconEditDialog.COMMAND_DRAWABLE.length; i++) {
+				if (imageButtons[i] != null) {
+					imageButtons[i].setVisibility(View.GONE);
+				}
+			}
+		}
+		catch (Exception e) {
+		}
+		// アイコンの数だけ領域を確保
+		imageButtons = new ImageButton[1];
+		// フローティングアイコンが有効の場合
+		ViewGroup.LayoutParams layoutParams;
+		// フローティングアイコンを描画
+		iconParamsAll[0] = new FrameLayout.LayoutParams(
+		FrameLayout.LayoutParams.WRAP_CONTENT,
+			FrameLayout.LayoutParams.WRAP_CONTENT
+		);
+		// 左上に配置
+		iconParamsAll[0].gravity = Gravity.TOP | Gravity.LEFT;
+		// アイコンのサイズだけ座標をずらす
+		iconParamsAll[0].topMargin = heightmargin;
+		iconParamsAll[0].leftMargin = widthmargin;
+		imageButtons[0] = new ImageButton(mActivity);
+		// 色と座標を設定
+		imageButtons[0].setColorFilter(forecolor);
+		imageButtons[0].setBackgroundColor(backcolor);
+		imageButtons[0].setLayoutParams(iconParamsAll[0]);
+		layout.addView(imageButtons[0]);
+		// レイアウトを取得
+		layoutParams = imageButtons[0].getLayoutParams();
+		// リサイズのピクセル数を設定
+		layoutParams.width = sizeInPx;
+		layoutParams.height = sizeInPx;
+		// 余白を設定
+		imageButtons[0].setPadding(paddingInPx, paddingInPx, paddingInPx, paddingInPx);
+		imageButtons[0].setLayoutParams(layoutParams);
+		// アイコンをリサイズする
+		imageButtons[0].setScaleType(ImageButton.ScaleType.FIT_XY);
+		// 十字アイコンの画像を登録
+		imageButtons[0].setImageResource(R.drawable.cursor);
 	}
 
 }

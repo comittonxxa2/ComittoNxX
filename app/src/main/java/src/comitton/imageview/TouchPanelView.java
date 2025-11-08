@@ -2617,5 +2617,87 @@ public class TouchPanelView extends View {
 		}
 	}
 
+	// フローティングアイコンの十字アイコン設定を表示
+	public static void FloatingIconDrawmain(Canvas canvas, int width, int height) {
+
+		int disp_x = width;
+		int disp_y = height;
+		int margin = 1;
+
+		Paint paint = new Paint();
+
+		// 最少輝度
+		paint.setColor(0xff000000);
+		// 半透明にする
+		paint.setAlpha(0xc0);
+
+		// 背景の輝度を下げる
+		canvas.drawRect(0, 0, disp_x, disp_y, paint);
+
+		// 最大輝度
+		paint.setColor(0xffffffff);
+		paint.setAlpha(255);
+		// 外枠を表示
+		paint.setStyle(Paint.Style.STROKE);
+		paint.setStrokeWidth(margin);
+		canvas.drawRect(0+margin, 0+margin, disp_x-margin, disp_y-margin, paint);
+
+		// 上部に操作説明を描画
+		int pagecy = disp_y / 20;	// ページ数表示の高さ
+
+		paint.setColor(0xff408040);
+		paint.setAlpha(0x80);
+		paint.setStyle(Paint.Style.FILL);
+		canvas.drawRect(0, 0, disp_x, pagecy, paint);
+
+		TextPaint textpaint = new TextPaint();
+		float fontsize = 36f;
+		textpaint.setTextSize(fontsize);
+		int textWidth;
+		int text_x;
+		int text_y;
+		String mestext;
+
+		textpaint.setColor(0xffffffff);
+		textpaint.setAlpha(0xff);
+		textpaint.setStyle(Paint.Style.FILL);
+
+		Resources res = mContext.getResources();
+
+		if (disp_x > disp_y) {
+			// 横画面
+			// テキストを取り出す
+			mestext = res.getString(R.string.cursorfloatingicon);
+			mestext += (" " + res.getString(R.string.SettingCursorClick));
+			// テキストの横幅を取得
+			textWidth = (int)textpaint.measureText(mestext);
+			// 中心を求める
+			text_x = (disp_x - textWidth) / 2 + margin + 0;
+			// 中心を求める
+			text_y = (pagecy + (int)fontsize) / 2;
+			canvas.drawText(mestext, text_x, text_y, textpaint);
+		}
+		else {
+			// 縦画面
+			// テキストを取り出す
+			mestext = res.getString(R.string.cursorfloatingicon);
+			// テキストの横幅を取得
+			textWidth = (int)textpaint.measureText(mestext);
+			// 中心を求める
+			text_x = (disp_x - textWidth) / 2 + margin + 0;
+			// 中心を求める
+			text_y = (pagecy + (int)fontsize) / 2 - (int)fontsize / 2;
+			canvas.drawText(mestext, text_x, text_y, textpaint);
+
+			mestext = res.getString(R.string.SettingCursorClick);
+			// テキストの横幅を取得
+			textWidth = (int)textpaint.measureText(mestext);
+			// 中心を求める
+			text_x = (disp_x - textWidth) / 2 + margin + 0;
+			// 中心を求める
+			text_y = (pagecy + (int)fontsize) / 2 + (int)fontsize / 2;
+			canvas.drawText(mestext, text_x, text_y, textpaint);
+		}
+	}
 }
 
