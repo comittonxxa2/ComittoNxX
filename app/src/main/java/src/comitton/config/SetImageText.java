@@ -194,4 +194,10 @@ public class SetImageText {
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CHGPAGEKEY, DEF.DEFAULT_CHGPAGEKEY);
 		return flag;
 	}
+
+	public static boolean getSoftChgPage(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_SORTCHGPAGE, DEF.DEFAULT_SORTCHGPAGE);
+		return flag;
+	}
 }
