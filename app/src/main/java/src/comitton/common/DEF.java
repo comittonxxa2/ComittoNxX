@@ -639,6 +639,7 @@ public class DEF {
 	public static final String KEY_VIEWNEXT = "ViewNextPage";
 	public static final String KEY_NEXTFILTER = "NextPageFilter";
 	public static final String KEY_CHGPAGEKEY = "ChgPageKey";
+	public static final String KEY_SORTCHGPAGE = "SoftChgPage";
 	public static final String KEY_FILELISTCACHEOFF = "FileListCacheOff";
 	public static final String KEY_FILELISTFASTREADOFF = "FileListFastReadOff";
 
@@ -1095,6 +1096,7 @@ public class DEF {
 	public static final boolean DEFAULT_CHGPAGE = true; // タップ操作の入替え:YES(縦書き、漫画)
 	public static final boolean DEFAULT_PREVREV = true; // 前ページに戻った時に逆から表示
 	public static final boolean DEFAULT_CHGPAGEKEY = false; // 左右キー操作の入替え
+	public static final boolean DEFAULT_SORTCHGPAGE = false; // ページ移動時にリスト表示に従わない
 
 	public static final boolean DEFAULT_PNUMDISP = false; // ページ番号表示しない
 	public static final int DEFAULT_PNUMFORMAT = 0; // page / total
