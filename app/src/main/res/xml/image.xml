@@ -294,6 +294,11 @@
                 android:targetClass="src.comitton.config.SetCornerEndImageViewerActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SoftChgPage"
+            android:summary="Check this box if you want to move to the next or previous file in a different order than the name."
+            android:title="Sort open file names at the edge of the page(*)" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
