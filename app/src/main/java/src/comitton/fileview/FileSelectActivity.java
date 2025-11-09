@@ -5119,21 +5119,27 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 
 		ArrayList<FileData> sortfiles = new ArrayList<FileData>(files.size());
-		for (FileData fd : files) {
-			int type = fd.getType();
-			switch (type) {
-				case FileData.FILETYPE_DIR: // ディレクトリ
-				case FileData.FILETYPE_TXT: // テキスト
-				case FileData.FILETYPE_ARC: // ZIP
-				case FileData.FILETYPE_EPUB: // Epub
-					sortfiles.add(fd);
-					break;
-				case FileData.FILETYPE_IMG: // イメージ
-					// イメージは親フォルダで管理
-					break;
-			}
+		if (SetImageText.getSoftChgPage(mSharedPreferences)) {
+			// ページ移動時にリスト表示に従う場合
+			sortfiles = mFileList.getFileList();
 		}
-		Collections.sort(sortfiles, new FilenameComparator());
+		else {
+			for (FileData fd : files) {
+				int type = fd.getType();
+				switch (type) {
+					case FileData.FILETYPE_DIR: // ディレクトリ
+					case FileData.FILETYPE_TXT: // テキスト
+					case FileData.FILETYPE_ARC: // ZIP
+					case FileData.FILETYPE_EPUB: // Epub
+						sortfiles.add(fd);
+						break;
+					case FileData.FILETYPE_IMG: // イメージ
+						// イメージは親フォルダで管理
+						break;
+				}
+			}
+			Collections.sort(sortfiles, new FilenameComparator());
+		}
 
 		// ソート後に現在ファイルを探す
 		int index = sortfiles.indexOf(searchfd);
