@@ -256,6 +256,11 @@
                 android:targetClass="src.comitton.config.SetCornerEndTextViewerActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SoftChgPage"
+            android:summary="ページ端に達した時にリスト表示の内容で前後のファイルへページ移動する場合にチェックを入れる"
+            android:title="ページ端で開くファイル名をソート＊" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
