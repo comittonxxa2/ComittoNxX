@@ -22,6 +22,7 @@
             android:key="TxtRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatortxtrgb"
             android:title="サーバー選択のテキスト色" />
         <src.comitton.config.color.ColorDirSetting
             android:dialogMessage="色を設定してください。"
@@ -29,6 +30,7 @@
             android:key="DirRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatordirrgb"
             android:title="ディレクトリの色" />
         <src.comitton.config.color.ColorBefSetting
             android:dialogMessage="色を設定してください。"
@@ -36,6 +38,7 @@
             android:key="BefRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorbefrgb"
             android:title="未読ファイルの色" />
         <src.comitton.config.color.ColorNowSetting
             android:dialogMessage="色を設定してください。"
@@ -43,6 +46,7 @@
             android:key="NowRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatornowrgb"
             android:title="読みかけファイルの色" />
         <src.comitton.config.color.ColorAftSetting
             android:dialogMessage="色を設定してください。"
@@ -50,6 +54,7 @@
             android:key="AftRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatoraftrgb"
             android:title="既読ファイルの色" />
         <src.comitton.config.color.ColorRrbSetting
             android:dialogMessage="色を設定してください。"
@@ -57,6 +62,7 @@
             android:key="RrbRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorrrbrgb"
             android:title="読書率の背景色" />
         <src.comitton.config.color.ColorImgSetting
             android:dialogMessage="色を設定してください。"
@@ -64,6 +70,7 @@
             android:key="ImgRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorimgrgb"
             android:title="イメージファイルの色" />
         <src.comitton.config.color.ColorInfSetting
             android:dialogMessage="色を設定してください。"
@@ -71,6 +78,7 @@
             android:key="InfRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorinfrgb"
             android:title="ファイル情報の色" />
         <src.comitton.config.color.ColorMrkSetting
             android:dialogMessage="色を設定してください。"
@@ -78,6 +86,7 @@
             android:key="MrkRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatormrkrgb"
             android:title="マーカーの色" />
         <src.comitton.config.color.ColorBakSetting
             android:dialogMessage="色を設定してください。"
@@ -85,6 +94,7 @@
             android:key="BakRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorbakrgb"
             android:title="リストの背景色" />
         <src.comitton.config.color.ColorCurSetting
             android:dialogMessage="色を設定してください。"
@@ -92,6 +102,7 @@
             android:key="CurRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorcurrgb"
             android:title="選択時の色" />
         <src.comitton.config.color.ColorTitSetting
             android:dialogMessage="色を設定してください。"
@@ -99,6 +110,7 @@
             android:key="TitRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatortitrgb"
             android:title="タイトルのテキスト色" />
         <src.comitton.config.color.ColorTibSetting
             android:dialogMessage="色を設定してください。"
@@ -106,6 +118,7 @@
             android:key="TibRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatortibrgb"
             android:title="タイトルの背景色" />
         <src.comitton.config.color.ColorTldSetting
             android:dialogMessage="色を設定してください。"
@@ -113,6 +126,7 @@
             android:key="TldRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatortldrgb"
             android:title="ツールバーの描画色" />
         <src.comitton.config.color.ColorTlbSetting
             android:dialogMessage="色を設定してください。"
@@ -120,6 +134,7 @@
             android:key="TlbRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatortlbrgb"
             android:title="ツールバーのボタン色" />
         <src.comitton.config.color.ColorBsfSetting
             android:dialogMessage="色を設定してください。"
@@ -127,6 +142,7 @@
             android:key="BsfRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorbsfrgb"
             android:title="本棚のテキスト色" />
         <src.comitton.config.color.ColorBseSetting
             android:dialogMessage="色を設定してください。"
@@ -134,6 +150,7 @@
             android:key="BseRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorbsergb"
             android:title="本棚のテキストの縁取りの色" />
         <src.comitton.config.color.ColorFifSetting
             android:dialogMessage="色を設定してください。"
@@ -141,6 +158,7 @@
             android:key="FifRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorfifrgb"
             android:title="フローティングアイコンの色" />
         <src.comitton.config.color.ColorFibSetting
             android:dialogMessage="色を設定してください。"
@@ -148,6 +166,7 @@
             android:key="FibRGB"
             android:negativeButtonText="@null"
             android:summary="dummy"
+            android:widgetLayout="@layout/indicatorfibrgb"
             android:title="フローティングアイコンの背景色" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
