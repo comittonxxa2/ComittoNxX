@@ -863,9 +863,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			ed = mSharedPreferences.edit();
 			ed.putString(DEF.KEY_LAST_VERSION, verName);
 			ed.apply();
-
+			// お知らせ表示を表示するとちらつきが発生する場合があるためメニューから開く時以外は何もしない
+			/*
 			// お知らせ表示
 			mInformation.showNotice();
+			*/
 		}
 
 		// GitHubに新しいバージョンがリリースされているか確認する
