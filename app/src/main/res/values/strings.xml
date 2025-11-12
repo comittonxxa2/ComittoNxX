@@ -881,6 +881,7 @@
     <string name="CornerEndTitle13">Single tap</string>
 
     <string name="selectEncryption">Encrypt the contents of the configuration file</string>
+    <string name="selectIgnoreReadInfo">Ignore read information</string>
 
     <string name="ssort00">Follow the sort display settings</string>
     <string name="ssort01">File name (ascending)</string>
