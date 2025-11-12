@@ -881,6 +881,7 @@
     <string name="CornerEndTitle13">シングルタップ</string>
 
     <string name="selectEncryption">設定ファイルの中身を暗号化する</string>
+    <string name="selectIgnoreReadInfo">既読情報を無視する</string>
 
     <string name="ssort00">ソート表示の設定に従う</string>
     <string name="ssort01">ファイル名(昇順)</string>
