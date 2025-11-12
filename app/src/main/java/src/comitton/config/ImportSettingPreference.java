@@ -38,6 +38,8 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
@@ -55,8 +57,10 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 	private EditText mEditView;
 	private TextView mMsgView;
 	private ListView mListView;
+	private CheckBox mCheckbox;
 	private ItemArrayAdapter mItemArrayAdapter;
 	private static byte[] mAesKey = null;
+	private static boolean mIgnoreReadInfo;
 
 	private static final int LAYOUT_PADDING = 10;
 
@@ -72,6 +76,7 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 
 	@Override
 	protected View onCreateDialogView() {
+		mIgnoreReadInfo = DEF.getBoolean(mSp, DEF.KEY_IGNOREREADINFO, false);
 		LinearLayout layout = new LinearLayout(mContext);
 		layout.setOrientation(LinearLayout.VERTICAL);
 
@@ -84,14 +89,28 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 		mListView = new ListView(mContext);
 		mListView.setScrollingCacheEnabled(false);
 		mListView.setOnItemClickListener(this);
+		mCheckbox = new CheckBox(mContext);
+		mCheckbox.setText(R.string.selectIgnoreReadInfo);
+		mCheckbox.setChecked(mIgnoreReadInfo);
 		updateImportList();
 
 		layout.addView(mMsgView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		layout.addView(mEditView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		layout.addView(mListView, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		layout.addView(mCheckbox, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
 		String str = (String) getDialogMessage();
 		mMsgView.setText(str);
+
+		mCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+			@Override
+			public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+				mIgnoreReadInfo = isChecked;
+				SharedPreferences.Editor editor = mSp.edit();
+				editor.putBoolean(DEF.KEY_IGNOREREADINFO, isChecked);
+				editor.apply();
+			}
+		});
 
 		return layout;
 	}
@@ -239,7 +258,10 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 				Map<String, ?> keys = mSp.getAll();
 				if (keys != null) {
 					for (String key : keys.keySet()) {
-						if (DEF.checkExportKey(key)) {
+						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://"))) {
+							// 既読情報を読み込まない場合は削除しない
+						}
+						else if (DEF.checkExportKey(key)) {
 							// 出力対象
 							ed.remove(key);
 						}
@@ -298,7 +320,12 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 						case 'i': // NxT専用キー
 						{
 							int work = Integer.parseInt(value);
-							ed.putInt(key, work);
+							if (mIgnoreReadInfo && (line.length() >= 3 && line.startsWith("i:/") || line.length() >= 8 && line.startsWith("i:smb://"))) {
+								// 既読情報を読み込まない場合は何もしない
+							}
+							else {
+								ed.putInt(key, work);
+							}
 							break;
 						}
 						case 'L':

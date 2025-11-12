@@ -171,11 +171,11 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 		}
 		else if(key.equals(DEF.KEY_TX_CNTRGB)){
 			//
-			mTxtCntColor.setSummary(getColorSummary(getCntColor(sharedPreferences)));
+			mTxtCntColor.setSummary(getColorSummary(getTxtCntColor(sharedPreferences)));
 		}
 		else if(key.equals(DEF.KEY_TX_GUIRGB)){
 			//
-			mTxtGuiColor.setSummary(getColorSummary(getGuiColor(sharedPreferences)));
+			mTxtGuiColor.setSummary(getColorSummary(getTxtGuiColor(sharedPreferences)));
 		}
 		else if(key.equals(DEF.KEY_TX_TVTRGB)){
 			//
@@ -212,7 +212,7 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 	}
 
 	public static int getGuiColor(SharedPreferences sp){
-		int val = DEF.getGuideValue(sp, null, DEF.KEY_GUIRGB, 1);
+		int val = DEF.getColorValue(sp, null, DEF.KEY_GUIRGB, 1);
 		return val & 0x00FFFFFF | 0x80000000;
 	}
 
@@ -228,7 +228,7 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 	}
 
 	public static int getTxtGuiColor(SharedPreferences sp){
-		int val = DEF.getGuideValue(sp, null, DEF.KEY_TX_GUIRGB, 1);
+		int val = DEF.getColorValue(sp, null, DEF.KEY_TX_GUIRGB, 1);
 		return val & 0x00FFFFFF | 0x80000000;
 	}
 

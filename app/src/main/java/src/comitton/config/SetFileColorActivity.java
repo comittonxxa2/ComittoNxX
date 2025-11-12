@@ -291,7 +291,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 			//
 			mTitColor.setSummary(getColorSummary(getTitColor(sharedPreferences, true)));
 		}
-		else if (key.equals(DEF.KEY_TLBRGB)) {
+		else if (key.equals(DEF.KEY_TIBRGB)) {
 			//
 			mTibColor.setSummary(getColorSummary(getTibColor(sharedPreferences, true)));
 		}
