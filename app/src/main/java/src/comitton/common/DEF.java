@@ -553,6 +553,7 @@ public class DEF {
 	public static final String KEY_FORCENAVIGATIONBAR = "ForceHideNavigationBar";
 	public static final String KEY_FORCESTATUSBAR = "ForceHideStatusBar";
 	public static final String KEY_ENCRYPTION = "encryption";
+	public static final String KEY_IGNOREREADINFO = "IgnoreReadInfo";
 	public static final String KEY_FORCETRADDISPLAYOLDVIEWROTATE = "ForceTradOldViewRotate";
 	public static final String KEY_READTEXTSETTING = "ReadTextSetting";
 	public static final String KEY_REVERSEROTARE = "ReverseRotate";
