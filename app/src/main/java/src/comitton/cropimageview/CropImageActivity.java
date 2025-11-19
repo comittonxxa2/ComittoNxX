@@ -295,7 +295,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 	public static void SetOrientationEventListener(AppCompatActivity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		mviewrota = SetCommonActivity.getViewRotaAll(sharedPreferences);
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
 			// 従来の設定で回転させる
 			DEF.setRotationAll(activity, mviewrota);
 			return;
@@ -324,14 +324,14 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 	}
 
 	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
 			return;
 		}
 		orientationEventListener.enable();
 	}
 
 	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
 			return;
 		}
 		orientationEventListener.disable();
