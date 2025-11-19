@@ -1,5 +1,7 @@
 package src.comitton.dialog;
 
+import static src.comitton.dialog.PageThumbnail.mThumView;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -33,21 +35,23 @@ import src.comitton.imageview.PageSelectListener;
 public class ToolbarDialog extends ImmersiveDialog implements
 		OnClickListener, OnSeekBarChangeListener, DialogInterface.OnDismissListener {
 
-	protected PageSelectListener mListener = null;
+	protected static PageSelectListener mListener = null;
 	protected Activity mActivity;
 
 	// パラメータ
 	protected boolean mViewer;
 	protected boolean mDirTree;
 	protected int mShareType = DEF.SHARE_SINGLE;
-	protected int mPage;
-	protected int mMaxPage;
-	protected boolean mReverse;
-	protected boolean mAutoApply;
+	protected static int mPage;
+	protected static int mMaxPage;
+	protected static boolean mReverse;
+	protected static boolean mAutoApply;
 
 	protected boolean mShare;
-	protected SeekBar mSeekPage;
+	protected static SeekBar mSeekPage;
 
+	// ツールバーを動的に表示する変更に伴いコメントアウトにした
+	/*
 	private AppCompatImageButton mBtnLeftMost;
 	private AppCompatImageButton mBtnLeft100;
 	private AppCompatImageButton mBtnLeft10;
@@ -90,6 +94,7 @@ public class ToolbarDialog extends ImmersiveDialog implements
 	private AppCompatImageButton mBtnProfile9;
 	private AppCompatImageButton mBtnProfile10;
 
+	*/
 	public ToolbarDialog(AppCompatActivity activity, @StyleRes int themeResId) {
 		super(activity, themeResId);
 		Window dlgWindow = getWindow();
@@ -126,6 +131,8 @@ public class ToolbarDialog extends ImmersiveDialog implements
 	}
 
 	public void setShareType(int shareType) {
+		// ツールバーを動的に表示する変更に伴いコメントアウトにした
+		/*
 		mShareType = shareType;
 		if (mShare) {
 			if (mShareType == DEF.SHARE_SINGLE) {
@@ -138,6 +145,7 @@ public class ToolbarDialog extends ImmersiveDialog implements
 				mBtnShareRightPage.setVisibility(View.VISIBLE);
 			}
 		}
+		*/
 	}
 
 	@SuppressLint("SuspiciousIndentation")
@@ -159,6 +167,8 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		setProgress(mPage, false);
 		mSeekPage.setOnSeekBarChangeListener(this);
 
+		// ツールバーを動的に表示する変更に伴いコメントアウトにした
+		/*
 		mBtnLeftMost = (AppCompatImageButton) this.findViewById(R.id.leftmost);
 		mBtnLeft100 = (AppCompatImageButton) this.findViewById(R.id.left100);
 		mBtnLeft10  = (AppCompatImageButton) this.findViewById(R.id.left10);
@@ -481,6 +491,7 @@ public class ToolbarDialog extends ImmersiveDialog implements
 				}
 			}
 		}
+		*/
 	}
 
 	@Override
@@ -496,6 +507,8 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		Resources res = mActivity.getResources();
 		float ratio = ToolbarEditDialog.getToolbarRatio(mActivity);
 
+		// ツールバーを動的に表示する変更に伴いコメントアウトにした
+		/*
 		// ボタンのサイズを変更する
 		zoom(res, mBtnLeftMost, ratio);
 		zoom(res, mBtnLeft100, ratio);
@@ -538,23 +551,202 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		zoom(res, mBtnProfile8, ratio);
 		zoom(res, mBtnProfile9, ratio);
 		zoom(res, mBtnProfile10, ratio);
+		*/
 	}
 
 	private void zoom(Resources resources, ImageButton imageButton, float ratio){
+		// ツールバーを動的に表示する変更に伴いコメントアウトにした
+		/*
 		// ボタンのサイズを変更する
 		imageButton.setImageDrawable(ImageAccess.zoom(resources, imageButton.getDrawable(), ratio));
 		imageButton.setPadding((int)(imageButton.getPaddingLeft() * ratio), (int)(imageButton.getPaddingTop() * ratio), (int)(mBtnLeftMost.getPaddingRight() * ratio), (int)(mBtnLeftMost.getPaddingBottom() * ratio));
 		imageButton.getLayoutParams().height = (int)(imageButton.getHeight() * ratio);
 		imageButton.getLayoutParams().width = (int)(imageButton.getWidth() * ratio);
 		imageButton.requestLayout();
+		*/
 	}
 
 	public void setPageSelectListear(PageSelectListener listener) {
 		mListener = listener;
 	}
 
+	// ツールバーのタッチイベントの実行
+	public static void SetListner(int index) {
+		switch (index) {
+			case DEF.TOOLBAR_EVENT_BOOK_LEFT:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_BOOK_LEFT);
+				break;
+			case DEF.TOOLBAR_EVENT_BOOK_RIGHT:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_BOOK_RIGHT);
+				break;
+			case DEF.TOOLBAR_EVENT_BOOKMARK_LEFT:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_BOOKMARK_LEFT);
+				break;
+			case DEF.TOOLBAR_EVENT_BOOKMARK_RIGHT:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_BOOKMARK_RIGHT);
+				break;
+			case DEF.TOOLBAR_EVENT_THUMB_SLIDER:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_THUMB_SLIDER);
+				break;
+			case DEF.TOOLBAR_EVENT_DIR_TREE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_DIR_TREE);
+				break;
+			case DEF.TOOLBAR_EVENT_TOC:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_TOC);
+				break;
+			case DEF.TOOLBAR_EVENT_FAVORITE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_FAVORITE);
+				break;
+			case DEF.TOOLBAR_EVENT_ADD_FAVORITE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_ADD_FAVORITE);
+				break;
+			case DEF.TOOLBAR_EVENT_SEARCH:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_SEARCH);
+				break;
+			case DEF.TOOLBAR_EVENT_SHARE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_SHARE);
+				break;
+			case DEF.TOOLBAR_EVENT_ROTATE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_ROTATE);
+				break;
+			case DEF.TOOLBAR_EVENT_ROTATE_IMAGE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_ROTATE_IMAGE);
+				break;
+			case DEF.TOOLBAR_EVENT_SELECT_THUMB:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_SELECT_THUMB);
+				break;
+			case DEF.TOOLBAR_EVENT_TRIM_THUMB:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_TRIM_THUMB);
+				break;
+			case DEF.TOOLBAR_EVENT_CONTROL:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_CONTROL);
+				break;
+			case DEF.TOOLBAR_EVENT_MENU:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_MENU);
+				break;
+			case DEF.TOOLBAR_EVENT_CONFIG:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_CONFIG);
+				break;
+			case DEF.TOOLBAR_EVENT_EDIT_TOOLBAR:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_EDIT_TOOLBAR);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE1:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE1);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE2:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE2);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE3:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE3);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE4:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE4);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE5:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE5);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE6:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE6);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE7:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE7);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE8:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE8);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE9:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE9);
+				break;
+			case DEF.TOOLBAR_EVENT_PROFILE10:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE10);
+				break;
+		}
+		if (index > DEF.TOOLBAR_EVENT_PAGE_RESET) {
+			return;
+		}
+		int page = calcProgress(mSeekPage.getProgress());
+		switch (index) {
+			case DEF.TOOLBAR_EVENT_LEFTMOST:
+				if (mReverse) {
+					page = mMaxPage - 1;
+				} else {
+					page = 0;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_LEFT100:
+				if (mReverse) {
+					page += 100;
+				} else {
+					page -= 100;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_LEFT10:
+				if (mReverse) {
+					page += 10;
+				} else {
+					page -= 10;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_LEFT1:
+				if (mReverse) {
+					page += 1;
+				} else {
+					page -= 1;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_RIGHT1:
+				if (mReverse) {
+					page -= 1;
+				} else {
+					page += 1;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_RIGHT10:
+				if (mReverse) {
+					page -= 10;
+				} else {
+					page += 10;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_RIGHT100:
+				if (mReverse) {
+					page -= 100;
+				} else {
+					page += 100;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_RIGHTMOST:
+				if (mReverse) {
+					page = 0;
+				} else {
+					page = mMaxPage - 1;
+				}
+				break;
+			case DEF.TOOLBAR_EVENT_PAGE_RESET:
+				// ページ選択をリセット
+				page = mPage;
+				break;
+		}
+		// ページ選択の場合
+		if (page < 0) {
+			page = 0;
+		} else if (page >= mMaxPage) {
+			page = mMaxPage - 1;
+		}
+
+		// 設定と通知
+		if (mAutoApply) {
+			mListener.onSelectPage(page);
+		}
+		setProgress(page, false);
+		// シークバーを移動させてもonProgressChangedへ飛ばないので直接操作する
+		mThumView.setPosition(page);
+	}
+
 	@Override
 	public void onClick(View v) {
+		// ツールバーを動的に表示する変更に伴いコメントアウトにした
+		/*
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		// ボタンクリック
 
@@ -734,9 +926,10 @@ public class ToolbarDialog extends ImmersiveDialog implements
 			}
 			setProgress(page, false);
 		}
+		*/
 	}
 
-	protected void setProgress(int pos, boolean fromThumb) {
+	protected static void setProgress(int pos, boolean fromThumb) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "pos=" + pos);
 		//if (debug) {DEF.StackTrace("ToolbarDialog", "setProgress:");}
@@ -752,7 +945,7 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		mSeekPage.setProgress(convpos);
 	}
 
-	protected int calcProgress(int pos) {
+	protected static int calcProgress(int pos) {
 		int convpos;
 
 		if (!mReverse) {

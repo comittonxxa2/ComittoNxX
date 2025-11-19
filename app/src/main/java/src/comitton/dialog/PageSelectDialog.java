@@ -5,6 +5,7 @@ import src.comitton.common.DEF;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,9 +13,11 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.text.InputType;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -60,6 +63,12 @@ public class PageSelectDialog extends ToolbarDialog implements Handler.Callback,
 
 	protected void onCreate(Bundle savedInstanceState){
 		setContentView(R.layout.pageselect);
+
+		// ツールバーを動的に表示するため親のレイアウトを取得
+		LinearLayout parentLayout = findViewById(R.id.pageselect);
+		Context context = getContext();
+		// ツールバーを動的に表示
+		PageThumbnail.SetIconLayout(parentLayout, context);
 
 		// 一度ダイアログを表示すると画面回転時に呼び出される
 		//TextView slash = (TextView) findViewById(R.id.text_slash);

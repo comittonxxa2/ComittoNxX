@@ -5,10 +5,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
+import androidx.core.widget.TextViewCompat;
 import androidx.preference.PreferenceManager;
 
 import android.os.Handler;
@@ -35,6 +38,10 @@ import android.widget.TextView;
 
 import androidx.annotation.StyleRes;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,6 +66,8 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 	private int mToolbarSize;
 	private TextView mTxtSize;
 	private String mSizeStr;
+	private Mlist[] mlists;
+	private int[] mIndex;
 
 	private ItemArrayAdapter mItemArrayAdapter;
 	private String[] mProfileWord;
@@ -221,6 +230,37 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.string.ToolbarProfile10,		// プロファイル10
 			};
 
+	private class Mlist {
+		String mitems;
+		int mCommndDrawables;
+		int mCommandRes;
+		boolean mChecked;
+		int mindex;
+		public void setItems(String items, int CommndDrawables, int CommandRes) {
+			mitems = items;
+			mCommndDrawables = CommndDrawables;
+			mCommandRes = CommandRes;
+		}
+		public void setChecked(boolean checked) {
+			mChecked = checked;
+		}
+		public void setIndex(int Index) {
+			mindex = Index;
+		}
+		public String getItems() {
+			return mitems;
+		}
+		public int getCommndDrawables() {
+			return mCommndDrawables;
+		}
+		public boolean getChecked() {
+			return mChecked;
+		}
+		public int getIndex() {
+			return mindex;
+		}
+	}
+
 	public FloatingIconEditDialog(AppCompatActivity activity, @StyleRes int themeResId, int cx, int cy, Handler handler) {
 		super(activity, themeResId);
 		setCanceledOnTouchOutside(true);
@@ -245,24 +285,35 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		mProfileWord[9] = sharedPreference.getString(DEF.KEY_PROFILE_WORD_10, "");
 
 		String[] items = null;
+		Mlist[] lists;
 		items = new String[COMMAND_RES.length];
+		lists = new Mlist[COMMAND_RES.length];
+		mIndex = new int[COMMAND_RES.length];
+		for (int i = 0; i < COMMAND_RES.length; i++) {
+			lists[i] = new Mlist();
+			mIndex[i] = sharedPreference.getInt(DEF.KEY_FLOATINGICON_TOOLBAR_INDEX + COMMAND_ID[i], i);
+		}
 		for (int i = 0; i < COMMAND_RES.length; i++) {
 			if (COMMAND_ID[i] >= DEF.TOOLBAR_PROFILE1 && COMMAND_ID[i] <= DEF.TOOLBAR_PROFILE10) {
 				// プロファイル
 				if (mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1].equals("")) {
 					// 中身が未定義なら
-					items[i] = activity.getResources().getString(COMMAND_RES[i]);
+					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]);
 				}
 				else {
 					// 後半に中身を追加
-					items[i] = activity.getResources().getString(COMMAND_RES[i]) + " : " + mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1];
+					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]) + " : " + mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1];
 				}
 			}
 			else {
-				items[i] = activity.getResources().getString(COMMAND_RES[i]);
+				items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]);
 			}
+			lists[i].setItems(items[i], COMMAND_DRAWABLE[mIndex[i]], COMMAND_RES[mIndex[i]]);
+			lists[i].setChecked(mStates[mIndex[i]]);
+			lists[i].setIndex(mIndex[i]);
 		}
 		mItems = items;
+		mlists = lists;
 	}
 
 	protected void onCreate(Bundle savedInstanceState){
@@ -285,7 +336,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		mTitleText.setText(mTitle);
 		// リストの設定
 		mListView.setScrollingCacheEnabled(false);
-		mItemArrayAdapter = new ItemArrayAdapter(mActivity, -1, mItems);
+		mItemArrayAdapter = new ItemArrayAdapter(mActivity, -1, mlists);
 		mListView.setAdapter(mItemArrayAdapter);
 
 		// デフォルトはしおりを記録する
@@ -347,6 +398,26 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		}
 		Logcat.d(logLevel, "終了します.");
 		return count;
+	}
+
+	public static int[] loadToolbarIndex(Context context) {
+		int[] states;
+		states = new int[COMMAND_ID.length];
+		try {
+			SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
+
+			int count = 0;
+			for (int i = 0; i < states.length; i++) {
+				try {
+					states[i] = sharedPreference.getInt(DEF.KEY_FLOATINGICON_TOOLBAR_INDEX + COMMAND_ID[i], i);
+				}
+				catch (Exception e) {
+				}
+			}
+		}
+		catch (Exception e) {
+		}
+		return states;
 	}
 
 	// 設定を読み込み
@@ -413,6 +484,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		for (int i = 0 ; i < states.length ; i ++) {
 			try {
 				ed.putBoolean(DEF.KEY_FLOATINGICON_TOOLBAR + COMMAND_ID[i], states[i]);
+				ed.putInt(DEF.KEY_FLOATINGICON_TOOLBAR_INDEX + COMMAND_ID[i], mlists[i].getIndex());
 			}
 			catch (Exception e) {
 				Logcat.e(logLevel, "エラーが発生しました.", e);
@@ -441,17 +513,22 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 
 	}
 
+	// dpをピクセルへ変換
+	private static int dpToPx(Context context, int dpValue) {
+		float density = context.getResources().getDisplayMetrics().density;
+		return (int) (dpValue * density + 0.5f);
+	}
 
-	public class ItemArrayAdapter extends ArrayAdapter<String>
+	public class ItemArrayAdapter extends ArrayAdapter<Mlist>
 	{
 		List<HashMap<String, Object>> mMap;
-		private String[] mItems; // ファイル情報リスト
+		private Mlist[] mlists;
 
 		// コンストラクタ
-		public ItemArrayAdapter(Context context, int resId, String[] items)
+		public ItemArrayAdapter(Context context, int resId, Mlist[] lists)
 		{
-			super(context, resId, items);
-			mItems = items;
+			super(context, resId, lists);
+			mlists = lists;
 		}
 
 		// 一要素のビューの生成
@@ -464,12 +541,20 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			CheckBox checkbox;
 			ImageView imageview;
 			TextView textview;
+			AppCompatButton  button1;
+			AppCompatButton  button2;
 			Drawable drawable;
 
 			if(view == null) {
 				int marginW = (int)(4 * mScale);
 				int marginH = (int)(0 * mScale);
 				Context context = getContext();
+				int marginInDp = 5;
+				int marginInPx = dpToPx(context, marginInDp);
+				int mButtonDp = 48;
+				int mButtonPx = dpToPx(context, mButtonDp);
+				// チェックボックスのレイアウトの色を持ってくる
+				int colorInt = context.getColor(R.color.green2);
 				// レイアウト
 				LinearLayout layout = new LinearLayout(context);
 				layout.setOrientation(LinearLayout.HORIZONTAL);
@@ -477,8 +562,8 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 				view = layout;
 
 				LinearLayout inLayout = new LinearLayout(context);
-				layout.setOrientation(LinearLayout.HORIZONTAL);
-				layout.setBackgroundColor(0);
+				inLayout.setOrientation(LinearLayout.HORIZONTAL);
+				inLayout.setBackgroundColor(0);
 
 				checkbox = new CheckBox(context);
 				checkbox.setId(0);
@@ -499,13 +584,36 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 
 				textview = new TextView(context);
 				textview.setId(2);
-				layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				layoutParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
 				layoutParams.gravity= Gravity.LEFT | Gravity.CENTER_VERTICAL;
 				textview.setLayoutParams(layoutParams);
 				textview.setPadding(marginW, marginW, 0, marginW);
 				inLayout.addView(textview);
+				// 項目移動のボタンを追加
+				button1 = new AppCompatButton(context);
+				button1.setId(3);
+				layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+				layoutParams.gravity =  Gravity.CENTER;
+				layoutParams.width = mButtonPx;
+				layoutParams.height = mButtonPx;
+	            button1.setPadding(marginInPx, marginInPx, marginInPx, marginInPx);
+				button1.setTextColor(colorInt);
+				button1.setLayoutParams(layoutParams);
+				TextViewCompat.setAutoSizeTextTypeWithDefaults(button1, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM);
+				inLayout.addView(button1);
+				// 項目移動のボタンを追加
+				button2 = new AppCompatButton(context);
+				button2.setId(4);
+				layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+				layoutParams.gravity = Gravity.CENTER;
+				layoutParams.width = mButtonPx;
+				layoutParams.height = mButtonPx;
+	            button2.setPadding(marginInPx, marginInPx, marginInPx, marginInPx);
+				button2.setTextColor(colorInt);
+				button2.setLayoutParams(layoutParams);
+				TextViewCompat.setAutoSizeTextTypeWithDefaults(button2, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM);
+				inLayout.addView(button2);
 
-				inLayout.setPadding(marginW, marginH, 0, marginH);
 				layout.addView(inLayout);
 
 				checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener(){
@@ -514,7 +622,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 						Integer index = (Integer)view.getTag();
 						if (index != null) {
     						if (0 <= index && index < mStates.length) {
-    							mStates[index] = state;
+    							mlists[index].setChecked(state);
     						}
 						}
 					}
@@ -525,16 +633,42 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 				checkbox = (CheckBox)view.findViewById(0);
 				imageview = (ImageView)view.findViewById(1);
 				textview = (TextView)view.findViewById(2);
+				button1 = (AppCompatButton)view.findViewById(3);
+				button2 = (AppCompatButton)view.findViewById(4);
 			}
 
 			// 値の指定
 			checkbox.setTag(index);
-			checkbox.setChecked(mStates[index]);
+			checkbox.setChecked(mlists[index].getChecked());
+			button1.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					List<Mlist> itemsList = Arrays.asList(mlists);
+					if (index > 0) {
+						// 項目の上下を入れ替える
+						Collections.swap(itemsList, index, index - 1);
+						// リストを更新
+						notifyDataSetChanged();
+					}
+				}
+			});
+			button2.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					List<Mlist> itemsList = Arrays.asList(mlists);
+					if (index < COMMAND_RES.length - 1) {
+						// 項目の上下を入れ替える
+						Collections.swap(itemsList, index, index + 1);
+						// リストを更新
+						notifyDataSetChanged();
+					}
+				}
+			});
 
 			if (imageview != null) {
 				if (0 <= index && index < COMMAND_DRAWABLE.length) {
 					Logcat.d(logLevel, "アイコンをセットします. index=" + index);
-					drawable = mActivity.getDrawable(COMMAND_DRAWABLE[index]);
+					drawable = mActivity.getDrawable(mlists[index].getCommndDrawables());
 					drawable.setTint(mActivity.getResources().getColor(R.color.white1));
 					imageview.setImageDrawable(drawable);
 				}
@@ -542,8 +676,19 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			else {
 				Logcat.d(logLevel, "ImageViewがnullです. index=" + index);
 			}
-
-			textview.setText(mItems[index]);
+			// ボタンを右端へ追いやるため空白で埋める(格好良いとは言えないがパラメータ調整では修正できなかったのでこの方法にした)
+			int spaceCount = 100;
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < spaceCount; i++) {
+				sb.append(" ");
+			}
+			String combinedText = sb.toString();
+			// テキストをセット
+			textview.setText(mlists[index].getItems() + combinedText);
+			// ボタンの矢印をセット
+			Resources res = mActivity.getResources();
+			button1.setText(res.getString(R.string.SettingArrowUp));
+			button2.setText(res.getString(R.string.SettingArrowDown));
 			return view;
 		}
 	}
@@ -553,6 +698,9 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		// キャンセルクリック
 		if (v.getId() == R.id.btn_ok) {
 			// 選択完了
+			for (int i = 0; i < mStates.length; i++) {
+				mStates[mlists[i].getIndex()] = mlists[i].getChecked();
+			}
 			saveToolbarState(mActivity, mStates);
 		}
 		dismiss();

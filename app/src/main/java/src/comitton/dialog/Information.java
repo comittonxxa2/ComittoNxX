@@ -33,10 +33,13 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -241,7 +244,11 @@ public class Information implements DialogInterface.OnDismissListener {
 			String filename = res.getString(R.string.noticeText);
 			webView.loadUrl("file:///android_asset/" + filename);
 			webView.setBackgroundColor(Color.TRANSPARENT);
-			setView(webView);
+			// FrameLayoutでWebViewを包む
+			FrameLayout container = new FrameLayout(mActivity);
+			container.addView(webView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+			// setViewでコンテナを設定
+			setView(container);
 			setButton(DialogInterface.BUTTON_POSITIVE, res.getString(R.string.btnOK),
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int whichButton) {
@@ -283,7 +290,11 @@ public class Information implements DialogInterface.OnDismissListener {
 					return true;
 				}
 			});
-			setView(webView);
+			// FrameLayoutでWebViewを包む
+			FrameLayout container = new FrameLayout(mActivity);
+			container.addView(webView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+			// setViewでコンテナを設定
+			setView(container);
 			setButton(DialogInterface.BUTTON_POSITIVE, res.getString(R.string.aboutOK),
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int whichButton) {
