@@ -922,6 +922,8 @@
     <string name="openfloatingiconcursor">Show cross icon</string>
     <string name="SettingCursorClick">Tap to move the cross icon, then press the back key to exit</string>
 
+    <string name="SettingArrowUp">⬆</string>
+    <string name="SettingArrowDown">⬇</string>
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
