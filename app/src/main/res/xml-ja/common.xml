@@ -32,9 +32,9 @@
             android:title="すべての画面でステータスバーを表示しない" />
         <CheckBoxPreference
             android:defaultValue="false"
-            android:key="ForceTradOldViewRotate"
-            android:summary="表示方向が固定されない場合にチェックを入れる(逆方向の回転は設定不可/再起動で反映)"
-            android:title="表示方向の設定で従来の方式を使う" />
+            android:key="DisplayViewRotate"
+            android:summary="逆方向の回転に対応させる場合にチェックを入れる(再起動で反映)"
+            android:title="表示方向の設定で新方式を使う" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ReverseRotate"
