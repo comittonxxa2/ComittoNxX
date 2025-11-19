@@ -1,5 +1,6 @@
 package src.comitton.fileview.view;
 
+import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.TextFormatter;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -48,10 +49,12 @@ public class MenuItemView extends View {
 
 	private Paint mTextPaint;
 	private Paint mFillPaint;
+	private Paint mFillPaint2;
 	private Paint mFramePaint;
 	private Path mChkPath;
 	private Paint mTextSPaint;
 	private Paint mFrameSPaint;
+	private Paint mFrameSPaint2;
 	private GradientDrawable mGradient;
 	private Rect mChkRect1;
 //	private Rect mChkRect2;
@@ -98,6 +101,8 @@ public class MenuItemView extends View {
 
 		int[] colors = { mBakColor, mTxtColor, mTxtColor, mBakColor };
 		mGradient = new GradientDrawable(Orientation.LEFT_RIGHT, colors);
+		Context context = getContext();
+		int colorInt = context.getColor(R.color.green2);
 
 		mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mTextPaint.setTextSize(size);
@@ -116,7 +121,13 @@ public class MenuItemView extends View {
 
 		mFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mFillPaint.setStyle(Style.FILL);
-		mFillPaint.setColor(0xFF40C0FF);
+//		mFillPaint.setColor(0xFF40C0FF);
+		// チェックボックスのレイアウトの色を持ってくる
+		mFillPaint.setColor(colorInt);
+
+		mFillPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mFillPaint2.setStyle(Style.FILL);
+		mFillPaint2.setColor(txtcolor);
 
 		mFramePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mFramePaint.setStyle(Style.STROKE);
@@ -127,6 +138,11 @@ public class MenuItemView extends View {
 		mFrameSPaint.setStyle(Style.STROKE);
 		mFrameSPaint.setStrokeWidth(7.0f);
 		mFrameSPaint.setColor(0xC0000000);
+
+		mFrameSPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mFrameSPaint2.setStyle(Style.FILL);
+		// チェックボックスのレイアウトの色を追加
+		mFrameSPaint2.setColor(colorInt);
 
 		if (mSubType == SUBTYPE_CHECK) {
 			mChkRect1 = new Rect();
@@ -177,8 +193,12 @@ public class MenuItemView extends View {
 				canvas.drawRect(mChkRect1, mFramePaint);
 				if (mSelect != 0) {
 //					canvas.drawRect(mChkRect2, mFillPaint);
+					// チェックボックスのレイアウトの色の塗りつぶしを追加
+					canvas.drawRect(mChkRect1, mFrameSPaint2);
+					canvas.drawRect(mChkRect1, mFrameSPaint);
+					canvas.drawRect(mChkRect1, mFramePaint);
 					canvas.drawPath(mChkPath, mTextSPaint);
-					canvas.drawPath(mChkPath, mFillPaint);
+					canvas.drawPath(mChkPath, mFillPaint2);
 				}
 			}
 			else if (mSubType == SUBTYPE_RADIO) {
