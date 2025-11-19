@@ -922,4 +922,7 @@
     <string name="openfloatingiconcursor">十字アイコンを表示</string>
     <string name="SettingCursorClick">タップして十字アイコン移動、バックキーで終了</string>
 
+    <string name="SettingArrowUp">⬆</string>
+    <string name="SettingArrowDown">⬇</string>
+
 </resources>
