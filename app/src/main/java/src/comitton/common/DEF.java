@@ -130,6 +130,7 @@ public class DEF {
 	public static final int HMSG_EVENT_FLOATINGICON_RESET = 216;
 	public static final int HMSG_EVENT_FLOATINGICON_CURSOR = 217;
 	public static final int HMSG_EVENT_FLOATINGICON_BACKUPRESTORE = 218;
+	public static final int HMSG_EVENT_TOOLBAR = 219;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -230,7 +231,9 @@ public class DEF {
 	public static final int MENU_LICENSE = Menu.FIRST + 105;
 
 	public static final String KEY_PAGE_SELECT_TOOLBAR = "PageSelectToolbar";
+	public static final String KEY_PAGE_SELECT_TOOLBAR_INDEX = "PageSelectToolbarIndex";
 	public static final String KEY_FLOATINGICON_TOOLBAR = "FloatingIconToolbar";
+	public static final String KEY_FLOATINGICON_TOOLBAR_INDEX = "FloatingIconToolbarIndex";
 	public static final int TOOLBAR_LEFTMOST = 1001;
 	public static final int TOOLBAR_LEFT100 = 1002;
 	public static final int TOOLBAR_LEFT10 = 1003;
@@ -273,6 +276,45 @@ public class DEF {
 	public static final int TOOLBAR_PROFILE9 = 1039;
 	public static final int TOOLBAR_PROFILE10 = 1040;
 	public static final int TOOLBAR_DISMISS = 1100;
+
+	public static final int TOOLBAR_EVENT_LEFTMOST = 0;
+	public static final int TOOLBAR_EVENT_LEFT100 = 1;
+	public static final int TOOLBAR_EVENT_LEFT10 = 2;
+	public static final int TOOLBAR_EVENT_LEFT1 = 3;
+	public static final int TOOLBAR_EVENT_RIGHT1 = 4;
+	public static final int TOOLBAR_EVENT_RIGHT10 = 5;
+	public static final int TOOLBAR_EVENT_RIGHT100 = 6;
+	public static final int TOOLBAR_EVENT_RIGHTMOST = 7;
+	public static final int TOOLBAR_EVENT_PAGE_RESET = 8;
+	public static final int TOOLBAR_EVENT_BOOK_LEFT = 9;
+	public static final int TOOLBAR_EVENT_BOOK_RIGHT = 10;
+	public static final int TOOLBAR_EVENT_BOOKMARK_LEFT = 11;
+	public static final int TOOLBAR_EVENT_BOOKMARK_RIGHT = 12;
+	public static final int TOOLBAR_EVENT_THUMB_SLIDER = 13;
+	public static final int TOOLBAR_EVENT_DIR_TREE = 14;
+	public static final int TOOLBAR_EVENT_TOC = 15;
+	public static final int TOOLBAR_EVENT_FAVORITE = 16;
+	public static final int TOOLBAR_EVENT_ADD_FAVORITE = 17;
+	public static final int TOOLBAR_EVENT_SEARCH = 18;
+	public static final int TOOLBAR_EVENT_SHARE = 19;
+	public static final int TOOLBAR_EVENT_ROTATE = 20;
+	public static final int TOOLBAR_EVENT_ROTATE_IMAGE = 21;
+	public static final int TOOLBAR_EVENT_SELECT_THUMB = 22;
+	public static final int TOOLBAR_EVENT_TRIM_THUMB = 23;
+	public static final int TOOLBAR_EVENT_CONTROL = 24;
+	public static final int TOOLBAR_EVENT_MENU = 25;
+	public static final int TOOLBAR_EVENT_CONFIG = 26;
+	public static final int TOOLBAR_EVENT_EDIT_TOOLBAR = 27;
+	public static final int TOOLBAR_EVENT_PROFILE1 = 28;
+	public static final int TOOLBAR_EVENT_PROFILE2 = 29;
+	public static final int TOOLBAR_EVENT_PROFILE3 = 30;
+	public static final int TOOLBAR_EVENT_PROFILE4 = 31;
+	public static final int TOOLBAR_EVENT_PROFILE5 = 32;
+	public static final int TOOLBAR_EVENT_PROFILE6 = 33;
+	public static final int TOOLBAR_EVENT_PROFILE7 = 34;
+	public static final int TOOLBAR_EVENT_PROFILE8 = 35;
+	public static final int TOOLBAR_EVENT_PROFILE9 = 36;
+	public static final int TOOLBAR_EVENT_PROFILE10 = 37;
 
 	public static final int SHARE_SINGLE = 2001;
 	public static final int SHARE_LR = 2002;
@@ -555,6 +597,7 @@ public class DEF {
 	public static final String KEY_ENCRYPTION = "encryption";
 	public static final String KEY_IGNOREREADINFO = "IgnoreReadInfo";
 	public static final String KEY_FORCETRADDISPLAYOLDVIEWROTATE = "ForceTradOldViewRotate";
+	public static final String KEY_DISPLAYVIEWROTATE = "DisplayViewRotate";
 	public static final String KEY_READTEXTSETTING = "ReadTextSetting";
 	public static final String KEY_REVERSEROTARE = "ReverseRotate";
 
