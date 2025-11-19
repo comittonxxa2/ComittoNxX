@@ -863,11 +863,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			ed = mSharedPreferences.edit();
 			ed.putString(DEF.KEY_LAST_VERSION, verName);
 			ed.apply();
-			// お知らせ表示を表示するとちらつきが発生する場合があるためメニューから開く時以外は何もしない
-			/*
 			// お知らせ表示
 			mInformation.showNotice();
-			*/
 		}
 
 		// GitHubに新しいバージョンがリリースされているか確認する
@@ -957,7 +954,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public static void SetOrientationEventListener(AppCompatActivity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		mListRota = SetFileListActivity.getListRota(sharedPreferences);
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
 			return;
 		}
 		deviceOrientation = -1;
@@ -984,14 +981,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 
 	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
 			return;
 		}
 		orientationEventListener.enable();
 	}
 
 	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
 			return;
 		}
 		orientationEventListener.disable();
