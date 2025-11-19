@@ -11,6 +11,7 @@ import src.comitton.config.SetFileColorActivity;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.dialog.FloatingIconDialog;
 import src.comitton.dialog.FloatingIconDialog.FloatingIconListenerInterface;
+import src.comitton.dialog.ToolbarDialog;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.config.SetCacheActivity;
@@ -729,7 +730,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	public static void SetOrientationEventListener(AppCompatActivity activity, int viewrota, SharedPreferences sharedPreferences) {
 
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
 			return;
 		}
 		deviceOrientation = -1;
@@ -756,14 +757,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	}
 
 	public static void SetOrientationEventListenerEnable(SharedPreferences sharedPreferences) {
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
 			return;
 		}
 		orientationEventListener.enable();
 	}
 
 	public static void SetOrientationEventListenerDisable(SharedPreferences sharedPreferences) {
-		if (SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
+		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences) || orientationEventListener == null) {
 			return;
 		}
 		orientationEventListener.disable();
@@ -1979,6 +1980,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mFloatingIconHorizontal = mFloatingIconHorizontalBackup;
 					mFloatingIconVertical = mFloatingIconVerticalBackup;
 				}
+				break;
+			case DEF.HMSG_EVENT_TOOLBAR:
+				// ツールバーのタッチイベントを実行
+				ToolbarDialog.SetListner(msg.arg1);
 				break;
 		}
 		return false;
@@ -3227,7 +3232,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							// サムネイルページ選択
 							if (!PageThumbnail.mIsOpened) {
 								PageThumbnail thumbDlg = new PageThumbnail(this, R.style.MyDialog);
-								thumbDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mPageWay == DEF.PAGEWAY_RIGHT, mImageMgr, mThumID, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR));								thumbDlg.setPageSelectListear(this);
+								thumbDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mPageWay == DEF.PAGEWAY_RIGHT, mImageMgr, mThumID, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR), mHandler);								thumbDlg.setPageSelectListear(this);
 								thumbDlg.show();
 								thumbDlg.setShareType(shareType);
 								mThumbDlg = thumbDlg;
@@ -5528,6 +5533,15 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					shareType = DEF.SHARE_SINGLE;
 				}
 
+				// ページ番号入力が開いていたら閉じる
+				if (PageSelectDialog.mIsOpened) {
+					mPageDlg.dismiss();
+				}
+				// サムネイルページ選択が開いていたら閉じる
+				if (PageThumbnail.mIsOpened) {
+					mThumbDlg.dismiss();
+				}
+
 				if (mPageSelect == PAGE_INPUT) {
 
 					mPageSelect = PAGE_THUMB;
@@ -5538,7 +5552,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// サムネイルページ選択
 					if (PageThumbnail.mIsOpened) {
 						PageThumbnail thumbDlg = new PageThumbnail(this, R.style.MyDialog);
-						thumbDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mPageWay == DEF.PAGEWAY_RIGHT, mImageMgr, mThumID, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR));
+						thumbDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mPageWay == DEF.PAGEWAY_RIGHT, mImageMgr, mThumID, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR), mHandler);
 						thumbDlg.setPageSelectListear(this);
 						thumbDlg.show();
 						thumbDlg.setShareType(shareType);
@@ -7837,11 +7851,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				imageButtons[i].setScaleType(ImageButton.ScaleType.FIT_XY);
 			}
 			int count = 0;
+			// 設定を取得
+			int[] mIndex = FloatingIconEditDialog.loadToolbarIndex(this);
 			for (int i = 0; i < FloatingIconEditDialog.COMMAND_DRAWABLE.length; i++) {
-				int finali = i;
-				if (mStates[i] && mFloatingIconEnable) {
+				int finali = mIndex[i];
+				if (mStates[mIndex[i]] && mFloatingIconEnable) {
 					// フローティングアイコンの画像を登録
-					imageButtons[count].setImageResource(FloatingIconEditDialog.COMMAND_DRAWABLE[i]);
+					imageButtons[count].setImageResource(FloatingIconEditDialog.COMMAND_DRAWABLE[mIndex[i]]);
 					// フローティングアイコンのクリックイベントを実行
 		            imageButtons[count].setOnClickListener(v -> {
 						Message message = new Message();
