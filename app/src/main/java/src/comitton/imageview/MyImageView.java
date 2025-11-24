@@ -1005,7 +1005,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     			}
 
     			// ルーペ機能
-    			if (zoomMode != ZOOM_NONE) {
+    			if (zoomMode != ZOOM_NONE && mParentAct.isZoomCheck()) {
     				// 画面の描画位置
     				Rect rcDst = getZoomAreaRect(zoomMode, ZOOM_GAP, mZoomView, cx, cy, mDrawRect);
 
@@ -2068,12 +2068,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if (mImage[0] != null) {
 			// 回転対応
 			if (mRotate == 0 || mRotate == 2) {
-				orgWidth[0] = mImage[0].Width;
-				orgHeight[0] = mImage[0].Height;
+				orgWidth[0] = mImage[0].SclWidth;
+				orgHeight[0] = mImage[0].SclHeight;
 			}
 			else {
-				orgWidth[0] = mImage[0].Height;
-				orgHeight[0] = mImage[0].Width;
+				orgWidth[0] = mImage[0].SclHeight;
+				orgHeight[0] = mImage[0].SclWidth;
 			}
 			// 幅補正
 			if (mImage[0].HalfMode != 0) {
@@ -2087,12 +2087,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if (mImage[1] != null) {
 			// 回転対応
 			if (mRotate == 0 || mRotate == 2) {
-				orgWidth[1] = mImage[1].Width;
-				orgHeight[1] = mImage[1].Height;
+				orgWidth[1] = mImage[1].SclWidth;
+				orgHeight[1] = mImage[1].SclHeight;
 			}
 			else {
-				orgWidth[1] = mImage[1].Height;
-				orgHeight[1] = mImage[1].Width;
+				orgWidth[1] = mImage[1].SclHeight;
+				orgHeight[1] = mImage[1].SclWidth;
 			}
 			if (mImage[1].HalfMode != 0) {
 				orgWidth[1] = (orgWidth[1] + 1) / 2;
@@ -2247,11 +2247,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (prevImage != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = prevImage.Width;
-						origHeight = prevImage.Height;
+						origWidth = prevImage.SclWidth;
+						origHeight = prevImage.SclHeight;
 					} else {
-						origWidth = prevImage.Height;
-						origHeight = prevImage.Width;
+						origWidth = prevImage.SclHeight;
+						origHeight = prevImage.SclWidth;
 					}
 					if (prevImage.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2294,11 +2294,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (prevImage != null && prev2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = prev2Image.Width;
-						origHeight = prev2Image.Height;
+						origWidth = prev2Image.SclWidth;
+						origHeight = prev2Image.SclHeight;
 					} else {
-						origWidth = prev2Image.Height;
-						origHeight = prev2Image.Width;
+						origWidth = prev2Image.SclHeight;
+						origHeight = prev2Image.SclWidth;
 					}
 					if (prev2Image.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2341,11 +2341,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (nextImage != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = nextImage.Width;
-						origHeight = nextImage.Height;
+						origWidth = nextImage.SclWidth;
+						origHeight = nextImage.SclHeight;
 					} else {
-						origWidth = nextImage.Height;
-						origHeight = nextImage.Width;
+						origWidth = nextImage.SclHeight;
+						origHeight = nextImage.SclWidth;
 					}
 					if (nextImage.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2388,11 +2388,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (nextImage != null && next2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = next2Image.Width;
-						origHeight = next2Image.Height;
+						origWidth = next2Image.SclWidth;
+						origHeight = next2Image.SclHeight;
 					} else {
-						origWidth = next2Image.Height;
-						origHeight = next2Image.Width;
+						origWidth = next2Image.SclHeight;
+						origHeight = next2Image.SclWidth;
 					}
 					if (next2Image.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2460,12 +2460,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if (mImage[0] != null) {
 			// 回転対応
 			if (mRotate == 0 || mRotate == 2) {
-				orgWidth[0] = mImage[0].Width;
-				orgHeight[0] = mImage[0].Height;
+				orgWidth[0] = mImage[0].SclWidth;
+				orgHeight[0] = mImage[0].SclHeight;
 			}
 			else {
-				orgWidth[0] = mImage[0].Height;
-				orgHeight[0] = mImage[0].Width;
+				orgWidth[0] = mImage[0].SclHeight;
+				orgHeight[0] = mImage[0].SclWidth;
 			}
 			// 幅補正
 			if (mImage[0].HalfMode != 0) {
@@ -2479,12 +2479,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if (mImage[1] != null) {
 			// 回転対応
 			if (mRotate == 0 || mRotate == 2) {
-				orgWidth[1] = mImage[1].Width;
-				orgHeight[1] = mImage[1].Height;
+				orgWidth[1] = mImage[1].SclWidth;
+				orgHeight[1] = mImage[1].SclHeight;
 			}
 			else {
-				orgWidth[1] = mImage[1].Height;
-				orgHeight[1] = mImage[1].Width;
+				orgWidth[1] = mImage[1].SclHeight;
+				orgHeight[1] = mImage[1].SclWidth;
 			}
 			if (mImage[1].HalfMode != 0) {
 				orgWidth[1] = (orgWidth[1] + 1) / 2;
@@ -2706,11 +2706,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (prevImage != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = prevImage.Width;
-						origHeight = prevImage.Height;
+						origWidth = prevImage.SclWidth;
+						origHeight = prevImage.SclHeight;
 					} else {
-						origWidth = prevImage.Height;
-						origHeight = prevImage.Width;
+						origWidth = prevImage.SclHeight;
+						origHeight = prevImage.SclWidth;
 					}
 					if (prevImage.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2759,11 +2759,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (prevImage != null && prev2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = prev2Image.Width;
-						origHeight = prev2Image.Height;
+						origWidth = prev2Image.SclWidth;
+						origHeight = prev2Image.SclHeight;
 					} else {
-						origWidth = prev2Image.Height;
-						origHeight = prev2Image.Width;
+						origWidth = prev2Image.SclHeight;
+						origHeight = prev2Image.SclWidth;
 					}
 					if (prev2Image.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2813,11 +2813,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (nextImage != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = nextImage.Width;
-						origHeight = nextImage.Height;
+						origWidth = nextImage.SclWidth;
+						origHeight = nextImage.SclHeight;
 					} else {
-						origWidth = nextImage.Height;
-						origHeight = nextImage.Width;
+						origWidth = nextImage.SclHeight;
+						origHeight = nextImage.SclWidth;
 					}
 					if (nextImage.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;
@@ -2867,11 +2867,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (next2Image != null && next2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
-						origWidth = next2Image.Width;
-						origHeight = next2Image.Height;
+						origWidth = next2Image.SclWidth;
+						origHeight = next2Image.SclHeight;
 					} else {
-						origWidth = next2Image.Height;
-						origHeight = next2Image.Width;
+						origWidth = next2Image.SclHeight;
+						origHeight = next2Image.SclWidth;
 					}
 					if (next2Image.HalfMode != 0) {
 						origWidth = (origWidth + 1) / 2;

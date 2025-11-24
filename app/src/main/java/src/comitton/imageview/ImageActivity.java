@@ -638,6 +638,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mDoubleTapGuardOn = false;
 	private boolean mAutoRepeatCheck = false;
 	private boolean mPinchScaleSetting = false;
+	private boolean mBackgroundPause = false;
 
 	private static int mFloatingIconSize;
 	private static int mFloatingIconHorizontal;
@@ -1633,6 +1634,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							mVibrator.vibrate(TIME_VIB_RANGE);
 						}
 
+						// バックグラウンドでのキャッシュ読み込み停止
+						if (mBackgroundPause) {
+							mImageMgr.setCacheSleep(true);
+						}
 						// タッチ位置が範囲内の時だけ処理
 						mLongTouchMode = true;
 						mImageView.setZoomMode(true);
@@ -1822,6 +1827,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							mPageSelecting = true;
 						}
 						mNextPage = -1;
+					}
+					// バックグラウンドでのキャッシュ読み込み再開
+					if (mBackgroundPause) {
+						mImageMgr.setCacheSleep(false);
 					}
 				}
 				if (!mFloatingIconInit) {
@@ -2561,6 +2570,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
     					float x2 = (int)event.getX(1);
     					float y2 = (int)event.getY(1);
     					if (Math.abs(x1 - x2) > mSDensity * 20 || Math.abs(y1 - y2) > mSDensity * 20) {
+							// バックグラウンドでのキャッシュ読み込み停止
+							if (mBackgroundPause) {
+								mImageMgr.setCacheSleep(true);
+							}
     						// 2点間が10sp以上であれば拡大縮小開始
     						mPinchOn = true;
     						mPinchScaleSel = mPinchScale;
@@ -2655,6 +2668,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
 						ed.apply();
     				}
+					// バックグラウンドでのキャッシュ読み込み再開
+					if (mBackgroundPause) {
+						mImageMgr.setCacheSleep(false);
+					}
     			}
     			return true;
     		}
@@ -2827,6 +2844,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								// タッチパネル設定が有効な場合
 								startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
 							}
+							// バックグラウンドでのキャッシュ読み込み停止
+							if (mBackgroundPause) {
+								mImageMgr.setCacheSleep(true);
+							}
 							// 現在のイメージ表示位置をフリックの判定のため記憶
 							mTouchDrawLeft = (int)x;
 							callZoomAreaDraw(x, y);
@@ -2878,6 +2899,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// ズーム表示解除
 						mImageView.setZoomMode(false);
 						mLongTouchMode = false;
+						// バックグラウンドでのキャッシュ読み込み再開
+						if (mBackgroundPause) {
+							mImageMgr.setCacheSleep(false);
+						}
 					}
 					// 押してる間のフラグクリア
 					mTouchFirst = false;
@@ -3266,6 +3291,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// startVibrate();
 			mImageView.setZoomMode(false);
 			mLongTouchMode = false;
+			// バックグラウンドでのキャッシュ読み込み再開
+			if (mBackgroundPause) {
+				mImageMgr.setCacheSleep(false);
+			}
 		}
 	}
 
@@ -6008,6 +6037,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mFloatingIconTransparency = FloatingIconDialog.getTransparency(sharedPreferences);
 			mFloatingIconDirectionMode = FloatingIconDialog.getDirectionMode(sharedPreferences);
 			mFloatingIconEnable = FloatingIconDialog.getEnable(sharedPreferences);
+			mBackgroundPause = SetImageActivity.getBackgroundPause(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -6257,6 +6287,26 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 		}
 		return false;
+	}
+
+	// ズーム可能かどうかを返す
+	boolean isZoomCheck() {
+		if (DEF.checkPortrait(mViewWidth, mViewHeight)) {
+			// 縦画面ならズーム可能
+			return true;
+		}
+		// 横画面はズームで落ちるので原因が判明するまで一先ず不可能にする
+		return false;
+	}
+
+	// 既読判定の最大ページ数から引き算する値を返す
+	public static int isDualMode() {
+		if (SetImageActivity.getInitView(mSharedPreferences) == DEF.DISPMODE_IM_DUAL) {
+			// 見開きの場合は1増やす
+			return 2;
+		}
+		// 通常は1を返す
+		return 1;
 	}
 
 	private void startScroll(int move) {
