@@ -175,8 +175,11 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
     int ret = 0;
 
 	WORD	*pixels = (WORD*)canvas;
-	int		image_width  = pData->OrgWidth;
-	int		image_height = pData->OrgHeight;
+	// スケール後の設定を有効にする
+	int		image_width  = pData->SclWidth[0];
+	int		image_height = pData->SclHeight[0];
+	// スケール後の設定なのでマージンカットを無視する
+	cut_left = cut_right = cut_top = cut_bottom = 0;
 
 	if (pData->UseFlag == 0) {
 		return -5;
@@ -184,30 +187,31 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 
 	int buffindex;
 	int buffpos = 0;
-	int linesize = (pData->OrgWidth + HOKAN_DOTS);
+	int linesize = (image_width + HOKAN_DOTS);
 	int lineindex = 0;
 
 	// 領域確保
-    ret = ScaleMemLine(index, pData->OrgHeight - cut_top - cut_bottom);
+    ret = ScaleMemLine(index, image_height - cut_top - cut_bottom);
 	if (ret < 0) {
 		return ret;
 	}
 
 	buffindex = -1;
-	for (lineindex = 0 ; lineindex < pData->OrgHeight - cut_bottom ; lineindex ++) {
+	for (lineindex = 0 ; lineindex < image_height - cut_bottom ; lineindex ++) {
 		if (gCancel[index]) {
 //			LOGD("DrawScaleBitmap : cancel.");
 			return ERROR_CODE_USER_CANCELED;
 		}
 		if (buffindex < 0 || BLOCKSIZE - buffpos < linesize) {
 			for (buffindex ++ ; buffindex < gBuffNum[index] ; buffindex ++) {
-				if (gBuffMng[index][buffindex].Page == page && gBuffMng[index][buffindex].Type == 0) {
+				// スケール後のバッファを探す
+				if (gBuffMng[index][buffindex].Page == page && gBuffMng[index][buffindex].Type == 1 && gBuffMng[index][buffindex].Half == 0) {
 					break;
 				}
 			}
 			if (buffindex >= gBuffNum[index]) {
 				// 領域不足
-				LOGE("DrawScaleBitmap: Data Error page=%d, lineindex=%d/%d", page, lineindex, (int)pData->OrgHeight);
+				LOGE("DrawScaleBitmap: Data Error page=%d, lineindex=%d/%d", page, lineindex, (int)image_height);
 				return ERROR_CODE_CACHE_IS_FULL;
 			}
 			buffpos = 0;
@@ -225,12 +229,12 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 	int OrgHeight;
 
 	if (rotate == 0 || rotate == 2) {
-		OrgWidth  = pData->OrgWidth - cut_left - cut_right;
-		OrgHeight = pData->OrgHeight - cut_top - cut_bottom;
+		OrgWidth  = image_width - cut_left - cut_right;
+		OrgHeight = image_height - cut_top - cut_bottom;
 	}
 	else {
-		OrgWidth  = pData->OrgHeight - cut_top - cut_bottom;
-		OrgHeight = pData->OrgWidth - cut_left - cut_right;
+		OrgWidth  = image_height - cut_top - cut_bottom;
+		OrgHeight = image_width - cut_left - cut_right;
 	}
 
 	if (psel == 0) {
@@ -244,7 +248,7 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
         }
 		for (xx = 0 ; xx < d_cx ; xx ++) {
 			// ソースの座標計算
-			xpos[xx] = (s_x + (xx * s_cx / d_cx)) * (pData->OrgWidth - cut_left - cut_right) / pData->OrgWidth;
+			xpos[xx] = (s_x + (xx * s_cx / d_cx)) * (image_width - cut_left - cut_right) / image_width;
 		}
 
 //	LOGD("DrawScaleBitmap : page=%d, OrgWidth=%d, pData->OrgWidth=%d, OrgHeight=%d, pData->OrgHeight=%d", page, OrgWidth, pData->OrgWidth, OrgHeight, pData->OrgHeight);
@@ -252,7 +256,7 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 		// 横固定90回転なし
 		for (yy = 0 ; yy < d_cy ; yy++) {
 			// ソースの座標計算
-			ypos = (s_y + (yy * s_cy / d_cy)) * (pData->OrgHeight - cut_top - cut_bottom) / pData->OrgHeight;
+			ypos = (s_y + (yy * s_cy / d_cy)) * (image_height - cut_top - cut_bottom) / image_height;
 			if (0 <= ypos && ypos < OrgHeight) {
 				for (xx = 0 ; xx < d_cx ; xx++) {
 					if (0 <= xpos[xx] && xpos[xx] < OrgWidth) {
@@ -295,12 +299,12 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
         }
 		for (yy = 0 ; yy < d_cy ; yy ++) {
 			// ソースの座標計算
-			ypos[yy] = (s_y + ((d_cy - yy - 1) * s_cy / d_cy)) * (pData->OrgHeight - cut_top - cut_bottom) / pData->OrgHeight;
+			ypos[yy] = (s_y + ((d_cy - yy - 1) * s_cy / d_cy)) * (image_height - cut_top - cut_bottom) / image_height;
 		}
 
 		for (xx = 0 ; xx < d_cx ; xx++) {
 			// ソースの座標計算
-			xpos = (s_x + (xx * s_cx / d_cx)) * (pData->OrgWidth - cut_left - cut_right) / pData->OrgWidth;
+			xpos = (s_x + (xx * s_cx / d_cx)) * (image_width - cut_left - cut_right) / image_width;
 			if (0 <= xpos && xpos < OrgWidth) {
 				for (yy = 0 ; yy < d_cy ; yy++) {
 					// yy=0のとき画面では一番下！
