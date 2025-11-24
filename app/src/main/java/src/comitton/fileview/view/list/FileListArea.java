@@ -20,6 +20,7 @@ import src.comitton.config.SetFileListActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.view.DrawNoticeListener;
+import src.comitton.imageview.ImageActivity;
 import src.comitton.jni.CallImgLibrary;
 
 import jp.dip.muracoro.comittonx.R;
@@ -379,8 +380,15 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							color = mAftColor;
 							break;
 						case DEF.PAGENUMBER_NONE:
-						default:
 							color = mNowColor;
+							break;
+						default:
+							if ((fd.getState() >= fd.getMaxpage() - ImageActivity.isDualMode()) && (fd.getState() > 0) && (fd.getMaxpage() > 0)) {
+								color = mAftColor;
+							}
+							else {
+								color = mNowColor;
+							}
 							break;
 					}
 				}
@@ -834,8 +842,15 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						color = mAftColor;
 						break;
 					case DEF.PAGENUMBER_NONE:
-					default:
 						color = mNowColor;
+						break;
+					default:
+						if ((fd.getState() >= fd.getMaxpage() - ImageActivity.isDualMode())  && (fd.getState() > 0) && (fd.getMaxpage() > 0)) {
+							color = mAftColor;
+						}
+						else {
+							color = mNowColor;
+						}
 						break;
 				}
 			}
@@ -1015,7 +1030,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						// 読書率を描画
 						// 読書率
 						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
-						if (fd.getState() == -2) {
+						if (fd.getState() == -2 || (fd.getState() >= fd.getMaxpage() - ImageActivity.isDualMode()) && (fd.getState() > 0) && (fd.getMaxpage() > 0)) {
 							rate = 1;
 						}
 						// 文字サイズ
@@ -1136,7 +1151,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			// 読書率を描画
 			// 読書率
 			float rate = (float)(file.getState() + 1) / (float)file.getMaxpage();
-			if (file.getState() == -2) {
+			if (file.getState() == -2 || (file.getState() >= file.getMaxpage() - ImageActivity.isDualMode()) && (file.getState() > 0) && (file.getMaxpage() > 0)) {
 				rate = 1;
 			}
 			// 文字サイズ
@@ -1599,14 +1614,14 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				String info = fd.getFileInfo();
 
 				mReadInfo[index] = "";
-				if ((fd.getState() >= 0) && (fd.getMaxpage() > 0)) {
+				if (fd.getState() == DEF.PAGENUMBER_READ || (fd.getState() >= fd.getMaxpage() - ImageActivity.isDualMode()) && (fd.getState() > 0) && (fd.getMaxpage() > 0)) {
+					mReadInfo[index] = "100% Read.";
+				}
+				else if ((fd.getState() >= 0) && (fd.getMaxpage() > 0)) {
 					// 読書率
 					float rate = (float) (fd.getState() + 1) / (float) fd.getMaxpage();
 					mReadInfo[index] = (int)(rate * 100) + "% Read.";
 
-				}
-				else if (fd.getState() == DEF.PAGENUMBER_READ) {
-					mReadInfo[index] = "100% Read.";
 				}
 				else if (fd.getState() == DEF.PAGENUMBER_UNREAD) {
 					mReadInfo[index] = "Unread.";
