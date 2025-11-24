@@ -14,6 +14,7 @@ import src.comitton.config.SetFileListActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.dialog.LoadingDialog;
+import src.comitton.imageview.ImageActivity;
 import src.comitton.imageview.ImageManager;
 import src.comitton.textview.TextManager;
 import src.comitton.config.SetTextActivity;
@@ -577,6 +578,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			}
 
 			String uri = FileAccess.parent(mActivity, mPath);
+			int mMargin = ImageActivity.isDualMode();
 
 			for (int i = fileList.size() - 1; i >= 0; i--) {
 
@@ -617,7 +619,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								state = DEF.PAGENUMBER_UNREAD;
 								size = DEF.PAGENUMBER_NONE;
-							} else if (state + 1 >= maxpage) {
+							} else if (state >= maxpage - mMargin) {
 								// 0から始まるので+1、見開きの分で-1
 								state = DEF.PAGENUMBER_READ;
 								size = maxpage;
@@ -629,7 +631,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								state = DEF.PAGENUMBER_UNREAD;
 								size = DEF.PAGENUMBER_NONE;
-							} else if (state + 1 >= maxpage) {
+							} else if (state >= maxpage - mMargin) {
 								// 0から始まるので+1、見開きの分で-1
 								state = DEF.PAGENUMBER_READ;
 								size = maxpage;
@@ -667,7 +669,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								state = DEF.PAGENUMBER_UNREAD;
 								size = DEF.PAGENUMBER_NONE;
-							} else if (state + 1 >= maxpage) {
+							} else if (state >= maxpage - mMargin) {
 								// 0から始まるので+1、見開きの分で-1
 								state = DEF.PAGENUMBER_READ;
 								size = maxpage;
@@ -679,7 +681,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								state = DEF.PAGENUMBER_UNREAD;
 								size = DEF.PAGENUMBER_NONE;
-							} else if (state + 1 >= maxpage) {
+							} else if (state >= maxpage - mMargin) {
 								// 0から始まるので+1、見開きの分で-1
 								state = DEF.PAGENUMBER_READ;
 								size = maxpage;
@@ -725,7 +727,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								if (maxpage == DEF.PAGENUMBER_NONE) {
 									state = DEF.PAGENUMBER_UNREAD;
 									size = DEF.PAGENUMBER_NONE;
-								} else if (state + 1 >= maxpage) {
+								} else if (state >= maxpage - mMargin) {
 									// 0から始まるので+1、見開きの分で-1
 									state = DEF.PAGENUMBER_READ;
 									size = maxpage;
@@ -737,7 +739,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								if (maxpage == DEF.PAGENUMBER_NONE) {
 									state = DEF.PAGENUMBER_UNREAD;
 									size = DEF.PAGENUMBER_NONE;
-								} else if (state + 1 >= maxpage) {
+								} else if (state >= maxpage - mMargin) {
 									// 0から始まるので+1、見開きの分で-1
 									state = DEF.PAGENUMBER_READ;
 									size = maxpage;
@@ -771,7 +773,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								if (maxpage == DEF.PAGENUMBER_NONE) {
 									state = DEF.PAGENUMBER_UNREAD;
 									size = DEF.PAGENUMBER_NONE;
-								} else if (state + 1 >= maxpage) {
+								} else if (state >= maxpage - mMargin) {
 									// 0から始まるので+1、見開きの分で-1
 									state = DEF.PAGENUMBER_READ;
 									size = maxpage;
@@ -783,7 +785,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								if (maxpage == DEF.PAGENUMBER_NONE) {
 									state = DEF.PAGENUMBER_UNREAD;
 									size = DEF.PAGENUMBER_NONE;
-								} else if (state + 1 >= maxpage) {
+								} else if (state >= maxpage - mMargin) {
 									// 0から始まるので+1、見開きの分で-1
 									state = DEF.PAGENUMBER_READ;
 									size = maxpage;
@@ -820,7 +822,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								state = DEF.PAGENUMBER_UNREAD;
 								size = DEF.PAGENUMBER_NONE;
-							} else if (state + 1 >= maxpage) {
+							} else if (state >= maxpage - mMargin) {
 								// 0から始まるので+1、見開きの分で-1
 								state = DEF.PAGENUMBER_READ;
 								size = maxpage;
@@ -832,7 +834,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 							if (maxpage == DEF.PAGENUMBER_NONE) {
 								state = DEF.PAGENUMBER_UNREAD;
 								size = DEF.PAGENUMBER_NONE;
-							} else if (state + 1 >= maxpage) {
+							} else if (state >= maxpage - mMargin) {
 								// 0から始まるので+1、見開きの分で-1
 								state = DEF.PAGENUMBER_READ;
 								size = maxpage;
@@ -1146,11 +1148,21 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					// 読書中の割合が多い順
 					val1 = 0;
 					if (file1.getState() >= 0 && file1.getMaxpage() > 0) {
-						val1 = (float)(file1.getState() + 1) / (float)file1.getMaxpage();
+						if (file1.getState() >= file1.getMaxpage() - ImageActivity.isDualMode()) {
+							val1 = 100;
+						}
+						else {
+							val1 = (float)(file1.getState() + 1) / (float)file1.getMaxpage();
+						}
 					}
 					val2 = 0;
 					if (file2.getState() >= 0 && file2.getMaxpage() > 0) {
-						val2 = (float)(file2.getState() + 1) / (float)file2.getMaxpage();
+						if (file2.getState() >= file2.getMaxpage() - ImageActivity.isDualMode()) {
+							val2 = 100;
+						}
+						else {
+							val2 = (float)(file2.getState() + 1) / (float)file2.getMaxpage();
+						}
 					}
 					float val = val2 - val1;
 					return val == 0 ? 0 : (val > 0 ? 1 : -1);
@@ -1160,11 +1172,19 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					// 読書中の割合が少ない順
 					val1 = 100;
 					if (file1.getState() >= 0 && file1.getMaxpage() > 0) {
-						val1 = (float)(file1.getState() + 1) / (float)file1.getMaxpage();
+						if (file1.getState() >= file1.getMaxpage() - ImageActivity.isDualMode()) {
+						}
+						else {
+							val1 = (float)(file1.getState() + 1) / (float)file1.getMaxpage();
+						}
 					}
 					val2 = 100;
 					if (file2.getState() >= 0 && file2.getMaxpage() > 0) {
-						val2 = (float)(file2.getState() + 1) / (float)file2.getMaxpage();
+						if (file2.getState() >= file2.getMaxpage() - ImageActivity.isDualMode()) {
+						}
+						else {
+							val2 = (float)(file2.getState() + 1) / (float)file2.getMaxpage();
+						}
 					}
 					float val = val1 - val2;
 					return val == 0 ? 0 : (val > 0 ? 1 : -1);
