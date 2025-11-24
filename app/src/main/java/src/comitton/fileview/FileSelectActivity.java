@@ -3032,6 +3032,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String pass = mServer.getPass();
 		ArrayList<FileData> files = mFileList.getFileList();
 		String mUriFilePath;
+		int mMargin = ImageActivity.isDualMode();
 
 		if (files != null) {
 			// nullのときは読み込み中なので処理しない
@@ -3079,11 +3080,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							ed.putInt(DEF.createUrl(mUriFilePath, user, pass), state);
 							ed.apply();
 							releaseManager();
-							if (state >= (maxpage - 1)) {
+							if (state >= (maxpage - mMargin)) {
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
-						} else if (state >= (maxpage - 1))	{
+						} else if (state >= (maxpage - mMargin))	{
 							//	最大ページ数に達した場合は既読にする
 							state = DEF.PAGENUMBER_READ;
 						}
@@ -3111,11 +3112,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
 							ed.apply();
 							releaseManager();
-							if (state >= (maxpage - 1)) {
+							if (state >= (maxpage - mMargin)) {
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
-						} else if (state >= (maxpage - 1))	{
+						} else if (state >= (maxpage - mMargin))	{
 							//	最大ページ数に達した場合は既読にする
 							state = DEF.PAGENUMBER_READ;
 						}
@@ -3152,11 +3153,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml", state);
 								ed.apply();
 								releaseManager();
-								if (state >= (maxpage - 1)) {
+								if (state >= (maxpage - mMargin)) {
 									//	最大ページ数に達した場合は既読にする
 									state = DEF.PAGENUMBER_READ;
 								}
-							} else if (state >= (maxpage - 1)) {
+							} else if (state >= (maxpage - mMargin)) {
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
@@ -3183,11 +3184,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								ed.putInt(DEF.createUrl(mUriFilePath, user, pass), state);
 								ed.apply();
 								releaseManager();
-								if (state >= (maxpage - 1)) {
+								if (state >= (maxpage - mMargin)) {
 									//	最大ページ数に達した場合は既読にする
 									state = DEF.PAGENUMBER_READ;
 								}
-							} else if (state >= (maxpage - 1))	{
+							} else if (state >= (maxpage - mMargin))	{
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
@@ -3215,11 +3216,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
 							ed.apply();
 							releaseManager();
-							if (state >= (maxpage - 1)) {
+							if (state >= (maxpage - mMargin)) {
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
-						} else if (state >= (maxpage - 1))	{
+						} else if (state >= (maxpage - mMargin))	{
 							//	最大ページ数に達した場合は既読にする
 							state = DEF.PAGENUMBER_READ;
 						}
