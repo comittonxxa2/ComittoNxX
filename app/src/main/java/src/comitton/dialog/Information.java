@@ -177,8 +177,6 @@ public class Information implements DialogInterface.OnDismissListener {
 	public void checkRecentRelease(Handler handler, boolean manually) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
-		// 修正版なので新しいリリースのチェックを行わないようにする
-/*
 		// 新しいリリースのチェック
 		mTurnOff = !manually;
 		boolean flag = false;
@@ -199,7 +197,6 @@ public class Information implements DialogInterface.OnDismissListener {
 			Thread thread = new Thread(version);
 			thread.start();
 		}
-*/
 	}
 
 	public void close() {
