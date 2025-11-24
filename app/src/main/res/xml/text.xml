@@ -259,7 +259,7 @@
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="SoftChgPage"
-            android:summary="Check this box if you want to move to the next or previous file in a different order than the name."
+            android:summary="Check this box if you want to move to the previous or next file in the list view when you reach the end of the page by turning the page."
             android:title="Sort open file names at the edge of the page(*)" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
