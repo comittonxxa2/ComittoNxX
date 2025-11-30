@@ -176,6 +176,17 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+		// ルーペの倍率の元サイズを除外したので表示サイズへ変換する
+		String tempZoomType = sharedPreferences.getString(DEF.KEY_ZOOMTYPE, "4");
+		if (tempZoomType.equals("1") || tempZoomType.equals("2")) {
+			if (tempZoomType.equals("1")) tempZoomType = "4";
+			if (tempZoomType.equals("2")) tempZoomType = "6";
+			// 変換後の値を保存する
+			SharedPreferences.Editor ed = sharedPreferences.edit();
+			ed.putString(DEF.KEY_ZOOMTYPE, tempZoomType);
+			ed.apply();
+		}
+
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
 			// 通知領域非表示
