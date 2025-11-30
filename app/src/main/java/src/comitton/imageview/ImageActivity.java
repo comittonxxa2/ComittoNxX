@@ -3,6 +3,7 @@ package src.comitton.imageview;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
@@ -74,13 +75,17 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.ImageDecoder;
 import android.graphics.Insets;
 import android.graphics.PointF;
+import android.graphics.drawable.AnimatedImageDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.os.Vibrator;
@@ -100,6 +105,7 @@ import android.view.WindowMetrics;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import src.comitton.common.ImageAccess;
@@ -567,7 +573,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	// private long mPrevScrollTime = 0;
 
 	// ビットマップ読み込みスレッドの制御用
-	private Handler mHandler;
+	private static Handler mHandler;
 	private BmpLoad mBmpLoad;
 	private Thread mBmpThread;
 	private boolean mBitmapLoading = false;
@@ -2154,6 +2160,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				if (!DEF.checkPortrait(bm[0].Width, bm[0].Height, mRotate)) {
 					// 横長画像であれば分割
 					mSourceImage[0] = bm[0];
+					// ズーム時に転送サイズが0になるので設定しない
+					/*
 					if ((mHalfPos == HALFPOS_2ND && mPageWay == DEF.PAGEWAY_RIGHT) || (mHalfPos != HALFPOS_2ND && mPageWay == DEF.PAGEWAY_LEFT)) {
 						// 左側用にする
 						mSourceImage[0].HalfMode = ImageData.HALF_LEFT;
@@ -2162,6 +2170,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// 右側用にする
 						mSourceImage[0].HalfMode = ImageData.HALF_RIGHT;
 					}
+					*/
 
 					mCurrentPageHalf = true;
 				}
@@ -2227,6 +2236,27 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			// 拡大/縮小
 			ImageScaling();
+
+			if (mImageMgr.mAnimeList != null) {
+				// 以前の表示を取り消す
+				stopGifAnimation();
+				if (mImageMgr.mAnimeList[mCurrentPage].getAnimeOn()) {
+					// アニメーションを表示中は塗りつぶす
+					mImageView.ViewOff(true);
+					// アニメーションを表示中は画面内に収めるため半分にする
+					mImageMgr.setImageScale(50);
+					ImageScaling();
+					// アニメーションを表示
+					mImageMgr.loadAnime(mCurrentPage);
+				}
+				else {
+					// アニメーションを表示しない場合は元のスケールに戻す
+					mImageMgr.setImageScale(mPinchScale);
+					ImageScaling();
+					// 塗りつぶしをオフにする
+					mImageView.ViewOff(false);
+				}
+			}
 
 			// 終了通知
 			Message message = new Message();
@@ -2523,7 +2553,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		int action = event.getAction();
 
 		// ピンチイン・アウト対応
-		if (mPinchEnable) {
+		if (mImageMgr.mAnimeList != null && mImageMgr.mAnimeList[mCurrentPage].getAnimeOn()) {
+			// アニメーションを表示中はピンチイン・アウトを行わせない
+		}
+		else if (mPinchEnable) {
     		int action2 = action & MotionEvent.ACTION_MASK;
     		// ズーム中ではない && ページ表示ではない && ガイド表示ではない
     		if (action2 == MotionEvent.ACTION_POINTER_1_DOWN) {
@@ -4975,6 +5008,22 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	}
 
+	// ブックマークのクラスを定義
+	public static class BookMark{
+		private String title;
+		private String value;
+		public BookMark(String title, String value) {
+			this.title = title;
+			this.value = value;
+		}
+		public String getTitle() {
+			return title;
+		}
+		public String getValue() {
+			return value;
+		}
+	}
+
 	// メニューを開く
 	private void openBookmarkMenu() {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -4991,19 +5040,34 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
 
 		ArrayList<RecordItem> list = RecordList.load(null, RecordList.TYPE_BOOKMARK, mServer, mPath, mFileName);
+		// ブックマークのコピーを作る
+		ArrayList<RecordItem> list_copy = new ArrayList<RecordItem>(list);
+
+		// ArrayListをソート
+		if (list_copy != null) {
+			Collections.sort(list_copy, new FileSelectActivity.BookmarkComparator((short) mSharedPreferences.getInt("RBSort", 0)));
+		}
+		ArrayList<BookMark> bookmark = new ArrayList<BookMark>();
 
 		boolean isAdd = false;
-		for (int i = 0; i < list.size(); i++) {
-			// ブックマーク追加
-			RecordItem data = list.get(i);
+		int count = 0;
+		for (int i = 0; i < list_copy.size(); i++) {
+			// ソートした結果でブックマークをArrayListへ追加
+			RecordItem data = list_copy.get(i);
 			String image = data.getImage();
 			for (int j = 0; j < mImageMgr.mFileList.length; j++) {
 				if (mImageMgr.mFileList[j].name.equals(image)) {
-					mMenuDialog.addItem(DEF.MENU_BOOKMARK + j, data.getDispName(), "P." + (j + 1));
+					bookmark.add(new BookMark(data.getDispName(),"P." + (j + 1)));
 					isAdd = true;
+					count++;
 					break;
 				}
 			}
+		}
+
+		for (int i = 0; i < count; i++) {
+			// ブックマーク追加
+			mMenuDialog.addItem(DEF.MENU_BOOKMARK + i,bookmark.get(i).getTitle(),bookmark.get(i).getValue());
 		}
 		if (isAdd) {
 			mMenuDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
@@ -6295,8 +6359,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// 縦画面ならズーム可能
 			return true;
 		}
-		// 横画面はズームで落ちるので原因が判明するまで一先ず不可能にする
-		return false;
+		// 横画面がズームで落ちる原因が原因が判明したので可能にする
+		return true;
 	}
 
 	// 既読判定の最大ページ数から引き算する値を返す
@@ -8176,4 +8240,72 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		imageButtons[0].setImageResource(R.drawable.cursor);
 	}
 
+	private static AnimatedImageDrawable animatedGifDrawable;
+	private static boolean isCanceled = false;
+	private static ImageView myImageView;
+
+	// アニメーションを表示
+	public static void PutAnimation(File file) {
+
+		new Handler(Looper.getMainLooper()).post(new Runnable() {
+			@Override
+			public void run() {
+				// メインスレッドで実行
+				// アニメーションのビューを得る
+				myImageView = new ImageView(mActivity);
+
+				FrameLayout.LayoutParams gifParams = new FrameLayout.LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT
+				);
+				myImageView.setLayoutParams(gifParams);
+				// アニメーションのビューを親レイアウトに加える
+				layout.addView(myImageView);
+
+				try {
+					// デコーダーへファイルを送る
+					ImageDecoder.Source source = ImageDecoder.createSource(file);
+					// デコード結果を得る
+					Drawable drawable = ImageDecoder.decodeDrawable(source);
+
+					if (drawable instanceof AnimatedImageDrawable) {
+						// アニメーションが有効だった場合
+						animatedGifDrawable = (AnimatedImageDrawable) drawable;
+						myImageView.setImageDrawable(drawable);
+						// アニメーションを実行
+						animatedGifDrawable.start(); 
+					}
+					else {
+						myImageView.setImageDrawable(drawable);
+					}
+				}
+				catch (Exception e) {
+				}
+			}
+		});
+		// フローティングアイコンを再表示させる
+		Message message = new Message();
+		message.what = DEF.HMSG_EVENT_FLOATINGICON_RESET;
+		mHandler.sendMessage(message);
+	}
+
+	public void stopGifAnimation() {
+		isCanceled = true;
+		new Handler(Looper.getMainLooper()).post(new Runnable() {
+			@Override
+			public void run() {
+				// メインスレッドで実行
+				if (animatedGifDrawable != null && animatedGifDrawable.isRunning()) {
+					// アニメーションの実行を中断
+					animatedGifDrawable.stop();
+					if (layout != null && myImageView != null) {
+						 // 親レイアウトからビューを削除
+						layout.removeView(myImageView);
+						// 参照もクリアする
+						myImageView = null;
+					}
+				}
+			}
+		});
+	}
 }

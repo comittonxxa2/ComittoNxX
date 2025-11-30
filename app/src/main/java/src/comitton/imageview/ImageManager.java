@@ -34,7 +34,10 @@ import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ImageDecoder;
 import android.graphics.Point;
+import android.graphics.drawable.AnimatedImageDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.graphics.ColorMatrix;
 import android.os.Handler;
@@ -57,6 +60,9 @@ import src.comitton.fileaccess.RarInputStream;
 import src.comitton.textview.TextManager;
 
 import android.annotation.SuppressLint;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -219,6 +225,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private final String mUser;
 	private final String mPass;
 	public FileListItem[] mFileList = null;
+	AnimeList[] mAnimeList = null;
 	private int mMaxCmpLength;
 	private int mMaxOrgLength;
 	private boolean mLoadImage = false;
@@ -242,6 +249,7 @@ public class ImageManager extends InputStream implements Runnable {
 
         mActivity = activity;
 		mFileList = null;
+		mAnimeList = null;
 		mFilePath = DEF.relativePath(mActivity, path, cmpfile);
 		mPath = path;
 		mFileName = cmpfile;
@@ -1418,6 +1426,16 @@ public class ImageManager extends InputStream implements Runnable {
 		return imgfile;
 	}
 
+	public class AnimeList{
+		boolean animeon;
+		private AnimeList(boolean enable) {
+			animeon = enable;
+		}
+		public boolean getAnimeOn() {
+			return animeon;
+		}
+	}
+
 	private void DirFileList(String path, String user, String pass) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. path=" + path);
@@ -1470,6 +1488,27 @@ public class ImageManager extends InputStream implements Runnable {
 		sort(list);
 		mFileList = (FileListItem[]) list.toArray(new FileListItem[0]);
 		mMaxOrgLength = maxorglen;
+
+		List<AnimeList> animelist = new ArrayList<AnimeList>();
+		for (int i = 0; i < mFileList.length; i++) {
+			boolean enable = false;
+			try {
+				String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[i].name);
+				File file = new File(filepath);
+				// デコーダーへファイルを送る
+				ImageDecoder.Source source = ImageDecoder.createSource(file);
+				// デコード結果を得る
+				Drawable drawable = ImageDecoder.decodeDrawable(source);
+				if (drawable instanceof AnimatedImageDrawable) {
+					enable = true;
+				}
+			}
+			catch (Exception e) {
+			}
+			animelist.add(new AnimeList(enable));
+		}
+		mAnimeList = (AnimeList[]) animelist.toArray(new AnimeList[0]);
+
 		Logcat.d(logLevel, "終了します. ");
 	}
 
@@ -2332,6 +2371,15 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 		}
 		return id;
+	}
+
+	public void loadAnime(int page) {
+		if (FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_AVIF && FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_JXL) {
+			String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[page].name);
+			File file = new File(filepath);
+			// アニメーションを表示
+			ImageActivity.PutAnimation(file);
+		}
 	}
 
 	// ビットマップ読み込み開始

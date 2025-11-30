@@ -163,6 +163,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private boolean mIsBackDraw = false;
 
 	private boolean mViewTapSw = false;
+	private boolean mViewSw = false;
 	private boolean mViewFloatingIconSw = false;
 
 	public MyImageView(Activity activity) {
@@ -869,7 +870,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 				}
 
-    			if (effectRate == 0.0f) {
+				if (mViewSw) {
+					// アニメーションを表示中は塗りつぶす
+					paint = mDrawPaint;
+					paint.setColor(mMgnColor);
+					// 塗りつぶし
+					bmpCanvas = new Canvas(mCanvasBitmap);
+					bmpCanvas.drawRect(0, 0, mCanvasBitmap.getWidth(), mCanvasBitmap.getHeight(), paint);
+					canvas.drawBitmap(mCanvasBitmap, 0, 0, null);
+				}
+				else if (effectRate == 0.0f) {
 					// 作成した画像を表示
 					canvas.drawBitmap(mCanvasBitmap, 0, 0, null);
 
@@ -1005,7 +1015,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     			}
 
     			// ルーペ機能
-    			if (zoomMode != ZOOM_NONE && mParentAct.isZoomCheck()) {
+    			if (zoomMode != ZOOM_NONE && mParentAct.isZoomCheck() && !mViewSw) {
     				// 画面の描画位置
     				Rect rcDst = getZoomAreaRect(zoomMode, ZOOM_GAP, mZoomView, cx, cy, mDrawRect);
 
@@ -2197,7 +2207,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if (0 <= rcSrc[i].right && rcSrc[i].left < orgWidth[i] + offsetX && 0 <= rcSrc[i].bottom &&  rcSrc[i].top < orgHeight[i]) {
 				CallImgLibrary.ImageScaleDraw(mActivity, mHandler, mCacheIndex, mImage[i].Page, mRotate
 						, Math.round(rcSrc[i].left), Math.round(rcSrc[i].top), Math.round(rcSrc[i].right - rcSrc[i].left), Math.round(rcSrc[i].bottom - rcSrc[i].top)
-						, 0, 0, rcDraw.right - rcDraw.left, rcDraw.bottom - rcDraw.top
+						, 0, 0, rcDraw.right - rcDraw.left, (rcDraw.bottom - rcDraw.top > mDispHeight) ? mDispHeight : rcDraw.bottom - rcDraw.top
 						, 0, mCanvasBitmap
 						, mImage[i].CutLeft, mImage[i].CutRight, mImage[i].CutTop, mImage[i].CutBottom);
 
@@ -2280,7 +2290,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					if (0 <= rectSrc.right && rectSrc.left < origWidth + offsetX && 0 <= rectSrc.bottom && rectSrc.top < origHeight) {
 						CallImgLibrary.ImageScaleDraw(mActivity, mHandler, mCacheIndex, prevImage.Page, mRotate
 								, Math.round(rectSrc.left), Math.round(rectSrc.top), Math.round(rectSrc.right - rectSrc.left), Math.round(rectSrc.bottom - rectSrc.top)
-								, 0, 0, rcDraw.right - rcDraw.left, rcDraw.bottom - rcDraw.top
+								, 0, 0, rcDraw.right - rcDraw.left, (rcDraw.bottom - rcDraw.top > mDispHeight) ? mDispHeight : rcDraw.bottom - rcDraw.top
 								, 0, mCanvasBitmap
 								, prevImage.CutLeft, prevImage.CutRight, prevImage.CutTop, prevImage.CutBottom);
 					}
@@ -2327,7 +2337,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					if (0 <= rectSrc.right && rectSrc.left < origWidth + offsetX && 0 <= rectSrc.bottom && rectSrc.top < origHeight) {
 						CallImgLibrary.ImageScaleDraw(mActivity, mHandler, mCacheIndex, prev2Image.Page, mRotate
 								, Math.round(rectSrc.left), Math.round(rectSrc.top), Math.round(rectSrc.right - rectSrc.left), Math.round(rectSrc.bottom - rectSrc.top)
-								, 0, 0, rcDraw.right - rcDraw.left, rcDraw.bottom - rcDraw.top
+								, 0, 0, rcDraw.right - rcDraw.left, (rcDraw.bottom - rcDraw.top > mDispHeight) ? mDispHeight : rcDraw.bottom - rcDraw.top
 								, 0, mCanvasBitmap
 								, prev2Image.CutLeft, prev2Image.CutRight, prev2Image.CutTop, prev2Image.CutBottom);
 					}
@@ -2374,7 +2384,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					if (0 <= rectSrc.right && rectSrc.left < origWidth + offsetX && 0 <= rectSrc.bottom && rectSrc.top < origHeight) {
 						CallImgLibrary.ImageScaleDraw(mActivity, mHandler, mCacheIndex, nextImage.Page, mRotate
 								, Math.round(rectSrc.left), Math.round(rectSrc.top), Math.round(rectSrc.right - rectSrc.left), Math.round(rectSrc.bottom - rectSrc.top)
-								, 0, 0, rcDraw.right - rcDraw.left, rcDraw.bottom - rcDraw.top
+								, 0, 0, rcDraw.right - rcDraw.left, (rcDraw.bottom - rcDraw.top > mDispHeight) ? mDispHeight : rcDraw.bottom - rcDraw.top
 								, 0, mCanvasBitmap
 								, nextImage.CutLeft, nextImage.CutRight, nextImage.CutTop, nextImage.CutBottom);
 					}
@@ -2421,7 +2431,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					if (0 <= rectSrc.right && rectSrc.left < origWidth + offsetX && 0 <= rectSrc.bottom && rectSrc.top < origHeight) {
 						CallImgLibrary.ImageScaleDraw(mActivity, mHandler, mCacheIndex, next2Image.Page, mRotate
 								, Math.round(rectSrc.left), Math.round(rectSrc.top), Math.round(rectSrc.right - rectSrc.left), Math.round(rectSrc.bottom - rectSrc.top)
-								, 0, 0, rcDraw.right - rcDraw.left, rcDraw.bottom - rcDraw.top
+								, 0, 0, rcDraw.right - rcDraw.left, (rcDraw.bottom - rcDraw.top > mDispHeight) ? mDispHeight : rcDraw.bottom - rcDraw.top
 								, 0, mCanvasBitmap
 								, next2Image.CutLeft, next2Image.CutRight, next2Image.CutTop, next2Image.CutBottom);
 					}
@@ -3220,6 +3230,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	public void ViewFloatingIconCursorSw(boolean sw) {
 		mViewFloatingIconSw = sw;
+		updateNotify();
+	}
+
+	public void ViewOff(boolean sw) {
+		mViewSw = sw;
 		updateNotify();
 	}
 }
