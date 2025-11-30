@@ -269,7 +269,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mFilter;
 	private boolean mApplyDir;
 
-	private short mSortType;
+	private static short mSortType;
 	private int mHistCount;
 	private boolean mLocalSave;
 	private boolean mSambaSave;
@@ -4467,7 +4467,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// ソート切り替え
 			ArrayList<RecordItem> recordList = mListScreenView.getList(listtype);
 			if (recordList != null) {
-				Collections.sort(recordList, new BookmarkComparator());
+				Collections.sort(recordList, new BookmarkComparator(mSortType));
 			}
 
 			mListScreenView.setListSortType(listtype, mSortType);
@@ -5853,10 +5853,15 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	/**
 	 * 履歴系リストをファイル名でソート
 	 */
-	public class BookmarkComparator implements Comparator<RecordItem> {
+	public static class BookmarkComparator implements Comparator<RecordItem> {
+		// BookmarkComparatorを外部から参照できるようにするため引数を用意した
+		short mBookmarkSortType;
+		public BookmarkComparator(short sortType) {
+			mBookmarkSortType = sortType;
+		}
 		public int compare(RecordItem data1, RecordItem data2) {
 			int result = 0;
-			switch (mSortType) {
+			switch (mBookmarkSortType) {
 				case 0: // パス
 				case 1: //
 					result = data1.getServer() - data2.getServer();
@@ -5888,7 +5893,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					break;
 			}
 			// ディレクトリ/ファイルタイプ
-			return result * (mSortType % 2 == 0 ? 1 : -1);
+			return result * (mBookmarkSortType % 2 == 0 ? 1 : -1);
 		}
 	}
 
@@ -5919,7 +5924,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				if (mHistCount >= 0 && listsize > mHistCount) {
 					// 古いものを削除
 					mSortType = 4;
-					Collections.sort(recordList, new BookmarkComparator());
+					Collections.sort(recordList, new BookmarkComparator(mSortType));
                     // 日付昇順にして先頭を削除
                     if (listsize - mHistCount > 0) {
                         recordList.subList(0, listsize - mHistCount).clear();
@@ -5949,7 +5954,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mSortType = (short) mSharedPreferences.getInt("RHSort", 5);
 			}
 			if (listtype != RecordList.TYPE_SERVER && listtype != RecordList.TYPE_MENU) {
-				Collections.sort(recordList, new BookmarkComparator());
+				Collections.sort(recordList, new BookmarkComparator(mSortType));
 			}
 			mListScreenView.setRecordList(list, recordList);
 			mListScreenView.setListSortType(listtype, mSortType);
