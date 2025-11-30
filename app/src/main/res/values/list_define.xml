@@ -281,9 +281,7 @@
         <item>3</item>
     </string-array>
     <string-array name="zoomsize_name_list">
-        <item>Original x1.0</item>
-        <item>Original x2.0</item>
-        <item>Original x3.0</item>
+        <item>Display x1.0</item>
         <item>Display x1.5</item>
         <item>Display x2.0</item>
         <item>Display x2.5</item>
@@ -291,8 +289,6 @@
     </string-array>
     <string-array name="zoomsize_value_list">
         <item>0</item>
-        <item>1</item>
-        <item>2</item>
         <item>3</item>
         <item>4</item>
         <item>5</item>
