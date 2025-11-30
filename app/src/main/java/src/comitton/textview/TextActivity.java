@@ -2,6 +2,7 @@ package src.comitton.textview;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
@@ -2745,12 +2746,26 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
 
+		// ブックマークのコピーを作る
+		ArrayList<RecordItem> list_copy = new ArrayList<RecordItem>(list);
 
+		// ArrayListをソート
+		if (list_copy != null) {
+			Collections.sort(list_copy, new FileSelectActivity.BookmarkComparator((short) mSharedPreferences.getInt("RBSort", 0)));
+		}
+		ArrayList<ImageActivity.BookMark> bookmark = new ArrayList<ImageActivity.BookMark>();
+
+		int count = 0;
+		for (int i = 0; i < list_copy.size(); i++) {
+			// ソートした結果でブックマークをArrayListへ追加
+			RecordItem data = list_copy.get(i);
+			int page = data.getPage();
+			bookmark.add(new ImageActivity.BookMark(data.getDispName(),"P." + page + 1));
+			count++;
+		}
 		for (int i = 0 ; i < list.size(); i ++) {
 			// ブックマーク追加
-			RecordItem data = list.get(i);
-			int page = data.getPage();
-			mMenuDialog.addItem(DEF.MENU_BOOKMARK + page, data.getDispName(), "P." + (page + 1));
+			mMenuDialog.addItem(DEF.MENU_BOOKMARK + i,bookmark.get(i).getTitle(),bookmark.get(i).getValue());
 		}
 
 		mMenuDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
