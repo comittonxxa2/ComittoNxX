@@ -281,9 +281,7 @@
         <item>3</item>
     </string-array>
     <string-array name="zoomsize_name_list">
-        <item>元画像サイズ</item>
-        <item>元画像サイズの2.0倍</item>
-        <item>元画像サイズの3.0倍</item>
+        <item>表示サイズ</item>
         <item>表示サイズの1.5倍</item>
         <item>表示サイズの2.0倍</item>
         <item>表示サイズの2.5倍</item>
@@ -291,8 +289,6 @@
     </string-array>
     <string-array name="zoomsize_value_list">
         <item>0</item>
-        <item>1</item>
-        <item>2</item>
         <item>3</item>
         <item>4</item>
         <item>5</item>
