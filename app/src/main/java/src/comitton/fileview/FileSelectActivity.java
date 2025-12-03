@@ -158,6 +158,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private String mLoadListCursor;
 	private int mLoadListTopIndex;
 	private int mLoadListNextOpen;
+	private boolean mLoadListAuto = false;
 	private String mLoadListNextPath;
 	private String mLoadListNextFile;
 	private String mLoadListNextInFile;
@@ -245,6 +246,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mImageTopSingle;
 
 	private boolean mResumeOpen;
+	private boolean mResumeOpenNoMessage;
 	private boolean mThumbnail;
 	private boolean mUseThumbnailTap;
 	private int mDuration = 800; // 長押し時間
@@ -708,6 +710,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// レジューム起動チェック
 		if (path == null) {
 			// アイコンから起動(ショートカットや回転ではない)とき
+			if (mResumeOpenNoMessage && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
+				// 起動時の自動読み込み
+				ExecLastOpen();
+			}
 			if (mResumeOpen && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
 				// 初回起動のみ(回転時などは行わない)
 				int lastView = mSharedPreferences.getInt("LastOpen", -1);
@@ -948,6 +954,56 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 				}
 			}
+		}
+	}
+
+	// 起動時の自動読み込み
+	private void ExecLastOpen() {
+		try {
+			int lastView = mSharedPreferences.getInt("LastOpen", -1);
+			String path = mSharedPreferences.getString("LastPath", "");
+			String lastFile = mSharedPreferences.getString("LastFile", "");
+			String lastText = mSharedPreferences.getString("LastText", "");
+			String lastImage = mSharedPreferences.getString("LastImage", "");
+			int server = mSharedPreferences.getInt("LastServer", DEF.INDEX_LOCAL);
+			// 起動処理失敗回数をリセット
+			if (mInitialize != 0) {
+				SharedPreferences.Editor ed = mSharedPreferences.edit();
+				ed.putInt(DEF.KEY_INITIALIZE, 0);
+				ed.apply();
+				mInitialize = 0;
+			}
+
+			// データを利用
+			if (lastView == DEF.LASTOPEN_TEXT) {
+				if (!lastFile.isEmpty()) {
+					// 最後に開いていた圧縮ファイル展開
+					// 圧縮ファイルを設定
+					mLoadListNextFile = lastFile;
+					mLoadListNextPath = path;
+					mLoadListNextInFile = lastText;
+				} else {
+					// 最後に開いたテキストオープン
+					mLoadListNextFile = lastText;
+					mLoadListNextPath = path;
+				}
+			} else if (lastView == DEF.LASTOPEN_IMAGE) {
+				if (!lastImage.isEmpty()) {
+					mLoadListNextFile = lastImage;
+					mLoadListNextPath = path;
+					mLoadListNextInFile = lastImage;
+				}
+				else {
+					mLoadListNextFile = lastFile;
+					mLoadListNextPath = path;
+					mLoadListNextInFile = "";
+				}
+			}
+			// ファイルを読み込み
+			mLoadListAuto = true;
+			moveFileSelectFromServer(server, mLoadListNextPath);
+			mLoadListNextOpen = CloseDialog.CLICK_LASTOPEN;
+		} catch (Exception ex) {
 		}
 	}
 
@@ -1444,6 +1500,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mHidden = SetCommonActivity.getHiddenFile(mSharedPreferences);
 
 		mResumeOpen = SetImageText.getResumeOpen(mSharedPreferences); // 戻るキーで確認メッセージ
+		mResumeOpenNoMessage = SetImageText.getResumeOpenNoMessage(mSharedPreferences);
 
 		// mToolbarShow =
 		// SetFileListActivity.getShowToolbar(mSharedPreferences); // ツールバー表示
@@ -3008,7 +3065,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		mListScreenView.mFileListArea.update(false);
 
-		if (mLoadListNextOpen != CloseDialog.CLICK_NONE) {
+		if (mLoadListNextOpen != CloseDialog.CLICK_NONE || mLoadListAuto) {
+			mLoadListAuto = false;
 			if (nextFileOpen(mLoadListNextOpen, mLoadListNextPath, mLoadListNextFile, mLoadListNextInFile, mLoadListNextType, mLoadListNextPage)) {
 				// オープンできた
 				return;
