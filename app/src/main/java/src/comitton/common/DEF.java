@@ -131,6 +131,7 @@ public class DEF {
 	public static final int HMSG_EVENT_FLOATINGICON_CURSOR = 217;
 	public static final int HMSG_EVENT_FLOATINGICON_BACKUPRESTORE = 218;
 	public static final int HMSG_EVENT_TOOLBAR = 219;
+	public static final int HMSG_EVENT_TOUCH_ZOOM_OFF = 220;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -641,6 +642,7 @@ public class DEF {
 	public static final String KEY_TAPRATE = "TapRate";
 	public static final String KEY_OLDPAGESEL = "OldPageSel";
 	public static final String KEY_RESUMEOPEN = "ResumeOpen";
+	public static final String KEY_RESUMEOPENNOMESSAGE = "ResumeOpenNoMessage";
 	public static final String KEY_RETURNKLISTVIEW = "ReturnListView";
 	public static final String KEY_CONFIRMBACK = "ConfirmBack";
 	public static final String KEY_CLEARTOP = "ClearTop";
@@ -687,6 +689,8 @@ public class DEF {
 	public static final String KEY_FILELISTCACHEOFF = "FileListCacheOff";
 	public static final String KEY_FILELISTFASTREADOFF = "FileListFastReadOff";
 	public static final String KEY_BACKGROUNDPAUSE = "BackgroundPause";
+	public static final String KEY_ANIMATIONENABLE = "AnimationEnable";
+	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
