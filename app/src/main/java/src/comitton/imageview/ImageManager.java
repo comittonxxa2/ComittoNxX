@@ -49,6 +49,7 @@ import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetFileListActivity;
+import src.comitton.config.SetImageActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
@@ -1428,11 +1429,16 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public class AnimeList{
 		boolean animeon;
-		private AnimeList(boolean enable) {
+		boolean animefile;
+		private AnimeList(boolean enable, boolean fileon) {
 			animeon = enable;
+			animefile = fileon;
 		}
 		public boolean getAnimeOn() {
 			return animeon;
+		}
+		public boolean getAnimeFile() {
+			return animefile;
 		}
 	}
 
@@ -1489,23 +1495,38 @@ public class ImageManager extends InputStream implements Runnable {
 		mFileList = (FileListItem[]) list.toArray(new FileListItem[0]);
 		mMaxOrgLength = maxorglen;
 
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		boolean mAnimationScan = SetImageActivity.getAnimationScan(sp);
+
 		List<AnimeList> animelist = new ArrayList<AnimeList>();
 		for (int i = 0; i < mFileList.length; i++) {
 			boolean enable = false;
-			try {
-				String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[i].name);
-				File file = new File(filepath);
-				// デコーダーへファイルを送る
-				ImageDecoder.Source source = ImageDecoder.createSource(file);
-				// デコード結果を得る
-				Drawable drawable = ImageDecoder.decodeDrawable(source);
-				if (drawable instanceof AnimatedImageDrawable) {
-					enable = true;
+			boolean fileon = false;
+			if (!(mFileList[i].exttype == FileData.EXTTYPE_WEBP) && !(mFileList[i].exttype == FileData.EXTTYPE_GIF)) {
+				// WebP/Gifファイル以外は何もしない
+			}
+			else if (!mAnimationScan) {
+				// スキャンをしない
+				fileon = true;
+			}
+			else {
+				// ファイルのスキャンを行う
+				fileon = true;
+				try {
+					String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[i].name);
+					File file = new File(filepath);
+					// デコーダーへファイルを送る
+					ImageDecoder.Source source = ImageDecoder.createSource(file);
+					// デコード結果を得る
+					Drawable drawable = ImageDecoder.decodeDrawable(source);
+					if (drawable instanceof AnimatedImageDrawable) {
+						enable = true;
+					}
+				}
+				catch (Exception e) {
 				}
 			}
-			catch (Exception e) {
-			}
-			animelist.add(new AnimeList(enable));
+			animelist.add(new AnimeList(enable, fileon));
 		}
 		mAnimeList = (AnimeList[]) animelist.toArray(new AnimeList[0]);
 
@@ -2371,6 +2392,28 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 		}
 		return id;
+	}
+
+	// アニメーション可能かどうかをチェック
+	public boolean checkAnimeEnable(int page) {
+		boolean enable = false;
+		if (FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_AVIF && FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_JXL) {
+			try {
+				String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[page].name);
+				File file = new File(filepath);
+				// デコーダーへファイルを送る
+				ImageDecoder.Source source = ImageDecoder.createSource(file);
+				// デコード結果を得る
+				Drawable drawable = ImageDecoder.decodeDrawable(source);
+				if (drawable instanceof AnimatedImageDrawable) {
+					// 可能だった場合
+					enable = true;
+				}
+			}
+				catch (Exception e) {
+			}
+		}
+		return enable;
 	}
 
 	public void loadAnime(int page) {

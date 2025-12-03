@@ -153,6 +153,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	// 上下の操作領域タッチ後何msでボタンを表示するか
 	private static final int LONGTAP_TIMER_UI = 400;
 	private static final int LONGTAP_TIMER_BTM = 400;
+	private static final int LONGTAP_TIMER_OFF = 100;
 
 	private static final int LIST_PROFILE1 = 26;
 	private static final int LIST_PROFILE2 = 27;
@@ -506,7 +507,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 画像の表示制御情報
 	private int mScaleMode;
-	private int mDispMode;
+	private static int mDispMode;
 	private int mAlgoMode;
 
 	// 表示文言
@@ -536,6 +537,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mTopMode = false; // トップ操作モード
 	private boolean mPinchOn = false;
 	private boolean mPinchDown = false;
+	private boolean mTapOnOff = false;
 	private int mPinchScale;
 	private int mPinchScaleSel;
 	private int mPinchCount;
@@ -668,6 +670,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private static boolean mFloatingIconCursorRestore = false;
 	private int cursorx;
 	private int cursory;
+	private boolean mAnimationEnable;
+	private boolean mAnimationScan;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -1647,6 +1651,22 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// タッチ位置が範囲内の時だけ処理
 						mLongTouchMode = true;
 						mImageView.setZoomMode(true);
+						// ズーム解除用のイベントを登録
+						startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_ZOOM_OFF);
+					}
+				}
+				return true;
+			case DEF.HMSG_EVENT_TOUCH_ZOOM_OFF:
+				// ズーム解除用のイベント
+				if (mLongTouchCount == msg.arg1) {
+					// 最新のタイマーの時だけ処理
+					if (!mTapOnOff) {
+						// タッチオフの場合
+						if (mLongTouchMode) {
+							// ズーム表示解除
+							mImageView.setZoomMode(false);
+							mLongTouchMode = false;
+						}
 					}
 				}
 				return true;
@@ -2237,11 +2257,38 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// 拡大/縮小
 			ImageScaling();
 
-			if (mImageMgr.mAnimeList != null) {
+			if (mImageMgr.mAnimeList != null && mAnimationEnable) {
+				// 以前の表示を取り消す前に背景を塗りつぶす
+				mImageView.ViewOff(true);
 				// 以前の表示を取り消す
 				stopGifAnimation();
-				if (mImageMgr.mAnimeList[mCurrentPage].getAnimeOn()) {
-					// アニメーションを表示中は塗りつぶす
+				if (!mImageMgr.mAnimeList[mCurrentPage].getAnimeFile()) {
+					// アニメーションを表示しない場合は元のスケールに戻す
+					mImageMgr.setImageScale(mPinchScale);
+					ImageScaling();
+					// 塗りつぶしをオフにする
+					mImageView.ViewOff(false);
+				}
+				else if (!mAnimationScan) {
+					// アニメーション可能かどうかをチェック
+					if (mImageMgr.checkAnimeEnable(mCurrentPage)) {
+						// アニメーション可能だった場合
+						// アニメーションを表示中は画面内に収めるため半分にする
+						mImageMgr.setImageScale(50);
+						ImageScaling();
+						// アニメーションを表示
+						mImageMgr.loadAnime(mCurrentPage);
+					}
+					else {
+						// アニメーションを表示しない場合は元のスケールに戻す
+						mImageMgr.setImageScale(mPinchScale);
+						ImageScaling();
+						// 塗りつぶしをオフにする
+						mImageView.ViewOff(false);
+					}
+				}
+				else if (mImageMgr.mAnimeList[mCurrentPage].getAnimeOn()) {
+					// アニメーションを表示中は背景を塗りつぶす
 					mImageView.ViewOff(true);
 					// アニメーションを表示中は画面内に収めるため半分にする
 					mImageMgr.setImageScale(50);
@@ -2553,7 +2600,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		int action = event.getAction();
 
 		// ピンチイン・アウト対応
-		if (mImageMgr.mAnimeList != null && mImageMgr.mAnimeList[mCurrentPage].getAnimeOn()) {
+		if (mImageMgr.mAnimeList != null && mImageMgr.mAnimeList[mCurrentPage].getAnimeOn() && mAnimationEnable) {
 			// アニメーションを表示中はピンチイン・アウトを行わせない
 		}
 		else if (mPinchEnable) {
@@ -2816,6 +2863,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 
 					mPageMode = false;
+					mTapOnOff = true;
 					mTouchPointNum = 0;
 
 					// 慣性スクロールの停止
@@ -2943,6 +2991,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mPinchOn = false;
 					mPinchDown = false;
 					mDoubleTapGuardOn = false;
+					mTapOnOff = false;
 					// 上部/下部選択中の状態解除
 					mGuideView.eventTouchCancel();
 					// ページ選択中解除
@@ -3060,6 +3109,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mTouchFirst = false;
 					mOperation = TOUCH_NONE;
 					this.mTouchMove = false;
+					mTapOnOff = false;
 					break;
 			}
 			return	true;
@@ -3080,6 +3130,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mClickGuard = false;
 			}
 			Action_Up_Sub(event);
+			mTapOnOff = false;
 		}
 		return super.onTouchEvent(event);
 	}
@@ -6102,6 +6153,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mFloatingIconDirectionMode = FloatingIconDialog.getDirectionMode(sharedPreferences);
 			mFloatingIconEnable = FloatingIconDialog.getEnable(sharedPreferences);
 			mBackgroundPause = SetImageActivity.getBackgroundPause(sharedPreferences);
+			mAnimationEnable = SetImageActivity.getAnimationEnable(sharedPreferences);
+			mAnimationScan = SetImageActivity.getAnimationScan(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -6365,7 +6418,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 既読判定の最大ページ数から引き算する値を返す
 	public static int isDualMode() {
-		if (SetImageActivity.getInitView(mSharedPreferences) == DEF.DISPMODE_IM_DUAL) {
+		if (mDispMode == DEF.DISPMODE_IM_DUAL) {
 			// 見開きの場合は1増やす
 			return 2;
 		}
@@ -6414,6 +6467,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// 下部押下時のみIMMERSIVEがOFFでも長押しにする(先頭・末尾の誤爆対策)
 			if (longtouch_event == DEF.HMSG_EVENT_TOUCH_BOTTOM) {
 				longtaptime = LONGTAP_TIMER_BTM;
+			}
+			else if (longtouch_event == DEF.HMSG_EVENT_TOUCH_ZOOM_OFF) {
+				longtaptime = LONGTAP_TIMER_OFF;
 			}
 			else {
 				if (!mImmEnable && !mImmForce) {
