@@ -1277,6 +1277,10 @@ public class TextManager {
 
 		LoadTextFile("META-INF/container.xml");
 
+		if (mInputBuff == null) {
+			Logcat.e(logLevel, "EPUBコンテナファイル META-INF/container.xml の読み込みに失敗しました。mInputBuff が null です。");
+			return filename;
+		}
 		inputStr = DEF.toUTF8(mInputBuff, 0, mInputBuff.length);
 		inputStr = inputStr.replaceAll("\r\n", "\n");
 
@@ -1719,10 +1723,18 @@ public class TextManager {
 		String inputStr = "";
 
 		if (!filename.isEmpty()) {
-			LoadTextFile(filename);
-			inputStr = DEF.toUTF8(mInputBuff, 0, mInputBuff.length);
-			inputStr = inputStr.replaceAll("\r\n", "\n");
-			Logcat.d(logLevel,"inputStr=" + inputStr.substring(0, Math.min(1000, inputStr.length())));
+			// 読み込み時にアクセス違反が起こる可能性があるためtry～catchで囲んでみた
+			try {
+				LoadTextFile(filename);
+				inputStr = DEF.toUTF8(mInputBuff, 0, mInputBuff.length);
+				inputStr = inputStr.replaceAll("\r\n", "\n");
+				Logcat.d(logLevel,"inputStr=" + inputStr.substring(0, Math.min(1000, inputStr.length())));
+			}
+			catch (Exception e) {
+				inputSB.append(inputStr);
+				Logcat.e(logLevel, "ファイルの読み込みに失敗", e);
+				return title;
+			}
 
 			// 本文の解析
 			XmlPullParser xmlPullParser = Xml.newPullParser();
