@@ -178,7 +178,7 @@ public class DownloadDialog extends ImmersiveDialog implements Runnable, Handler
 				sendMessage(MSG_MESSAGE, path + item, 0, 0);
 				sendMessage(MSG_SETMAX, null, 0, (int)fileSize);
 
-				byte[] buff = new byte[1024 * 16];
+				byte[] buff = new byte[1024 * 1024 * 8];
 				int size;
 				long total = 0;
 				while (true) {
