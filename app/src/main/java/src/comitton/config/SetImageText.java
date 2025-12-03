@@ -130,6 +130,12 @@ public class SetImageText {
 		return flag;
 	}
 
+	public static boolean getResumeOpenNoMessage(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_RESUMEOPENNOMESSAGE, false);
+		return flag;
+	}
+
 	public static boolean getConfirmBack(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CONFIRMBACK, true);
