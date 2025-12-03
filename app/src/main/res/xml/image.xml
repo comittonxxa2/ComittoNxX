@@ -170,6 +170,16 @@
             android:key="FloatingIconEnable"
             android:summary="Uncheck if you want to disable the floating icon(Used when the pull-down menu and floating icon overlap by mistake)."
             android:title="Enable floating icon" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AnimationEnable"
+            android:summary="Check this box if you want to display WebP/Gif animations."
+            android:title="Enable WebP/Gif animations" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AnimationScan"
+            android:summary="Check this box if you want to scan in advance to see if WebP/Gif animation is possible."
+            android:title="Enable scanning of WebP/Gif files" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Operation Settings" >
         <CheckBoxPreference

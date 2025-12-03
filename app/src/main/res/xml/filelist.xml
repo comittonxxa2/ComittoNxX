@@ -50,6 +50,11 @@
             android:title="Open the last file on startup" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="ResumeOpenNoMessage"
+            android:summary="Do not display a confirmation dialog when opening a previously viewed file at startup"
+            android:title="Automatically open previously viewed files" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="TapExpand"
             android:summary="Expands to display the contents of the file by tapping zip/rar/pdf file."
             android:title="Expanded file on tap" />
