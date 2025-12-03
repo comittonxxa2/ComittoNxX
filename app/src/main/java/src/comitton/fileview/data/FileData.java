@@ -351,7 +351,7 @@ public class FileData {
 	}
 	public static boolean isEpubSub(String filepath) {
 		String filename = filepath.toLowerCase();
-		return filename.endsWith(".css") || filename.endsWith(".xml") || filename.endsWith(".opf") || filename.endsWith(".ncx");
+		return filename.endsWith(".css") || filename.endsWith(".xml") || filename.endsWith(".opf") || filename.endsWith(".ncx") || filename.endsWith(".html");
 	}
 	public static boolean isText(String filepath) {
 		String filename = filepath.toLowerCase();
