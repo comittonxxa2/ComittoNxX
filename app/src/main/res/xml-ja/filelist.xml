@@ -50,6 +50,11 @@
             android:title="前回のファイルをオープン" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="ResumeOpenNoMessage"
+            android:summary="起動時に前回表示したファイルを開く際に確認のダイアログを表示しない"
+            android:title="前回表示したファイルを自動で開く" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="TapExpand"
             android:summary="zip/rar/pdfのタップでファイル内容を展開表示する"
             android:title="タップでファイル展開表示" />

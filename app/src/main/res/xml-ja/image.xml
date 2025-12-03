@@ -170,6 +170,16 @@
             android:key="FloatingIconEnable"
             android:summary="フローティングアイコンを無効にしたい場合はチェックを外す(誤ってプルダウンメニューとフローティングアイコンが重なった場合に用いる)"
             android:title="フローティングアイコンを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AnimationEnable"
+            android:summary="WebP/Gifアニメーション表示を行いたい場合はチェックを入れる"
+            android:title="WebP/Gifアニメーションを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AnimationScan"
+            android:summary="あらかじめWebP/Gifアニメーション可能かどうかのスキャンを行う場合はチェックを入れる"
+            android:title="WebP/Gifファイルのスキャンを有効にする" />
     </PreferenceCategory>
     <PreferenceCategory android:title="操作関連の設定（＊はテキストと共通の設定）" >
         <CheckBoxPreference
