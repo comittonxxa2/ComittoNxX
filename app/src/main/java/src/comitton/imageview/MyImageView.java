@@ -165,6 +165,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private boolean mViewTapSw = false;
 	private boolean mViewSw = false;
 	private boolean mViewFloatingIconSw = false;
+	private boolean mInitalizeHeight = false;
+	private boolean mInitalizeWidth = false;
+	private float mHDrawLeft;
+	private float mHDrawTop;
+	private float mVDrawLeft;
+	private float mVDrawTop;
 
 	public MyImageView(Activity activity) {
 		super(activity);
@@ -175,6 +181,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mWorkRect = new Rect();
 		mHandler = new Handler(this);
 		new TouchPanelView(activity, 1);
+		mInitalizeHeight = false;
+		mInitalizeWidth = false;
 
 		requestFocus();
 		mHolder = getHolder();
@@ -196,8 +204,63 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mUpdateThread.start();
 	}
 
+	// 座標の保存
+	private void BackupPosition(boolean update, float x, float y) {
+		if (mDispWidth > mDispHeight) {
+			// 横画面の場合
+			// 画面更新
+			if (!mInitalizeWidth) {
+				mInitalizeWidth = true;
+				// 初回起動の場合は表示座標を入れる
+				mHDrawLeft = x;
+				mHDrawTop = y;
+			}
+			else if (update) {
+				// 通常更新の場合は縦と横が反転しているので更新手前の縦画面の座標を保存
+				mVDrawLeft = mDrawLeft;
+				mVDrawTop = mDrawTop;
+			}
+			else {
+				// スクロール移動の場合は更新後の座標を保存
+				mHDrawLeft = mDrawLeft;
+				mHDrawTop = mDrawTop;
+			}
+		}
+		else {
+			// 縦画面の場合
+			// 画面更新
+			if (!mInitalizeHeight) {
+				mInitalizeHeight = true;
+				// 初回起動の場合は表示座標を入れる
+				mVDrawLeft = x;
+				mVDrawTop = y;
+			}
+			else if (update) {
+				// 通常更新の場合は縦と横が反転しているので更新手前の横画面の座標を保存
+				mHDrawLeft = mDrawLeft;
+				mHDrawTop = mDrawTop;
+			}
+			else {
+				// スクロール移動の場合は更新後の座標を保存
+				mVDrawLeft = mDrawLeft;
+				mVDrawTop = mDrawTop;
+			}
+		}
+	}
+
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		// 表示位置を補正する
+		if (width > height) {
+			// 横画面の場合
+			mDrawTop = mHDrawTop;
+			mDrawLeft = mHDrawLeft;
+		}
+		else if (height > width) {
+			// 縦画面の場合
+			mDrawLeft = mVDrawLeft;
+			mDrawTop = mVDrawTop;
+		}
 		// Surface の属性が変更された際にコールされる
 		updateNotify();
 	}
@@ -1237,6 +1300,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 //			disp_x = mDispWidth;
 //			disp_y = mDispHeight;
 //		}
+		// 座標の保存を初回起動時に戻す(ページめくりとピンチズーム時はここへ飛んでくる)
+		mInitalizeWidth = false;
+		mInitalizeHeight = false;
 		updateOverSize(isResize);
 
 /*		// 表示を戻す
@@ -1407,6 +1473,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
    				drawLeft = disp_x - view_x;
 			}
 		}
+		// 更新手前の座標を保存
+		BackupPosition(true, drawLeft, drawTop);
 		mDrawLeft = drawLeft;
 		mDrawTop = drawTop;
 
@@ -1594,6 +1662,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		}
 
 		if (fUpdate) {
+			// 更新後の座標を保存
+			BackupPosition(false, 0, 0);
 			updateNotify();
 		}
 
@@ -1978,6 +2048,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if (move_cnt <= 1) {
 			mScrollPoint = null;
 			result = false;
+			// 更新後の座標を保存
+			BackupPosition(false, 0, 0);
 		}
 		Logcat.v(logLevel, " 終了します. result=" + result);
 		return result;
