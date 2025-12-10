@@ -6230,22 +6230,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				showCloseDialog(CloseDialog.LAYOUT_LAST);
 			}
 			else if (mLastMsg == DEF.LASTMSG_NEXT) {
-				if (mUriPath.substring(mUriPath.length() - 1).equals("/")) {
-					if (mImageName == null || mImageName.isEmpty()) {
-						// ディレクトリオープンのとき
-						// 前のファイルを開き、続きから記録せず、現在頁保存
-						finishActivity(CloseDialog.CLICK_NEXTTOP, false, true);
-					} else {
-						// イメージファイル直接オープンのとき
-						// 閉じる
-						finishActivity(false);
-					}
-				}
-				else {
-					// 圧縮ファイルオープンのとき
-					// 前のファイルを開き、続きから記録せず、現在頁保存
-					finishActivity(CloseDialog.CLICK_NEXTTOP, false, true);
-				}
+				// 前のファイルを開き、続きから記録せず、現在頁保存
+				finishActivity(CloseDialog.CLICK_NEXTTOP, false, true);
 			}
 			else {
 				// 閉じる
@@ -6292,22 +6278,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				showCloseDialog(CloseDialog.LAYOUT_TOP);
 			}
 			else if (mLastMsg == DEF.LASTMSG_NEXT) {
-				if (mUriPath.substring(mUriPath.length() - 1).equals("/")) {
-					if (mImageName == null || mImageName.length() == 0) {
-						// ディレクトリオープンのとき
-						// 前のファイルを開き、続きから記録せず、現在頁保存
-						finishActivity(CloseDialog.CLICK_PREVLAST, false, true);
-					} else {
-						// イメージファイル直接オープンのとき
-						// 閉じる
-						finishActivity(false);
-					}
-				}
-				else {
-					// 圧縮ファイルオープンのとき
-					// 前のファイルを開き、続きから記録せず、現在頁保存
-					finishActivity(CloseDialog.CLICK_PREVLAST, false, true);
-				}
+				// 前のファイルを開き、続きから記録せず、現在頁保存
+				finishActivity(CloseDialog.CLICK_PREVLAST, false, true);
 			}
 			else {
 				// 閉じる
