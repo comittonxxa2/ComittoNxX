@@ -409,7 +409,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			return;
 		}
 
-		if (mImage[0] == null) {
+		if (mImage[0] == null && mImage[1] == null) {
 			return;
 		}
 
@@ -447,7 +447,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				return;
 			}
 
-			if (mImage[0] == null) {
+			if (mImage[0] == null && mImage[1] == null) {
 				return;
 			}
 			if (!isCreateBack && isBackDraw && mBackBitmap != null) {
@@ -1317,7 +1317,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		int disp_x = mDispWidth;
 		int disp_y = mDispHeight;
 
-		if (mImage[0] == null) {
+		if (mImage[0] == null && mImage[1] == null) {
 			return;
 		}
 

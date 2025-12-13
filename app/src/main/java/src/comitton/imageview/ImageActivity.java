@@ -1724,7 +1724,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// エフェクト無しのときはそのまま修了
 					mLoadingNext = true;
 					Logcat.v(logLevel, "EVENT_EFFECT: SET mBitmapLoading = false");
-					mBitmapLoading = false;
+					// スクロール移動で描画が停止するのでコメントアウトにする
+//					mBitmapLoading = false;
 					if (mAutoPlay) {
 						startViewTimer(DEF.HMSG_EVENT_AUTOPLAY);
 					}
@@ -1742,7 +1743,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				else {
 					// エフェクト無しのときはそのまま修了
 					mLoadingNext = true;
-					mBitmapLoading = false;
+					// スクロール移動で描画が停止するのでコメントアウトにする
+//					mBitmapLoading = false;
 					mScrolling = false;
 					if (mAutoPlay) {
 						startViewTimer(DEF.HMSG_EVENT_AUTOPLAY);
@@ -1769,6 +1771,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_LOAD_END: // 画像読み込み終了
 				Logcat.v(logLevel, "HMSG_LOAD_END: mEffectRate=" + mEffectRate);
 				if (mBitmapLoading) {
+					// ここでフラグをクリア
+					mBitmapLoading = false;
 					// Loading中を消去
 					if (mSourceImage[0] != null) {
 						mGuideView.setLodingState();
@@ -1816,7 +1820,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 						// エフェクト無しのときはそのまま終了
 						mLoadingNext = true;
-						mBitmapLoading = false;
+						// スクロール移動で描画が停止するのでコメントアウトにする
+//						mBitmapLoading = false;
 						mPageSelecting = false;
 						if (mAutoPlay) {
 							startViewTimer(DEF.HMSG_EVENT_AUTOPLAY);
@@ -2077,11 +2082,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mImageView.update(true);
 
 		// mImageView.lockDraw();
+		// スクロール移動でサーフェスビューが点滅するのでコメントアウトにする
+		/*
 		// 旧ビットマップを解放
 		mSourceImage[0] = null;
 		mSourceImage[1] = null;
 		// 解放
 		mImageView.setImageBitmap(mSourceImage);
+		*/
 
 		mCurrentPageHalf = false;
 		mCurrentPageDual = false;
@@ -2191,8 +2199,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						mSourceImage[0].HalfMode = ImageData.HALF_RIGHT;
 					}
 					*/
-
+					// スクロール移動でページめくりに失敗するのでコメントアウトにした
+					/*
 					mCurrentPageHalf = true;
+					*/
 				}
 				else {
 					mHalfPos = HALFPOS_1ST;
@@ -2262,7 +2272,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mImageView.ViewOff(true);
 				// 以前の表示を取り消す
 				stopGifAnimation();
-				if (!mImageMgr.mAnimeList[mCurrentPage].getAnimeFile()) {
+				if (!mImageMgr.mAnimeList[mCurrentPage].getAnimeFile() || mScrlNext) {
 					// アニメーションを表示しない場合は元のスケールに戻す
 					mImageMgr.setImageScale(mPinchScale);
 					ImageScaling();
@@ -3487,6 +3497,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				callZoomAreaDraw(x, y);
 			}
 			else {
+				if (mBackgroundPause) {
+					// スクロール移動でバックグラウンドでのキャッシュ読み込みを停止させない
+					mImageMgr.setCacheSleep(false);
+				}
 				// ページ戻or進、スクロール処理
 				if (this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
 					// タッチ後に範囲を超えて移動した場合はスクロールモードへ
@@ -3499,6 +3513,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 				if (!this.mTouchFirst) {
 //				if (this.mTouchFirst == false) {
+//					Logcat.v(1, "■■■ スクロール中ならスクロール中のフラグをセット");
 					// ■■■ スクロール中なら
 					// スクロール中のフラグをセット
 					this.mTouchMove = true;
