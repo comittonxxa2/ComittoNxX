@@ -5179,7 +5179,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		ArrayList<FileData> sortfiles = new ArrayList<FileData>(files.size());
 		if (SetImageText.getSoftChgPage(mSharedPreferences)) {
 			// ページ移動時にリスト表示に従う場合
-			sortfiles = mFileList.getFileList();
+			ArrayList<FileData> mfiles = mFileList.getFileList();
+			for (int i = 0; i < mfiles.size(); i++) {
+				int type = mfiles.get(i).getType();
+				switch (type) {
+					case FileData.FILETYPE_DIR: // ディレクトリ
+					case FileData.FILETYPE_TXT: // テキスト
+					case FileData.FILETYPE_ARC: // ZIP
+					case FileData.FILETYPE_EPUB: // Epub
+						sortfiles.add(mfiles.get(i));
+						break;
+					case FileData.FILETYPE_IMG: // イメージ
+						// イメージは親フォルダで管理
+						break;
+				}
+			}
 		}
 		else {
 			for (FileData fd : files) {
