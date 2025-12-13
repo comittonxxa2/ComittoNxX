@@ -2267,12 +2267,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// 拡大/縮小
 			ImageScaling();
 
-			if (mImageMgr.mAnimeList != null && mAnimationEnable) {
+			if (mImageMgr.mAnimeList != null && mAnimationEnable && !mScrlNext) {
 				// 以前の表示を取り消す前に背景を塗りつぶす
 				mImageView.ViewOff(true);
 				// 以前の表示を取り消す
 				stopGifAnimation();
-				if (!mImageMgr.mAnimeList[mCurrentPage].getAnimeFile() || mScrlNext) {
+				if (!mImageMgr.mAnimeList[mCurrentPage].getAnimeFile()) {
 					// アニメーションを表示しない場合は元のスケールに戻す
 					mImageMgr.setImageScale(mPinchScale);
 					ImageScaling();
