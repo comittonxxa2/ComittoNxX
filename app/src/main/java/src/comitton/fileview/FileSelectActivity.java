@@ -3408,15 +3408,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				switch (result) {
 					case DEF.TOOLBAR_ADDDIR:
 						// ディレクトリ登録
-						RecordList.add(RecordList.TYPE_DIRECTORY, RecordItem.TYPE_FOLDER, mServer.getSelect(), mPath, null
+						try {
+							// ひとまずtry～catchで囲む
+							RecordList.add(RecordList.TYPE_DIRECTORY, RecordItem.TYPE_FOLDER, mServer.getSelect(), mPath, null
 								, new Date().getTime(), null, -1, null);
 
-						mListScreenView.notifyUpdate(RecordList.TYPE_DIRECTORY);
-						// ディレクトリリストに切り替える
-						mListScreenView.updateRecordList(RecordList.TYPE_DIRECTORY);
-						int listindex = mListScreenView.getListIndex(RecordList.TYPE_DIRECTORY);
-						mListScreenView.setListIndex(listindex, 0);
-						mListScreenView.onUpdateArea(ListScreenView.AREATYPE_ALL, false);
+							mListScreenView.notifyUpdate(RecordList.TYPE_DIRECTORY);
+							// ディレクトリリストに切り替える
+							mListScreenView.updateRecordList(RecordList.TYPE_DIRECTORY);
+							int listindex = mListScreenView.getListIndex(RecordList.TYPE_DIRECTORY);
+							mListScreenView.setListIndex(listindex, 0);
+							mListScreenView.onUpdateArea(ListScreenView.AREATYPE_ALL, false);
+						}
+						catch (Exception e) {
+							Toast.makeText(mActivity, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+						}
 						break;
 					case DEF.TOOLBAR_PARENT:
 						// 親ディレクトリに移動
