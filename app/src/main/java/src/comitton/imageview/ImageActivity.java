@@ -3337,7 +3337,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							// ページ番号入力
 							if (!PageSelectDialog.mIsOpened) {
 								PageSelectDialog pageDlg = new PageSelectDialog(this, R.style.MyDialog);
-								pageDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mImageMgr.length(), mPageWay == DEF.PAGEWAY_RIGHT, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR));
+								pageDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mImageMgr.length(), mPageWay == DEF.PAGEWAY_RIGHT, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR),mHandler);
 								pageDlg.setPageSelectListear(this);
 								pageDlg.show();
 								pageDlg.setShareType(shareType);
@@ -5078,15 +5078,20 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	public static class BookMark{
 		private String title;
 		private String value;
-		public BookMark(String title, String value) {
+		private int page;
+		public BookMark(String title, String value, int page) {
 			this.title = title;
 			this.value = value;
+			this.page = page;
 		}
 		public String getTitle() {
 			return title;
 		}
 		public String getValue() {
 			return value;
+		}
+		public int getPage() {
+			return page;
 		}
 	}
 
@@ -5123,7 +5128,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			String image = data.getImage();
 			for (int j = 0; j < mImageMgr.mFileList.length; j++) {
 				if (mImageMgr.mFileList[j].name.equals(image)) {
-					bookmark.add(new BookMark(data.getDispName(),"P." + (j + 1)));
+					bookmark.add(new BookMark(data.getDispName(),"P." + (j + 1), j));
 					isAdd = true;
 					count++;
 					break;
@@ -5133,7 +5138,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		for (int i = 0; i < count; i++) {
 			// ブックマーク追加
-			mMenuDialog.addItem(DEF.MENU_BOOKMARK + i,bookmark.get(i).getTitle(),bookmark.get(i).getValue());
+			mMenuDialog.addItem(DEF.MENU_BOOKMARK + bookmark.get(i).getPage(),bookmark.get(i).getTitle(),bookmark.get(i).getValue());
 		}
 		if (isAdd) {
 			mMenuDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
@@ -5728,7 +5733,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// ページ番号入力
 					if (PageSelectDialog.mIsOpened) {
 						PageSelectDialog pageDlg = new PageSelectDialog(this, R.style.MyDialog);
-						pageDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mImageMgr.length(), mPageWay == DEF.PAGEWAY_RIGHT, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR));
+						pageDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mImageMgr.length(), mPageWay == DEF.PAGEWAY_RIGHT, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR), mHandler);
 						pageDlg.setPageSelectListear(this);
 						pageDlg.show();
 						pageDlg.setShareType(shareType);
