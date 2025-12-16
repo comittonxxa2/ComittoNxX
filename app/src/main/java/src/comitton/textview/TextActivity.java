@@ -9,6 +9,7 @@ import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetCacheActivity;
 import src.comitton.config.SetHardwareTextViewerKeyActivity;
+import src.comitton.dialog.ToolbarDialog;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -1271,6 +1272,10 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				mTextView.setPage(mCurrentPage, false, true);
 				mTextView.update(true);
 				break;
+			case DEF.HMSG_EVENT_TOOLBAR:
+				// ツールバーのタッチイベントを実行
+				ToolbarDialog.SetListner(msg.arg1);
+				break;
 		}
 		return true;
 	}
@@ -1992,7 +1997,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 							if (PageSelectDialog.mIsOpened == false) {
 								PageSelectDialog pageDlg = new PageSelectDialog(this, R.style.MyDialog);
-								pageDlg.setParams(DEF.TEXT_VIEWER, mCurrentPage, mTextMgr.length(), true);
+								pageDlg.setParams(DEF.TEXT_VIEWER, mCurrentPage, mTextMgr.length(), true, false, mHandler);
 								pageDlg.setPageSelectListear(this);
 								pageDlg.show();
 								mPageDlg = pageDlg;
@@ -2760,12 +2765,12 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			// ソートした結果でブックマークをArrayListへ追加
 			RecordItem data = list_copy.get(i);
 			int page = data.getPage();
-			bookmark.add(new ImageActivity.BookMark(data.getDispName(),"P." + page + 1));
+			bookmark.add(new ImageActivity.BookMark(data.getDispName(),"P." + page + 1, page));
 			count++;
 		}
 		for (int i = 0 ; i < list.size(); i ++) {
 			// ブックマーク追加
-			mMenuDialog.addItem(DEF.MENU_BOOKMARK + i,bookmark.get(i).getTitle(),bookmark.get(i).getValue());
+			mMenuDialog.addItem(DEF.MENU_BOOKMARK + bookmark.get(i).getPage(),bookmark.get(i).getTitle(),bookmark.get(i).getValue());
 		}
 
 		mMenuDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
