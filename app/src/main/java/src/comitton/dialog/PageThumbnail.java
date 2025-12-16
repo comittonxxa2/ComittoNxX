@@ -51,7 +51,7 @@ public class PageThumbnail extends ToolbarDialog implements OnTouchListener,
 	}
 
 	public void setParams(boolean viwer, int page, boolean reverse, ImageManager imgr, long thumid, boolean dirtree, Handler handler) {
-		super.setParams(viwer, page, imgr.length(), reverse, dirtree);
+		super.setParams(viwer, page, imgr.length(), reverse, dirtree, handler);
 		mPage = page;
 		mReverse = reverse;
 		mMaxPage = imgr.length();
@@ -70,7 +70,7 @@ public class PageThumbnail extends ToolbarDialog implements OnTouchListener,
 	}
 
 	// ツールバーを動的に表示する(元々はxmlで静的に表示していたのを変更)
-	public static void SetIconLayout(LinearLayout parentLayout, Context context) {
+	public static void SetIconLayout(LinearLayout parentLayout, Context context, Handler handler) {
 		// 横スクロールのレイアウトを設定(この中にアイコンが登録される)
 		HorizontalScrollView hr = new HorizontalScrollView(context);
 		hr.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -110,7 +110,7 @@ public class PageThumbnail extends ToolbarDialog implements OnTouchListener,
 					Message message = new Message();
 					message.what = DEF.HMSG_EVENT_TOOLBAR;
 					message.arg1 = finalI;
-					mHandler.sendMessage(message);
+					handler.sendMessage(message);
 				});
 				// アイコンのサイズをセット
 				int sizeInPx = dpToPx(context, (int)(32 * ratio));
@@ -141,7 +141,7 @@ public class PageThumbnail extends ToolbarDialog implements OnTouchListener,
 		LinearLayout parentLayout = findViewById(R.id.pagethumbnail);
 		Context context = getContext();
 		// ツールバーを動的に表示
-		SetIconLayout(parentLayout, context);
+		SetIconLayout(parentLayout, context, mHandler);
 
 		mScroll = (HorizontalScrollView) this.findViewById(R.id.scrl_view);
 		mThumView = (ThumbnailView) this.findViewById(R.id.thumb_view);

@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -122,7 +123,7 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		setOnDismissListener(this);
 	}
 
-	public void setParams(boolean viewer, int page, int maxpage, boolean reverse,boolean dirtree) {
+	public void setParams(boolean viewer, int page, int maxpage, boolean reverse,boolean dirtree, Handler handler) {
 		mViewer = viewer;
 		mPage = page;
 		mMaxPage = maxpage;
@@ -740,7 +741,9 @@ public class ToolbarDialog extends ImmersiveDialog implements
 		}
 		setProgress(page, false);
 		// シークバーを移動させてもonProgressChangedへ飛ばないので直接操作する
-		mThumView.setPosition(page);
+		if (mThumView != null) {
+			mThumView.setPosition(page);
+		}
 	}
 
 	@Override

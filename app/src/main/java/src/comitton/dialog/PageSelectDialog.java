@@ -41,6 +41,7 @@ public class PageSelectDialog extends ToolbarDialog implements Handler.Callback,
 	private boolean mIsCancel;
 	private Object mObject;
 	private Handler mHandler;
+	private Handler mHandlerParams;
 
 	private EditText mEditPage;
 	private Button mBtnCancel;
@@ -53,12 +54,9 @@ public class PageSelectDialog extends ToolbarDialog implements Handler.Callback,
 		mAutoApply = true;
 	}
 
-	public void setParams(boolean viwer, int page, int maxpage, boolean reverse) {
-		super.setParams(viwer, page, maxpage, reverse, false);
-	}
-
-	public void setParams(boolean viwer, int page, int maxpage, boolean reverse, boolean dirtree) {
-		super.setParams(viwer, page, maxpage, reverse, dirtree);
+	public void setParams(boolean viwer, int page, int maxpage, boolean reverse, boolean dirtree, Handler handler) {
+		super.setParams(viwer, page, maxpage, reverse, dirtree, handler);
+		mHandlerParams = handler;
 	}
 
 	protected void onCreate(Bundle savedInstanceState){
@@ -68,7 +66,7 @@ public class PageSelectDialog extends ToolbarDialog implements Handler.Callback,
 		LinearLayout parentLayout = findViewById(R.id.pageselect);
 		Context context = getContext();
 		// ツールバーを動的に表示
-		PageThumbnail.SetIconLayout(parentLayout, context);
+		PageThumbnail.SetIconLayout(parentLayout, context, mHandlerParams);
 
 		// 一度ダイアログを表示すると画面回転時に呼び出される
 		//TextView slash = (TextView) findViewById(R.id.text_slash);
