@@ -1195,6 +1195,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									// オープンできた
 									return;
 								}
+								// リスト表示を更新
+								loadListView();
 							}
 						} else {
 							// 次のファイルを開かない場合
