@@ -221,6 +221,7 @@ public class DEF {
 	public static final int MENU_PROFILE9 = Menu.FIRST + 73;
 	public static final int MENU_PROFILE10 = Menu.FIRST + 74;
 	public static final int MENU_FLOATINGICON_SETTING = Menu.FIRST + 75;
+	public static final int MENU_DISPLAY_ANIMEPAUSE = Menu.FIRST + 76;
 	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
@@ -590,6 +591,8 @@ public class DEF {
 	public static final String KEY_BOTTOMFILE = "BottomFile";
 	public static final String KEY_PINCHENABLE = "PinchEnable";
 	public static final String KEY_OLDMENU = "OldMenu";
+	public static final String KEY_SCROLLMODE = "ScrollMode";
+	public static final String KEY_INERTIASCROLL = "InertiaScroll";
 
 	public static final String KEY_HIDDENFILE = "HiddenFile";
 
@@ -1639,6 +1642,7 @@ public class DEF {
 	public static final int TAP_PROFILE9 = 111;		// プロファイル9
 	public static final int TAP_PROFILE10 = 112;		// プロファイル10
 	public static final int TAP_SWSCREENORIENT = 113;	// 表示方向の切り替え
+	public static final int TAP_ANIMEPAUSE = 114;	//アニメーションの一時停止
 
 	// イメージビューア用のタップ操作の初期値
 	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
