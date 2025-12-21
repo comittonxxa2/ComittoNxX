@@ -205,6 +205,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			19,	// 中央余白表示
 			20,	// 中央影表示,
 			31,
+			41,
 			LIST_PROFILE1,	// プロファイル1
 			LIST_PROFILE2,	// プロファイル2
 			LIST_PROFILE3,	// プロファイル3
@@ -250,6 +251,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		DEF.MENU_CMARGIN,	// 中央余白表示
 		DEF.MENU_CSHADOW,	// 中央影表示
 		DEF.MENU_DISPLAY_POSITION,	// 画面の表示位置
+		DEF.MENU_DISPLAY_ANIMEPAUSE,	// アニメーション再生の一時停止
 		DEF.MENU_PROFILE1,	// プロファイル1
 		DEF.MENU_PROFILE2,	// プロファイル2
 		DEF.MENU_PROFILE3,	// プロファイル3
@@ -294,6 +296,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.cMargin,		// 中央余白表示
 		R.string.cShadow,		// 中央影表示
 		R.string.DisplayPositionMenu,		// 画面の表示位置
+		R.string.AnimationPause,	// アニメーション再生の一時停止
 		R.string.Profile1,		// プロファイル1
 		R.string.Profile2,		// プロファイル2
 		R.string.Profile3,		// プロファイル3
@@ -672,6 +675,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int cursory;
 	private boolean mAnimationEnable;
 	private boolean mAnimationScan;
+	private int mScrollMode;
+	private boolean mInertiaScroll;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -2517,7 +2522,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (mImageView != null) {
 			mImageView.setConfig(this, mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mZoomType, mPageWay, mScrlWay, mScrlRngW, mScrlRngH, mPrevRev, mNoExpand, mFitDual,
-					mCMargin, mCShadow, mPseLand, mEffect, mScrlNext, mViewNext, mNextFilter, mDisplayPosition);
+					mCMargin, mCShadow, mPseLand, mEffect, mScrlNext, mViewNext, mNextFilter, mDisplayPosition, mScrollMode, mInertiaScroll);
 			mImageView.setLoupeConfig(mLoupeSize);	// ルーペサイズの設定
 		}
 		if (mGuideView != null) {
@@ -3081,7 +3086,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								if (mFlickEdge && mTouchDrawLeft > mImmCancelRange) {
 									// 端からフリックしないときはページめくりしない
 									;
-								} else if ((flickPage > 0 && mPageWay == DEF.PAGEWAY_RIGHT) || (flickPage < 0 && mPageWay != DEF.PAGEWAY_RIGHT) ? !mChgFlick : mChgFlick) {
+								} else if ((flickPage > 0 && (mPageWay == DEF.PAGEWAY_RIGHT && mScrollMode == 0 || mPageWay != DEF.PAGEWAY_RIGHT && mScrollMode != 0)) || (flickPage < 0 && (mPageWay != DEF.PAGEWAY_RIGHT && mScrollMode == 0 || mPageWay == DEF.PAGEWAY_RIGHT && mScrollMode != 0)) ? !mChgFlick : mChgFlick) {
 									// 次ページへ
 									if (mScrlNext) {
 										mImageView.scrollReset();
@@ -4044,6 +4049,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 表示方向の切り替え
 				mActivity.SetRotate(mViewRota, mRevtRota);
 				break;
+			case DEF.TAP_ANIMEPAUSE:
+				// アニメーションの一時停止
+				execCommand(DEF.MENU_DISPLAY_ANIMEPAUSE);
+				break;
 			case DEF.TAP_EXIT_VIEWER:
 				finishActivity(true);
 				break;
@@ -4923,6 +4932,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMenuDialog.addItem(DEF.MENU_SETTHUMB, res.getString(R.string.setThumb));
 		mMenuDialog.addItem(DEF.MENU_SETTHUMBCROPPED, res.getString(R.string.setThumbCropped));
 
+		// アニメーション再生の一時停止
+		mMenuDialog.addItem(DEF.MENU_DISPLAY_ANIMEPAUSE, res.getString(R.string.AnimationPause));
 		// 一時設定
 		mMenuDialog.addSection(res.getString(R.string.settingSec));
 		// イメージ表示設定
@@ -5564,6 +5575,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.MENU_FLOATINGICON_SETTING:
 				showFloatingIconDialog(DEF.MENU_IMGCONF);
 				break;
+			case DEF.MENU_DISPLAY_ANIMEPAUSE:
+				pauseGifAnimation();
+				break;
 
 			default: {
 				if (id >= DEF.MENU_DIR_TREE) {
@@ -6175,6 +6189,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mBackgroundPause = SetImageActivity.getBackgroundPause(sharedPreferences);
 			mAnimationEnable = SetImageActivity.getAnimationEnable(sharedPreferences);
 			mAnimationScan = SetImageActivity.getAnimationScan(sharedPreferences);
+			mScrollMode = SetImageActivity.getScrollMode(sharedPreferences);
+			mInertiaScroll = SetImageActivity.getInertiaScroll(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -6513,7 +6529,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				return;
 			}
 		}
-		if (event == DEF.HMSG_EVENT_EFFECT_NEXT) {
+		else if (event == DEF.HMSG_EVENT_EFFECT_NEXT) {
 			// エフェクト進行
 			NextTime += DEF.INTERVAL_EFFECT_NEXT;
 		}
@@ -8343,14 +8359,36 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			@Override
 			public void run() {
 				// メインスレッドで実行
-				if (animatedGifDrawable != null && animatedGifDrawable.isRunning()) {
-					// アニメーションの実行を中断
-					animatedGifDrawable.stop();
+				if (animatedGifDrawable != null) {
+					if (animatedGifDrawable.isRunning()) {
+						// アニメーションの実行を中断
+						animatedGifDrawable.stop();
+					}
 					if (layout != null && myImageView != null) {
 						 // 親レイアウトからビューを削除
 						layout.removeView(myImageView);
 						// 参照もクリアする
 						myImageView = null;
+					}
+				}
+			}
+		});
+	}
+
+	public void pauseGifAnimation() {
+		isCanceled = true;
+		new Handler(Looper.getMainLooper()).post(new Runnable() {
+			@Override
+			public void run() {
+				// メインスレッドで実行
+				if (animatedGifDrawable != null) {
+					if (animatedGifDrawable.isRunning()) {
+						// アニメーションの実行を中断
+						animatedGifDrawable.stop();
+					}
+					else {
+						// アニメーションを実行
+						animatedGifDrawable.start();
 					}
 				}
 			}

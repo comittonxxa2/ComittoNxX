@@ -75,6 +75,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private int mScrlRangeH;
 	private int mEffect;
 	private int mDisplayPosition;
+	private int mScrollMode;
 	private boolean mPrevRev  = false;
 	private boolean mIsMargin = false;	// 中央のすき間あり
 	private boolean mIsShadow = false;
@@ -83,13 +84,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private boolean mScrlNextStop = false;
 	private boolean mViewNext  = false;
 	private boolean mNextFilter = true;
+	private boolean mTateyomi = false;
 
 	private int mDispWidth  = 0;
 	private int mDispHeight = 0;
 
 	private int mAttenuateCount = 0;
 	private int mOverScrollX = 0;
+	private int mOverScrollY = 0;
 	private int mLastOverScrollX = 0;
+	private int mLastOverScrollY = 0;
 	private int mOverScrollMax = 0;
 	private float mMomentiumX;
 	private float mMomentiumY;
@@ -141,7 +145,10 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private int mDrawWidthSum  = 0;
 	private int mDrawHeightMax = 0;
 	private int mCurrentPage = 0;
+	private int mOldPage = -1;
+	private boolean mMove = false;
 	private boolean mPageLock = false;
+	private boolean mInertiaScroll = false;
 
 	private int mThreadWaitLoop = 0;
 
@@ -494,16 +501,22 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					mLastOverScrollX = mOverScrollX;
 					mOverScrollX = 0;
 				}
+				if (mOverScrollY != 0) {
+					mLastOverScrollY = mOverScrollY;
+					mOverScrollY = 0;
+				}
 				float tx = 0;
 				float ty = 0;
 				if (!pseLand) {
 					if(effectRate > 0) {
 						tx = Math.min(cx * effectRate * -1 + mLastOverScrollX, 0);
+						ty = Math.min(mDrawHeightMax * effectRate * -1 + mLastOverScrollY, 0);
 						//Logcat.d(logLevel, "tx=" + tx + ", cx=" + cx + ", effectRate=" + effectRate + ", mLastOverScrollX=" + mLastOverScrollX);
 					}
 					else {
 						//Logcat.d(logLevel, "tx=" + tx + ",cx=" + cx + ", effectRate=" + effectRate + ", mLastOverScrollX=" + mLastOverScrollX);
 						tx = Math.max(cx * effectRate * -1 + mLastOverScrollX, 0);
+						ty = Math.max(mDrawHeightMax * effectRate * -1 + mLastOverScrollY, 0);
 					}
 				} else {
 					if(effectRate > 0) {
@@ -515,18 +528,89 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						ty = Math.max(cy * effectRate * -1 + mLastOverScrollX, 0);
 					}
 				}
+				// ページ番号の変化をチェック
+				if (mImage[0] != null && mImage[0].Page != mOldPage) {
+					if (mImage[0].Page > mOldPage) {
+						mMove = true;
+					}
+					else {
+						mMove = false;
+					}
+				}
 //					if (mScrlNext == false || mOverScrollX == 0) {
 				if (effect == 1) {	// ページめくりフリップ
 					canvas.save();
+					float mDir = 1f;
 					if (!pseLand) {
-						canvas.translate(tx, 0);
+						// 縦と横ではスキャン方向が異なるため個別で処理
+						// 縦=ページ移動と座標の方向が一致
+						// 横=ページ移動と座標の方向が反対
+						if (mTateyomi) {
+							if (effectRate > 0) {
+								// エフェクト方向が正方向の場合は反転
+								mDir = -1;
+							}
+							else {
+								mDir = 1;
+							}
+							if (!mMove) {
+								// ページ番号が戻った場合は反転
+								mDir = -mDir;
+							}
+							canvas.translate(0, ty * mDir);
+						}
+						else {
+							if (effectRate > 0) {
+								mDir = 1;
+							}
+							else {
+								// エフェクト方向が負の方向の場合は反転
+								mDir = -1;
+							}
+							if (!mMove) {
+								// ページ番号が戻った場合は反転
+								mDir = -mDir;
+							}
+							canvas.translate(tx * mDir, 0);
+						}
 					} else {
 						canvas.translate(0, ty);
 					}
 				}
 				if (effect == 3) {	// ページめくりスクロール
+					float mDir = 1f;
 					if (!pseLand) {
-						drawLeft += tx;
+						// 縦と横ではスキャン方向が異なるため個別で処理
+						// 縦=ページ移動と座標の方向が一致
+						// 横=ページ移動と座標の方向が反対
+						if (mTateyomi) {
+							if (effectRate > 0) {
+								// エフェクト方向が正方向の場合は反転
+								mDir = -1;
+							}
+							else {
+								mDir = 1;
+							}
+							if (!mMove) {
+								// ページ番号が戻った場合は反転
+								mDir = -mDir;
+							}
+							drawTop += ty * mDir;
+						}
+						else {
+							if (effectRate > 0) {
+								mDir = 1;
+							}
+							else {
+								// エフェクト方向が負の方向の場合は反転
+								mDir = -1;
+							}
+							if (!mMove) {
+								// ページ番号が戻った場合
+								mDir = -mDir;
+							}
+							drawLeft += tx * mDir;
+						}
 					} else {
 						drawTop += ty;
 					}
@@ -535,6 +619,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 			else {
 				mLastOverScrollX = 0;
+				mLastOverScrollY = 0;
+				if (mImage[0] != null) {
+					// 現在のページ番号を保存
+					mOldPage = mImage[0].Page;
+				}
 			}
 			// ピンチイン/アウト中
 			if (pinchsel > 0) {
@@ -586,8 +675,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if (mScrlNext && effect == 3) {
 					mScrlNextStop = false;
 
-					if (mOverScrollX > 0) {
-						if (mPageWay == DEF.PAGEWAY_RIGHT) {
+					if (mOverScrollX > 0 && !mTateyomi || mOverScrollY > 0 && mTateyomi) {
+						if (mPageWay == DEF.PAGEWAY_RIGHT && !mTateyomi) {
 							if (nextPage >= mImageManager.length()) {
 								mScrlNextStop = true;
 							}
@@ -597,8 +686,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							}
 						}
 					}
-					if (mOverScrollX < 0) {
-						if (mPageWay == DEF.PAGEWAY_RIGHT) {
+					if (mOverScrollX < 0 && !mTateyomi || mOverScrollY < 0 && mTateyomi) {
+						if (mPageWay == DEF.PAGEWAY_RIGHT && !mTateyomi) {
 							if (prevPage < 0) {
 								mScrlNextStop = true;
 							}
@@ -611,9 +700,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 					if (!mPageLock) {	// ページロック中じゃなければ
 						// 現在のページ幅合計以上移動したら前後のページに移動する
-						if (mOverScrollX > mDrawWidthSum || mOverScrollX > mDispWidth) {
+						if ((mOverScrollX > mDrawWidthSum || mOverScrollX > mDispWidth) && !mTateyomi || mOverScrollY > mDrawHeightMax && mTateyomi) {
 							mPageLock = true;
-							if (mPageWay == DEF.PAGEWAY_RIGHT) {
+							if (mPageWay == DEF.PAGEWAY_RIGHT && !mTateyomi) {
 								if (nextPage <= mImageManager.length()) {
 									mParentAct.nextPage();
 								}
@@ -623,9 +712,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								}
 							}
 						}
-						if (mOverScrollX < -(mDrawWidthSum) || mOverScrollX < -(mDispWidth)) {
+						if ((mOverScrollX < -(mDrawWidthSum) || mOverScrollX < -(mDispWidth)) && !mTateyomi || mOverScrollY < -(mDrawHeightMax) && mTateyomi) {
 							mPageLock = true;
-							if (mPageWay == DEF.PAGEWAY_RIGHT) {
+							if (mPageWay == DEF.PAGEWAY_RIGHT && !mTateyomi) {
 								if (prevPage >= 0) {
 									mParentAct.prevPage();
 								}
@@ -644,6 +733,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						} else if (mOverScrollX < 0) {
 							mOverScrollX = mOverScrollX + Math.min(drawWidthSum, cx);
 						}
+						if (mOverScrollY > 0) {
+							mOverScrollY = mOverScrollY - Math.min(drawHeightMax, cy);
+						} else if (mOverScrollY < 0) {
+							mOverScrollY = mOverScrollY + Math.min(drawHeightMax, cy);
+						}
 						mCurrentPage = mImage[0].Page;
 						mPageLock = false;
 					}
@@ -651,6 +745,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					// スクロール量が超過している分だけ描画する位置をずらす
 					if (!pseLand) {
 						drawLeft += mOverScrollX;
+						drawTop += mOverScrollY;
 					} else {
 						drawTop = mOverScrollX;
 					}
@@ -669,7 +764,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				if ((mScrlNext && !mScrlNextStop) && effect == 3) {
 
 					// 前のページを表示用Bitmapに書き込む
-					if (prevPage > 0 && prevPage < mImageManager.length()) {
+					if (prevPage >= 0 && prevPage < mImageManager.length()) {
 						prevImage = mImageManager.getImageData(prevPage);
 
 						if (prevImage != null) {
@@ -677,8 +772,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 右開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft + drawWidthSum;
-									dt = (int) drawTop + ((mDrawHeightMax - prevImage.SclHeight) / 2);
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop - prevImage.SclHeight;
+									}
+									else {
+										dl = (int) drawLeft + drawWidthSum;
+										dt = (int) drawTop + ((mDrawHeightMax - prevImage.SclHeight) / 2);
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - prevImage.SclHeight + ((mDrawHeightMax - prevImage.SclHeight) / 2);
@@ -688,8 +789,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 左開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft - prevImage.SclWidth;
-									dt = (int) drawTop;
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop + drawHeightMax;
+									}
+									else {
+										dl = (int) drawLeft - prevImage.SclWidth;
+										dt = (int) drawTop;
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - prevImage.SclHeight;
@@ -706,16 +813,22 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 					// ２つ前のページを表示用Bitmapに書き込む
-					if (prev2Page > 0 && prev2Page < mImageManager.length()) {
+					if (prev2Page >= 0 && prev2Page < mImageManager.length()) {
 						prev2Image = mImageManager.getImageData(prev2Page);
 
 						if (prevImage != null && prev2Image != null) {
 							if (mPageWay == DEF.PAGEWAY_RIGHT) {
 								// 右開き
 								if (!pseLand) {
-									// 横持ち
-									dl = (int) drawLeft + drawWidthSum + prevImage.SclWidth;
-									dt = (int) drawTop + ((mDrawHeightMax - prev2Image.SclHeight) / 2);
+									if (mTateyomi) {
+										// 横持ち
+										dl = (int) drawLeft;
+										dt = (int) drawTop - prevImage.SclHeight - prev2Image.SclHeight;
+									}
+									else {
+										dl = (int) drawLeft + drawWidthSum + prevImage.SclWidth;
+										dt = (int) drawTop + ((mDrawHeightMax - prev2Image.SclHeight) / 2);
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - prev2Image.SclHeight + ((mDrawHeightMax - prev2Image.SclHeight) / 2);
@@ -725,8 +838,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 左開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft - prevImage.SclWidth - prev2Image.SclWidth;
-									dt = (int) drawTop;
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop + drawHeightMax + prevImage.SclHeight;
+									}
+									else {
+										dl = (int) drawLeft - prevImage.SclWidth - prev2Image.SclWidth;
+										dt = (int) drawTop;
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - prev2Image.SclHeight;
@@ -743,7 +862,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 					// 次のページを表示用Bitmapに書き込む
-					if (nextPage > 0 && nextPage < mImageManager.length()) {
+					if (nextPage >= 0 && nextPage < mImageManager.length()) {
 						nextImage = mImageManager.getImageData(nextPage);
 
 						if (nextImage != null) {
@@ -751,8 +870,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 右開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft - nextImage.SclWidth;
-									dt = (int) drawTop + ((mDrawHeightMax - nextImage.SclHeight) / 2);
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop + drawHeightMax;
+									}
+									else {
+										dl = (int) drawLeft - nextImage.SclWidth;
+										dt = (int) drawTop + ((mDrawHeightMax - nextImage.SclHeight) / 2);
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - nextImage.SclHeight;
@@ -762,8 +887,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 左開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft + drawWidthSum;
-									dt = (int) drawTop;
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop - nextImage.SclHeight;
+									}
+									else {
+										dl = (int) drawLeft + drawWidthSum;
+										dt = (int) drawTop;
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - nextImage.SclHeight;
@@ -780,7 +911,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 					// 2つ次のページを表示用Bitmapに書き込む
-					if (next2Page > 0 && next2Page < mImageManager.length()) {
+					if (next2Page >= 0 && next2Page < mImageManager.length()) {
 						next2Image = mImageManager.getImageData(next2Page);
 
 						if (nextImage != null && next2Image != null) {
@@ -788,8 +919,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 右開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft - nextImage.SclWidth - next2Image.SclWidth;
-									dt = (int) drawTop + ((mDrawHeightMax - next2Image.SclHeight) / 2);
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop + drawHeightMax + nextImage.SclHeight;
+									}
+									else {
+										dl = (int) drawLeft - nextImage.SclWidth - next2Image.SclWidth;
+										dt = (int) drawTop + ((mDrawHeightMax - next2Image.SclHeight) / 2);
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - next2Image.SclHeight + ((mDrawHeightMax - next2Image.SclHeight) / 2);
@@ -799,8 +936,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// 左開き
 								if (!pseLand) {
 									// 横持ち
-									dl = (int) drawLeft + drawWidthSum + nextImage.SclWidth;
-									dt = (int) drawTop;
+									if (mTateyomi) {
+										dl = (int) drawLeft;
+										dt = (int) drawTop - nextImage.SclHeight - next2Image.SclHeight;
+									}
+									else {
+										dl = (int) drawLeft + drawWidthSum + nextImage.SclWidth;
+										dt = (int) drawTop;
+									}
 								} else {
 									// 縦持ち
 									dl = cy - (int) drawTop - next2Image.SclHeight;
@@ -817,7 +960,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 				}
 				// 左ページを表示用Bitmapに書き込む
-				if (mImage[1] != null) {
+				if (mImage[1] != null && !mTateyomi) {
     				if (!pseLand) {
 						// 横持ち
     					dl = (int)drawLeft;
@@ -840,8 +983,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     			if (mImage[0] != null) {
     				if (!pseLand) {
 						// 横持ち
-    					dl = (int)drawLeft + drawWidthSum - drawWidth0;
-    					dt = (int)drawTop;
+						if (mTateyomi) {
+	    					dl = (int)drawLeft;
+	    					dt = (int)drawTop;
+						}
+						else {
+	    					dl = (int)drawLeft + drawWidthSum - drawWidth0;
+	    					dt = (int)drawTop;
+    					}
     				}
     				else {
 						// 縦持ち
@@ -856,14 +1005,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     				}
     			}
 
-				if (!mViewNext && mOverScrollX == 0) {
+				if (!mViewNext && (mOverScrollX == 0 || mOverScrollY == 0)) {
 					if (!pseLand) {
 						// 横持ち
 						dl = (int) drawLeft;
 						dt = (int) drawTop;
 
 						prevMask = new PaintDrawable(mMgnColor);
-						mDrawRect.set(0, 0, dl, cy);
+						if (mTateyomi) {
+							mDrawRect.set(0, 0, cx, dt);
+						}
+						else {
+							mDrawRect.set(0, 0, dl, cy);
+						}
 						prevMask.setBounds(mDrawRect);
 					} else {
 						// 縦持ち
@@ -881,7 +1035,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						dt = (int) drawTop;
 
 						nextMask = new PaintDrawable(mMgnColor);
-						mDrawRect.set((int) drawLeft + drawWidthSum, 0, cx, cy);
+						if (mTateyomi) {
+							mDrawRect.set(0, (int) drawTop + drawHeightMax, cx, cy);
+						}
+						else {
+							mDrawRect.set((int) drawLeft + drawWidthSum, 0, cx, cy);
+						}
 						nextMask.setBounds(mDrawRect);
 					} else {
 						// 縦持ち
@@ -895,15 +1054,22 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				}
 				// 「スクロールで前後のページへ移動」の設定が有効かつ、スクロール量超過していないなら前後のページにグラデーションを重ねる
 				// グラデーションOFFの時は表示しない
-				else if ((mScrlNext && !mScrlNextStop) && effect == 3 && mOverScrollX == 0 && mViewNext && mNextFilter) {
+				else if ((mScrlNext && !mScrlNextStop) && effect == 3 && (mOverScrollX == 0 || mOverScrollY == 0) && mViewNext && mNextFilter) {
 					if (!pseLand) {
 						// 横持ち
 						dl = (int) drawLeft;
 						dt = (int) drawTop;
 
-						prevGrad = new GradientDrawable(Orientation.RIGHT_LEFT, colors);
-						mDrawRect.set(0, 0, dl, cy);
-						prevGrad.setBounds(mDrawRect);
+						if (mTateyomi) {
+							prevGrad = new GradientDrawable(Orientation.BOTTOM_TOP, colors);
+							mDrawRect.set(0, 0, cx, dt);
+							prevGrad.setBounds(mDrawRect);
+						}
+						else {
+							prevGrad = new GradientDrawable(Orientation.RIGHT_LEFT, colors);
+							mDrawRect.set(0, 0, dl, cy);
+							prevGrad.setBounds(mDrawRect);
+						}
 					} else {
 						// 縦持ち
 						dl = cy - (int) drawTop - (int) drawHeight1;
@@ -919,9 +1085,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						dl = (int) drawLeft + drawWidthSum - drawWidth0;
 						dt = (int) drawTop;
 
-						nextGrad = new GradientDrawable(Orientation.LEFT_RIGHT, colors);
-						mDrawRect.set((int) drawLeft + drawWidthSum, 0, cx, cy);
-						nextGrad.setBounds(mDrawRect);
+						if (mTateyomi) {
+							nextGrad = new GradientDrawable(Orientation.TOP_BOTTOM, colors);
+							mDrawRect.set(0, (int) drawTop + drawHeightMax, cx, cy);
+							nextGrad.setBounds(mDrawRect);
+						}
+						else {
+							nextGrad = new GradientDrawable(Orientation.LEFT_RIGHT, colors);
+							mDrawRect.set((int) drawLeft + drawWidthSum, 0, cx, cy);
+							nextGrad.setBounds(mDrawRect);
+						}
 					} else {
 						// 縦持ち
 						dl = cy - (int) drawTop - (int) drawHeight0;
@@ -946,7 +1119,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					// 作成した画像を表示
 					canvas.drawBitmap(mCanvasBitmap, 0, 0, null);
 
-					if (!mViewNext && mOverScrollX == 0) {
+					if (!mViewNext && (mOverScrollX == 0 || mOverScrollY == 0)) {
 						if (prevMask != null) {
 							prevMask.draw(canvas);
 						}
@@ -955,7 +1128,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						}
 					}
 					// 「スクロールで前後のページへ移動」の設定が有効かつ、スクロール量超過していないなら前後のページにグラデーションを重ねる
-					if ((mScrlNext && !mScrlNextStop) && effect == 3 && mOverScrollX == 0 && mViewNext) {
+					if ((mScrlNext && !mScrlNextStop) && effect == 3 && (mOverScrollX == 0 || mOverScrollY == 0) && mViewNext) {
 						if (prevGrad != null) {
 							prevGrad.draw(canvas);
 						}
@@ -1022,26 +1195,47 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     				// 中央影
     				if (mIsShadow && mShadow > 0) {
     					// グラデーション幅算出
-    					int grad_cx = 0;
-    					int cen_x1, cen_x2;
+    					int grad_cx = 0, grad_cy = 0;
+    					int cen_x1, cen_x2, cen_y1, cen_y2;
     					GradientDrawable grad;
     					int[] colors = {0x00000000, 0x06000000, 0x10000000, 0x30000000, 0x80000000};
 
     					if (mShadow > 0) {
     						grad_cx = ((drawWidth0 + drawWidth1) / 2 * mShadow) / 100;
+    						grad_cy = (drawHeightMax * mShadow) / 100;
     					}
 
-    					cen_x1 = (int)drawLeft + drawWidth1 + center;
-    					cen_x2 = cen_x1 + grad_cx;
+						if (mTateyomi) {
+	    					cen_x1 = (int)drawLeft;
+	    					cen_x2 = cen_x1 + drawWidth0;
+	    					cen_y1 = (int)drawTop + drawHeightMax - grad_cy;
+	    					cen_y2 = cen_y1 + grad_cx;
+						}
+						else {
+	    					cen_x1 = (int)drawLeft + drawWidth1 + center;
+	    					cen_x2 = cen_x1 + grad_cx;
+	    					cen_y1 = (int)drawTop;
+	    					cen_y2 = cen_y1 + drawHeightMax;
+						}
     					grad = new GradientDrawable(Orientation.RIGHT_LEFT, colors);
-    					mDrawRect.set(cen_x1, (int)drawTop, cen_x2, (int)drawTop + drawHeight0);
+    					mDrawRect.set(cen_x1, cen_y1, cen_x2, cen_y2);
     					grad.setBounds(mDrawRect);
     					grad.draw(canvas);
 
-    					cen_x1 = (int)drawLeft + drawWidth1 - grad_cx;
-    					cen_x2 = cen_x1 + grad_cx;
+						if (mTateyomi) {
+	    					cen_x1 = (int)drawLeft;
+	    					cen_x2 = cen_x1 + drawWidth0;
+	    					cen_y1 = (int)drawTop + drawHeight1 - grad_cy;
+	    					cen_y2 = cen_y1 + grad_cx;
+						}
+						else {
+	    					cen_x1 = (int)drawLeft + drawWidth1 - grad_cx;
+	    					cen_x2 = cen_x1 + grad_cx;
+	    					cen_y1 = (int)drawTop;
+	    					cen_y2 = cen_y1 + drawHeightMax;
+    					}
     					grad = new GradientDrawable(Orientation.LEFT_RIGHT, colors);
-    					mDrawRect.set(cen_x1, (int)drawTop, cen_x2, (int)drawTop + drawHeight1);
+    					mDrawRect.set(cen_x1, cen_y1, cen_x2, cen_y2);
     					grad.setBounds(mDrawRect);
     					grad.draw(canvas);
     				}
@@ -1049,10 +1243,10 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
     			// オーバースクロール
 				//「スクロールで前後のページへ移動」の設定が無効のときスクロール量が超過していれば、引っ張りエフェクトを表示
-				if ((!mScrlNext || mScrlNextStop) && mOverScrollX != 0) {
+				if ((!mScrlNext || mScrlNextStop) && mOverScrollX != 0 && mOverScrollY != 0) {
     				// グラデーション幅算出
     				int grad_cx = Math.min(cx, cy) / 20;
-    				int cen_x1, cen_x2;
+    				int cen_x1, cen_x2, cen_y1, cen_y2;
     				GradientDrawable grad;
     				int[] colors = {0,
     						0x06000000 | (mGuiColor & 0x00FFFFFF),
@@ -1072,6 +1266,22 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
     					cen_x2 = grad_cx * mOverScrollX / mOverScrollMax;
     					grad = new GradientDrawable(Orientation.RIGHT_LEFT, colors);
     					mDrawRect.set(cen_x1, 0, cen_x2, cy);
+    					grad.setBounds(mDrawRect);
+    					grad.draw(canvas);
+    				}
+    				if (mOverScrollY < 0) {
+    					cen_y1 = cy + grad_cx * mOverScrollY / mOverScrollMax;
+    					cen_y2 = cy;
+    					grad = new GradientDrawable(Orientation.LEFT_RIGHT, colors);
+    					mDrawRect.set(0, cen_y1, cx, cen_y2);
+    					grad.setBounds(mDrawRect);
+    					grad.draw(canvas);
+    				}
+    				else if (mOverScrollY > 0) {
+    					cen_y1 = 0;
+    					cen_y2 = grad_cx * mOverScrollY / mOverScrollMax;
+    					grad = new GradientDrawable(Orientation.RIGHT_LEFT, colors);
+    					mDrawRect.set(0, cen_y1, cx, cen_y2);
     					grad.setBounds(mDrawRect);
     					grad.draw(canvas);
     				}
@@ -1101,7 +1311,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			if (effectRate != 0.0f) {
-				if ((!mScrlNext || mScrlNextStop) || mOverScrollX == 0) {
+				if ((!mScrlNext || mScrlNextStop) || mOverScrollX == 0 || mOverScrollY == 0) {
 					if (effect == 1) {
 						canvas.restore();
 					}
@@ -1119,7 +1329,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	}
 
 	// 余白色を設定
-	public void setConfig(ImageActivity parent, int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int zom, int way, int sway, int srngw, int srngh, boolean pr, boolean ne, boolean fit, boolean cmgn, boolean csdw, boolean psel, int effect, boolean scrlNext, boolean viewNext, boolean nextFilter, int displayposition){
+	public void setConfig(ImageActivity parent, int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int zom, int way, int sway, int srngw, int srngh, boolean pr, boolean ne, boolean fit, boolean cmgn, boolean csdw, boolean psel, int effect, boolean scrlNext, boolean viewNext, boolean nextFilter, int displayposition, int scrollmode, boolean inertiacroll){
 		mParentAct = parent;
 		mMgnColor  = mclr;
 		mCenColor  = cclr;
@@ -1154,6 +1364,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mViewNext = viewNext;
 		mNextFilter = nextFilter;
 		mDisplayPosition = displayposition;
+		mScrollMode = scrollmode;
+		// スクロールページ移動方向切り替え
+		mTateyomi = (mScrollMode == 1) ? true : false;
+		// スクロール位置をリセット
+		mOverScrollX = 0;
+		mOverScrollY = 0;
+		// 慣性スクロールの設定
+		mInertiaScroll = inertiacroll;
 	}
 
 	public void setLoupeConfig(int size) {
@@ -1445,7 +1663,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 				}
 
-    			if (isLeft){
+				if (mTateyomi && mOverScrollY != 0) {
+					// 縦スクロール移動では中心に表示する
+					drawLeft = (disp_x - view_x) / 2;
+				}
+				else if (isLeft ){
     				drawLeft = 0 + mMgnLeft;
     			}
     			else{
@@ -1484,14 +1706,21 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	public int checkFlick() {
 		int overX = mOverScrollX;
+		int overY = mOverScrollY;
 		// 「スクロールで前後のページへ移動」の設定が無効なら、指をあげたらスクロール超過をリセットする
 		if (!mScrlNext || mScrlNextStop) {
 			mOverScrollX = 0;
+			mOverScrollY = 0;
 		}
 		if (checkFlick(overX, mOverScrollMax)) {
 			// 100% 以上引っ張っているとき
 			// mLastAttenuate = null;
 			return overX;
+		}
+		if (checkFlick(overY, mOverScrollMax)) {
+			// 100% 以上引っ張っているとき
+			// mLastAttenuate = null;
+			return overY;
 		}
 //		}
 		return 0;
@@ -1506,6 +1735,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	public void scrollReset() {
 		mOverScrollX = 0;
+		mOverScrollY = 0;
 //		mDrawLeft = 0 + mMgnLeft;
 //		mDrawTop = 0 + mMgnTop;
 		mMomentiumMsg = null;
@@ -1528,6 +1758,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		// スクロールで前後のページへ移動が有効なら、スクロール超過をリセットしない
 		if (!mScrlNext  || mScrlNextStop) {
 			mOverScrollX = 0;
+			mOverScrollY = 0;
 		}
 		mOverScrollMax = flickWidth * scroll;
 		mMomentiumMsg = null;
@@ -1599,10 +1830,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		}
 
 		float orgLeft = mDrawLeft;
+		float orgTop = mDrawTop;
 //		float moveX = ((x - mScrollBaseX) * scroll) + mOverScrollX;
 //		float moveY = (y - mScrollBaseY) * scroll;
 		float moveX = (x * scroll) + mOverScrollX;
-		float moveY = y * scroll;
+		float moveY = y * scroll + mOverScrollY;
 
 		float left = mDrawLeft + moveX;
 		float top  = mDrawTop  + moveY;
@@ -1644,15 +1876,25 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 		if (flag) {
 			// スクロール超過量を設定
-			mOverScrollX = (int)(moveX - (mDrawLeft - orgLeft));
+			if (mTateyomi) {
+				mOverScrollY = (int)(moveY - (mDrawTop - orgTop));
+				mOverScrollX = 0;
+			}
+			else {
+				mOverScrollX = (int)(moveX - (mDrawLeft - orgLeft));
+				mOverScrollY = 0;
+			}
 
 			if (!mScrlNext || mScrlNextStop) {
 				// スクロールで前後のページへ移動が無効ならスクロール量を減衰キャンセルさせる
 				if (Math.abs(mOverScrollX) > mOverScrollMax) {
 					mOverScrollX = mOverScrollMax * (mOverScrollX > 0 ? 1 : -1);
 				}
+				if (Math.abs(mOverScrollY) > mOverScrollMax) {
+					mOverScrollY = mOverScrollMax * (mOverScrollY > 0 ? 1 : -1);
+				}
 				//Logcat.d(logLevel, "overScroll=" + mOverScrollX + ", moveX=" + moveX + ", move=" + (int)(mDrawLeft - orgLeft));
-				if (mOverScrollX != 0) {
+				if (mOverScrollX != 0 && mOverScrollY != 0) {
 					// 減衰開始
 					attenuate();
 					// 描画
@@ -2042,7 +2284,24 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 				}
 			}
 
-			mDrawTop += y_move;
+			if (mOverScrollY == 0) {
+				mDrawTop += y_move;
+			}
+			// オーバースクロールしている場合は、先にそちらを消費する
+			else if (mOverScrollY > 0) {
+				mOverScrollY += y_move;
+				if (mOverScrollY < 0) {
+					mDrawTop += mOverScrollY;
+					mOverScrollY = 0;
+				}
+			}
+			else if (mOverScrollY < 0) {
+				mOverScrollY += y_move;
+				if (mOverScrollY > 0) {
+					mDrawTop += mOverScrollY;
+					mOverScrollY = 0;
+				}
+			}
 			updateNotify();
 		}
 		if (move_cnt <= 1) {
@@ -2239,11 +2498,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if ((mScrlNext && !mScrlNextStop) && mEffect == 3) {
 			// 「スクロールで前後のページへ移動」の設定が有効ならスクロール分を補正する
 			pos_x[0] = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - mOverScrollX) / scale_x / fitScale1;
+			pos_y[0] = (tch_y - mDrawTop - mOverScrollY) / scale_y / fitScale1;
 		}
 		else {
 			pos_x[0] = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn)) / scale_x / fitScale1;
+			pos_y[0] = (tch_y - mDrawTop) / scale_y / fitScale1;
 		}
-		pos_y[0] = (tch_y - mDrawTop) / scale_y / fitScale1;
 
 		
 		RectF rcSrc[] = new RectF[2];
@@ -2253,11 +2513,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if ((mScrlNext && !mScrlNextStop) && mEffect == 3) {
 				// 「スクロールで前後のページへ移動」の設定が有効ならスクロール分を補正する
 				pos_x[1] = (int)((tch_x - (mDrawLeft) - mOverScrollX) / scale_x / fitScale2);
+				pos_y[1] = (int)((tch_y - mDrawTop - mOverScrollY) / scale_y / fitScale2);
 			}
 			else {
 				pos_x[1] = (int)((tch_x - mDrawLeft) / scale_x / fitScale2);
+				pos_y[1] = (int)((tch_y - mDrawTop) / scale_y / fitScale2);
 			}
-			pos_y[1] = (int)((tch_y - mDrawTop) / scale_y / fitScale2);
 
 			rcSrc[1] = new RectF(pos_x[1] - src2_cx, pos_y[1] - src2_cy, pos_x[1] + src2_cx, pos_y[1] + src2_cy);
 		}
@@ -2323,10 +2584,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			int origHeight = 0;
 
 			// 前のページを表示用Bitmapに書き込む
-			if (prevPage > 0 && prevPage < mImageManager.length()) {
+			if (prevPage >= 0 && prevPage < mImageManager.length()) {
 				prevImage = mImageManager.getImageData(prevPage);
+				// 縦スクロール時は上下逆方向になるので反対側のページを持ってくる
+				nextImage = mImageManager.getImageData(nextPage);
 
-				if (prevImage != null) {
+				if (prevImage != null || mTateyomi && nextImage != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
 						origWidth = prevImage.SclWidth;
@@ -2353,8 +2616,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 					
 					// 表示開始位置
-					float tmpPos_x = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - mOverScrollX) / scale_x;
-					float tmpPos_y = (tch_y - (mDrawTop)) / scale_y;
+					float tmpPos_x;
+					float tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (tch_x - (mDrawLeft)) / scale_x;
+						tmpPos_y = (int) ((tch_y - (mDrawTop) + nextImage.SclHeight - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - mOverScrollX) / scale_x;
+						tmpPos_y = (tch_y - (mDrawTop)) / scale_y;
+					}
 
 					RectF rectSrc = new RectF((int)tmpPos_x - (int)src_cx + offsetX, (int)tmpPos_y - (int)src_cy, (int)tmpPos_x + (int)src_cx + offsetX, (int)tmpPos_y + (int)src_cy);
 
@@ -2370,10 +2641,13 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			// 前の前のページを表示用Bitmapに書き込む
-			if (prev2Page > 0 && prev2Page < mImageManager.length()) {
+			if (prev2Page >= 0 && prev2Page < mImageManager.length()) {
 				prev2Image = mImageManager.getImageData(prev2Page);
+				// 縦スクロール時は上下逆方向になるので反対側のページを持ってくる
+				nextImage = mImageManager.getImageData(nextPage);
+				next2Image = mImageManager.getImageData(next2Page);
 
-				if (prevImage != null && prev2Image != null) {
+				if (prevImage != null && prev2Image != null || mTateyomi && nextImage != null && next2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
 						origWidth = prev2Image.SclWidth;
@@ -2400,8 +2674,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 					// 表示開始位置
-					float tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - prev2Image.SclWidth - mOverScrollX) / scale_x);
-					float tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					float tmpPos_x;
+					float tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (tch_x - (mDrawLeft)) / scale_x;
+						tmpPos_y = (int) ((tch_y - (mDrawTop) + nextImage.SclHeight + next2Image.SclHeight - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - prev2Image.SclWidth - mOverScrollX) / scale_x;
+						tmpPos_y = (tch_y - (mDrawTop)) / scale_y;
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - (float)src_cx, tmpPos_y - (float)src_cy, tmpPos_x + (float)src_cx, tmpPos_y + (float)src_cy);
 
@@ -2417,7 +2699,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			// 次のページを表示用Bitmapに書き込む
-			if (nextPage > 0 && nextPage < mImageManager.length()) {
+			if (nextPage >= 0 && nextPage < mImageManager.length()) {
 				nextImage = mImageManager.getImageData(nextPage);
 
 				if (nextImage != null) {
@@ -2447,8 +2729,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 					// 表示開始位置
-					float tmpPos_x = (int) ((tch_x - (mDrawLeft) + nextImage.SclWidth - mOverScrollX) / scale_x);
-					float tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					float tmpPos_x;
+					float tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn)) / scale_x;
+						tmpPos_y = (int) ((tch_y - (mDrawTop) - mDrawHeightMax - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (tch_x - (mDrawLeft) + nextImage.SclWidth - mOverScrollX) / scale_x;
+						tmpPos_y = (tch_y - (mDrawTop)) / scale_y;
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - (float)src_cx + offsetX, tmpPos_y - (float)src_cy, tmpPos_x + (float)src_cx + offsetX, tmpPos_y + (float)src_cy);
 
@@ -2464,10 +2754,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			// 次の次のページを表示用Bitmapに書き込む
-			if (next2Page > 0 && next2Page < mImageManager.length()) {
+			if (next2Page >= 0 && next2Page < mImageManager.length()) {
 				next2Image = mImageManager.getImageData(next2Page);
+				// 縦スクロール時は上下逆方向になるので反対側のページを持ってくる
+				prevImage = mImageManager.getImageData(prevPage);
 
-				if (nextImage != null && next2Image != null) {
+				if (nextImage != null && next2Image != null || mTateyomi && prevImage != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
 						origWidth = next2Image.SclWidth;
@@ -2494,8 +2786,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					}
 
 					// 表示開始位置
-					float tmpPos_x = (int) ((tch_x - (mDrawLeft) + nextImage.SclWidth + next2Image.SclWidth - mOverScrollX) / scale_x);
-					float tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					float tmpPos_x;
+					float tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn)) / scale_x;
+						tmpPos_y = (int) ((tch_y - (mDrawTop) - mDrawHeightMax - prevImage.SclHeight - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (tch_x - (mDrawLeft) + nextImage.SclWidth + next2Image.SclWidth - mOverScrollX) / scale_x;
+						tmpPos_y = (tch_y - (mDrawTop)) / scale_y;
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - (float)src_cx + offsetX, tmpPos_y - (float)src_cy, tmpPos_x + (float)src_cx + offsetX, tmpPos_y + (float)src_cy);
 
@@ -2623,11 +2923,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if ((mScrlNext && !mScrlNextStop) && mEffect == 3) {
 			// 「スクロールで前後のページへ移動」の設定が有効ならスクロール分を補正する
 			pos_x[0] = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - mOverScrollX) / scale_x / fitScale1;
+			pos_y[0] = (tch_y - (mDrawTop) - mOverScrollY) / scale_y / fitScale1;
 		}
 		else {
 			pos_x[0] = (tch_x - (mDrawLeft + mDrawWidth[1] + cmgn)) / scale_x / fitScale1;
+			pos_y[0] = (tch_y - (mDrawTop)) / scale_y / fitScale1;
 		}
-		pos_y[0] = (tch_y - (mDrawTop)) / scale_y / fitScale1;
 
 
 		RectF rcSrc[] = new RectF[2];
@@ -2642,11 +2943,12 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if ((mScrlNext && !mScrlNextStop) && mEffect == 3) {
 				// 「スクロールで前後のページへ移動」の設定が有効ならスクロール分を補正する
 				pos_x[1] = (int)((tch_x - (mDrawLeft) - mOverScrollX) / scale_x / fitScale2);
+				pos_y[1] = (int)((tch_y - (mDrawTop) - mOverScrollY) / scale_y / fitScale2);
 			}
 			else {
 				pos_x[1] = (int)((tch_x - (mDrawLeft)) / scale_x / fitScale2);
+				pos_y[1] = (int)((tch_y - (mDrawTop)) / scale_y / fitScale2);
 			}
-			pos_y[1] = (int)((tch_y - (mDrawTop)) / scale_y / fitScale2);
 			
 			rcSrc[1] = new RectF(pos_x[1] - src2_cx, pos_y[1] - src2_cy, pos_x[1] + src2_cx, pos_y[1] + src2_cy);
 			if (cmgn != 0) {
@@ -2782,7 +3084,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			int origHeight = 0;
 
 			// 前のページを表示用Bitmapに書き込む
-			if (prevPage > 0 && prevPage < mImageManager.length()) {
+			if (prevPage >= 0 && prevPage < mImageManager.length()) {
 				prevImage = mImageManager.getImageData(prevPage);
 
 				if (prevImage != null) {
@@ -2806,8 +3108,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					int src_cy = (int) (origHeight * view_cy / pinch_scale / prevImage.FitHeight / 2);
 
 					// 表示開始位置
-					int tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - mOverScrollX) / scale_x);
-					int tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					int tmpPos_x;
+					int tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft)) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop) + prevImage.SclHeight - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - mOverScrollX) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - src_cx + offsetX, tmpPos_y - src_cy, tmpPos_x + src_cx + offsetX, tmpPos_y + src_cy);
 					if (cmgn != 0) {
@@ -2860,8 +3170,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					int src_cy = (int) (origHeight * view_cy / pinch_scale / prev2Image.FitHeight / 2);
 
 					// 表示開始位置
-					int tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prev2Image.SclWidth - prev2Image.SclWidth - mOverScrollX) / scale_x);
-					int tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					int tmpPos_x;
+					int tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft)) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop) + prevImage.SclHeight + prev2Image.SclHeight - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn) - prevImage.SclWidth - prev2Image.SclWidth - mOverScrollX) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - src_cx + offsetX, tmpPos_y - src_cy, tmpPos_x + src_cx + offsetX, tmpPos_y + src_cy);
 					if (cmgn != 0) {
@@ -2889,7 +3207,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			// 次のページを表示用Bitmapに書き込む
-			if (nextPage > 0 && nextPage < mImageManager.length()) {
+			if (nextPage >= 0 && nextPage < mImageManager.length()) {
 				nextImage = mImageManager.getImageData(nextPage);
 
 				if (nextImage != null) {
@@ -2913,8 +3231,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					int src_cy = (int) (origHeight * view_cy / pinch_scale / nextImage.FitHeight / 2);
 
 					// 表示開始位置
-					int tmpPos_x = (int) ((tch_x - (mDrawLeft) + nextImage.SclWidth - mOverScrollX) / scale_x);
-					int tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					int tmpPos_x;
+					int tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn)) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop) - mDrawHeightMax - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft) + nextImage.SclWidth - mOverScrollX) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - src_cx, tmpPos_y - src_cy, tmpPos_x + src_cx, tmpPos_y + src_cy);
 					if (cmgn != 0) {
@@ -2943,7 +3269,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 
 			// 次の次のページを表示用Bitmapに書き込む
-			if (next2Page > 0 && next2Page < mImageManager.length()) {
+			if (next2Page >= 0 && next2Page < mImageManager.length()) {
 				next2Image = mImageManager.getImageData(next2Page);
 
 				if (next2Image != null && next2Image != null) {
@@ -2967,8 +3293,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					int src_cy = (int) (origHeight * view_cy / pinch_scale / next2Image.FitHeight / 2);
 
 					// 表示開始位置
-					int tmpPos_x = (int) ((tch_x - (mDrawLeft) + nextImage.SclWidth + next2Image.SclWidth - mOverScrollX) / scale_x);
-					int tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					int tmpPos_x;
+					int tmpPos_y;
+					if (mTateyomi) {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft + mDrawWidth[1] + cmgn)) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop) - mDrawHeightMax  - nextImage.SclHeight - mOverScrollY) / scale_y);
+					}
+					else {
+						tmpPos_x = (int) ((tch_x - (mDrawLeft) + nextImage.SclWidth + next2Image.SclWidth - mOverScrollX) / scale_x);
+						tmpPos_y = (int) ((tch_y - (mDrawTop)) / scale_y);
+					}
 
 					RectF rectSrc = new RectF(tmpPos_x - src_cx, tmpPos_y - src_cy, tmpPos_x + src_cx, tmpPos_y + src_cy);
 					if (cmgn != 0) {
@@ -3201,7 +3535,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						}
 					}
 					updateNotify();
-					if (mOverScrollX != 0) {
+					if (mOverScrollX != 0 && mOverScrollY != 0) {
 						long NextTime = SystemClock.uptimeMillis() + ATTENUATE_TERM;
 						Message nextmsg = mHandler.obtainMessage(HMSG_ATTENUATE);
 						nextmsg.arg1 = ++ mAttenuateCount;
@@ -3269,12 +3603,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					// スクロール位置とスクロール結果の判定
 					float sx = mMomentiumX;// * msg.arg1;
 					float sy = mMomentiumY;// * msg.arg1;
-					int ox = (int)mDrawLeft;
-					int oy = (int)mDrawTop;
-					scrollMove(sx, sy, msg.arg1, false);
+					scrollMove(sx, sy, msg.arg1, mInertiaScroll);
 					// 次のメッセージ
-					if ((ox != (int)mDrawLeft || oy != (int)mDrawTop)
-								&& (Math.abs(mMomentiumX) >= 2.0f || Math.abs(mMomentiumY) >= 2.0f)) {
+					if ((Math.abs(mMomentiumX) >= 2.0f || Math.abs(mMomentiumY) >= 2.0f)) {
 						mMomentiumMsg = mHandler.obtainMessage(HMSG_MOMENTIUM, msg.arg1, msg.arg2);
 						mHandler.sendMessageAtTime(mMomentiumMsg, NextTime);
 					}
