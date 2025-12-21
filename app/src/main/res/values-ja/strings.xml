@@ -153,6 +153,7 @@
     <string name="mgnCutMenu">余白の削除</string>
     <string name="mgnCutColorMenu">余白の削除対象の色</string>
     <string name="DisplayPositionMenu">画面の表示位置</string>
+    <string name="AnimationPause">アニメ再生の停止/再開</string>
     <string name="imgRotaMenu">画像の回転</string>
     <string name="imgConfMenu">画像表示設定</string>
     <string name="Profile1">プロファイル1</string>
@@ -924,5 +925,8 @@
 
     <string name="SettingArrowUp">⬆</string>
     <string name="SettingArrowDown">⬇</string>
+
+    <string name="scrollmode00">横スクロール</string>
+    <string name="scrollmode01">縦スクロール</string>
 
 </resources>
