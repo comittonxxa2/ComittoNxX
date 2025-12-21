@@ -36,6 +36,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference mVolKey;
 	private ListPreference mLastPage;
 	private ListPreference mPageSel;
+	private ListPreference mScrollMode;
 
 	private OperationPreference mTapPattern;
 	private PageNumberPreference mPageNumber;
@@ -167,6 +168,9 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		, R.string.Profile8
 		, R.string.Profile9
 		, R.string.Profile10 };
+	public static final int[] ScrollMode =
+		{ R.string.scrollmode00
+		, R.string.scrollmode01 };
 
 	Resources mResources;
 
@@ -231,6 +235,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 		mLastPage = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LASTPAGE);
 		mPageSel = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_PAGESELECT);
+		mScrollMode = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SCROLLMODE);
 
 		mResources = getResources();
 
@@ -287,6 +292,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 最終ページでの確認
 		mPageSel.setSummary(SetImageText.getPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
+		mScrollMode.setSummary(getScrollModeSummary(sharedPreferences));
 
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
@@ -374,6 +380,10 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		else if(key.equals(DEF.KEY_PAGESELECT)){
 			//
 			mPageSel.setSummary(SetImageText.getPageSelectSummary(mResources, sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_SCROLLMODE)){
+			//
+			mScrollMode.setSummary(getScrollModeSummary(sharedPreferences));
 		}
 	}
 
@@ -707,6 +717,20 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		return flag;
 	}
 
+	public static int getScrollMode(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_SCROLLMODE, "0");
+		if (val < 0 || val >= ScrollMode.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static boolean getInertiaScroll(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_INERTIASCROLL, false);
+		return flag;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getViewRotaSummary(SharedPreferences sharedPreferences){
 		int val = getViewRota(sharedPreferences);
@@ -822,5 +846,11 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 			summ = res.getString(R.string.pnumnodisp);
 		}
 		return summ;
+	}
+
+	private String getScrollModeSummary(SharedPreferences sharedPreferences){
+		int val = getScrollMode(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(ScrollMode[val]);
 	}
 }
