@@ -153,6 +153,7 @@
     <string name="mgnCutMenu">Remove white space</string>
     <string name="mgnCutColorMenu">Color to remove margin</string>
     <string name="DisplayPositionMenu">Display position on screen</string>
+    <string name="AnimationPause">Stop/resume animation playback</string>
     <string name="imgRotaMenu">Image Rotate</string>
     <string name="imgConfMenu">Image Config</string>
     <string name="Profile1">Profile1</string>
@@ -924,6 +925,10 @@
 
     <string name="SettingArrowUp">⬆</string>
     <string name="SettingArrowDown">⬇</string>
+
+    <string name="scrollmode00">Horizontal scroll</string>
+    <string name="scrollmode01">Vertical scroll</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
