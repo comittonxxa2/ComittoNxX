@@ -278,6 +278,19 @@
             android:key="ViewNextPage"
             android:summary="スクロール操作で前後のページへ移動が有効の時、スクロール量が0でも左右に表示領域が余っているときに次のページを表示する"
             android:title="次のページを表示" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="スクロール操作によるページ移動の縦横選択"
+            android:entries="@array/scrollmode_name_list"
+            android:entryValues="@array/scrollmode_value_list"
+            android:key="ScrollMode"
+            android:summary="dummy"
+            android:title="スクロール操作によるページ移動の縦横選択" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="InertiaScroll"
+            android:summary="スクロール操作に余韻を持たせる場合にチェックを入れる(共通の表示詳細設定のスクロール関連のパラメータが有効になる)"
+            android:title="慣性スクロール" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="NextPageFilter"
