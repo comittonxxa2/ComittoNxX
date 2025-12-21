@@ -278,6 +278,19 @@
             android:key="ViewNextPage"
             android:summary="When scrolling to the next page is enabled, the next page will be displayed the next page when there is free display area to the side even if the scroll amount is 0."
             android:title="Display next pages" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Scrolling to select vertical or horizontal page movement"
+            android:entries="@array/scrollmode_name_list"
+            android:entryValues="@array/scrollmode_value_list"
+            android:key="ScrollMode"
+            android:summary="dummy"
+            android:title="Scrolling to select vertical or horizontal page movement" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="InertiaScroll"
+            android:summary="Check this box if you want to add a lingering effect to scrolling operations (this enables the scrolling-related parameters in the common display advanced settings)."
+            android:title="Inertial scroll" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="NextPageFilter"
