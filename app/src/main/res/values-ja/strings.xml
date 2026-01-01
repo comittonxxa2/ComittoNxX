@@ -929,4 +929,10 @@
     <string name="scrollmode00">横スクロール</string>
     <string name="scrollmode01">縦スクロール</string>
 
+    <string name="buffsize00">システム設定</string>
+    <string name="buffsize01">システム設定の2倍</string>
+    <string name="buffsize02">システム設定の4倍</string>
+    <string name="buffsize03">システム設定の8倍</string>
+    <string name="buffsize04">システム設定の16倍</string>
+
 </resources>

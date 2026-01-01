@@ -826,5 +826,19 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+    <string-array name="buffsize_name_list">
+        <item>システム設定</item>
+        <item>システム設定の2倍</item>
+        <item>システム設定の4倍</item>
+        <item>システム設定の8倍</item>
+        <item>システム設定の16倍</item>
+    </string-array>
+    <string-array name="buffsize_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
 
 </resources>
