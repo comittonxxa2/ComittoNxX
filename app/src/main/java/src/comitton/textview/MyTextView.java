@@ -133,6 +133,8 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	private boolean mMessageBreak;
 	private Thread mUpdateThread;
 	private boolean mIsRunning;
+	private boolean mIsScrolling = false;
+	private int mScrollCount = 0;
 
 	private Point[] mScrollPos;
 	private Point mScrollPoint;
@@ -195,6 +197,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	private GuideView mGuideView;
 
 	private boolean mViewTapSw = false;
+	private boolean mReduced;
 
 	private float[] mShiftX = { 0.0f, 0.65f, 0.2f, 0.05f, 0.0f, 0.3f, 0.0f, 0.0f, 0.0f, -0.7f, -0.15f};
 	private float[] mShiftY = { 0.0f, 0.5f, 0.1f, 0.10f, 0.1f, 0.5f, -0.03f, 0.03f, 0.0f, 0.0f, -0.30f};
@@ -299,6 +302,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	}
 
 	public void updateNotify() {
+		mIsScrolling = true;
 		if (mUpdateThread != null) {
 			mUpdateThread.interrupt();
 		}
@@ -1310,7 +1314,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	}
 
 	// 余白色を設定
-	public boolean setConfig(int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int srngw, int srngh, int svol, boolean pr, boolean cmgn, boolean csdw, boolean psel, boolean effect, int effecttime, String fontfile, boolean ascrt, int pic_scale) {
+	public boolean setConfig(int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int srngw, int srngh, int svol, boolean pr, boolean cmgn, boolean csdw, boolean psel, boolean effect, int effecttime, String fontfile, boolean ascrt, int pic_scale, boolean reduced) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		boolean result = true;
 
@@ -1353,6 +1357,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		}
 		mAscRotate = ascrt;
 		mPicScale = pic_scale;
+		mReduced = reduced;
 
 		mBackPaint.setColor(mMgnColor);
 		mCenterPaint.setColor(mCenColor);
@@ -1939,9 +1944,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		//mCurrentPage = getCurrentPage(PAGEBASE_CENTER);
 		setCurrentPage(getCurrentPage(PAGEBASE_CENTER));
 
-		if (fUpdate) {
-			updateNotify();
-		}
+		updateNotify();
 
 //		mScrollBaseX = x;
 //		mScrollBaseY = y;
@@ -2810,6 +2813,43 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 
 	@Override
 	public void run() {
+		if (mReduced) {
+			while (mIsRunning) {
+				try {
+					// 基本は待機(何もなければここでスリープ)
+					Thread.sleep(3600000);
+				} catch (InterruptedException e) {
+					// タッチや自動スクロール開始で起こされる
+					long startTime = System.currentTimeMillis();
+					// 動きが必要な間だけループする
+					while (mIsRunning && mIsScrolling) {
+						long frameStartTime = System.currentTimeMillis();
+						// 描画
+						update(false);
+						// 省電力のためのウェイト
+						long frameTime = System.currentTimeMillis() - frameStartTime;
+						// 30fps(33ms)を目標にする
+						long waitTime = 33 - frameTime; 
+						if (waitTime > 0) {
+							try {
+								Thread.sleep(waitTime);
+							} catch (InterruptedException ie) {
+								// 次の描画要求が来てもそのまま続行
+							}
+							// 描画を停止させるまでに猶予を持たせる
+							mScrollCount++;
+							if (mScrollCount > 30) {
+								mScrollCount = 0;
+								// 描画を停止させる
+								mIsScrolling = false;
+							}
+						}
+					}
+				}
+			}
+			return;
+		}
+
 		// 描画スレッド起動時にカンストして動作しない場合があるためスレッドのループ待ちカウンタのリセットを入れる
 		mThreadWaitLoop = 0;
 		// リスト描画処理監視

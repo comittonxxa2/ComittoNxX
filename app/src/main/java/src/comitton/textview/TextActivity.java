@@ -364,9 +364,11 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private GestureDetectorCompat mDetector;
 	private boolean mDoubleTapMode = false;
 	private boolean mAutoRepeatCheck = false;
+	private boolean mDisablePageButton;
 
 	private Insets insets;
 	private boolean mHideNavigationBar = false;
+	private boolean mReduced;
 
 	/**
 	 * 画面が作成された時に発生します。
@@ -468,7 +470,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		}
 
 		mTextView.setDispMode(mDispMode);
-		mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false);
+		mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false, mDisablePageButton);
 		setConfig();
 		mTextView.setColor(mTextColor, mBackColor, mGradColor, mGradation, mSrchColor);
 		mTextView.lockDraw();
@@ -1895,7 +1897,10 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			else if (result == 0x4002 || result == 0x4003) {
 				int mPageWay = DEF. PAGEWAY_RIGHT;
 
-				if (mPageSelect == PAGE_SLIDE) {
+				if (mDisablePageButton) {
+					// 先頭/末尾ボタンを無効にする場合は何もしない
+				}
+				else if (mPageSelect == PAGE_SLIDE) {
 					// ページ選択方法が画面下をスワイプのとき
 					// 末尾ボタン
 					if (result == 0x4003) {
@@ -2431,7 +2436,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				mDispMode = index - DEF.TAP_SELVIEW00;
 				mTextView.lockDraw();
 				mTextView.setDispMode(mDispMode);
-				mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false);
+				mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false, mDisablePageButton);
 				setTextPageData();
 				mTextView.update(true);
 				break;
@@ -2559,7 +2564,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							mDispMode = index;
 							mTextView.lockDraw();
 							mTextView.setDispMode(mDispMode);
-							mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false);
+							mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false, mDisablePageButton);
 							setTextPageData();
 							mTextView.update(true);
 						}
@@ -3406,7 +3411,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 		mTextView.setTextBuffer(null, null, null);
 		mTextView.setDispMode(mDispMode);
-		mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false);
+		mGuideView.setGuideMode(mDispMode == DEF.DISPMODE_TX_DUAL, mBottomFile, true, mPageSelect, false, mDisablePageButton);
 		setConfig();
 		mTextView.setColor(mTextColor, mBackColor, mGradColor, mGradation, mSrchColor);
 		mTextView.updateScreenSize();
@@ -3614,12 +3619,14 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mMemSize = DEF.calcMemSize(SetCacheActivity.getMemSize(sharedPreferences));
 		mMemNext = DEF.calcMemPage(SetCacheActivity.getMemNext(sharedPreferences));
 		mMemPrev = DEF.calcMemPage(SetCacheActivity.getMemPrev(sharedPreferences));
+		mDisablePageButton = SetTextActivity.getDisablePageButton(sharedPreferences);
+		mReduced = SetTextActivity.getReduced(sharedPreferences);
 	}
 
 	private void setConfig() {
 		if (mTextView != null) {
 			boolean result;
-			result = mTextView.setConfig(mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mScrlRngW, mScrlRngH, mVolScrl, mPrevRev, mCMargin, mCShadow, mPseLand, mEffect, mEffectTime, mFontFile, mAscMode != TextManager.ASC_NORMAL, mPicSize);
+			result = mTextView.setConfig(mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mScrlRngW, mScrlRngH, mVolScrl, mPrevRev, mCMargin, mCShadow, mPseLand, mEffect, mEffectTime, mFontFile, mAscMode != TextManager.ASC_NORMAL, mPicSize, mReduced);
 			if (!result) {
 				Toast.makeText(this, "open font error:\"" + mFontFile + "\"", Toast.LENGTH_LONG).show();
 
