@@ -27,6 +27,7 @@ import android.os.Handler.Callback;
 import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Choreographer;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -47,6 +48,10 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	private final int HMSG_ATTENUATE = 4002;
 	private final int HMSG_MOMENTIUM = 4003;
+	private final int HMSG_PREVNEXTPAGE = 4004;
+
+	private final int PREVPAGE = 0;
+	private final int NEXTPAGE = 1;
 
 	private final int ATTENUATE_TERM = 10;
 	private final int MOMENTIUM_TERM = 10;
@@ -85,6 +90,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private boolean mViewNext  = false;
 	private boolean mNextFilter = true;
 	private boolean mTateyomi = false;
+	private boolean mReduced = false;
 
 	private int mDispWidth  = 0;
 	private int mDispHeight = 0;
@@ -114,6 +120,10 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private Bitmap mCanvasBitmap;
 
 	private Point[] mScrollPos;
+	private int[] mScrollMove;
+	private int mScrollWait;
+	private int mScrollWaitOld;
+	private boolean mScrollWaitReset = false;
 	private Point mScrollPoint;
 	private Point mScrollStartPos = new Point();
 	private long mScrollStart;
@@ -134,6 +144,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private final SurfaceHolder mHolder;
 	private Thread mUpdateThread;
 	private boolean mIsRunning;
+	private boolean mIsScrolling = false;
+	private int mScrollCount = 0;
 
 	// イメージ更新処理
 	private boolean mIsPageBack = false;
@@ -205,6 +217,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	public void surfaceCreated(SurfaceHolder holder) {
 		mIsRunning = true;
 
+		Choreographer.getInstance().postFrameCallback(mFrameCallback);
 		// 描画スレッド起動
 		mUpdateThread = new Thread(this);
 		mUpdateThread.setPriority(Thread.MAX_PRIORITY);
@@ -280,17 +293,38 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
 	public void breakThread() {
 		mIsRunning = false;
+		Choreographer.getInstance().removeFrameCallback(mFrameCallback);
 		mUpdateThread.interrupt();
 	}
 
 	public void updateNotify() {
+		// 外部からの描画更新用の割り込みを実行→サーフェスビューの割り込みへ変更
+		mIsScrolling = true;
+		/*
 		if (mUpdateThread != null) {
 			mUpdateThread.interrupt();
 		}
 		else {
 			update(false);
 		}
+		*/
 	}
+
+	// コールバックの実装
+	private final Choreographer.FrameCallback mFrameCallback = new Choreographer.FrameCallback() {
+		@Override
+		public void doFrame(long frameTimeNanos) {
+			// 動作フラグが true の場合のみ処理を継続
+			if (mIsRunning) {
+				// スレッドへ割り込みをかける(update(false)を実行させる)
+				if (mUpdateThread != null) {
+					mUpdateThread.interrupt();
+				}
+				// 次のフレームの実行を予約する
+				Choreographer.getInstance().postFrameCallback(this);
+			}
+		}
+	};
 
 	@Override
 	public void run() {
@@ -310,13 +344,39 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					break;
 				}
 				else {
-					if	(mThreadWaitLoop < 1000)	{
-						mThreadWaitLoop++;
-						update(false);
+					if (mReduced) {
+						// 動きが必要な間だけループする
+						while (mIsRunning && mIsScrolling) {
+							long frameStartTime = System.currentTimeMillis();
+							update(false);
+							// 省電力のためのウェイト
+							long frameTime = System.currentTimeMillis() - frameStartTime;
+							// 30fps(33ms)を目標にする
+							long waitTime = 33 - frameTime; 
+							if (waitTime > 0) {
+								try {
+									Thread.sleep(waitTime);
+								} catch (InterruptedException ie) {
+									// 次の描画要求が来てもそのまま続行
+								}
+							}
+							// 描画を停止させるまでに猶予を持たせる
+							mScrollCount++;
+							if (mScrollCount > 30) {
+								mScrollCount = 0;
+								// 描画を停止させる
+								mIsScrolling = false;
+							}
+						}
 					}
-					else
-					{
-						mThreadWaitLoop = 0;
+					else {
+						if	(mThreadWaitLoop < 1000)	{
+							mThreadWaitLoop++;
+							update(false);
+						}
+						else {
+							mThreadWaitLoop = 0;
+						}
 					}
 				}
 			}
@@ -704,11 +764,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							mPageLock = true;
 							if (mPageWay == DEF.PAGEWAY_RIGHT && !mTateyomi) {
 								if (nextPage <= mImageManager.length()) {
-									mParentAct.nextPage();
+									// ページめくりを中から呼び出すとサーフェスビューが例外を出すので外部からの呼び出しへ変更した
+									Message message = new Message();
+									message.arg1 = NEXTPAGE;
+									message.what = HMSG_PREVNEXTPAGE;
+									mHandler.sendMessage(message);
 								}
 							} else {
 								if (prevPage >= 0) {
-									mParentAct.prevPage();
+									// ページめくりを中から呼び出すとサーフェスビューが例外を出すので外部からの呼び出しへ変更した
+									Message message = new Message();
+									message.arg1 = PREVPAGE;
+									message.what = HMSG_PREVNEXTPAGE;
+									mHandler.sendMessage(message);
 								}
 							}
 						}
@@ -716,11 +784,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							mPageLock = true;
 							if (mPageWay == DEF.PAGEWAY_RIGHT && !mTateyomi) {
 								if (prevPage >= 0) {
-									mParentAct.prevPage();
+									// ページめくりを中から呼び出すとサーフェスビューが例外を出すので外部からの呼び出しへ変更した
+									Message message = new Message();
+									message.arg1 = PREVPAGE;
+									message.what = HMSG_PREVNEXTPAGE;
+									mHandler.sendMessage(message);
 								}
 							} else {
 								if (nextPage <= mImageManager.length()) {
-									mParentAct.nextPage();
+									// ページめくりを中から呼び出すとサーフェスビューが例外を出すので外部からの呼び出しへ変更した
+									Message message = new Message();
+									message.arg1 = NEXTPAGE;
+									message.what = HMSG_PREVNEXTPAGE;
+									mHandler.sendMessage(message);
 								}
 							}
 						}
@@ -1329,7 +1405,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	}
 
 	// 余白色を設定
-	public void setConfig(ImageActivity parent, int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int zom, int way, int sway, int srngw, int srngh, boolean pr, boolean ne, boolean fit, boolean cmgn, boolean csdw, boolean psel, int effect, boolean scrlNext, boolean viewNext, boolean nextFilter, int displayposition, int scrollmode, boolean inertiacroll){
+	public void setConfig(ImageActivity parent, int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int zom, int way, int sway, int srngw, int srngh, boolean pr, boolean ne, boolean fit, boolean cmgn, boolean csdw, boolean psel, int effect, boolean scrlNext, boolean viewNext, boolean nextFilter, int displayposition, int scrollmode, boolean inertiacroll, boolean reduced){
 		mParentAct = parent;
 		mMgnColor  = mclr;
 		mCenColor  = cclr;
@@ -1372,6 +1448,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mOverScrollY = 0;
 		// 慣性スクロールの設定
 		mInertiaScroll = inertiacroll;
+		mReduced = reduced;
 	}
 
 	public void setLoupeConfig(int size) {
@@ -1906,8 +1983,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		if (fUpdate) {
 			// 更新後の座標を保存
 			BackupPosition(false, 0, 0);
-			updateNotify();
 		}
+		updateNotify();
 
 //		mScrollBaseX += x;
 //		mScrollBaseY += y;
@@ -2060,6 +2137,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		x_cnt = x_pos[0].length;
 		y_cnt = y_pos.length;
 		mScrollPos = new Point[x_cnt * y_cnt * p_cnt];
+		mScrollMove = new int[x_cnt * y_cnt * p_cnt];
+		mScrollWaitReset = true;
 		// 左右ページごとの設定
 		for (int p = 0 ; p < p_cnt ; p ++) {
 			if (mScrlWay == DEF.SCRLWAY_H) {	// 横→縦の順番
@@ -2075,6 +2154,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							int pp = p_cnt - p - 1;
 							mScrollPos[p * (x_cnt * y_cnt) + (y * x_cnt) + x] = new Point(x_pos[pp][xx] * -1, y_pos[y] * -1);
 						}
+						mScrollMove[p * (x_cnt * y_cnt) + (y * x_cnt) + x] = y;
 					}
 				}
 			}
@@ -2091,6 +2171,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							int pp = p_cnt - p - 1;
 							mScrollPos[p * (x_cnt * y_cnt) + (x * y_cnt) + y] = new Point(x_pos[pp][xx] * -1, y_pos[y] * -1);
 						}
+						mScrollMove[p * (x_cnt * y_cnt) + (x * y_cnt) + y] = x;
 					}
 				}
 			}
@@ -2186,10 +2267,13 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			index += move >= 0 ? 1 : -1;
 			if (index < 0 || index >= mScrollPos.length) {
 				// 端っこの場合はページ遷移
+				mScrollWaitReset = true;
 				return false;
 			}
 		}
 		mScrollPoint = new Point(mScrollPos[index].x, mScrollPos[index].y);
+		mScrollWaitOld = mScrollWait;
+		mScrollWait = mScrollMove[index];
 /*
 		// オーバースクロールの量が画面幅を超えている場合、枠外のページでスクロールを停止する
 		if (mOverScrollX > mDispWidth) {
@@ -2201,6 +2285,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 */
 //		moveToNextPoint();
 		return true;
+	}
+
+	public boolean checkScrollWait() {
+		if (mScrollWaitReset) {
+			mScrollWaitReset = false;
+			mScrollWaitOld = mScrollWait;
+		}
+		if (mScrollWait != mScrollWaitOld) {
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
 	/**
@@ -3382,8 +3479,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					mZoomMode = (mZoomMode & 0xF0) | ZOOM_LEFT;
 				}
 			}
-			this.updateNotify();
 		}
+		this.updateNotify();
 		return;
 	}
 
@@ -3616,6 +3713,14 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			case DEF.HMSG_WORKSTREAM:
 				// ファイルアクセスの表示
 				return true;
+			case HMSG_PREVNEXTPAGE:
+				if (msg.arg1 == PREVPAGE) {
+					mParentAct.prevPage();
+				}
+				else {
+					mParentAct.nextPage();
+				}
+				break;
 		}
 		return false;
 	}

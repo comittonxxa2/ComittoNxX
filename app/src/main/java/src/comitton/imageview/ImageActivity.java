@@ -53,6 +53,8 @@ import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.noise.NoiseSwitch;
 import src.comitton.common.GuideView;
+import src.comitton.jni.CallImgLibrary;
+import src.comitton.jni.CallJniLibrary;
 
 import android.annotation.SuppressLint;
 
@@ -365,6 +367,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int mRotateBtn;
 	private static boolean mRevtRota;
 	private int mVolScrl;
+	private int mScrlDiag;
 	private int mScrlWay;
 	private int mScrlRngW;
 	private int mScrlRngH;
@@ -677,6 +680,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mAnimationScan;
 	private int mScrollMode;
 	private boolean mInertiaScroll;
+	private boolean mDisablePageButton;
+	private boolean mReduced;
+	private long mBuffSize;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -991,7 +997,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				return insets;
 			});
 		}
-
+		// 画像のバッファサイズを設定
+		CallImgLibrary.initializeMemoryManagement(mBuffSize);
 		// フローティングアイコンの表示を遅延実行させる
 		startViewTimer(DEF.HMSG_EVENT_FLOATINGICON_RESET);
 		// 念のため画像読み込み終了時にも実行させる
@@ -1741,7 +1748,15 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_SCROLL_NEXT:
 				Logcat.v(logLevel, "HMSG_EVENT_SCROLL:");
 				// スクロールで移動
-				if (mImageView.moveToNextPoint(mVolScrl)) {
+				boolean effectcheck;
+				if (mImageView.checkScrollWait()) {
+					// 斜め方向の場合
+					effectcheck = mImageView.moveToNextPoint(mScrlDiag);
+				}
+				else {
+					effectcheck = mImageView.moveToNextPoint(mVolScrl);
+				}
+				if (effectcheck) {
 					// エフェクト中は次のイベントを登録
 					startViewTimer(DEF.HMSG_EVENT_SCROLL_NEXT);
 				}
@@ -2522,12 +2537,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (mImageView != null) {
 			mImageView.setConfig(this, mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mZoomType, mPageWay, mScrlWay, mScrlRngW, mScrlRngH, mPrevRev, mNoExpand, mFitDual,
-					mCMargin, mCShadow, mPseLand, mEffect, mScrlNext, mViewNext, mNextFilter, mDisplayPosition, mScrollMode, mInertiaScroll);
+					mCMargin, mCShadow, mPseLand, mEffect, mScrlNext, mViewNext, mNextFilter, mDisplayPosition, mScrollMode, mInertiaScroll, mReduced);
 			mImageView.setLoupeConfig(mLoupeSize);	// ルーペサイズの設定
 		}
 		if (mGuideView != null) {
 			// 操作ガイドの設定
-			mGuideView.setGuideMode(isDualView(), mBottomFile, mPageWay == DEF.PAGEWAY_RIGHT, mPageSelect, mImmEnable | mImmForce);
+			mGuideView.setGuideMode(isDualView(), mBottomFile, mPageWay == DEF.PAGEWAY_RIGHT, mPageSelect, mImmEnable | mImmForce, mDisablePageButton);
 		}
 	}
 
@@ -3225,7 +3240,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 先頭/末尾ボタン
 				mResult = result;
 
-				if (mPageSelect == PAGE_SLIDE) {
+				if (mDisablePageButton) {
+					// 先頭/末尾ボタンを無効にする場合は何もしない
+				}
+				else if (mPageSelect == PAGE_SLIDE) {
 					// ページ選択方法が画面下をスワイプのとき
 					if (mResult == 0x4003) {
 						// 左側ボタン
@@ -4476,7 +4494,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					setBitmapImage();
 
 					// 操作ガイドの設定
-					mGuideView.setGuideMode(isDualView() == true, mBottomFile, mPageWay == DEF.PAGEWAY_RIGHT, mPageSelect, mImmEnable | mImmForce);
+					mGuideView.setGuideMode(isDualView() == true, mBottomFile, mPageWay == DEF.PAGEWAY_RIGHT, mPageSelect, mImmEnable | mImmForce, mDisablePageButton);
 				}
 				else if (ischange) {
 					// 表示を更新
@@ -6034,6 +6052,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mPinchEnable = SetImageTextDetailActivity.getPinchEnable(sharedPreferences);
 
 			mVolScrl = DEF.calcScrlSpeedPix(SetImageTextDetailActivity.getVolScrl(sharedPreferences), mSDensity);
+			mScrlDiag = DEF.calcScrlSpeedPix(SetImageDetailActivity.getScrollDiag(sharedPreferences), mSDensity);
 			mScrlWay = SetImageActivity.getScrlWay(sharedPreferences);
 			mTapScrl = SetImageText.getTapScrl(sharedPreferences);
 			mFlickPage = SetImageText.getFlickPage(sharedPreferences);
@@ -6191,6 +6210,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mAnimationScan = SetImageActivity.getAnimationScan(sharedPreferences);
 			mScrollMode = SetImageActivity.getScrollMode(sharedPreferences);
 			mInertiaScroll = SetImageActivity.getInertiaScroll(sharedPreferences);
+			mDisablePageButton = SetImageActivity.getDisablePageButton(sharedPreferences);
+			mReduced = SetImageActivity.getReduced(sharedPreferences);
+			mBuffSize = SetImageDetailActivity.getBuffSize(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -6536,8 +6558,16 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		else if (event == DEF.HMSG_EVENT_SCROLL) {
 			Logcat.v(logLevel, "HMSG_EVENT_SCROLL.");
 			// スクロール開始
-			if (!mImageView.moveToNextPoint(mVolScrl)) {
-				return;
+			if (mImageView.checkScrollWait()) {
+				// 斜め方向の場合
+				if (!mImageView.moveToNextPoint(mScrlDiag)) {
+					return;
+				}
+			}
+			else {
+				if (!mImageView.moveToNextPoint(mVolScrl)) {
+					return;
+				}
 			}
 			NextTime += DEF.INTERVAL_SCROLL;
 			mScrolling = true;
@@ -6725,6 +6755,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mImageMgr.deleteShareCache();
 			}
 		}
+		// キャッシュをクリア
+		mImageMgr.clearMemCache();
 
 		if (mBitmapLoading) {
 			mTerminate = true;

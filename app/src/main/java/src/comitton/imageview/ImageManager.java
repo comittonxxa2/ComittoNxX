@@ -1739,8 +1739,16 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-//		}
-//		synchronized (mLock) {
+		}
+		// キャンセルを送出した後に確実に実行させるため100ミリ秒の時間待ちを入れてみた
+		new Thread(() -> {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}).start();
+		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				if (mFileList != null) {
@@ -1773,8 +1781,16 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-//		}
-//		synchronized (mLock) {
+		}
+		// キャンセルを送出した後に確実に実行させるため100ミリ秒の時間待ちを入れてみた
+		new Thread(() -> {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}).start();
+		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				CallImgLibrary.ImageScaleFree(mActivity, mHandler, mCacheIndex, -1, -1);
@@ -2436,12 +2452,12 @@ public class ImageManager extends InputStream implements Runnable {
 		ImageData id = null;
 		mCacheBreak = true;
 		synchronized (mLock) {
-			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+//			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
 //		}
 //		synchronized (mLock) {
 			if (!mCloseFlag) {
 				mCacheBreak = false;
-				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
+//				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				mThreadLoading = false;
 				if (mMemCacheFlag[page].fSource) {
 					// メモリキャッシュあり
@@ -4567,8 +4583,16 @@ public class ImageManager extends InputStream implements Runnable {
 		mCacheBreak = true;
 		synchronized (mLock) {
 			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
-//		}
-//		synchronized (mLock) {
+		}
+		// キャンセルを送出した後に確実に実行させるため100ミリ秒の時間待ちを入れてみた
+		new Thread(() -> {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}).start();
+		synchronized (mLock) {
 			if (!mCloseFlag) {
 				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				CallImgLibrary.ImageScaleFree(mActivity, mHandler, mCacheIndex, -1, -1);
@@ -4593,11 +4617,11 @@ public class ImageManager extends InputStream implements Runnable {
 		boolean ret = false;
 		mCacheBreak = true;
 		synchronized (mLock) {
-			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+//			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
 //		}
 //		synchronized (mLock) {
 			if (!mCloseFlag) {
-				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
+//				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 				ret = ImageScaling(page1, page2, half1, half2, img1, img2);
 			}
 		}
@@ -5223,11 +5247,11 @@ public class ImageManager extends InputStream implements Runnable {
 		String resultPath = null;
 		mCacheBreak = true;
 		synchronized (mLock) {
-			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
+//			CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 1);
 //		}
 //		synchronized (mLock) {
 			if (!mCloseFlag) {
-				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
+//				CallImgLibrary.ImageCancel(mActivity, mHandler, mCacheIndex, 0);
 
 				// キャッシュ読込モードオン
 				new File(DEF.getBaseDirectory()).mkdirs();
