@@ -253,6 +253,13 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_ThumbnailFree(JNIEnv
 	return 0;
 }
 
+JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_initializeMemoryManagement (JNIEnv *env, jclass obj, jint buffsize)
+{
+	// 画像のバッファサイズを設定
+	SetBlockSize(buffsize);
+	return 0;
+}
+
 /*
  * Class:     src_comitton_stream_CallImgLibrary
  * Method:    ImageInitialize

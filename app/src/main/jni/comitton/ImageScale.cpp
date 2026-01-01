@@ -459,7 +459,7 @@ int SetLinesPtr(int index, int Page, int Half, int Count, int OrgWidth, int OrgH
 //			LOGD("CreateScale : cancel.");
 			return ERROR_CODE_USER_CANCELED;
 		}
-		if (buffindex < 0 || BLOCKSIZE - buffpos < linesize ) {
+		if (buffindex < 0 || GetBlockSize() - buffpos < linesize ) {
 			for (buffindex ++ ; buffindex < nMngnum ; buffindex ++) {
 				if (pMngptr[buffindex].Page == Page && pMngptr[buffindex].Type == Type && pMngptr[buffindex].Half == Half) {
 					break;
@@ -505,7 +505,7 @@ int NextSclBuff(int index, int Page, int Half, int Count, int *pBuffIndex, int *
 #ifdef DEBUG
     LOGD("NextSclBuff : 開始します. index=%d, Page=%d, Half=%d, Count=%d, LineSize=%d", index, Page, Half, Count, LineSize);
 #endif
-	if (buffindex < 0 || BLOCKSIZE - *pBuffPos < LineSize) {
+	if (buffindex < 0 || GetBlockSize() - *pBuffPos < LineSize) {
 		for (buffindex ++ ; buffindex < gSclBuffNum[index] ; buffindex ++) {
 			if (gSclBuffMng[index][buffindex].Page == -1) {
 				break;
@@ -575,7 +575,7 @@ int CopySclBuffMngToBuffMng(int index)
 			gBuffMng[index][buffindex].Half = gSclBuffMng[index][i].Half;
 			gBuffMng[index][buffindex].Size = gSclBuffMng[index][i].Size;
 			gBuffMng[index][buffindex].Count = 0;
-			memcpy(gBuffMng[index][buffindex].Buff, gSclBuffMng[index][i].Buff, BLOCKSIZE * sizeof(LONG));
+			memcpy(gBuffMng[index][buffindex].Buff, gSclBuffMng[index][i].Buff, GetBlockSize() * sizeof(LONG));
 //			LOGD("CopySclBuffMngToBuffMng Ed : %d/%d -> %d/%d", i, gSclBuffNum[index], buffindex, gBuffNum[index]);
 		}
 	}

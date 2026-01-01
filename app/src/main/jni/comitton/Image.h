@@ -189,3 +189,5 @@ int LoadImageAvif(int, int, IMAGEDATA *, int, int, WORD *);
 
 int ImageGetSizeJxl(int, int, int *, int *);
 int LoadImageJxl(int, int, IMAGEDATA *, int, int, WORD *);
+int GetBlockSize(void);
+void SetBlockSize(int);

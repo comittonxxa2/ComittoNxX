@@ -50,6 +50,20 @@ int			*gSclIntParam3[MAX_BUFFER_INDEX] = {nullptr};
 int			gMaxColumn[MAX_BUFFER_INDEX] = {0};
 int			gMaxLine[MAX_BUFFER_INDEX] = {0};
 
+int gbuffsize = 0;
+
+void SetBlockSize(int buffsize)
+{
+	// 画像のバッファサイズを設定
+	gbuffsize = buffsize;
+}
+
+int GetBlockSize(void)
+{
+	// 画像のバッファサイズを計算して設定
+	return 128 * 1024 * (1 << gbuffsize);
+}
+
 int DrawBitmap(int index, int page, int half, int x, int y, void *canvas, int width, int height, int stride, IMAGEDATA *pData)
 {
 	WORD	*pixels = (WORD*)canvas;
@@ -116,7 +130,7 @@ int DrawBitmap(int index, int page, int half, int x, int y, void *canvas, int wi
 
 	// バッファのスキップ
 	for (yy = 0 ; yy < ypos ; yy ++) {
-		if (buffindex < 0 || BLOCKSIZE - buffpos < linesize) {
+		if (buffindex < 0 || GetBlockSize() - buffpos < linesize) {
 			for (buffindex ++ ; buffindex < gBuffNum[index] ; buffindex ++) {
 				if (gBuffMng[index][buffindex].Page == page && gBuffMng[index][buffindex].Type == 1 && gBuffMng[index][buffindex].Half == half) {
 					break;
@@ -134,7 +148,7 @@ int DrawBitmap(int index, int page, int half, int x, int y, void *canvas, int wi
 	}
 
 	for (yy = 0 ; yy < lines ; yy++) {
-		if (buffindex < 0 || BLOCKSIZE - buffpos < linesize) {
+		if (buffindex < 0 || GetBlockSize() - buffpos < linesize) {
 			for (buffindex ++ ; buffindex < gBuffNum[index] ; buffindex ++) {
 				if (gBuffMng[index][buffindex].Page == page && gBuffMng[index][buffindex].Type == 1 && gBuffMng[index][buffindex].Half == half) {
 					break;
@@ -202,7 +216,7 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 //			LOGD("DrawScaleBitmap : cancel.");
 			return ERROR_CODE_USER_CANCELED;
 		}
-		if (buffindex < 0 || BLOCKSIZE - buffpos < linesize) {
+		if (buffindex < 0 || GetBlockSize() - buffpos < linesize) {
 			for (buffindex ++ ; buffindex < gBuffNum[index] ; buffindex ++) {
 				// スケール後のバッファを探す
 				if (gBuffMng[index][buffindex].Page == page && gBuffMng[index][buffindex].Type == 1 && gBuffMng[index][buffindex].Half == 0) {
@@ -375,7 +389,7 @@ int MemAlloc(int index, int buffsize)
         int i;
         for (i = 0; i < buffnum; i++) {
             gBuffMng[index][i].Page = -1;    // 未使用状態に初期化
-            gBuffMng[index][i].Buff = (LONG *) malloc(BLOCKSIZE * sizeof(LONG));
+            gBuffMng[index][i].Buff = (LONG *) malloc(GetBlockSize() * sizeof(LONG));
             if (gBuffMng[index][i].Buff == nullptr) {
                 LOGE("MemAlloc: malloc error.(Buff / index=%d)", i);
                 // 確保に失敗した場合は戻らずに途中でループ終了させる
@@ -497,7 +511,7 @@ int ScaleMemInit(int index)
 int ScaleMemAlloc(int index, int linesize, int linenum)
 {
     /** 1ブロックに何行分確保できるか */
-	int NumOfLines = (BLOCKSIZE / linesize);
+	int NumOfLines = (GetBlockSize() / linesize);
     /** 全部で何ブロック必要か */
 	int buffnum  = (linenum + NumOfLines - 1) / NumOfLines;
 	int ret = 0;
@@ -531,7 +545,7 @@ int ScaleMemAlloc(int index, int linesize, int linenum)
 
 	// 不足分を確保
 	for (i = gSclBuffNum[index] ; i < SCLBUFFNUM && i < gSclBuffNum[index] + (buffnum - count) ; i ++) {
-		gSclBuffMng[index][i].Buff = (LONG*)malloc(BLOCKSIZE * sizeof(LONG));
+		gSclBuffMng[index][i].Buff = (LONG*)malloc(GetBlockSize() * sizeof(LONG));
 		if (gSclBuffMng[index][i].Buff == nullptr) {
 			LOGE("Initialize: malloc error.(SclBuffMng / index=%d)", i);
 			gSclBuffNum[index] = i;
@@ -702,7 +716,7 @@ int SetBuff(int index, int page, uint32_t width, uint32_t height, uint8_t *data,
         }
 
         // ライン毎のバッファの位置を保存
-        if (buffindex < 0 || BLOCKSIZE - buffpos < linesize) {
+        if (buffindex < 0 || GetBlockSize() - buffpos < linesize) {
             for (buffindex++; buffindex < gBuffNum[index] ; buffindex++) {
                 if (gBuffMng[index][buffindex].Page == -1) {
                     break;

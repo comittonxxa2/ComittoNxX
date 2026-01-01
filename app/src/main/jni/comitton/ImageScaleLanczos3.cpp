@@ -115,6 +115,9 @@ void *CreateScaleLanczos3_ThreadFunc(void *param)
 				// 元座標の整数分からのオフセットと元座標との距離を参照する
 				for (int offsetx = xn + scans ; offsetx <= xn + scane ; offsetx++) {
 					// 元座標の整数分からのオフセットと元座標との距離を計算(座標の基準はピクセルの中心なのでオフセットに0.5を加算してサイズ変更後の比率を掛ける)
+					if (gCancel[index]) {
+						return (void*)ERROR_CODE_USER_CANCELED;
+					}
 					absx = abs(fwidth - (offsetx + 0.5)) * scale;
 					// 距離を小数点以下第二桁に丸め込む(0～9.99)
 					int shiftx = round(absx * 100);
