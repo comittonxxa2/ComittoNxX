@@ -7,6 +7,7 @@ import src.comitton.config.seekbar.ScrlRngHSeekbar;
 import src.comitton.config.seekbar.ScrlRngWSeekbar;
 import src.comitton.config.seekbar.WAdjustSeekbar;
 import src.comitton.config.seekbar.WScalingSeekbar;
+import src.comitton.config.seekbar.ScrlDiagSeekbar;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -36,6 +37,8 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 	private AutoPlaySeekbar mAutoPlay;
 	private ListPreference mMaxThread;
 	private ListPreference mLoupeSize;
+	private ScrlDiagSeekbar mScrlDiag;
+	private ListPreference mBuffSize;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -57,12 +60,30 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 			R.string.loupesize01,
 			R.string.loupesize02
 		};
+	public static final int[] BuffSize =
+		{
+			R.string.buffsize00,
+			R.string.buffsize01,
+			R.string.buffsize02,
+			R.string.buffsize03,
+			R.string.buffsize04
+		};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+		// 斜め方向のスクロールの速度をスクロールの速度からコピーしてくる
+		int tempScrlDiag = DEF.getInt(sharedPreferences, DEF.KEY_SCRLDIAG, -1);
+		if (tempScrlDiag == -1) {
+			tempScrlDiag = DEF.getInt(sharedPreferences, DEF.KEY_VOLSCRL, DEF.DEFAULT_VOLSCRL);
+			// 値を保存する
+			SharedPreferences.Editor ed = sharedPreferences.edit();
+			ed.putInt(DEF.KEY_SCRLDIAG, tempScrlDiag);
+			ed.apply();
+		}
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -89,6 +110,8 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		mAutoPlay = (AutoPlaySeekbar) getPreferenceScreen().findPreference(DEF.KEY_AUTOPLAY);
 		mMaxThread = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_MAXTHREAD);
 		mLoupeSize = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LOUPESIZE);
+		mScrlDiag = (ScrlDiagSeekbar) getPreferenceScreen().findPreference(DEF.KEY_SCRLDIAG);
+		mBuffSize = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_BUFFSIZE);
 
 
 		// 項目選択
@@ -126,6 +149,8 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		mMaxThread.setSummary(getMaxThreadSummary(sharedPreferences));	// 最大スレッド数
 		mLoupeSize.setSummary(getLoupeSizeSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
+		mScrlDiag.setSummary(getScrollDiagSummary(sharedPreferences));
+		mBuffSize.setSummary(getBuffSizeSummary(sharedPreferences));
 	}
 
 	@Override
@@ -175,6 +200,14 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		else if(key.equals(DEF.KEY_LOUPESIZE)){
 			// ルーペサイズ
 			mLoupeSize.setSummary(getLoupeSizeSummary(sharedPreferences));
+		}
+		else if (key.equals(DEF.KEY_SCRLDIAG)) {
+			// スクロール速度
+			mScrlDiag.setSummary(getScrollDiagSummary(sharedPreferences));
+		}
+		else if (key.equals(DEF.KEY_BUFFSIZE)) {
+			// 画像のバッファサイズ
+			mBuffSize.setSummary(getBuffSizeSummary(sharedPreferences));
 		}
 	}
 
@@ -240,6 +273,20 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		int val;
 		val = DEF.getInt(sharedPreferences, DEF.KEY_LOUPESIZE, "0");
 		if (val < 0 || val >= LoupeSize.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static int getScrollDiag(SharedPreferences sharedPreferences) {
+		int num = DEF.getInt(sharedPreferences, DEF.KEY_SCRLDIAG, DEF.DEFAULT_SCRLDIAG);
+		return num;
+	}
+
+	public static int getBuffSize(SharedPreferences sharedPreferences){
+		int val;
+		val = DEF.getInt(sharedPreferences, DEF.KEY_BUFFSIZE, "0");
+		if (val < 0 || val >= BuffSize.length){
 			val = 0;
 		}
 		return val;
@@ -332,4 +379,19 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		return str;
 	}
 
+	private String getScrollDiagSummary(SharedPreferences sharedPreferences) {
+		int val = getScrollDiag(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.unitSumm1);
+
+		return DEF.getScrlSpeedStr(val, summ1);
+	}
+
+	private String getBuffSizeSummary(SharedPreferences sharedPreferences){
+		int val = getBuffSize(sharedPreferences);
+		String str;
+		Resources res = getResources();
+		str = res.getString(BuffSize[val]);
+		return str;
+	}
 }
