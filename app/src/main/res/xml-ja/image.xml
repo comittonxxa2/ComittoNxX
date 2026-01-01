@@ -180,6 +180,11 @@
             android:key="AnimationScan"
             android:summary="あらかじめWebP/Gifアニメーション可能かどうかのスキャンを行う場合はチェックを入れる"
             android:title="WebP/Gifファイルのスキャンを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="Reduced"
+            android:summary="表示の頻度を下げて消費電力を抑える場合はチェックを入れる"
+            android:title="間引き表示を行う＊" />
     </PreferenceCategory>
     <PreferenceCategory android:title="操作関連の設定（＊はテキストと共通の設定）" >
         <CheckBoxPreference
@@ -327,6 +332,11 @@
             android:key="BackgroundPause"
             android:summary="バックグラウンドの先読み処理中にビューアを操作すると落ちる場合にチェックを入れる"
             android:title="ビューアの操作時に先読み処理を一時停止" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="先頭/末尾ボタンを無効にする場合にチェックを入れる"
+            android:title="画面下の先頭/末尾ボタンを無効にする＊" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

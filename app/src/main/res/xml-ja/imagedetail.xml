@@ -58,6 +58,13 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="音量キー等でのスクロール量(高さ)" />
+        <src.comitton.config.seekbar.ScrlDiagSeekbar
+            android:dialogMessage="斜め方向のスクロール速度"
+            android:dialogTitle="スクロール速度"
+            android:key="ScrlDiag"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="斜め方向のスクロール速度" />
         <src.comitton.config.seekbar.AutoPlaySeekbar
             android:dialogMessage="自動再生時の間隔"
             android:dialogTitle="自動再生速度"
@@ -65,6 +72,14 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="自動再生速度" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="画像のバッファサイズ"
+            android:entries="@array/buffsize_name_list"
+            android:entryValues="@array/buffsize_value_list"
+            android:key="Buffsize"
+            android:summary="dummy"
+            android:title="画像のバッファサイズ" />
         <ListPreference
             android:defaultValue="2"
             android:dialogTitle="画像処理スレッド数"

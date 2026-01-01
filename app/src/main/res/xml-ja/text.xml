@@ -101,6 +101,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="時刻と充電表示＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="Reduced"
+            android:summary="表示の頻度を下げて消費電力を抑える場合はチェックを入れる"
+            android:title="間引き表示を行う＊" />
     </PreferenceCategory>
     <PreferenceCategory android:title="操作関連の設定(＊はイメージと共通)" >
         <CheckBoxPreference
@@ -261,6 +266,11 @@
             android:key="SoftChgPage"
             android:summary="ページめくりでページ端に達した時にリスト表示の内容で前後のファイルへページ移動する場合にチェックを入れる"
             android:title="ページ端で開くファイル名をソート＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="先頭/末尾ボタンを無効にする場合にチェックを入れる"
+            android:title="画面下の先頭/末尾ボタンを無効にする＊" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
