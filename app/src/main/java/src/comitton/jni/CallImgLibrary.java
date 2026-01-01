@@ -51,6 +51,7 @@ public class CallImgLibrary {
 	public static native int ThumbnailImageSize(long id, int index);
 	public static native int ThumbnailDraw(long id, Bitmap bitmap, int index);
 	public static native int ThumbnailFree(long id);
+	public static native int initializeMemoryManagement(long buffsize);
 
 	// スレッド数設定
 	public static native int SetParameter(int threadnum);
@@ -62,6 +63,11 @@ public class CallImgLibrary {
 				+ (moire != 0 ? 16 : 0)
 				+ (pseland != 0 ? 32 : 0);
 		return val;
+	}
+
+	public static int initializeMemoryManagement(Context context, Handler handler, long buffsize) {
+		int ret = initializeMemoryManagement(buffsize);
+		return ret;
 	}
 
 	public static int ImageInitialize(Context context, Handler handler, long loadsize, int buffnum, int totalpage, int maxthreadnum){
