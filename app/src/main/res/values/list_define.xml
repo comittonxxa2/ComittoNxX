@@ -826,5 +826,19 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+    <string-array name="buffsize_name_list">
+        <item>System settings</item>
+        <item>2x the system setting</item>
+        <item>4x the system setting</item>
+        <item>8x the system setting</item>
+        <item>16x the system setting</item>
+    </string-array>
+    <string-array name="buffsize_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
 
 </resources>

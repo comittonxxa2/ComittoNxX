@@ -929,6 +929,12 @@
     <string name="scrollmode00">Horizontal scroll</string>
     <string name="scrollmode01">Vertical scroll</string>
 
+    <string name="buffsize00">System settings</string>
+    <string name="buffsize01">2x the system setting</string>
+    <string name="buffsize02">4x the system setting</string>
+    <string name="buffsize03">8x the system setting</string>
+    <string name="buffsize04">16x the system setting</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
