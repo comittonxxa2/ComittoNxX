@@ -101,6 +101,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Time and Buttery(*)" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="Reduced"
+            android:summary="Check this box to reduce power consumption by reducing the display frequency."
+            android:title="Display thinned images(*)" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Operation Settings(* is common to the image setting)" >
         <CheckBoxPreference
@@ -261,6 +266,11 @@
             android:key="SoftChgPage"
             android:summary="Check this box if you want to move to the previous or next file in the list view when you reach the end of the page by turning the page."
             android:title="Sort open file names at the edge of the page(*)" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="Check to disable the top/bottom button"
+            android:title="Disable top/bottom buttons(*)" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

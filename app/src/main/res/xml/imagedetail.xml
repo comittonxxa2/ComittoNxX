@@ -58,6 +58,13 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Scroll Range (Height)" />
+        <src.comitton.config.seekbar.ScrlDiagSeekbar
+            android:dialogMessage="Diagonal scroll speed"
+            android:dialogTitle="Scroll Speed"
+            android:key="ScrlDiag"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Diagonal scroll speed" />
         <src.comitton.config.seekbar.AutoPlaySeekbar
             android:dialogMessage="Interval to play automatically."
             android:dialogTitle="Auto Play Interval"
@@ -65,6 +72,14 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Auto Play Interval" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Image buffer size"
+            android:entries="@array/buffsize_name_list"
+            android:entryValues="@array/buffsize_value_list"
+            android:key="Buffsize"
+            android:summary="dummy"
+            android:title="Image buffer size" />
         <ListPreference
             android:defaultValue="2"
             android:dialogTitle="Max number of processing threads"

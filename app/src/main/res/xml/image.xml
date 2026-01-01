@@ -180,6 +180,11 @@
             android:key="AnimationScan"
             android:summary="Check this box if you want to scan in advance to see if WebP/Gif animation is possible."
             android:title="Enable scanning of WebP/Gif files" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="Reduced"
+            android:summary="Check this box to reduce power consumption by reducing the display frequency."
+            android:title="Display thinned images(*)" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Operation Settings" >
         <CheckBoxPreference
@@ -329,6 +334,11 @@
             android:title="Pause pre-loading when interacting with the viewer
 
 " />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="Check to disable the top/bottom button"
+            android:title="Disable top/bottom buttons(*)" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
