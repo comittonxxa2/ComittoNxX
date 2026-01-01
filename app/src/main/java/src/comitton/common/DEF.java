@@ -562,6 +562,7 @@ public class DEF {
 	public static final String KEY_ZOOMTYPE = "ZoomType";
 	public static final String KEY_SCRLRNGW = "ScrlRngW";
 	public static final String KEY_SCRLRNGH = "ScrlRngH";
+	public static final String KEY_SCRLDIAG = "ScrlDiag";
 
 	public static final String KEY_CHAR_DETECT = "CharDetect";
 	public static final String KEY_CHARSET = "Charset";
@@ -593,6 +594,7 @@ public class DEF {
 	public static final String KEY_OLDMENU = "OldMenu";
 	public static final String KEY_SCROLLMODE = "ScrollMode";
 	public static final String KEY_INERTIASCROLL = "InertiaScroll";
+	public static final String KEY_REDUCED = "Reduced";
 
 	public static final String KEY_HIDDENFILE = "HiddenFile";
 
@@ -681,6 +683,7 @@ public class DEF {
 	public static final String KEY_INVERT = "Invert";
 	public static final String KEY_TOPSINGLE = "TopSingle";
 	public static final String KEY_MAXTHREAD = "MaxThread";
+	public static final String KEY_BUFFSIZE = "Buffsize";
 	public static final String KEY_THUMBNAILTAP = "ThumbnailTap";
 	public static final String KEY_MENULONGTAP = "MenuLongTap";
 	public static final String KEY_LOUPESIZE = "LoupeSize";
@@ -694,6 +697,7 @@ public class DEF {
 	public static final String KEY_BACKGROUNDPAUSE = "BackgroundPause";
 	public static final String KEY_ANIMATIONENABLE = "AnimationEnable";
 	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
+	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
@@ -1137,6 +1141,7 @@ public class DEF {
 	public static final int DEFAULT_VOLSCRL = 6; // 32ドット
 	public static final int DEFAULT_SCRLRNGW = 6; // 35% ((6+1)*5)
 	public static final int DEFAULT_SCRLRNGH = 6; // 35% ((6+1)*5)
+	public static final int DEFAULT_SCRLDIAG = 6; // 32ドット
 	public static final int DEFAULT_ITEMMARGIN = 10; // 項目の余白:10sp
 	public static final int DEFAULT_EFFECTTIME = 3; // スクロール時間:250msec
 	public static final int DEFAULT_MOMENTMODE = 8; // スクロール減速:フレーム1/8ずつ減速
@@ -1249,6 +1254,7 @@ public class DEF {
 	public static final int MAX_VOLSCRL = 39; // 200ドット
 	public static final int MAX_SCRLRNGW = 19; // 100% ((19+1)*5)
 	public static final int MAX_SCRLRNGH = 19; // 100% ((19+1)*5)
+	public static final int MAX_SCRLDIAG = 39; // 200ドット
 	public static final int MAX_ITEMMARGIN = 30; // 50ドット
 	public static final int MAX_EFFECTTIME = 20; // 1000msec
 	public static final int MAX_MOMENTMODE = 16; // 1000msec

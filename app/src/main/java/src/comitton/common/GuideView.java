@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.EventListener;
 
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.Logcat;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -141,6 +142,7 @@ public class GuideView {
 	private int mFirstCY;
 
 	private boolean mOperationMode;
+	private boolean mDisablePageButton;
 
 	private Paint mDrawPaint;
 	private Paint mTextPaint;
@@ -830,12 +832,13 @@ public class GuideView {
 		invalidate();
 	}
 
-	public void setGuideMode(boolean dual, boolean file, boolean isRtoL, int pagemode, boolean imm) {
+	public void setGuideMode(boolean dual, boolean file, boolean isRtoL, int pagemode, boolean imm, boolean disablePageButton) {
 		mDualView = dual;
 		mNextFile = file;
 		mIsRtoL = isRtoL;
 		mPageMode = pagemode;
 		mImmEnable = imm;
+		mDisablePageButton = disablePageButton;
 	}
 
 	// 描画するガイドの設定
@@ -1035,7 +1038,13 @@ public class GuideView {
 		else if (mFirstY >= mFirstCY - mButtonSize) {
 			int num;
 
-			num = 11 + 2;
+			if (mDisablePageButton) {
+				// 先頭ページ/最終ページを無効にする
+				num = 11 + 0;
+			}
+			else {
+				num = 11 + 2;
+			}
 
 			if (mPageMode == 0) {
 				// スワイプページ選択モードの場合はページ選択なし
@@ -1073,17 +1082,22 @@ public class GuideView {
 				i++;
 			}
 
-			// 先頭ページ
-			id_wk = 0x4002;
-			rc_wk = new Rect(mFirstCX - mButtonSize, mFirstCY - mButtonSize, mFirstCX, mFirstCY);
-			cmdinfo[i] = new CommandInfo(null, rc_wk, id_wk, false, false);	// 長押し時に表示
-			i ++;
+			if (mDisablePageButton) {
+				// 先頭ページ/最終ページを無効にする
+			}
+			else {
+				// 先頭ページ
+				id_wk = 0x4002;
+				rc_wk = new Rect(mFirstCX - mButtonSize, mFirstCY - mButtonSize, mFirstCX, mFirstCY);
+				cmdinfo[i] = new CommandInfo(null, rc_wk, id_wk, false, false);	// 長押し時に表示
+				i ++;
 
-			// 最終ページ
-			id_wk = 0x4003;
-			rc_wk = new Rect(0, mFirstCY - mButtonSize, mButtonSize, mFirstCY);
-			cmdinfo[i] = new CommandInfo(null, rc_wk, id_wk, false, false);	// 長押し時に表示
-			i ++;
+				// 最終ページ
+				id_wk = 0x4003;
+				rc_wk = new Rect(0, mFirstCY - mButtonSize, mButtonSize, mFirstCY);
+				cmdinfo[i] = new CommandInfo(null, rc_wk, id_wk, false, false);	// 長押し時に表示
+				i ++;
+			}
 
 			basey -= (mButtonSize + 1) * 3 / 2;
 
@@ -1470,6 +1484,7 @@ public class GuideView {
 
 	private void invalidate() {
 		if (mListener != null) {
+//			Logcat.v(1, "invalidate()");
 			mListener.onUpdate();
 		}
 	}
