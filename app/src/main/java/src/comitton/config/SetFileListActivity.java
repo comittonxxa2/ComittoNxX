@@ -56,6 +56,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ThumbnailPreference mThumbnail;
 
 	private ListPreference mReadTextSetting;
+	private ListPreference mReadStyleSetting;
+	private ListPreference mReadProgressbarPosition;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -133,6 +135,13 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 			{ R.string.readtext00		// 通常表示
 			, R.string.readtext01		// 表示なし
 			, R.string.readtext02 };	// 日付サイズの後へ表示
+	public static final int[] ReadStyleName =
+			{ R.string.readstyle00		// ドーナツチャート
+			, R.string.readstyle01 };	// 進捗バー
+	public static final int[] ReadProgressPosName =
+			{ R.string.readprogresspos00		// ノーマル
+			, R.string.readprogresspos01		// 上側
+			, R.string.readprogresspos02 };	// 下側
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -177,6 +186,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mListThumbSeek = (ListThumbSeekbar)getPreferenceScreen().findPreference(DEF.KEY_LISTTHUMBSEEK);
 		mMenuLongTap   = (MenuLongTapSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MENULONGTAP);
 		mReadTextSetting = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READTEXTSETTING);
+		mReadStyleSetting = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READSTYLESETTING);
+		mReadProgressbarPosition = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READPROGRESSBARPOSITION);
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FILEHELP);
@@ -224,6 +235,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mListThumbSeek.setSummary(getListThumbSeekSummary(sharedPreferences));		// リストサムネイルサイズ表示
 		mMenuLongTap.setSummary(getMenuLongTapSummary(sharedPreferences));
 		mReadTextSetting.setSummary(getReadTextSettingSummary(sharedPreferences));
+		mReadStyleSetting.setSummary(getReadStyleSettingSummary(sharedPreferences));
+		mReadProgressbarPosition.setSummary(getReadProgressbarPositionSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 }
 
@@ -320,6 +333,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		}
 		else if(key.equals(DEF.KEY_READTEXTSETTING)){
 			mReadTextSetting.setSummary(getReadTextSettingSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_READSTYLESETTING)){
+			mReadStyleSetting.setSummary(getReadStyleSettingSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_READPROGRESSBARPOSITION)){
+			mReadProgressbarPosition.setSummary(getReadProgressbarPositionSummary(sharedPreferences));
 		}
 	}
 
@@ -647,6 +666,22 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return val;
 	}
 
+	public static int getReadStyleSetting(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_READSTYLESETTING, "0");
+		if(val < 0 || val >= ReadStyleName.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static int getReadProgressbarPosition(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_READPROGRESSBARPOSITION, "0");
+		if(val < 0 || val >= ReadProgressPosName.length){
+			val = 0;
+		}
+		return val;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
@@ -793,5 +828,17 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		int val = getReadTextSetting(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(ReadTextName[val]);
+	}
+
+	private String getReadStyleSettingSummary(SharedPreferences sharedPreferences){
+		int val = getReadStyleSetting(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(ReadStyleName[val]);
+	}
+
+	private String getReadProgressbarPositionSummary(SharedPreferences sharedPreferences){
+		int val = getReadProgressbarPosition(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(ReadProgressPosName[val]);
 	}
 }

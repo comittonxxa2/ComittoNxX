@@ -556,6 +556,12 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		return flag;
 	}
 
+	public static boolean getDisableTextInfo(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_TX_DISABLETEXTINFO, false);
+		return flag;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getViewRotaSummary(SharedPreferences sharedPreferences){
 		int val = getViewRota(sharedPreferences);
