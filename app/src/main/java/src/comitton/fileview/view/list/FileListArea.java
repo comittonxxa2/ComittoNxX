@@ -85,6 +85,13 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private final int SHELF_SHADOW_SIZE = 5;
 	private final int SHELF_SHADOW_EFFECT = 10;
 
+	private final int GAUGE_BAR_HEIGHT = 10;
+	private final int GAUGE_BAR_MARGIN = 3;
+
+	private final int GAUGE_NORMAL = 0;
+	private final int GAUGE_TOP = 1;
+	private final int GAUGE_BOTTOM = 2;
+
 	private Bitmap[] mIcon;
 	private Bitmap[] mMark;
 
@@ -167,6 +174,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private boolean mBookShelfColorExtOn;
 	private boolean mBookShelfAfterCircleOn;
 	private boolean mBookShelfTextSplitOn;
+	private boolean mGauge;
+	private int mGaugePos;
 
 	private String[][][] mText;
 
@@ -284,6 +293,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			// サムネイル表示しない場合は無効にする
 			mBookShelfPatternSelect = false;
 		}
+		mGauge = (SetFileListActivity.getReadStyleSetting(sharedPreferences) == 1) ? true : false;
+		mGaugePos = SetFileListActivity.getReadProgressbarPosition(sharedPreferences);
 		// 先頭項目の位置
 		int ypos = mTopPos;
 //		long clockSt = SystemClock.uptimeMillis();
@@ -422,6 +433,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 
 						int retBitmap = CallImgLibrary.ThumbnailCheck(mThumbnailId, index);
+						int mMarkOffset = (mGaugePos == GAUGE_BOTTOM && mGauge) ? dpToPx(GAUGE_BAR_HEIGHT + GAUGE_BAR_MARGIN + 2) : 0;
 						if (mDrawBitmap != null && retBitmap == 1) {
 							int retValue = CallImgLibrary.ThumbnailDraw(mThumbnailId, mDrawBitmap, index);
 							int width = (retValue >> 16) & 0xFFFF;
@@ -468,10 +480,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mBitmapPaint);
 
 							if (bmMark != null) {
-								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH, mBitmapPaint);
+								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
 							Logcat.d(logLevel,"fd.getState()=" + fd.getState() + ", fd.getMaxpage()=" + fd.getMaxpage() + ", fd.getName()=" + fd.getName());
-							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color);
+							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + dstHeight);
 						}
 						else {
 							// サムネイルありかつ画像なし
@@ -512,7 +524,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							}
 
 							if (bmMark != null) {
-								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH, mBitmapPaint);
+								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
 						}
 					}
@@ -555,7 +567,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						mSrcRect.set(0, 0, dstWidth, dstHeight);
 						mDstRect.set(x + dstX, y + dstY, x + dstX + (int)(dstWidth * dsMin), y + dstY + (int)(dstHeight * dsMin));
 						canvas.drawBitmap(bm, mSrcRect, mDstRect, mBitmapPaint);
-						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color);
+						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + dstHeight);
 					}
 				}else{ // タイル表示・サムネ無しの場合は枠で囲む
 					canvas.drawRect(baseX + mDrawLeft + ix * mItemWidth + mItemMargin, y + mIconHeight,
@@ -751,6 +763,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		mInfoPaint.setTextAlign(Paint.Align.LEFT);
 
 		int ypos = mTopPos;
+		mGauge = (SetFileListActivity.getReadStyleSetting(sharedPreferences) == 1) ? true : false;
+		mGaugePos = SetFileListActivity.getReadProgressbarPosition(sharedPreferences);
 		for (int iy = mTopRow ; ypos < cy ; iy ++) {
 			index = iy;
 			Logcat.d(logLevel, "index=" + index + ", listnum=" + listnum);
@@ -896,6 +910,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 					}
 
+					int mMarkOffset = (mGaugePos == GAUGE_BOTTOM && mGauge) ? dpToPx(GAUGE_BAR_HEIGHT + GAUGE_BAR_MARGIN + 2) : 0;
+
 					if (mDrawBitmap != null && retBitmap == 1) {
 						int retValue = CallImgLibrary.ThumbnailDraw(mThumbnailId, mDrawBitmap, index);
 						int width = (retValue >> 16) & 0xFFFF;
@@ -941,8 +957,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mBitmapPaint);
 
 						if (bmMark != null) {
-                            canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH, mBitmapPaint);
-							drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color);
+                            canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
+							drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, dstWidth, y + dstHeight);
 						}
 					}
 					else {
@@ -984,7 +1000,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 
 						if (bmMark != null) {
-                            canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH, mBitmapPaint);
+                            canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 						}
 					}
 				}
@@ -1029,6 +1045,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					else if ((fd.getState() >= 0) && (fd.getMaxpage() > 0) || (fd.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 						// 読書率を描画
 						// 読書率
+						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, iconWidth, y + dstHeight);
+						// 記述が同じなのでコメントアウトにした
+						/*
 						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
 						if (fd.getState() == -2 || (fd.getState() >= fd.getMaxpage() - ImageActivity.isDualMode()) && (fd.getState() > 0) && (fd.getMaxpage() > 0)) {
 							rate = 1;
@@ -1087,6 +1106,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						paint.setStyle(Paint.Style.FILL);
 						paint.setColor(color);
 						canvas.drawText(str, text_x, text_y, paint);
+						*/
 					}
 				}
 				// タイトルはアイコンの右側に表示
@@ -1142,7 +1162,13 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		return;
 	}
 
-	private void drawPagerate(Canvas canvas, FileData file, int width, int height, int x, int y, int color) {
+	// dpをピクセルへ変換
+	private int dpToPx(int dpValue) {
+		float density = mContext.getResources().getDisplayMetrics().density;
+		return (int) (dpValue * density + 0.5f);
+	}
+
+	private void drawPagerate(Canvas canvas, FileData file, int width, int height, int x, int y, int color, int bar_width, int offset_y) {
 		if ((file.getState() >= 0) && (file.getMaxpage() > 0) || (file.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 			if (SetFileListActivity.getDisableListIcon(sharedPreferences)) {
 				// 読書率のドーナツチャートを描画しない
@@ -1172,42 +1198,100 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			float centerX = x + (width / 2F);
 			float centerY = y + height - (radiud1 * 2);
 
-			// 読書率のドーナツチャートを描画
-			paint.setColor(Color.DKGRAY);
-			canvas.drawArc(centerX - radiud1 - 2, centerY - radiud1 - 2, centerX + radiud1 + 2,centerY + radiud1 + 2, -90F, rate * 360, true, paint);
-			paint.setColor(color);
-			canvas.drawArc(centerX - radiud1, centerY - radiud1, centerX + radiud1,centerY + radiud1, -90F, rate * 360, true, paint);
+			if (!mGauge) {
+				// 読書率のドーナツチャートを描画
+				paint.setColor(Color.DKGRAY);
+				canvas.drawArc(centerX - radiud1 - 2, centerY - radiud1 - 2, centerX + radiud1 + 2,centerY + radiud1 + 2, -90F, rate * 360, true, paint);
+				paint.setColor(color);
+				canvas.drawArc(centerX - radiud1, centerY - radiud1, centerX + radiud1,centerY + radiud1, -90F, rate * 360, true, paint);
 
-			//グラデーション円(中サイズ)を描画
-			paint.setColor(getDrawArcBackColor());
-			Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, getDrawArcBackColor(), mRrbColor, Shader.TileMode.CLAMP);
-			paint.setShader(s);
-			canvas.drawOval(new RectF(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2), paint);
+				//グラデーション円(中サイズ)を描画
+				paint.setColor(getDrawArcBackColor());
+				Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, getDrawArcBackColor(), mRrbColor, Shader.TileMode.CLAMP);
+				paint.setShader(s);
+				canvas.drawOval(new RectF(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2), paint);
 
-			//グラデーション円(小サイズ)を描画
-			s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, mRrbColor, getDrawArcBackColor(), Shader.TileMode.CLAMP);
-			paint.setShader(s);
-			canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
+				//グラデーション円(小サイズ)を描画
+				s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, mRrbColor, getDrawArcBackColor(), Shader.TileMode.CLAMP);
+				paint.setShader(s);
+				canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
 
-			// 読書率の文字列を描画
-			String str;
-			if (rate == 1) {
-				Resources res = mContext.getResources();
-				str = res.getString(R.string.kidoku);
+				// 読書率の文字列を描画
+				String str;
+				if (rate == 1) {
+					Resources res = mContext.getResources();
+					str = res.getString(R.string.kidoku);
+				}
+				else {
+					str = (int)(rate * 100) + "%";
+				}
+				paint.setShader(null);
+				paint.setStyle(Paint.Style.STROKE);
+				paint.setStrokeWidth(2.0f);
+				paint.setColor(Color.DKGRAY);
+				float text_x = centerX;
+				float text_y = centerY - ((paint.descent() + paint.ascent()) / 2);
+				canvas.drawText(str, text_x, text_y, paint);
+				paint.setStyle(Paint.Style.FILL);
+				paint.setColor(color);
+				canvas.drawText(str, text_x, text_y, paint);
 			}
 			else {
-				str = (int)(rate * 100) + "%";
+				// 読書率の進捗バーを描画
+				Paint framePaint;
+				framePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+				framePaint.setColor(Color.WHITE);
+				framePaint.setStyle(Paint.Style.STROKE);
+				framePaint.setStrokeWidth(5f);
+				// 中塗りの設定
+				Paint remainingPaint;
+				remainingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+				remainingPaint.setColor(getDrawArcBackColor());
+				remainingPaint.setStyle(Paint.Style.FILL);
+				// 進捗バーに影を付ける
+			    remainingPaint.setShadowLayer(SHELF_SHADOW_EFFECT, SHELF_SHADOW_SIZE, SHELF_SHADOW_SIZE, 0xFF000000);
+				// 中塗りの設定
+				Paint fillPaint;
+				fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+				fillPaint.setColor(color);
+				fillPaint.setStyle(Paint.Style.FILL);
+
+				int iconHeight = mListIconHeight;
+				int iconWidth = mIconWidth * iconHeight / mIconHeight;
+				int bar_x = bar_width - dpToPx(GAUGE_BAR_MARGIN * 2);
+				int bar_y = dpToPx(GAUGE_BAR_HEIGHT);
+				// 進捗バーの座標の選択
+				int offsety;
+				switch (mGaugePos) {
+					case GAUGE_TOP:
+						// 上側
+						offsety = y + bar_y / 2 + dpToPx(GAUGE_BAR_MARGIN);
+						break;
+					case GAUGE_BOTTOM:
+						// 下側
+						offsety = offset_y - bar_y / 2 - dpToPx(GAUGE_BAR_MARGIN);
+						break;
+					default:
+						// ドーナツチャートと同じ座標
+						offsety = (int)centerY;
+						break;
+				}
+				RectF rectF = new RectF(centerX - bar_x / 2, offsety - bar_y / 2, centerX + bar_x / 2, offsety + bar_y / 2);
+				// 角丸の半径
+				float cornerRadius = rectF.height() / 5;
+				// 進捗バーの背景を塗りつぶす
+				RectF fullBarRect = new RectF(centerX - bar_x / 2, offsety - bar_y / 2, centerX + bar_x / 2, offsety + bar_y / 2);
+				canvas.drawRoundRect(fullBarRect, cornerRadius, cornerRadius, remainingPaint);
+
+				float fillWidth = (rectF.width()) * rate;
+				if (fillWidth > 0) {
+					// 進捗バーを塗りつぶす
+					RectF fillRect = new RectF(rectF.left, rectF.top, rectF.left + fillWidth, rectF.bottom);
+					canvas.drawRoundRect(fillRect, cornerRadius, cornerRadius, fillPaint);
+				}
+				// 外枠を表示
+				canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, framePaint);
 			}
-			paint.setShader(null);
-			paint.setStyle(Paint.Style.STROKE);
-			paint.setStrokeWidth(2.0f);
-			paint.setColor(Color.DKGRAY);
-			float text_x = centerX;
-			float text_y = centerY - ((paint.descent() + paint.ascent()) / 2);
-			canvas.drawText(str, text_x, text_y, paint);
-			paint.setStyle(Paint.Style.FILL);
-			paint.setColor(color);
-			canvas.drawText(str, text_x, text_y, paint);
 		}
 	}
 
