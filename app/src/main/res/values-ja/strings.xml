@@ -106,6 +106,7 @@
     <string name="marker">マーカー</string>
     <string name="addBookmarkMenu">ブックマーク追加</string>
     <string name="selBookmarkMenu">ブックマーク選択</string>
+    <string name="selContentsMenu">目次の選択</string>
     <string name="selDirTreeMenu">ディレクトリ選択</string>
     <string name="selChapterMenu">見出し選択</string>
     <string name="searchTextMenu">検索文字列設定</string>
@@ -154,6 +155,7 @@
     <string name="mgnCutColorMenu">余白の削除対象の色</string>
     <string name="DisplayPositionMenu">画面の表示位置</string>
     <string name="AnimationPause">アニメ再生の停止/再開</string>
+    <string name="SelectContentsMenu">目次の選択</string>
     <string name="imgRotaMenu">画像の回転</string>
     <string name="imgConfMenu">画像表示設定</string>
     <string name="Profile1">プロファイル1</string>
@@ -306,6 +308,7 @@
     <string name="bm02">ブックマークを削除</string>
     <string name="bmTitle">ブックマーク一覧</string>
     <string name="bmNotFound">ブックマークはありません。</string>
+    <string name="contentsNotFound">目次はありません。</string>
     <string name="bmSort0">Path</string>
     <string name="bmSort1">Name</string>
     <string name="bmSort2">Date</string>
@@ -905,6 +908,13 @@
     <string name="readtext00">通常表示</string>
     <string name="readtext01">表示しない</string>
     <string name="readtext02">日付サイズの後へ表示</string>
+
+    <string name="readstyle00">ドーナツチャート</string>
+    <string name="readstyle01">進捗バー</string>
+
+    <string name="readprogresspos00">ドーナツチャートと同じ座標</string>
+    <string name="readprogresspos01">上側</string>
+    <string name="readprogresspos02">下側</string>
 
     <string name="enablefloatingicon">フローティングアイコンを有効</string>
     <string name="editfloatingicon">項目を編集</string>

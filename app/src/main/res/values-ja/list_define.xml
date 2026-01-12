@@ -840,5 +840,23 @@
         <item>3</item>
         <item>4</item>
     </string-array>
+    <string-array name="readstylesetting_name_list">
+        <item>ドーナツチャート</item>
+        <item>進捗バー</item>
+    </string-array>
+    <string-array name="readstylesetting_value_list">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+    <string-array name="readprogressbarpos_name_list">
+        <item>ドーナツチャートと同じ座標</item>
+        <item>上側</item>
+        <item>下側</item>
+    </string-array>
+    <string-array name="readprogressbarpos_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
 </resources>
