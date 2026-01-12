@@ -186,6 +186,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			5,	// オートプレイ開始
 			6,	// ブックマーク追加
 			7,	// ブックマーク選択
+			42,	// 目次の選択
 			8,	// シャープ化
 			23,	// 明るさ補正
 			24,	// ガンマ補正
@@ -232,6 +233,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		DEF.MENU_AUTOPLAY,	// オートプレイ開始
 		DEF.MENU_ADDBOOKMARK,// ブックマーク追加
 		DEF.MENU_SELBOOKMARK,// ブックマーク選択
+		DEF.MENU_CONTENTS,	// 目次の選択
 		DEF.MENU_SHARPEN,	// シャープ化
 		DEF.MENU_BRIGHT,	// 明るさ補正
 		DEF.MENU_GAMMA,		// ガンマ補正
@@ -277,6 +279,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.playMenu,		// オートプレイ開始
 		R.string.addBookmarkMenu,// ブックマーク追加
 		R.string.selBookmarkMenu,// ブックマーク選択
+		R.string.selContentsMenu,	// 目次の選択
 		R.string.sharpenMenu,	// シャープ化
 		R.string.brightMenu,	// 明るさ補正
 		R.string.gammaMenu,		// ガンマ補正
@@ -683,6 +686,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mDisablePageButton;
 	private boolean mReduced;
 	private long mBuffSize;
+	private boolean mEnableContentsFile;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -2517,7 +2521,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (mImageMgr != null) {
 			mImageMgr.setConfig(mScaleMode, mCenter, mFitDual, mDispMode, mNoExpand, mAlgoMode, mRotate, mWAdjust
-					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation, mColoring, mMgnBlkMsk, mMarginLevel, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginAspectMask, mMarginForceIgnoreAspect);
+					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation, mColoring, mMgnBlkMsk, mMarginLevel, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginAspectMask, mMarginForceIgnoreAspect, mEnableContentsFile);
 		}
 		// モードが変わればスケールは初期化
 		if (scaleinit) {
@@ -4071,6 +4075,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// アニメーションの一時停止
 				execCommand(DEF.MENU_DISPLAY_ANIMEPAUSE);
 				break;
+			case DEF.TAP_SELECTCONTENTSMENU:
+				// 目次の選択
+				execCommand(DEF.MENU_CONTENTS);
+				break;
 			case DEF.TAP_EXIT_VIEWER:
 				finishActivity(true);
 				break;
@@ -4919,6 +4927,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMenuDialog.addItem(DEF.MENU_SELBOOKMARK, res.getString(R.string.selBookmarkMenu));
 		// ブックマーク追加
 		mMenuDialog.addItem(DEF.MENU_ADDBOOKMARK, res.getString(R.string.addBookmarkMenu));
+		if (mEnableContentsFile) {
+			// 目次の選択
+			mMenuDialog.addItem(DEF.MENU_CONTENTS, res.getString(R.string.SelectContentsMenu));
+		}
 		// // ブックマーク選択
 		// mMenuDialog.addItem(DEF.MENU_SELBOOKMARK,
 		// res.getString(R.string.selBookmarkMenu));
@@ -4949,9 +4961,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMenuDialog.addItem(DEF.MENU_DELSHARE, res.getString(R.string.delshareMenu));
 		mMenuDialog.addItem(DEF.MENU_SETTHUMB, res.getString(R.string.setThumb));
 		mMenuDialog.addItem(DEF.MENU_SETTHUMBCROPPED, res.getString(R.string.setThumbCropped));
-
-		// アニメーション再生の一時停止
-		mMenuDialog.addItem(DEF.MENU_DISPLAY_ANIMEPAUSE, res.getString(R.string.AnimationPause));
+		if (mAnimationEnable) {
+			// アニメーション再生の一時停止
+			mMenuDialog.addItem(DEF.MENU_DISPLAY_ANIMEPAUSE, res.getString(R.string.AnimationPause));
+		}
 		// 一時設定
 		mMenuDialog.addSection(res.getString(R.string.settingSec));
 		// イメージ表示設定
@@ -5174,6 +5187,71 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		else {
 			Toast.makeText(this, R.string.bmNotFound, Toast.LENGTH_SHORT).show();
+			mMenuDialog = null;
+		}
+	}
+
+	// 目次の選択のメニューを開く
+	private void openContentsMenu() {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
+
+		if (mImageMgr == null || mImageView == null || mMenuDialog != null || !mEnableContentsFile) {
+			return;
+		}
+		if (mImageMgr.GetContentsLegnth() == 0) {
+			// 目次が無かった場合
+			Toast.makeText(this, R.string.contentsNotFound, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		Resources res = getResources();
+		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		// 目次の選択のタイトルを追加
+		mMenuDialog.addSection(res.getString(R.string.SelectContentsMenu));
+
+		ArrayList<BookMark> bookmark = new ArrayList<BookMark>();
+		boolean isAdd = false;
+		int count = 0;
+		// 目次を検索
+		for (int i = 0; i < mImageMgr.GetContentsLegnth(); i++) {
+			boolean found = false;
+			int found_count = 0;
+			if (!mImageMgr.GetContentsFile(i).equals("")) {
+				// ファイル名があれば一致するファイルを探す
+				for (int j = 0; j < mImageMgr.GetmFileListLength(); j++) {
+					if (mImageMgr.GetmFileListFilename(j).equals(mImageMgr.GetContentsFile(i))) {
+						// 一致するファイルが見つかった
+						found = true;
+						found_count = j;
+						break;
+					}
+				}
+			}
+			if (found) {
+				// 一致するファイルが見つかった場合は登録
+				bookmark.add(new BookMark(mImageMgr.GetContentsTitle(i),"P." + (found_count + 1), found_count));
+				isAdd = true;
+				count++;
+			}
+			// 一致するファイルが見つからない場合はページ番号で探す
+			else if (mImageMgr.GetContentsPage(i) > 0 && mImageMgr.GetContentsPage(i) <= mImageMgr.GetmFileListLength()) {
+				// ページ番号があれば登録
+				bookmark.add(new BookMark(mImageMgr.GetContentsTitle(i),"P." + (mImageMgr.GetContentsPage(i)), mImageMgr.GetContentsPage(i) - 1));
+				isAdd = true;
+				count++;
+			}
+			else {
+			}
+		}
+		for (int i = 0; i < count; i++) {
+			// 目次のページ移動先を追加
+			mMenuDialog.addItem(DEF.MENU_BOOKMARK + bookmark.get(i).getPage(),bookmark.get(i).getTitle(),bookmark.get(i).getValue());
+		}
+		if (isAdd) {
+			mMenuDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
+		}
+		else {
+			Toast.makeText(this, R.string.contentsNotFound, Toast.LENGTH_SHORT).show();
 			mMenuDialog = null;
 		}
 	}
@@ -5596,6 +5674,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.MENU_DISPLAY_ANIMEPAUSE:
 				pauseGifAnimation();
 				break;
+			case DEF.MENU_CONTENTS:
+				// 目次の選択ダイアログ表示
+				openContentsMenu();
+				break;
 
 			default: {
 				if (id >= DEF.MENU_DIR_TREE) {
@@ -5947,7 +6029,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 			}
 			deviceOrientation = -1;
-			orientationEventListener.enable();
+			if (orientationEventListener != null) {
+				// 例外が発生する可能性があるため有効の場合のみ選択する
+				orientationEventListener.enable();
+			}
 
 			mImageView.setImageBitmap(null);
 
@@ -6213,6 +6298,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mDisablePageButton = SetImageActivity.getDisablePageButton(sharedPreferences);
 			mReduced = SetImageActivity.getReduced(sharedPreferences);
 			mBuffSize = SetImageDetailActivity.getBuffSize(sharedPreferences);
+			mEnableContentsFile = SetImageActivity.getEnableContentsFile(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();

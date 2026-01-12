@@ -13,15 +13,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
@@ -243,6 +247,12 @@ public class ImageManager extends InputStream implements Runnable {
 	private byte[] retObject;
 	private byte[] buffer;
 
+	private static int mContentsLength;
+	private static String[] mContentsFile;
+	private static String[] mContentsTltle;
+	private static int[] mContentsPage;
+	private boolean mEnableContentsFile;
+
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -367,6 +377,121 @@ public class ImageManager extends InputStream implements Runnable {
 		mLoadImage = true;
 	}
 
+	// テキストの解析
+	public static void TextAnalysis(String text) {
+		// テキストが見つからない場合は戻る
+		if (text == null || text.trim().isEmpty()) return;
+		// テキストを改行コードで分割
+		String[] lines = text.split("\\R");
+		// 各項目の配列を確保する
+		String[] extractedFileName = new String[lines.length];
+		int[] pageNumber = new int[lines.length];
+		String[] infoString = new String[lines.length];
+		// カウントを初期化
+		mContentsLength = 0;
+		int count = 0;
+		// テキストの行数だけループ
+		for (String line : lines) {
+			String trimmedLine = line.trim();
+			// テキストが見つからない場合はスキップ
+			if (trimmedLine.isEmpty()) continue;
+			// 半角スペース/カンマ/タブでテキストを分割
+			String[] parts = trimmedLine.split("[ \t,]+");
+        	// テキストのみ格納
+			List<String> textElements = new ArrayList<>(); 
+			infoString[count] = "";
+			extractedFileName[count] = "";
+			pageNumber[count] = -1;
+			// テキストの解析
+			for (String part : parts) {
+				// ファイル名判定
+				if (part.matches("(?i).*\\.(jpg|jpeg|png|gif|webp|avif|heif|heic|jxl)$")) {
+					extractedFileName[count] = part;
+				}
+				// 数値判定(ページ番号)
+				else if (part.matches("\\d+")) {
+					pageNumber[count] = Integer.parseInt(part);
+	            }
+				// 該当しない場合はテキスト判定(タイトル名)
+				else if (!part.contains(".")) {
+					// ドットを含まないテキストを順に格納する
+					textElements.add(part);
+				}
+			}
+			// テキスト要素のみをスペースで連結
+			infoString[count] = String.join(" ", textElements);
+			// 解析結果の出力
+			if (!infoString[count].isEmpty() || pageNumber[count] != -1 || !extractedFileName[count].isEmpty()) {
+				// 解析結果が有ればカウントを増やす
+				count++;
+			}
+		}
+		// 解析結果を配列へ保存
+		if (count > 0) {
+			mContentsLength = count;
+			mContentsFile = new String[count];
+			mContentsTltle = new String[count];
+			mContentsPage = new int[count];
+			for (int i = 0; i < count; i++) {
+				mContentsFile[i] = extractedFileName[i];
+				mContentsTltle[i] = infoString[i];
+				mContentsPage[i] = pageNumber[i];
+			}
+		}
+	}
+
+	public int GetContentsLegnth() {
+		return mContentsLength;
+	}
+	public String GetContentsFile(int num) {
+		return mContentsFile[num];
+	}
+	public String GetContentsTitle(int num) {
+		return mContentsTltle[num];
+	}
+	public int GetContentsPage(int num) {
+		return mContentsPage[num];
+	}
+	public int GetmFileListLength() {
+		return mFileList.length;
+	}
+	public String GetmFileListFilename(int num) {
+		return mFileList[num].name;
+	}
+
+	// 保存済みのテキストを読み出して解析を行う
+	private void CheckTextAnalysis() {
+		if (mEnableContentsFile) {
+			// 保存済みのテキストを読み出す
+			String name = mFilePath;
+			// 区切りをアンダーバーへ変換
+			name = name.replace("\\", "_");
+			name = name.replace("/", "_");
+			// ファイル名の末尾に目次を加える
+			String rname = name + "_contents";
+			// ファイル名をMD5のハッシュ値へ変換
+			String pathcode = DEF.makeCode(rname, 0, 0);
+			String rfile = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+			try {
+				// ファイルを読み出す
+				FileInputStream fis = new FileInputStream(rfile);
+				int length;
+				byte[] buff = new byte[1024 * 64];
+				if ((length = fis.read(buff)) > 0) {
+					// ファイルが読み込めた場合
+					// BASE64デコードして中身を取り出す
+					byte[] copiedArray = Arrays.copyOf(buff, length);
+					byte[] byteArray = Base64.getDecoder().decode(copiedArray);
+					String str = new String(byteArray, StandardCharsets.UTF_8);
+					// テキストを解析
+					TextAnalysis(str);
+				}
+				fis.close();
+			} catch (Exception e) {
+			}
+		}
+	}
+
 	public int mEpubMode = TextManager.EPUB_MODE_ALL_IMAGE;
 
 	private void epubFileList() throws IOException {
@@ -412,6 +537,8 @@ public class ImageManager extends InputStream implements Runnable {
 		byte [] cdhBuf = null;
 		long fileLength = cmpDirectLength();
 		long cdhLength = 0;		//central directory header length
+		String wname;
+		String wfile;
 
 		boolean rar5 = false;
 		boolean stop = false;
@@ -437,6 +564,12 @@ public class ImageManager extends InputStream implements Runnable {
 		byte[] lbuff = new byte[4];
 		byte[] bbuff = new byte[2];
 		buffer = new byte[1024];
+		byte[] buff = new byte[1024 * 64];
+		byte[] mContentsbuff = new byte[1024 * 64];
+		int mContentsLen = 0;
+		boolean mContentsFound = false;
+		// あらかじめ目次の解析結果を初期化しておく(これを入れないと以前の解析結果が参照されてしまう)
+		mContentsLength = 0;
 
 		if (!mFileListCacheOff) {
 			// ファイルリストのキャッシュが有効の場合
@@ -644,7 +777,35 @@ public class ImageManager extends InputStream implements Runnable {
 							if (fl.type == FileData.FILETYPE_ARC || fl.type == FileData.FILETYPE_PARENT || fl.type == FileData.FILETYPE_DIR || fl.type == FileData.FILETYPE_PDF || fl.type == FileData.FILETYPE_WEB) {
 								use = false;
 							}
-							else if (fl.type == FileData.FILETYPE_TXT && mOpenMode != OPENMODE_LIST && mOpenMode != OPENMODE_TEXTVIEW) {
+							else if (fl.type == FileData.FILETYPE_TXT && mOpenMode != OPENMODE_TEXTVIEW) {
+								if (mFileType == FILETYPE_ZIP) {
+									// ZIPファイルだった場合はテキストファイルを取り出す
+									try (ZipFile zip = new ZipFile(mFilePath)) {
+										// 特定のファイルを指定して取得
+										ZipEntry entry = zip.getEntry(fl.name);
+										if (entry != null) {
+											// ファイルが見つかれば読み込む
+											InputStream fis = zip.getInputStream(entry);
+											int length;
+											if ((length = fis.read(buff)) > 0) {
+												// ファイルが読み込めた場合
+												// 文字列に変換
+												String str = new String(buff, StandardCharsets.UTF_8);
+												// テキストを解析
+												TextAnalysis(str);
+												if (GetContentsLegnth() > 0) {
+													// 解析結果が有れば
+													mContentsFound = true;
+													// サイズとバッファを保存
+													mContentsLen = length;
+													mContentsbuff = Arrays.copyOf(buff, length);
+												}
+											}
+											fis.close();
+										}
+									} catch (Exception e) {
+									}
+								}
 								use = false;
 							}
 							else if (fl.type == FileData.FILETYPE_EPUB) {
@@ -867,6 +1028,32 @@ public class ImageManager extends InputStream implements Runnable {
 					}
 				}
 			}
+			if (mEnableContentsFile) {
+				// ファイル名の末尾に目次を加える
+				wname = name + "_contents";
+				// ファイル名をMD5のハッシュ値へ変換
+				pathcode = DEF.makeCode(wname, 0, 0);
+				wfile = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+				try {
+					// 以前のファイルを削除
+					new File(wfile).delete();
+				} catch (Exception e) {
+				}
+				// 目次のファイルを保存
+				if (mContentsFound) {
+					// 解析結果が有れば
+					try {
+						FileOutputStream fos = new FileOutputStream(wfile);
+						byte[] copiedArray = Arrays.copyOf(mContentsbuff, mContentsLen);
+						// ファイルの中身が直ぐに分からないようにするためにBASE64エンコードする
+						byte[] enc = Base64.getEncoder().encode(copiedArray);
+						// ファイルを書き出す
+						fos.write(enc, 0, enc.length);
+						fos.close();
+					} catch (Exception e) {
+					}
+				}
+			}
 		}
 		// RARであればメモリ確保
 		if (mFileType == FILETYPE_RAR) {
@@ -877,6 +1064,9 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		mMaxCmpLength = maxcmplen;
 		mMaxOrgLength = maxorglen;
+
+		// 保存済みのテキストを読み出して解析を行う
+		CheckTextAnalysis();
 
 		Logcat.d(logLevel, "終了します. mMaxCmpLength=" + mMaxCmpLength + ", mMaxOrgLength=" + mMaxOrgLength);
 	}
@@ -3060,7 +3250,7 @@ public class ImageManager extends InputStream implements Runnable {
 				short type = FileData.getType(mActivity, name);
 				short exttype = FileData.getExtType(mActivity, name);
 				boolean use = true;
-				if (type == FileData.FILETYPE_TXT && mOpenMode != OPENMODE_LIST && mOpenMode != OPENMODE_TEXTVIEW) {
+				if (type == FileData.FILETYPE_TXT && mOpenMode != OPENMODE_TEXTVIEW) {
 					use = false;
 				}
 				else if (type == FileData.FILETYPE_EPUB_SUB && mOpenMode != OPENMODE_TEXTVIEW) {
@@ -4522,7 +4712,7 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	// 設定変更
-	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation, boolean coloring, boolean marginblackmask, int marginlevel, int marginlimit, int marginspace, int marginrange, int marginstart, boolean marginaspectmask, boolean marginforceignoreaspect) {
+	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation, boolean coloring, boolean marginblackmask, int marginlevel, int marginlimit, int marginspace, int marginrange, int marginstart, boolean marginaspectmask, boolean marginforceignoreaspect, boolean enablecontentsfile) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "wscale=" + wscale + ", scale=" + scale);
 		mScrScaleMode = mode;
@@ -4564,6 +4754,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mContrast  = contrast;
 		mHue = hue;
 		mSaturation = saturation;
+		mEnableContentsFile = enablecontentsfile;
 
 		// フィルター設定
 		SetColorEffect();
