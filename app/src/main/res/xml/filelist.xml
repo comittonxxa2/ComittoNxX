@@ -260,6 +260,22 @@
             android:key="ReadTextSetting"
             android:summary="dummy"
             android:title="Text display of reading rate in list view" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Choice of reading rate donut chart/progress bar"
+            android:entries="@array/readstylesetting_name_list"
+            android:entryValues="@array/readstylesetting_value_list"
+            android:key="ReadStyleSetting"
+            android:summary="dummy"
+            android:title="Choice of reading rate donut chart/progress bar" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Coordinates of the reading rate progress bar"
+            android:entries="@array/readprogressbarpos_name_list"
+            android:entryValues="@array/readprogressbarpos_value_list"
+            android:key="ReadProgressbarPosition"
+            android:summary="dummy"
+            android:title="Coordinates of the reading rate progress bar" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

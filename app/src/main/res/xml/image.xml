@@ -339,6 +339,11 @@
             android:key="DisablePageButton"
             android:summary="Check to disable the top/bottom button"
             android:title="Disable top/bottom buttons(*)" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="EnableContentsFile"
+            android:summary="Check to enable the table of contents text file"
+            android:title="Enable table of contents files in compressed files" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
