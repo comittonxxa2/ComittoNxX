@@ -222,8 +222,10 @@ public class DEF {
 	public static final int MENU_PROFILE10 = Menu.FIRST + 74;
 	public static final int MENU_FLOATINGICON_SETTING = Menu.FIRST + 75;
 	public static final int MENU_DISPLAY_ANIMEPAUSE = Menu.FIRST + 76;
-	public static final int MENU_BOOKMARK = Menu.FIRST + 1000;
-	public static final int MENU_CHAPTER = Menu.FIRST + 2000;
+	public static final int MENU_CONTENTS = Menu.FIRST + 77;
+	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
+	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
+	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
 
 	public static final int MENU_CMARGIN = Menu.FIRST + 101;
@@ -606,6 +608,8 @@ public class DEF {
 	public static final String KEY_DISPLAYVIEWROTATE = "DisplayViewRotate";
 	public static final String KEY_READTEXTSETTING = "ReadTextSetting";
 	public static final String KEY_REVERSEROTARE = "ReverseRotate";
+	public static final String KEY_READSTYLESETTING = "ReadStyleSetting";
+	public static final String KEY_READPROGRESSBARPOSITION = "ReadProgressbarPosition";
 
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
@@ -698,6 +702,7 @@ public class DEF {
 	public static final String KEY_ANIMATIONENABLE = "AnimationEnable";
 	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
 	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
+	public static final String KEY_ENABLECONTENTSFILE = "EnableContentsFile";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
@@ -1301,6 +1306,7 @@ public class DEF {
 	public static final String KEY_TX_FONTBODY = "txFontBodySp";
 	public static final String KEY_TX_FONTRUBI = "txFontRubiSp";
 	public static final String KEY_TX_FONTINFO = "txFontInfoSp";
+	public static final String KEY_TX_DISABLETEXTINFO = "DisableTextInfo";
 	public static final String KEY_TX_SPACEW = "txSpaceW";
 	public static final String KEY_TX_SPACEH = "txSpaceH";
 	public static final String KEY_TX_MARGINW = "txMarginW";
@@ -1649,6 +1655,7 @@ public class DEF {
 	public static final int TAP_PROFILE10 = 112;		// プロファイル10
 	public static final int TAP_SWSCREENORIENT = 113;	// 表示方向の切り替え
 	public static final int TAP_ANIMEPAUSE = 114;	//アニメーションの一時停止
+	public static final int TAP_SELECTCONTENTSMENU = 115;	// 目次の選択
 
 	// イメージビューア用のタップ操作の初期値
 	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
