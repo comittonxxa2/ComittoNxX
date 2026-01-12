@@ -198,6 +198,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 
 	private boolean mViewTapSw = false;
 	private boolean mReduced;
+	private boolean mDisableTextInfo;
 
 	private float[] mShiftX = { 0.0f, 0.65f, 0.2f, 0.05f, 0.0f, 0.3f, 0.0f, 0.0f, 0.0f, -0.7f, -0.15f};
 	private float[] mShiftY = { 0.0f, 0.5f, 0.1f, 0.10f, 0.1f, 0.5f, -0.03f, 0.03f, 0.0f, 0.0f, -0.30f};
@@ -691,13 +692,15 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		FontMetrics fm = text.getFontMetrics();
 
 		// タイトル描画
-		if (mDrawTitle != null) {
-			canvas.drawText(mDrawTitle, x + mDrawWidth / 2L, y + -fm.top + margin, text);
-		}
+		if (!mDisableTextInfo) {
+			if (mDrawTitle != null) {
+				canvas.drawText(mDrawTitle, x + mDrawWidth / 2L, y + -fm.top + margin, text);
+			}
 
-		// ページ番号描画
-		String pagestr = (index + 1) + " / " + mTextData.length;
-		canvas.drawText(pagestr, x + mDrawWidth / 2L, y + mDrawHeight - fm.bottom - margin, text);
+			// ページ番号描画
+			String pagestr = (index + 1) + " / " + mTextData.length;
+			canvas.drawText(pagestr, x + mDrawWidth / 2L, y + mDrawHeight - fm.bottom - margin, text);
+		}
 
 		char[] code = new char[2];
 
@@ -1314,7 +1317,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 	}
 
 	// 余白色を設定
-	public boolean setConfig(int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int srngw, int srngh, int svol, boolean pr, boolean cmgn, boolean csdw, boolean psel, boolean effect, int effecttime, String fontfile, boolean ascrt, int pic_scale, boolean reduced) {
+	public boolean setConfig(int mclr, int cclr, int gclr, int vp, int mgn, int cen, int sdw, int srngw, int srngh, int svol, boolean pr, boolean cmgn, boolean csdw, boolean psel, boolean effect, int effecttime, String fontfile, boolean ascrt, int pic_scale, boolean reduced, boolean disabletextinfo) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		boolean result = true;
 
@@ -1358,6 +1361,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		mAscRotate = ascrt;
 		mPicScale = pic_scale;
 		mReduced = reduced;
+		mDisableTextInfo = disabletextinfo;
 
 		mBackPaint.setColor(mMgnColor);
 		mCenterPaint.setColor(mCenColor);

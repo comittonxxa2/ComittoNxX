@@ -369,6 +369,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private Insets insets;
 	private boolean mHideNavigationBar = false;
 	private boolean mReduced;
+	private boolean mDisableTextInfo;
 
 	/**
 	 * 画面が作成された時に発生します。
@@ -3137,6 +3138,10 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				mBodySize = DEF.calcFontPix(body, mDensity);
 				mRubiSize = DEF.calcFontPix(rubi, mDensity);
 				mInfoSize = DEF.calcFontPix(info, mDensity);
+				if (mDisableTextInfo) {
+					// ヘッダ/フッタを表示しない場合はフォントサイズを0に設定
+					mInfoSize = 0;
+				}
 				mMarginW = DEF.calcDispMargin(marginw);
 				mMarginH = mInfoSize + DEF.calcDispMargin(marginh);
 
@@ -3544,6 +3549,11 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mBodySize = DEF.calcFontPix(mBodySizeOrg, mDensity);	// 本文
 		mRubiSize = DEF.calcFontPix(mRubiSizeOrg, mDensity);	// ルビ
 		mInfoSize = DEF.calcFontPix(mInfoSizeOrg, mDensity);	// ページ情報など
+		mDisableTextInfo = SetTextActivity.getDisableTextInfo(sharedPreferences);
+		if (mDisableTextInfo) {
+			// ヘッダ/フッタを表示しない場合はフォントサイズを0に設定
+			mInfoSize = 0;
+		}
 
 		mPicSize = SetTextActivity.getPicSize(sharedPreferences);	// 挿絵サイズ
 
@@ -3626,7 +3636,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private void setConfig() {
 		if (mTextView != null) {
 			boolean result;
-			result = mTextView.setConfig(mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mScrlRngW, mScrlRngH, mVolScrl, mPrevRev, mCMargin, mCShadow, mPseLand, mEffect, mEffectTime, mFontFile, mAscMode != TextManager.ASC_NORMAL, mPicSize, mReduced);
+			result = mTextView.setConfig(mMgnColor, mCenColor, mTopColor1, mViewPoint, mMargin, mCenter, mShadow, mScrlRngW, mScrlRngH, mVolScrl, mPrevRev, mCMargin, mCShadow, mPseLand, mEffect, mEffectTime, mFontFile, mAscMode != TextManager.ASC_NORMAL, mPicSize, mReduced, mDisableTextInfo);
 			if (!result) {
 				Toast.makeText(this, "open font error:\"" + mFontFile + "\"", Toast.LENGTH_LONG).show();
 
