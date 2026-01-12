@@ -106,6 +106,7 @@
     <string name="marker">Marker</string>
     <string name="addBookmarkMenu">Add Favorite</string>
     <string name="selBookmarkMenu">Select Favorite</string>
+    <string name="selContentsMenu">Select Table of Contents</string>
     <string name="selDirTreeMenu">Select Sub Directory</string>
     <string name="selChapterMenu">Select Chapter</string>
     <string name="searchTextMenu">Set Search Text</string>
@@ -154,6 +155,7 @@
     <string name="mgnCutColorMenu">Color to remove margin</string>
     <string name="DisplayPositionMenu">Display position on screen</string>
     <string name="AnimationPause">Stop/resume animation playback</string>
+    <string name="SelectContentsMenu">Table of contents selection</string>
     <string name="imgRotaMenu">Image Rotate</string>
     <string name="imgConfMenu">Image Config</string>
     <string name="Profile1">Profile1</string>
@@ -306,6 +308,7 @@
     <string name="bm02">Delete Favorite</string>
     <string name="bmTitle">Favorite List</string>
     <string name="bmNotFound">There are no bookmarks.</string>
+    <string name="contentsNotFound">There are no table of contents.</string>
     <string name="bmSort0">Path</string>
     <string name="bmSort1">Name</string>
     <string name="bmSort2">Date</string>
@@ -905,6 +908,13 @@
     <string name="readtext00">Normal display</string>
     <string name="readtext01">Not displayed</string>
     <string name="readtext02">Displayed after the date size</string>
+
+    <string name="readstyle00">Donut chart</string>
+    <string name="readstyle01">Progress bar</string>
+
+    <string name="readprogresspos00">Same coordinates as the doughnut chart</string>
+    <string name="readprogresspos01">Upper side</string>
+    <string name="readprogresspos02">Lower side</string>
 
     <string name="enablefloatingicon">Enable Floating Toolbar</string>
     <string name="editfloatingicon">Edit item</string>
