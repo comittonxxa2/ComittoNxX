@@ -189,6 +189,29 @@
             android:key="ChgPageKey"
             android:summary="チェックにより右キーが前ページの移動になります"
             android:title="左右キー操作の入替え＊" />
+        <PreferenceScreen
+            android:key="CornerEndSet"
+            android:title="四隅と端をタップエリアにして動作を割り当て"
+            android:summary="タップ操作の割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetCornerEndTextViewerActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SoftChgPage"
+            android:summary="ページめくりでページ端に達した時にリスト表示の内容で前後のファイルへページ移動する場合にチェックを入れる"
+            android:title="ページ端で開くファイル名をソート＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="先頭/末尾ボタンを無効にする場合にチェックを入れる"
+            android:title="画面下の先頭/末尾ボタンを無効にする＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisableTextInfo"
+            android:summary="上下のヘッダー/フッターを表示しない場合にチェックを入れる"
+            android:title="ヘッダー/フッターを表示しない" />
     </PreferenceCategory>
     <PreferenceCategory android:title="フォント設定" >
         <ListPreference
@@ -253,24 +276,6 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="上下の余白サイズ" />
-        <PreferenceScreen
-            android:key="CornerEndSet"
-            android:title="四隅と端をタップエリアにして動作を割り当て"
-            android:summary="タップ操作の割り当てを設定する" >
-            <intent
-                android:targetClass="src.comitton.config.SetCornerEndTextViewerActivity"
-                android:targetPackage="@string/application_id" />
-        </PreferenceScreen>
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="SoftChgPage"
-            android:summary="ページめくりでページ端に達した時にリスト表示の内容で前後のファイルへページ移動する場合にチェックを入れる"
-            android:title="ページ端で開くファイル名をソート＊" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="DisablePageButton"
-            android:summary="先頭/末尾ボタンを無効にする場合にチェックを入れる"
-            android:title="画面下の先頭/末尾ボタンを無効にする＊" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

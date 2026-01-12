@@ -262,6 +262,22 @@
             android:key="ReadTextSetting"
             android:summary="dummy"
             android:title="リスト表示の読書率のテキスト表示" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="読書率のドーナツチャート/進捗バーの選択"
+            android:entries="@array/readstylesetting_name_list"
+            android:entryValues="@array/readstylesetting_value_list"
+            android:key="ReadStyleSetting"
+            android:summary="dummy"
+            android:title="読書率のドーナツチャート/進捗バーの選択" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="読書率の進捗バーの座標"
+            android:entries="@array/readprogressbarpos_name_list"
+            android:entryValues="@array/readprogressbarpos_value_list"
+            android:key="ReadProgressbarPosition"
+            android:summary="dummy"
+            android:title="読書率の進捗バーの座標" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

@@ -337,6 +337,11 @@
             android:key="DisablePageButton"
             android:summary="先頭/末尾ボタンを無効にする場合にチェックを入れる"
             android:title="画面下の先頭/末尾ボタンを無効にする＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="EnableContentsFile"
+            android:summary="目次のテキストファイルを有効にする場合にチェックを入れる"
+            android:title="圧縮ファイル内の目次ファイルを有効にする" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
