@@ -6075,6 +6075,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		} catch (Exception e) {
 			Logcat.e(logLevel, "Delete error.", e);
 		}
+		String wname;
+		wname = name + "_contents";
+		pathcode = DEF.makeCode(wname, 0, 0);
+		file = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+		try {
+			// 目次のファイルを削除
+			new File(file).delete();
+		} catch (Exception e) {
+			Logcat.e(logLevel, "Delete error.", e);
+		}
 	}
 
 	private static boolean mRecordSwitch = false;
