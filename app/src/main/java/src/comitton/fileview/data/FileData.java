@@ -83,6 +83,13 @@ public class FileData {
 		setDate(date);
 	}
 
+	// リスト表示用に特別に用意(htmlを認識させるため)
+	public FileData (Context context, String name, long size, long date, boolean dummy) {
+		setName(context, name, true);
+		setSize(size);
+		setDate(date);
+	}
+
 	public FileData (Context context, String name, int state) {
 		this(context, name);
 		setState(state);
@@ -118,6 +125,13 @@ public class FileData {
 	public void setName(Context context, String name) {
 		this.name = name;
 		setType(context, name);
+		setExtType(context, name);
+	}
+
+	// リスト表示用に特別に用意(htmlを認識させるため)
+	public void setName(Context context, String name, boolean dummy) {
+		this.name = name;
+		setType(context, name, true);
 		setExtType(context, name);
 	}
 
@@ -157,6 +171,11 @@ public class FileData {
 		setType(getType(context, filepath));
 	}
 
+	// リスト表示用に特別に用意(htmlを認識させるため)
+	private void setType(Context context, String filepath, boolean dummy) {
+		setType(getType(context, filepath, true));
+	}
+
 	public short getExtType() {
 		return exttype;
 	}
@@ -189,6 +208,39 @@ public class FileData {
 		}
 		if (isEpubSub(filename)) {
 			return FILETYPE_EPUB_SUB;
+		}
+		if (isWeb(filename)) {
+			return FILETYPE_WEB;
+		}
+		return FILETYPE_NONE;
+	}
+
+	// リスト表示用に特別に用意(htmlを認識させるため)
+	public static short getType(Context context, String filepath, boolean dummy) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		String filename = FileAccess.filename(context, filepath);
+		Logcat.d(logLevel, "開始します. filepath=" + filepath + ", filename=" + filename);
+
+		if (filename.equals("..")) {
+			return FILETYPE_PARENT;
+		}
+		if (filename.endsWith("/")) {
+			return FILETYPE_DIR;
+		}
+		if (isArchive(filename)) {
+			return FILETYPE_ARC;
+		}
+		if (isImage(context, filename)) {
+			return FILETYPE_IMG;
+		}
+		if (isPdf(filename)) {
+			return FILETYPE_PDF;
+		}
+		if (isText(filename)) {
+			return FILETYPE_TXT;
+		}
+		if (isEpub(filename)) {
+			return FILETYPE_EPUB;
 		}
 		if (isWeb(filename)) {
 			return FILETYPE_WEB;
