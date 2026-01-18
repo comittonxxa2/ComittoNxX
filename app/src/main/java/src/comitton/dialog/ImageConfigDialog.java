@@ -8,6 +8,7 @@ import src.comitton.dialog.ListDialog.ListSelectListener;
 import jp.dip.muracoro.comittonx.R;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.res.Resources;
@@ -127,7 +128,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private String mSaturationStr;
 
 	private String mAutoStr;
-	private String mNoneStr;
+	private static String mNoneStr;
 	private String mDegreeStr;
 
 	private String[] mAlgoModeItems;
@@ -290,7 +291,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 
 
-		if (mCommandId != DEF.MENU_IMGCONF) {
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF) {
 			mChkGray.setVisibility(View.GONE);
 			mChkColoring.setVisibility(View.GONE);
 			mChkInvert.setVisibility(View.GONE);
@@ -312,15 +313,33 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mBtnDisplayPosition.setVisibility(View.GONE);
 
 		}
-		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_SHARPEN) {
+		if (mCommandId == DEF.MENU_WEBIMGCONF) {
+			mChkMoire.setVisibility(View.GONE);
+			mChkTopSingle.setVisibility(View.GONE);
+
+			mTxtAlgoMode.setVisibility(View.GONE);
+			mTxtDispMode.setVisibility(View.GONE);
+			mTxtScaleMode.setVisibility(View.GONE);
+			mTxtMgncut.setVisibility(View.GONE);
+			mTxtMgncutColor.setVisibility(View.GONE);
+			mTxtDisplayPosition.setVisibility(View.GONE);
+
+			mBtnAlgoMode.setVisibility(View.GONE);
+			mBtnDispMode.setVisibility(View.GONE);
+			mBtnScaleMode.setVisibility(View.GONE);
+			mBtnMgncut.setVisibility(View.GONE);
+			mBtnMgncutColor.setVisibility(View.GONE);
+			mBtnDisplayPosition.setVisibility(View.GONE);
+		}
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_SHARPEN) {
 			mTxtSharpen.setVisibility(View.GONE);
 			mSkbSharpen.setVisibility(View.GONE);
 		}
-		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_BRIGHT) {
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_BRIGHT) {
 			mTxtBright.setVisibility(View.GONE);
 			mSkbBright.setVisibility(View.GONE);
 		}
-		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_GAMMA) {
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_GAMMA) {
 			mTxtGamma.setVisibility(View.GONE);
 			mSkbGamma.setVisibility(View.GONE);
 		}
@@ -328,15 +347,15 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtBkLight.setVisibility(View.GONE);
 			mSkbBkLight.setVisibility(View.GONE);
 		}
-		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_CONTRAST) {
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_CONTRAST) {
 			mTxtContrast.setVisibility(View.GONE);
 			mSkbContrast.setVisibility(View.GONE);
 		}
-		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_HUE) {
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_HUE) {
 			mTxtHue.setVisibility(View.GONE);
 			mSkbHue.setVisibility(View.GONE);
 		}
-		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_SATURATION) {
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_SATURATION) {
 			mTxtSaturation.setVisibility(View.GONE);
 			mSkbSaturation.setVisibility(View.GONE);
 		}
@@ -356,13 +375,13 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mTxtHue != null) mHueStr = mTxtHue.getText().toString();
 		if (mTxtSaturation != null) mSaturationStr = mTxtSaturation.getText().toString();
 
-		if (mTxtSharpen != null && mTxtSharpen != null) mTxtSharpen.setText(mSharpenStr.replaceAll("%", getSharpenStr(mSharpen)));
-		if (mTxtBright != null && mTxtBright != null) mTxtBright.setText(mBrightStr.replaceAll("%", getBrightGammaStr(mBright)));
-		if (mTxtGamma != null && mTxtGamma != null) mTxtGamma.setText(mGammaStr.replaceAll("%", getBrightGammaStr(mGamma)));
+		if (mTxtSharpen != null && mTxtSharpen != null) mTxtSharpen.setText(mSharpenStr.replaceAll("%", getSharpenStr(getContext(), mSharpen)));
+		if (mTxtBright != null && mTxtBright != null) mTxtBright.setText(mBrightStr.replaceAll("%", getBrightGammaStr(getContext(), mBright)));
+		if (mTxtGamma != null && mTxtGamma != null) mTxtGamma.setText(mGammaStr.replaceAll("%", getBrightGammaStr(getContext(), mGamma)));
 		if (mTxtBkLight != null && mTxtBkLight != null) mTxtBkLight.setText(mBkLightStr.replaceAll("%", getBkLight(mBkLight)));
-		if (mTxtContrast != null && mTxtContrast != null) mTxtContrast.setText(mContrastStr.replaceAll("%", getBrightGammaStr(mContrast)));
-		if (mTxtHue != null && mTxtHue != null) mTxtHue.setText(mHueStr.replaceAll("%", getBrightGammaStr(mHue)));
-		if (mTxtSaturation != null && mTxtSaturation != null) mTxtSaturation.setText(mSaturationStr.replaceAll("%", getBrightGammaStr(mSaturation)));
+		if (mTxtContrast != null && mTxtContrast != null) mTxtContrast.setText(mContrastStr.replaceAll("%", getBrightGammaStr(getContext(), mContrast)));
+		if (mTxtHue != null && mTxtHue != null) mTxtHue.setText(mHueStr.replaceAll("%", getBrightGammaStr(getContext(), mHue)));
+		if (mTxtSaturation != null && mTxtSaturation != null) mTxtSaturation.setText(mSaturationStr.replaceAll("%", getBrightGammaStr(getContext(), mSaturation)));
 
 		if (mSkbSharpen != null) mSkbSharpen.setMax(32);
 		if (mSkbSharpen != null) mSkbSharpen.setOnSeekBarChangeListener(this);
@@ -608,7 +627,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 		// 変更通知
 		if (seekBar == mSkbSharpen) {
-			String str = getSharpenStr(progress);
+			String str = getSharpenStr(getContext(), progress);
 			mTxtSharpen.setText(mSharpenStr.replaceAll("%", str));
 		}
 		else if (seekBar == mSkbBkLight) {
@@ -616,11 +635,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtBkLight.setText(mBkLightStr.replaceAll("%", str));
 		}
 		else if (seekBar == mSkbBright) {
-			String str = getBrightGammaStr(progress);
+			String str = getBrightGammaStr(getContext(), progress);
 			mTxtBright.setText(mBrightStr.replaceAll("%", str));
 		}
 		else if (seekBar == mSkbGamma) {
-			String str = getBrightGammaStr(progress);
+			String str = getBrightGammaStr(getContext(), progress);
 			mTxtGamma.setText(mGammaStr.replaceAll("%", str));
 		}
 		else if (seekBar == mSkbContrast) {
@@ -628,7 +647,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtContrast.setText(mContrastStr.replaceAll("%", str));
 		}
 		else if (seekBar == mSkbHue) {
-			String str = getHueStr(progress);
+			String str = getHueStr(getContext(), progress);
 			mTxtHue.setText(mHueStr.replaceAll("%", str));
 		}
 		else if (seekBar == mSkbSaturation) {
@@ -639,10 +658,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		}
 	}
 
-	private String getSharpenStr(int progress) {
+	public static String getSharpenStr(Context context, int progress) {
 		String str;
 		if (progress == 0) {
-			str = mNoneStr;
+			Resources res = context.getResources();
+			str = res.getString(R.string.none);
 		}
 		else if (progress < 16) {
 			str = String.valueOf(progress % 16) + "/16";
@@ -667,10 +687,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		return str;
 	}
 
-	private String getBrightGammaStr(int progress) {
+	public static String getBrightGammaStr(Context context, int progress) {
 		String str;
 		if (progress == 5) {
-			str = mNoneStr;
+			Resources res = context.getResources();
+			str = res.getString(R.string.none);
 		}
 		else if (progress < 5) {
 			str = String.valueOf(progress - 5);
@@ -681,19 +702,20 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		return str;
 	}
 
-	private String getContrastStr(int progress) {
+	public static String getContrastStr(int progress) {
 		String str;
 		str = String.valueOf(progress * 5) + "%";
 		return str;
 	}
 
-	private String getHueStr(int progress) {
+	public static String getHueStr(Context context, int progress) {
+		Resources res = context.getResources();
 		String str;
-		str = String.valueOf((progress - 20) * 5) + mDegreeStr;
+		str = String.valueOf((progress - 20) * 5) + res.getString(R.string.degree);
 		return str;
 	}
 
-	private String getSaturationStr(int progress) {
+	public static String getSaturationStr(int progress) {
 		String str;
 		str = String.valueOf(progress * 5) + "%";
 		return str;

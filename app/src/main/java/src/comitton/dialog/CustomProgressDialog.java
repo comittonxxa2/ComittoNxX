@@ -5,6 +5,7 @@ import src.comitton.common.DEF;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.widget.TextView;
 import android.widget.ProgressBar;
 
@@ -29,12 +30,14 @@ public class CustomProgressDialog extends DialogFragment {
 	private Handler mHandler;
 	private String mTitle;
 	private boolean mCancelableOutsideTouch;
+	private boolean mProgressbarMode = true;
 
-	public CustomProgressDialog(String title, String message, boolean cancelableOutsideTouch, Handler handler) {
+	public CustomProgressDialog(String title, String message, boolean cancelableOutsideTouch, Handler handler, boolean progressbarmode) {
 		mMessage = message;
 		mTitle = title;
 		mCancelableOutsideTouch = cancelableOutsideTouch;
 		mHandler = handler;
+		mProgressbarMode = progressbarmode;
 	}
 
 	@Override
@@ -51,6 +54,9 @@ public class CustomProgressDialog extends DialogFragment {
 		progressBar = view.findViewById(R.id.progress_bar);
 		progress1TextView = view.findViewById(R.id.progress_1_text_view);
 		progress2TextView = view.findViewById(R.id.progress_2_text_view);
+		if (mProgressbarMode) {
+			progress2TextView.setText("-/-");
+		}
 		// ダイアログのタイトル文を設定
 		builder.setTitle(mTitle);
 		// ダイアログのメッセージ文を設定
@@ -76,11 +82,15 @@ public class CustomProgressDialog extends DialogFragment {
 	}
 
 	// プログレスバーの位置を設定
-	public void setProgress(int progress) {
+	public void setProgress(int progress, long numerator, long denominator) {
 		if (progressBar != null) {
 			progressBar.setProgress(progress);
 			progress1TextView.setText(progress + "%");
-			progress2TextView.setText(progress + "/100");
+			if (!mProgressbarMode) {
+				denominator = 100;
+				numerator = progress;
+			}
+			progress2TextView.setText(numerator + "/" + denominator);
 		}
 	}
 }
