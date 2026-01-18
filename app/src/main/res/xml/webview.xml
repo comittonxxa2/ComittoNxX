@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Webview screen settings" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewFilter"
+            android:summary="Enables image filters for HTML files."
+            android:title="Enable filters on the Webview screen" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewPulldownMenu"
+            android:summary="The filter pull-down menu is enabled by tapping the top of the screen."
+            android:title="Enable the filter dropdown menu" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Tap position at the top of the screen"
+            android:entries="@array/pulldowntap_name_list"
+            android:entryValues="@array/pulldowntap_value_list"
+            android:key="WebviewPulldownTapPosition"
+            android:summary="dummy"
+            android:title="Tap position at the top of the screen" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewUserAgent"
+            android:summary="Spoofing the User-Agent to the PC version"
+            android:title="Use a desktop User-Agent" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Filter settings" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewGray"
+            android:summary="@null"
+            android:title="Grayscale" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewInvert"
+            android:summary="@null"
+            android:title="color inversion" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewColoring"
+            android:summary="@null"
+            android:title="automatic coloring" />
+        <src.comitton.config.seekbar.SharpenSeekbar
+            android:dialogMessage="Select the sharpness value"
+            android:dialogTitle="image sharpening"
+            android:key="WebviewSharpen"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="image sharpening" />
+        <src.comitton.config.seekbar.BrightSeekbar
+            android:dialogMessage="Select the brightness value"
+            android:dialogTitle="image brightness"
+            android:key="WebviewBright"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="image brightness" />
+        <src.comitton.config.seekbar.GammaSeekbar
+            android:dialogMessage="Select the gamma value"
+            android:dialogTitle="image gamma"
+            android:key="WebviewGamma"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="image gamma" />
+        <src.comitton.config.seekbar.ConsrastSeekbar
+            android:dialogMessage="Select the contrast value"
+            android:dialogTitle="image contrast"
+            android:key="WebviewContrast"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="image contrast" />
+        <src.comitton.config.seekbar.HueSeekbar
+            android:dialogMessage="Select the hue value"
+            android:dialogTitle="image hue"
+            android:key="WebviewHue"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="image hue" />
+        <src.comitton.config.seekbar.SaturationSeekbar
+            android:dialogMessage="Select the saturation value"
+            android:dialogTitle="image saturation"
+            android:key="WebviewSaturation"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="image saturation" />
+    </PreferenceCategory>
+</PreferenceScreen>

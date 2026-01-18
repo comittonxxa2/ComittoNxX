@@ -136,6 +136,14 @@
                 android:targetClass="src.comitton.config.SetHardwareSelectKeyActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="WebviewSet"
+            android:title="Webview screen settings"
+            android:summary="Set the parameters for the Webview screen" >
+            <intent
+                android:targetClass="src.comitton.config.SetWebViewActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Save settings to file" >
         <src.comitton.config.ExportSettingPreference
