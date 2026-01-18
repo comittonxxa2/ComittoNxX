@@ -2,6 +2,8 @@ package src.comitton.config.seekbar;
 
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.dialog.ImageConfigDialog;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -192,6 +194,10 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = mContext.getString(R.string.srngSumm2);
 			mSummary2 = "";
 		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWSHARPEN) || mKey.equals(DEF.KEY_WEBVIEWBRIGHT) || mKey.equals(DEF.KEY_WEBVIEWGAMMA) || mKey.equals(DEF.KEY_WEBVIEWCONTRAST) || mKey.equals(DEF.KEY_WEBVIEWHUE) || mKey.equals(DEF.KEY_WEBVIEWSATURATION)) {
+			mSummary1 = "";
+			mSummary2 = "";
+		}
 		else {
 			mSummary1 = mContext.getString(R.string.pixSumm1);
 			mSummary2 = mContext.getString(R.string.pixSumm2);
@@ -307,6 +313,24 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		}
 		else if (mKey.equals(DEF.KEY_THUMBNAILTOPSPACE) || mKey.equals(DEF.KEY_THUMBNAILBOTTOMSPACE) || mKey.equals(DEF.KEY_FILENAMEBOTTOMSPACE) || mKey.equals(DEF.KEY_BOOKSHELFBRIGHTLEVEL)) {
 			strSummary = String.valueOf(num) + " " + mSummary1;
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWSHARPEN)) {
+			strSummary = ImageConfigDialog.getSharpenStr(getContext(), num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWBRIGHT)) {
+			strSummary = ImageConfigDialog.getBrightGammaStr(getContext(), num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWGAMMA)) {
+			strSummary = ImageConfigDialog.getBrightGammaStr(getContext(), num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWCONTRAST)) {
+			strSummary = ImageConfigDialog.getContrastStr(num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWHUE)) {
+			strSummary = ImageConfigDialog.getHueStr(getContext(), num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWSATURATION)) {
+			strSummary = ImageConfigDialog.getSaturationStr(num);
 		}
 		else {
 			strSummary = DEF.getSizeStr(num, mSummary1, mSummary2);
