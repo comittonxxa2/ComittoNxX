@@ -945,4 +945,8 @@
     <string name="buffsize03">システム設定の8倍</string>
     <string name="buffsize04">システム設定の16倍</string>
 
+    <string name="pulldowntappos00">中央上</string>
+    <string name="pulldowntappos01">左上</string>
+    <string name="pulldowntappos02">右上</string>
+
 </resources>
