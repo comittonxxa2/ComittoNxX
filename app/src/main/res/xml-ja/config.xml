@@ -135,6 +135,14 @@
                 android:targetClass="src.comitton.config.SetHardwareSelectKeyActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="WebviewSet"
+            android:title="Webview画面の設定"
+            android:summary="Webview画面のパラメータを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetWebViewActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="設定のファイル保存" >
         <src.comitton.config.ExportSettingPreference

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Webview画面の設定" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewFilter"
+            android:summary="HTMLファイルの画像のフィルターが有効になる"
+            android:title="Webview画面でフィルターを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewPulldownMenu"
+            android:summary="画面上端のタップ操作によるフィルターのプルダウンメニューが有効になる"
+            android:title="フィルターのプルダウンメニューを有効にする" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="画面上端のタップ位置"
+            android:entries="@array/pulldowntap_name_list"
+            android:entryValues="@array/pulldowntap_value_list"
+            android:key="WebviewPulldownTapPosition"
+            android:summary="dummy"
+            android:title="画面上端のタップ位置" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewUserAgent"
+            android:summary="User-AgentをPC版に偽装する"
+            android:title="デスクトップ用のUser-Agentにする" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="フィルターの設定" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewGray"
+            android:summary="@null"
+            android:title="グレースケール化" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewInvert"
+            android:summary="@null"
+            android:title="色反転" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewColoring"
+            android:summary="@null"
+            android:title="自動着色" />
+        <src.comitton.config.seekbar.SharpenSeekbar
+            android:dialogMessage="シャープネスの数値を選択"
+            android:dialogTitle="画像シャープ化"
+            android:key="WebviewSharpen"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="画像シャープ化" />
+        <src.comitton.config.seekbar.BrightSeekbar
+            android:dialogMessage="明るさの数値を選択"
+            android:dialogTitle="明るさ補正"
+            android:key="WebviewBright"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="明るさ補正" />
+        <src.comitton.config.seekbar.GammaSeekbar
+            android:dialogMessage="ガンマの数値を選択"
+            android:dialogTitle="ガンマ補正"
+            android:key="WebviewGamma"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="ガンマ補正" />
+        <src.comitton.config.seekbar.ConsrastSeekbar
+            android:dialogMessage="コントラストの数値を選択"
+            android:dialogTitle="コントラスト"
+            android:key="WebviewContrast"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="コントラスト" />
+        <src.comitton.config.seekbar.HueSeekbar
+            android:dialogMessage="色相の数値を選択"
+            android:dialogTitle="色相"
+            android:key="WebviewHue"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="色相" />
+        <src.comitton.config.seekbar.SaturationSeekbar
+            android:dialogMessage="彩度の数値を選択"
+            android:dialogTitle="彩度"
+            android:key="WebviewSaturation"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="彩度" />
+    </PreferenceCategory>
+</PreferenceScreen>
