@@ -132,6 +132,7 @@ public class DEF {
 	public static final int HMSG_EVENT_FLOATINGICON_BACKUPRESTORE = 218;
 	public static final int HMSG_EVENT_TOOLBAR = 219;
 	public static final int HMSG_EVENT_TOUCH_ZOOM_OFF = 220;
+	public static final int HMSG_EVENT_BACKGROUND_CACHE = 221;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -144,6 +145,7 @@ public class DEF {
 	public static final int INTERVAL_ATTENUATE = 10;
 	public static final int INTERVAL_MOMENTIUM = 10;
 	public static final int INTERVAL_FLOATINGICON = 500;	// Milliseconds
+	public static final int INTERVAL_BACKGROUND_CACHE = 500;	// Milliseconds
 
 	public static final int MENU_HELP = Menu.FIRST + 0;
 	public static final int MENU_SETTING = Menu.FIRST + 1;
@@ -223,6 +225,7 @@ public class DEF {
 	public static final int MENU_FLOATINGICON_SETTING = Menu.FIRST + 75;
 	public static final int MENU_DISPLAY_ANIMEPAUSE = Menu.FIRST + 76;
 	public static final int MENU_CONTENTS = Menu.FIRST + 77;
+	public static final int MENU_WEBIMGCONF = Menu.FIRST + 78;
 	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
 	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
@@ -610,6 +613,7 @@ public class DEF {
 	public static final String KEY_REVERSEROTARE = "ReverseRotate";
 	public static final String KEY_READSTYLESETTING = "ReadStyleSetting";
 	public static final String KEY_READPROGRESSBARPOSITION = "ReadProgressbarPosition";
+	public static final String KEY_PROGRESSBARMODE = "ProgressBarMode";
 
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
@@ -703,6 +707,19 @@ public class DEF {
 	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
 	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
 	public static final String KEY_ENABLECONTENTSFILE = "EnableContentsFile";
+	public static final String KEY_WEBVIEWFILTER = "WebviewFilter";
+	public static final String KEY_WEBVIEWUSEREGENT = "WebviewUserAgent";
+	public static final String KEY_WEBVIEWPULLDOWNMENU = "WebviewPulldownMenu";
+	public static final String KEY_WEBVIEWPULLDOWNTAPPOSITION = "WebviewPulldownTapPosition";
+	public static final String KEY_WEBVIEWBRIGHT = "WebviewBright";
+	public static final String KEY_WEBVIEWGAMMA = "WebviewGamma";
+	public static final String KEY_WEBVIEWCONTRAST = "WebviewContrast";
+	public static final String KEY_WEBVIEWHUE = "WebviewHue";
+	public static final String KEY_WEBVIEWSATURATION = "WebviewSaturation";
+	public static final String KEY_WEBVIEWGRAY = "WebviewGray";
+	public static final String KEY_WEBVIEWCOLORING = "WebviewColoring";
+	public static final String KEY_WEBVIEWINVERT = "WebviewInvert";
+	public static final String KEY_WEBVIEWSHARPEN = "WebviewSharpen";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
@@ -1219,6 +1236,19 @@ public class DEF {
 	public static final int DEFAULT_FLOATINGICONVIRTICAL = 50;
 	public static final int DEFAULT_FLOATINGICONTRANSPARENCY = 50;
 	public static final int DEFAULT_FLOATINGICONDIRECTIONMODE = 0;
+
+	public static final int DEFAULT_WEBVIEWSHARPEN = 0;
+	public static final int MAX_WEBVIEWSHARPEN = 32;
+	public static final int DEFAULT_WEBVIEWBRIGHT = 5;
+	public static final int MAX_WEBVIEWBRIGHT = 10;
+	public static final int DEFAULT_WEBVIEWGAMMA = 5;
+	public static final int MAX_WEBVIEWGAMMA = 10;
+	public static final int DEFAULT_WEBVIEWCONTRAST = 10;
+	public static final int MAX_WEBVIEWCONTRAST = 20;
+	public static final int DEFAULT_WEBVIEWHUE = 20;
+	public static final int MAX_WEBVIEWHUE = 40;
+	public static final int DEFAULT_WEBVIEWSATURATION = 20;
+	public static final int MAX_WEBVIEWSATURATION = 80;
 
 	public static final int DEFAULT_THUMBNAILTOPSPACE = 5;
 	public static final int MAX_THUMBNAILTOPSPACE = 100;

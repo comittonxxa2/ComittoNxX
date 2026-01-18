@@ -53,6 +53,8 @@ public class ThumbnailLoader {
 	protected int mThumbMargin;
 
 	private static int mGetThumbnailPosition =  0;
+	private static int mGetThumbnailNumerator = 0;
+	private static int mGetThumbnailDenominator = 0;
 
 	public ThumbnailLoader(AppCompatActivity activity, String uri, String path, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum,int crop, int margin, int type) {
 		super();
@@ -188,6 +190,12 @@ public class ThumbnailLoader {
 	public static int GetThumbnailPosition() {
 		return mGetThumbnailPosition;
 	}
+	public static int GetThumbnailNumerator() {
+		return mGetThumbnailNumerator;
+	}
+	public static int GetThumbnailDenominator() {
+		return mGetThumbnailDenominator;
+	}
 
 	/**
 	 * サムネイルのキャッシュサイズが保存上限数を超えていたら削除する
@@ -229,6 +237,8 @@ public class ThumbnailLoader {
 			Collections.sort(fileArray, new ThumbnailLoader.TimeSortComparator());
 			for (int i = fileArray.size() - 1; i >= leave; i--) {
 				// サムネイルキャッシュ削除ダイアログのプログレスバー表示を更新
+				mGetThumbnailNumerator = i;
+				mGetThumbnailDenominator = fileArray.size();
 				mGetThumbnailPosition = 100 - (int)(((float)(i) / (float)fileArray.size()) * 100);
 				File work = fileArray.get(i);
 				long filetime = work.lastModified();
