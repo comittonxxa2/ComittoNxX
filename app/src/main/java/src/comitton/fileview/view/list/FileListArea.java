@@ -483,7 +483,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
 							Logcat.d(logLevel,"fd.getState()=" + fd.getState() + ", fd.getMaxpage()=" + fd.getMaxpage() + ", fd.getName()=" + fd.getName());
-							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + dstHeight);
+							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + mIconHeight);
 						}
 						else {
 							// サムネイルありかつ画像なし
@@ -567,7 +567,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						mSrcRect.set(0, 0, dstWidth, dstHeight);
 						mDstRect.set(x + dstX, y + dstY, x + dstX + (int)(dstWidth * dsMin), y + dstY + (int)(dstHeight * dsMin));
 						canvas.drawBitmap(bm, mSrcRect, mDstRect, mBitmapPaint);
-						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + dstHeight);
+						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + mIconHeight);
 					}
 				}else{ // タイル表示・サムネ無しの場合は枠で囲む
 					canvas.drawRect(baseX + mDrawLeft + ix * mItemWidth + mItemMargin, y + mIconHeight,
@@ -958,8 +958,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 						if (bmMark != null) {
                             canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
-							drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, dstWidth, y + dstHeight);
 						}
+						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, dstWidth, y + iconHeight);
 					}
 					else {
 						// サムネイルありかつ画像なし
@@ -1018,7 +1018,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 						// 未読・既読で色を変える
 						bm = ImageAccess.setColor(bm, mLinePaint.getColor());
-						canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
+						if (!mBookShelfPatternSelect) {
+							canvas.drawRect(x - 1, y - 1, x + iconWidth, y + iconHeight, mLinePaint);
+						}
 					}
 					int dstWidth = bm.getWidth();
 					int dstHeight = bm.getHeight();
@@ -1045,7 +1047,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					else if ((fd.getState() >= 0) && (fd.getMaxpage() > 0) || (fd.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 						// 読書率を描画
 						// 読書率
-						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, iconWidth, y + dstHeight);
+						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, dstWidth, y + iconHeight);
 						// 記述が同じなのでコメントアウトにした
 						/*
 						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
