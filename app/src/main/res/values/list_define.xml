@@ -858,5 +858,15 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="pulldowntap_name_list">
+        <item>top center</item>
+        <item>upper left</item>
+        <item>upper right</item>
+    </string-array>
+    <string-array name="pulldowntap_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
 </resources>

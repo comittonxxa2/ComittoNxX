@@ -945,6 +945,10 @@
     <string name="buffsize03">8x the system setting</string>
     <string name="buffsize04">16x the system setting</string>
 
+    <string name="pulldowntappos00">top center</string>
+    <string name="pulldowntappos01">upper left</string>
+    <string name="pulldowntappos02">upper right</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
