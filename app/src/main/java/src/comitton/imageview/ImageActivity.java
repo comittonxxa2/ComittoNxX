@@ -687,6 +687,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mReduced;
 	private long mBuffSize;
 	private boolean mEnableContentsFile;
+	private boolean mProgressbarMode;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -976,13 +977,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		// ページ読み込みダイアログの表示を準備
 		res = mActivity.getResources();
-		mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadpage), res.getString(R.string.loadingfilelist),true, mHandler);
+		mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadpage), res.getString(R.string.loadingfilelist),true, mHandler, mProgressbarMode);
 
 		supportFragmentManager = mActivity.getSupportFragmentManager();
 		// ダイアログの表示
 		mProgressDialog.show(supportFragmentManager, TAG);
 		// プログレスバーをリセット
-		mProgressDialog.setProgress(0);
+		mProgressDialog.setProgress(0, 0, 0);
 		// 自分のIDからViewのIDを取得する
 		View contentView = findViewById(android.R.id.content);
 		ViewGroup rootView = (ViewGroup)contentView.getRootView();
@@ -1630,7 +1631,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				synchronized (this) {
 					if (!isFinishing() && mProgressDialog != null) {
 						// ページ読み込み中
-						mProgressDialog.setProgress(msg.arg1);
+						Bundle bundle = msg.getData();
+						long arg3 = bundle.getLong("arg3");
+						long arg4 = bundle.getLong("arg4");
+						mProgressDialog.setProgress(msg.arg1, arg3, arg4);
 					}
 				}
 				return true;
@@ -1885,7 +1889,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 					// バックグラウンドでのキャッシュ読み込み再開
 					if (mBackgroundPause) {
-						mImageMgr.setCacheSleep(false);
+						startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+//						mImageMgr.setCacheSleep(false);
 					}
 				}
 				if (!mFloatingIconInit) {
@@ -2048,6 +2053,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_TOOLBAR:
 				// ツールバーのタッチイベントを実行
 				ToolbarDialog.SetListner(msg.arg1);
+				break;
+			case DEF.HMSG_EVENT_BACKGROUND_CACHE:
+				mImageMgr.setCacheSleep(false);
 				break;
 		}
 		return false;
@@ -2784,7 +2792,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
     				}
 					// バックグラウンドでのキャッシュ読み込み再開
 					if (mBackgroundPause) {
-						mImageMgr.setCacheSleep(false);
+						startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+//						mImageMgr.setCacheSleep(false);
 					}
     			}
     			return true;
@@ -3016,7 +3025,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						mLongTouchMode = false;
 						// バックグラウンドでのキャッシュ読み込み再開
 						if (mBackgroundPause) {
-							mImageMgr.setCacheSleep(false);
+							startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+//							mImageMgr.setCacheSleep(false);
 						}
 					}
 					// 押してる間のフラグクリア
@@ -3414,7 +3424,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mLongTouchMode = false;
 			// バックグラウンドでのキャッシュ読み込み再開
 			if (mBackgroundPause) {
-				mImageMgr.setCacheSleep(false);
+				startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+//				mImageMgr.setCacheSleep(false);
 			}
 		}
 	}
@@ -6299,6 +6310,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mReduced = SetImageActivity.getReduced(sharedPreferences);
 			mBuffSize = SetImageDetailActivity.getBuffSize(sharedPreferences);
 			mEnableContentsFile = SetImageActivity.getEnableContentsFile(sharedPreferences);
+			mProgressbarMode = SetFileListActivity.getProgressBarMode(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -6680,6 +6692,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		else if (event == DEF.HMSG_EVENT_FLOATINGICON_RESET) {
 			NextTime += DEF.INTERVAL_FLOATINGICON;
+		}
+		else if (event == DEF.HMSG_EVENT_BACKGROUND_CACHE) {
+			NextTime += DEF.INTERVAL_BACKGROUND_CACHE;
 		}
 		else {
 			NextTime += DEF.INTERVAL_DEFAULT;

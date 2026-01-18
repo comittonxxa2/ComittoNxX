@@ -44,6 +44,7 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.graphics.ColorMatrix;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -543,7 +544,7 @@ public class ImageManager extends InputStream implements Runnable {
 		boolean rar5 = false;
 		boolean stop = false;
 
-		sendProgress(0, 0);
+		sendProgress(0, 0, 0, 0);
 
 		Logcat.d(logLevel, "mFilePath:" + mFilePath);
 		String name = mFilePath;
@@ -915,7 +916,7 @@ public class ImageManager extends InputStream implements Runnable {
 					nowPercent = nowPercent > 100 ? 100 : nowPercent;
 					if (oldPercent != nowPercent) {
 						// 値が変化していればメッセージを送る
-						if (!sendProgress(0, nowPercent)) {
+						if (!sendProgress(0, nowPercent, totalSize, fileLength)) {
 							mFileList = new FileListItem[0];
 							return;
 						}
@@ -1071,7 +1072,7 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "終了します. mMaxCmpLength=" + mMaxCmpLength + ", mMaxOrgLength=" + mMaxOrgLength);
 	}
 
-	public boolean sendProgress(int type, int count) {
+	public boolean sendProgress(int type, int count, long numerator, long denominator) {
 		// 割合を通知
 		if (!mRunningFlag) {
 			return false;
@@ -1094,6 +1095,10 @@ public class ImageManager extends InputStream implements Runnable {
 		message.what = messagewhat;
 		message.arg1 = count;
 		message.arg2 = type;
+		Bundle bundle = new Bundle();
+		bundle.putLong("arg3", numerator);
+		bundle.putLong("arg4", denominator);
+		message.setData(bundle);
 		mHandler.sendMessage(message);
 		return true;
 	}
@@ -1677,6 +1682,10 @@ public class ImageManager extends InputStream implements Runnable {
 				message.what = DEF.HMSG_PROGRESS_IMAGE;
 				message.arg1 = nowPercent;
 				message.arg2 = 0;
+				Bundle bundle = new Bundle();
+				bundle.putLong("arg3", count);
+				bundle.putLong("arg4", maxorglen);
+				message.setData(bundle);
 				mHandler.sendMessage(message);
 			}
 		}
@@ -1806,6 +1815,10 @@ public class ImageManager extends InputStream implements Runnable {
 				message.what = DEF.HMSG_PROGRESS_IMAGE;
 				message.arg1 = nowPercent;
 				message.arg2 = 0;
+				Bundle bundle = new Bundle();
+				bundle.putLong("arg3", page);
+				bundle.putLong("arg4", maxPage);
+				message.setData(bundle);
 				mHandler.sendMessage(message);
 			}
 		}
@@ -4665,46 +4678,42 @@ public class ImageManager extends InputStream implements Runnable {
 
 	// フィルター設定
 	private void SetColorEffect() {
+		// Webview版のフィルター設定の内容で書き直し
 		float cont = (float)mContrast * 0.02f;
 		float hue = (float)mHue;
 		float sat = (float)mSaturation * 0.01f;
-		float[] defaultValues = {
-			1, 0, 0, 0, 0,
-			0, 1, 0, 0, 0,
-			0, 0, 1, 0, 0,
-			0, 0, 0, 1, 0
-		};
-		float[] values = defaultValues;
 		// コントラストを変更
 		float translate = (0.5f - 0.5f * cont) * 255.f;
-		values[0] = cont;
-		values[6] = values[0];
-		values[12] = values[0];
-		values[4] = translate;
-		values[9] = values[4];
-		values[14] = values[4];
+		float[] values = {
+			cont, 0, 0, 0, translate,
+			0, cont, 0, 0, translate,
+			0, 0, cont, 0, translate,
+			0, 0, 0, 1, 0
+		};
 		ColorMatrix cm = new ColorMatrix(values);
 		// 彩度を変更
 		ColorMatrix saturationCM = new ColorMatrix();
 		saturationCM.setSaturation(sat);
 		// 連結する
 		cm.postConcat(saturationCM);
+		ColorMatrix hueCM = new ColorMatrix();
 		// 色相を変更
-		float a = Math.max(0, (float) Math.cos(hue / 360 * 2 * Math.PI));
-		float b = Math.max(0, (float) Math.cos((hue - 120) / 360 * 2 * Math.PI));
-		float c = Math.max(0, (float) Math.cos((hue - 240) / 360 * 2 * Math.PI));
-		float sum = a + b + c;
-		values = defaultValues;
-		values[0] = a / sum;
-		values[6] = values[0];
-		values[12] = values[0];
-		values[1] = b / sum;
-		values[7] = values[1];
-		values[10] = values[1];
-		values[2] = c / sum;
-		values[5] = values[2];
-		values[11] = values[2];
-		ColorMatrix hueCM = new ColorMatrix(values);
+		// 色相を変化させると輝度レベルが変わる可能性があったので手直ししてみた
+		float hueRad = (float) (mHue * Math.PI / 180.0);
+		float cosVal = (float) Math.cos(hueRad);
+		float sinVal = (float) Math.sin(hueRad);
+		// ITU-R BT.709 輝度の重み付け係数
+		float lumR = 0.213f;
+		float lumG = 0.715f;
+		float lumB = 0.072f;
+		// 輝度を維持したまま色相を回転させる
+		float[] hueMatrix = {
+			lumR + cosVal * (1 - lumR) + sinVal * (-lumR), lumG + cosVal * (-lumG) + sinVal * (-lumG), lumB + cosVal * (-lumB) + sinVal * (1 - lumB), 0, 0,
+			lumR + cosVal * (-lumR) + sinVal * (0.143f), lumG + cosVal * (1 - lumG) + sinVal * (0.140f), lumB + cosVal * (-lumB) + sinVal * (-0.283f), 0, 0,
+			lumR + cosVal * (-lumR) + sinVal * (-(1 - lumR)), lumG + cosVal * (-lumG) + sinVal * (lumG), lumB + cosVal * (1 - lumB) + sinVal * (lumB), 0, 0,
+			0, 0, 0, 1, 0
+		};
+		hueCM.set(hueMatrix);
 		// 連結する
 		cm.postConcat(hueCM);
 		// マトリックスを取り出す
