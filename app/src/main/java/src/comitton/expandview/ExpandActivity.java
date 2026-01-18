@@ -107,6 +107,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 	private int mTibColor;
 	private int mTlbColor;
 	private int mListRota;
+	private boolean mProgressbarMode;
 
 	private int mServer;
 	private String mURI;
@@ -218,6 +219,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		mFontSub = DEF.calcFontPix(SetFileListActivity.getFontSub(mSharedPreferences), mDensity);
 		mItemMargin = DEF.calcSpToPix(SetFileListActivity.getItemMargin(mSharedPreferences), mDensity);
 		mListRota = SetFileListActivity.getListRota(mSharedPreferences);
+		mProgressbarMode = SetFileListActivity.getProgressBarMode(mSharedPreferences);
 
 //		int textDispMode = SetTextActivity.getInitView(mSharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
 //		if (textDispMode == DEF.DISPMODE_TX_DUAL) {
@@ -958,7 +960,10 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 				synchronized (this) {
 					if (mProgressDialog != null) {
 						// ページ読み込み中
-						mProgressDialog.setProgress(msg.arg1);
+						Bundle bundle = msg.getData();
+						long arg3 = bundle.getLong("arg3");
+						long arg4 = bundle.getLong("arg4");
+						mProgressDialog.setProgress(msg.arg1, arg3, arg4);
 					}
 				}
 				return true;
@@ -1095,12 +1100,12 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		// プログレスダイアログ準備
 		// ファイル展開ダイアログの表示を準備
 		res = mActivity.getResources();
-		mProgressDialog = new CustomProgressDialog(res.getString(R.string.expandcompTitle), res.getString(R.string.expandingcompTitle),true, mHandler);
+		mProgressDialog = new CustomProgressDialog(res.getString(R.string.expandcompTitle), res.getString(R.string.expandingcompTitle),true, mHandler, mProgressbarMode);
 		supportFragmentManager = mActivity.getSupportFragmentManager();
 		// ダイアログの表示
 		mProgressDialog.show(supportFragmentManager, TAG);
 		// プログレスバーをリセット
-		mProgressDialog.setProgress(0);
+		mProgressDialog.setProgress(0, 0, 0);
 
 		mZipLoad = new ZipLoad(mHandler, this);
 		mZipThread = new Thread(mZipLoad);
