@@ -276,6 +276,11 @@
             android:key="ReadProgressbarPosition"
             android:summary="dummy"
             android:title="Coordinates of the reading rate progress bar" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ProgressBarMode"
+            android:summary="Check this box if you want to use the reference value instead of a percentage."
+            android:title="The rightmost value of the progress bar is the actual value." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
