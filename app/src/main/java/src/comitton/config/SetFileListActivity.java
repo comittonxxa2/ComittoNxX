@@ -682,6 +682,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return val;
 	}
 
+	public static boolean getProgressBarMode(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_PROGRESSBARMODE, false);
+		return flag;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
