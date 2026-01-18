@@ -278,6 +278,11 @@
             android:key="ReadProgressbarPosition"
             android:summary="dummy"
             android:title="読書率の進捗バーの座標" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ProgressBarMode"
+            android:summary="割合では無く参照している値にする場合にチェックを入れる"
+            android:title="プログレスバーの右端の表示を実際の値にする" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
