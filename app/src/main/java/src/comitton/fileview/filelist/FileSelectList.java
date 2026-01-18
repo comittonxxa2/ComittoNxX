@@ -110,6 +110,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private boolean mFileListFastReadOff = false;
 	private static int old_progress;
 	private static int progress;
+	private static int numerator;
+	private static int denominator;
 	private static Thread mMultiThread = null;
 	private static Handler mainHandler;
 	private static boolean threadstartcheck = false;
@@ -436,7 +438,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				}
 				// ファイルリスト読み込みダイアログの表示を準備
 				Resources res = mActivity.getResources();
-				mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadfilelist), res.getString(R.string.loadingfilelist),true, mHandler);
+				boolean mProgressbarMode = SetFileListActivity.getProgressBarMode(mSp);
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadfilelist), res.getString(R.string.loadingfilelist),true, mHandler, mProgressbarMode);
 				supportFragmentManager = mActivity.getSupportFragmentManager();
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
@@ -445,7 +448,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					// ダイアログの表示
 					mProgressDialog.show(supportFragmentManager, TAG);
 					// プログレスバーをリセット
-					mProgressDialog.setProgress(0);
+					mProgressDialog.setProgress(0, 0, 0);
 				});
 				// 読み込み中の位置の変化量をクリア
 				old_progress = progress;
@@ -465,7 +468,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						int finalProgress = progress;
 						mainHandler.post(() -> {
 							// メイン画面で表示
-							mProgressDialog.setProgress(finalProgress);
+							mProgressDialog.setProgress(finalProgress, numerator, denominator);
 						});
 						// 次の位置と比較するため値を保存
 						old_progress = progress;
@@ -583,6 +586,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			for (int i = fileList.size() - 1; i >= 0; i--) {
 
 				// ファイルリスト読み込みダイアログのプログレスバー表示を更新
+				numerator = fileList.size() - 1 - i;
+				denominator = fileList.size();
 				progress = 100 - (int)(((float)(i) / (float)fileList.size()) * 100);
 				name = fileList.get(i).getName();
 				uri = DEF.relativePath(mActivity, currentPath, name);
@@ -994,10 +999,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			}
 			else if (mSortMode == DEF.ZIPSORT_FILESEP || mSortMode == DEF.ZIPSORT_NEWSEP || mSortMode == DEF.ZIPSORT_OLDSEP) {
 				// IMAGEとZIPのソート優先度は同じにする
-				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT || type1 == FileData.FILETYPE_PDF || type1 == FileData.FILETYPE_EPUB) {
+				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT || type1 == FileData.FILETYPE_PDF || type1 == FileData.FILETYPE_EPUB || type1 == FileData.FILETYPE_WEB) {
 					type1 = FileData.FILETYPE_ARC;
 				}
-				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_EPUB) {
+				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_EPUB || type2 == FileData.FILETYPE_WEB) {
 					type2 = FileData.FILETYPE_ARC;
 				}
 
@@ -1042,10 +1047,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			}
 			else if (mSortMode == DEF.ZIPSORT_FILESEP || mSortMode == DEF.ZIPSORT_NEWSEP || mSortMode == DEF.ZIPSORT_OLDSEP) {
 				// IMAGEとZIPのソート優先度は同じにする
-				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT || type1 == FileData.FILETYPE_PDF || type1 == FileData.FILETYPE_EPUB) {
+				if (type1 == FileData.FILETYPE_IMG || type1 == FileData.FILETYPE_TXT || type1 == FileData.FILETYPE_PDF || type1 == FileData.FILETYPE_EPUB || type1 == FileData.FILETYPE_WEB) {
 					type1 = FileData.FILETYPE_ARC;
 				}
-				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_EPUB) {
+				if (type2 == FileData.FILETYPE_IMG || type2 == FileData.FILETYPE_TXT || type2 == FileData.FILETYPE_PDF || type2 == FileData.FILETYPE_EPUB || type2 == FileData.FILETYPE_WEB) {
 					type2 = FileData.FILETYPE_ARC;
 				}
 
