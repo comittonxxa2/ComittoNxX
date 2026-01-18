@@ -176,6 +176,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static FragmentManager supportFragmentManager;
 	private static int old_progress;
 	private static int progress;
+	private static int numerator;
+	private static int denominator;
 	private static Handler mainHandler;
 	private static boolean threadstartcheck = false;
 	private static boolean threadstartcheck2 = false;
@@ -312,6 +314,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	private boolean mAutoRepeatCheck = false;
+	private boolean mProgressbarMode = false;
 
 	private Bundle mSavedInstanceState = null;
 
@@ -1535,6 +1538,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		mForceNotice = SetCommonActivity.getForceHideStatusBar(mSharedPreferences);
 		mImmForce = SetCommonActivity.getForceHideNavigationBar(mSharedPreferences);
+		mProgressbarMode = SetFileListActivity.getProgressBarMode(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3107,6 +3111,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					break;
 				}
 				// ファイルリストの更新ダイアログのプログレスバー表示を更新
+				numerator = i;
+				denominator = files.size();
 				progress = (int)(((float)(i) / (float)files.size()) * 100);
 				FileData data = files.get(i);
 				String name = data.getName();
@@ -4205,6 +4211,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						ArrayList<FileData> files = mFileList.getFileList();
 						for (int i = 0; i < files.size(); i++) {
 							// しおり削除のダイアログのプログレスバー表示を更新
+							numerator = i;
+							denominator = files.size();
 							progress = (int)(((float)(i) / (float)files.size()) * 100);
 							FileData data = files.get(i);
 							if (data.getType() == FileData.FILETYPE_ARC || data.getType() == FileData.FILETYPE_TXT || data.getType() == FileData.FILETYPE_DIR) {
@@ -4276,7 +4284,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// しおり削除のダイアログの表示を準備
 				Resources res = mActivity.getResources();
 				// しおり削除中はダイアログの表示をキャンセルさせないようにする
-				mProgressDialog = new CustomProgressDialog(res.getString(R.string.deletesiori), res.getString(R.string.deletingsiori),false, mHandler);
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.deletesiori), res.getString(R.string.deletingsiori),false, mHandler, mProgressbarMode);
 				supportFragmentManager = mActivity.getSupportFragmentManager();
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
@@ -4285,7 +4293,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// ダイアログの表示
 					mProgressDialog.show(supportFragmentManager, TAG);
 					// プログレスバーをリセット
-					mProgressDialog.setProgress(0);
+					mProgressDialog.setProgress(0, 0, 0);
 				});
 
 				// しおり削除の位置の変化量をクリア
@@ -4306,7 +4314,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						int finalProgress = progress;
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.setProgress(finalProgress);
+							mProgressDialog.setProgress(finalProgress, numerator, denominator);
 						});
 						// 次の位置と比較するため値を保存
 						old_progress = progress;
@@ -4368,7 +4376,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// サムネイルキャッシュ削除のダイアログの表示を準備
 				Resources res = mActivity.getResources();
 				// サムネイルキャッシュ削除中はダイアログの表示をキャンセルさせないようにする
-				mProgressDialog = new CustomProgressDialog(res.getString(R.string.thumbMenu), res.getString(R.string.deletingsiori),false, mHandler);
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.thumbMenu), res.getString(R.string.deletingsiori),false, mHandler, mProgressbarMode);
 				supportFragmentManager = mActivity.getSupportFragmentManager();
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
@@ -4377,7 +4385,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// ダイアログの表示
 					mProgressDialog.show(supportFragmentManager, TAG);
 					// プログレスバーをリセット
-					mProgressDialog.setProgress(0);
+					mProgressDialog.setProgress(0, 0, 0);
 				});
 
 				// サムネイルキャッシュ削除の位置の変化量をクリア
@@ -4385,6 +4393,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				boolean stop = true;
 				while (stop) {
 					progress = ThumbnailLoader.GetThumbnailPosition();
+					numerator = ThumbnailLoader.GetThumbnailNumerator();
+					denominator = ThumbnailLoader.GetThumbnailDenominator();
 					if (threadstartcheck3) {
 						// サムネイルキャッシュ削除が完了していれば終了させる
 						// メイン画面で表示
@@ -4399,7 +4409,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						int finalProgress = progress;
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.setProgress(finalProgress);
+							mProgressDialog.setProgress(finalProgress, numerator, denominator);
 						});
 						// 次の位置と比較するため値を保存
 						old_progress = progress;
@@ -5419,7 +5429,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				// ファイルリストの更新ダイアログの表示を準備
 				Resources res = mActivity.getResources();
-				mProgressDialog = new CustomProgressDialog(res.getString(R.string.updatefilelist), res.getString(R.string.updatingfilelist),true, mHandler);
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.updatefilelist), res.getString(R.string.updatingfilelist),true, mHandler, mProgressbarMode);
 				supportFragmentManager = mActivity.getSupportFragmentManager();
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
@@ -5428,7 +5438,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// ダイアログの表示
 					mProgressDialog.show(supportFragmentManager, TAG);
 					// プログレスバーをリセット
-					mProgressDialog.setProgress(0);
+					mProgressDialog.setProgress(0, 0, 0);
 				});
 
 				// 更新中の位置の変化量をクリア
@@ -5449,7 +5459,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						int finalProgress = progress;
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.setProgress(finalProgress);
+							mProgressDialog.setProgress(finalProgress, numerator, denominator);
 						});
 						// 次の位置と比較するため値を保存
 						old_progress = progress;
