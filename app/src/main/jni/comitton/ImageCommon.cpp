@@ -138,7 +138,10 @@ int DrawBitmap(int index, int page, int half, int x, int y, void *canvas, int wi
 			}
 			if (buffindex >= gBuffNum[index]) {
 				// 領域不足
+				// ログのエラーが大量に出ると他のログが埋もれてしまうのでコメントアウトにした
+				/*
 				LOGE("DrawBitmap/1: Data Error page=%d, buffindex=%d", page, buffindex);
+				*/
 				return ERROR_CODE_CACHE_IS_FULL;
 			}
 			buffpos = 0;
@@ -156,7 +159,10 @@ int DrawBitmap(int index, int page, int half, int x, int y, void *canvas, int wi
 			}
 			if (buffindex >= gBuffNum[index]) {
 				// 領域不足
+				// ログのエラーが大量に出ると他のログが埋もれてしまうのでコメントアウトにした
+				/*
 				LOGE("DrawBitmap/2: Data Error page=%d, line=%d, buffindex=%d", page, yy, buffindex);
+				*/
 				return ERROR_CODE_CACHE_IS_FULL;
 			}
 			buffpos = 0;

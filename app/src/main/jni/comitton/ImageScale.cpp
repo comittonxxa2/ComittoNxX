@@ -170,7 +170,8 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
 		// 50%以上の縮小がある場合
 		int zw = scl_w * 100 /  OrgWidth;
 		int zh = scl_h * 100 /  OrgHeight;
-		if (zw < 100 && zh < 100) {
+		// 100%以上でもモアレ軽減モードを有効にした(拡大縮小の後のシャープネスで効果あり)
+//		if (zw < 100 && zh < 100) {
 			// 元データ配列化
 			ret = SetLinesPtr(index, Page, Half, Count, OrgWidth, OrgHeight);
 			if (ret < 0) {
@@ -186,7 +187,7 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
 			// 古いワークデータは削除
 			EraseSclBuffMng(index, Count);
 			Count ++;
-		}
+//		}
 #ifdef DEBUG_CREATESCALE
         LOGD("CreateScale: Moire   END: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
 #endif

@@ -44,6 +44,12 @@ void *ImageSharpen_ThreadFunc(void *param)
 	int	rr = 0, gg = 0, bb = 0;
 	int		yd3, yd2;
 
+	 // Java(RenderScript)の係数に合わせた定数
+	float a = (float)mAmount;
+	float k1 = -a / 16.0f;
+	float k2 = -2.0f * a / 16.0f;
+	float k3 = (16.0f + 12.0f * a) / 16.0f;
+
 	for (yy = stindex ; yy < edindex ; yy ++) {
 		if (gCancel[index]) {
 			LOGD("ImageSharpen : cancel.");
@@ -61,44 +67,43 @@ void *ImageSharpen_ThreadFunc(void *param)
 		yd3 = gDitherY_3bit[yy & 0x07];
 		yd2 = gDitherY_2bit[yy & 0x03];
 		for (xx =  0 ; xx < OrgWidth + HOKAN_DOTS - 1 ; xx++) {
-			// 
-            rr -= RGB888_RED(orgbuff1[xx - 1]) * mAmount;
-            rr -= RGB888_RED(orgbuff1[xx + 0]) * mAmount * 2;
-            rr -= RGB888_RED(orgbuff1[xx + 1]) * mAmount;
-            rr -= RGB888_RED(orgbuff2[xx - 1]) * mAmount * 2;
-            rr += RGB888_RED(orgbuff2[xx + 0]) * (16 + (mAmount * 12));
-            rr -= RGB888_RED(orgbuff2[xx + 1]) * mAmount * 2;
-            rr -= RGB888_RED(orgbuff3[xx - 1]) * mAmount;
-            rr -= RGB888_RED(orgbuff3[xx + 0]) * mAmount * 2;
-            rr -= RGB888_RED(orgbuff3[xx + 1]) * mAmount;
-            rr /= 16;
+			// Java版の独立計算を再現するため、浮動小数点でリセット
+			float fr = 0, fg = 0, fb = 0;
 
-            gg -= RGB888_GREEN(orgbuff1[xx - 1]) * mAmount;
-            gg -= RGB888_GREEN(orgbuff1[xx + 0]) * mAmount * 2;
-            gg -= RGB888_GREEN(orgbuff1[xx + 1]) * mAmount;
-            gg -= RGB888_GREEN(orgbuff2[xx - 1]) * mAmount * 2;
-            gg += RGB888_GREEN(orgbuff2[xx + 0]) * (16 + (mAmount * 12));
-            gg -= RGB888_GREEN(orgbuff2[xx + 1]) * mAmount * 2;
-            gg -= RGB888_GREEN(orgbuff3[xx - 1]) * mAmount;
-            gg -= RGB888_GREEN(orgbuff3[xx + 0]) * mAmount * 2;
-            gg -= RGB888_GREEN(orgbuff3[xx + 1]) * mAmount;
-            gg /= 16;
+			fr += (float)RGB888_RED(orgbuff1[xx - 1]) * k1;
+			fr += (float)RGB888_RED(orgbuff1[xx + 0]) * k2;
+			fr += (float)RGB888_RED(orgbuff1[xx + 1]) * k1;
+			fr += (float)RGB888_RED(orgbuff2[xx - 1]) * k2;
+			fr += (float)RGB888_RED(orgbuff2[xx + 0]) * k3;
+			fr += (float)RGB888_RED(orgbuff2[xx + 1]) * k2;
+			fr += (float)RGB888_RED(orgbuff3[xx - 1]) * k1;
+			fr += (float)RGB888_RED(orgbuff3[xx + 0]) * k2;
+			fr += (float)RGB888_RED(orgbuff3[xx + 1]) * k1;
 
-            bb -= RGB888_BLUE(orgbuff1[xx - 1]) * mAmount;
-            bb -= RGB888_BLUE(orgbuff1[xx + 0]) * mAmount * 2;
-            bb -= RGB888_BLUE(orgbuff1[xx + 1]) * mAmount;
-            bb -= RGB888_BLUE(orgbuff2[xx - 1]) * mAmount * 2;
-            bb += RGB888_BLUE(orgbuff2[xx + 0]) * (16 + (mAmount * 12));
-            bb -= RGB888_BLUE(orgbuff2[xx + 1]) * mAmount * 2;
-            bb -= RGB888_BLUE(orgbuff3[xx - 1]) * mAmount;
-            bb -= RGB888_BLUE(orgbuff3[xx + 0]) * mAmount * 2;
-            bb -= RGB888_BLUE(orgbuff3[xx + 1]) * mAmount;
-            bb /= 16;
+			fg += (float)RGB888_GREEN(orgbuff1[xx - 1]) * k1;
+			fg += (float)RGB888_GREEN(orgbuff1[xx + 0]) * k2;
+			fg += (float)RGB888_GREEN(orgbuff1[xx + 1]) * k1;
+			fg += (float)RGB888_GREEN(orgbuff2[xx - 1]) * k2;
+			fg += (float)RGB888_GREEN(orgbuff2[xx + 0]) * k3;
+			fg += (float)RGB888_GREEN(orgbuff2[xx + 1]) * k2;
+			fg += (float)RGB888_GREEN(orgbuff3[xx - 1]) * k1;
+			fg += (float)RGB888_GREEN(orgbuff3[xx + 0]) * k2;
+			fg += (float)RGB888_GREEN(orgbuff3[xx + 1]) * k1;
 
-			// 0～255に収める
-			rr = LIMIT_RGB(rr);
-			gg = LIMIT_RGB(gg);
-			bb = LIMIT_RGB(bb);
+			fb += (float)RGB888_BLUE(orgbuff1[xx - 1]) * k1;
+			fb += (float)RGB888_BLUE(orgbuff1[xx + 0]) * k2;
+			fb += (float)RGB888_BLUE(orgbuff1[xx + 1]) * k1;
+			fb += (float)RGB888_BLUE(orgbuff2[xx - 1]) * k2;
+			fb += (float)RGB888_BLUE(orgbuff2[xx + 0]) * k3;
+			fb += (float)RGB888_BLUE(orgbuff2[xx + 1]) * k2;
+			fb += (float)RGB888_BLUE(orgbuff3[xx - 1]) * k1;
+			fb += (float)RGB888_BLUE(orgbuff3[xx + 0]) * k2;
+			fb += (float)RGB888_BLUE(orgbuff3[xx + 1]) * k1;
+
+			// 0～255に収める（+0.5f で四捨五入）
+			rr = LIMIT_RGB((int)(fr + 0.5f));
+			gg = LIMIT_RGB((int)(fg + 0.5f));
+			bb = LIMIT_RGB((int)(fb + 0.5f));
 
             buffptr[xx - HOKAN_DOTS / 2] = MAKE8888(rr, gg, bb);
 		}

@@ -21,84 +21,96 @@ extern char gDitherX_2bit[4][4];
 extern char gDitherY_3bit[8];
 extern char gDitherY_2bit[4];
 
-void *ImageBlur_ThreadFunc(void *param)
-{
+void *ImageBlur_ThreadFunc(void *param) {
+	// ガウスぼかしへ変更、処理の最適化を行ってみた
 	int *range = (int*)param;
-	int stindex = range[0];
-	int edindex = range[1];
-	int Width   = range[2];
-	int Height  = range[3];
-	int Zoom    = range[4];
-    int index    = range[5];
-
-//	LOGD("ImageBlur_ThreadFund : st=%d, ed=%d, w=%d, h=%d, z=%d", stindex, edindex, Width, Height, Zoom);
-
-	int		rr, gg, bb;
-	int		rr1, gg1, bb1;
-	int		rr2, gg2, bb2;
-	int		yd3, yd2;
-	int		dotcnt;
-
-	// 使用するバッファを保持
-    LONG *orgbuff1;
-    LONG *orgbuff2;
-
-	LONG *buffptr = NULL;
-
-	int raito = Zoom * Zoom / 100;
-//	LOGD("ImageBlur_ThreadFund : zoom=%d, raito=%d", Zoom, raito);
-	if (raito < 25) {
-		raito = 25;
+	int stindex = range[0], edindex = range[1];
+	int Width = range[2], Height = range[3], Zoom = range[4], index = range[5];
+	// 作業用バッファ
+	uint16_t tR[3][Width], tG[3][Width], tB[3][Width];
+	// 重み合計が常に16(全体で256)になるように設計
+	// w(端) * 2 + weight_c(中央) = 16
+	int weight_c, w;
+	if (Zoom < 100) {
+		// 縮小時：標準 [4, 8, 4] 比率は1:2:1と同じ
+		weight_c = 8;  w = 4;
+	} else if (Zoom <= 120) {
+		// 100-120%：最もモアレが出やすいため、縮小時と同じ強さにする
+		weight_c = 8;  w = 4;
+	} else if (Zoom <= 135) {
+		// 120-135%：少し弱める [3, 10, 3]
+		weight_c = 10; w = 3;
+	} else if (Zoom <= 150) {
+		// 135-150%：さらに弱める [2, 12, 2]
+		weight_c = 12; w = 2;
+	} else if (Zoom <= 170) {
+		// 151-170%：かなり弱める [1, 14, 1]
+		weight_c = 14; w = 1;
+	} else {
+		// 171%以上：ほぼぼかさない [0, 16, 0]
+		weight_c = 16; w = 0;
 	}
+	// 横ぼかしをインライン化して効率化
+	auto blur_h = [&](int row_y, int b_idx) {
+		// 画像の上下端での範囲外アクセスを防ぐ
+		int target_y = (row_y < 0) ? 0 : (row_y >= Height) ? Height - 1 : row_y;
+		// 読み込みの基点を HOKAN_DOTS/2 に固定
+		LONG *src = gLinesPtr[index][target_y + HOKAN_DOTS / 2];
+		uint16_t *r = tR[b_idx], *g = tG[b_idx], *b = tB[b_idx];
 
-	for (int yy = stindex ; yy < edindex ; yy ++) {
-//		LOGD("ImageBlur : loop yy=%d", yy);
-		if (gCancel[index]) {
-//			LOGD("ImageBlur_ThreadFund : cancel.(gCancel[index]=%d)", gCancel[index]);
-			return (void*)ERROR_CODE_USER_CANCELED;
+		for (int x = 0; x < Width; x++) {
+			// 水平方向の3タップフィルタ
+			// 前後を参照するためx+1を中心にする
+			// 右ズレを左に戻す
+			int idxL = x + 1;
+			int idxC = x + 2;
+			int idxR = x + 3;
+			// 右端でデータが途切れないための境界処理
+			int limit = Width + (HOKAN_DOTS / 2) - 1;
+			if (idxL > limit) idxL = limit;
+			if (idxC > limit) idxC = limit;
+			if (idxR > limit) idxR = limit;
+
+			LONG pL = src[idxL], pC = src[idxC], pR = src[idxR];
+			// 重み付け計算(合計16倍)
+			r[x] = (uint16_t)(RGB888_RED(pL) * w + RGB888_RED(pC) * weight_c + RGB888_RED(pR) * w);
+			g[x] = (uint16_t)(RGB888_GREEN(pL) * w + RGB888_GREEN(pC) * weight_c + RGB888_GREEN(pR) * w);
+			b[x] = (uint16_t)(RGB888_BLUE(pL) * w + RGB888_BLUE(pC) * weight_c + RGB888_BLUE(pR) * w);
 		}
+	};
+	// 初期行の充填
+	// 0: 前の行 (prev), 1: 現在の行 (curr), 2: 次の行 (next)
+	// 前の行 (stindex=0の時は0行目を複製)
+	blur_h(stindex - 1, 0);
+	// 現在の行
+	blur_h(stindex, 1);
+	// 縦ぼかしを実行
+	for (int yy = stindex; yy < edindex; yy++) {
+		if (gCancel[index]) break;
+		// ローテーション用インデックスの計算
+		// (yy - stindex)をベースにすることでスレッド境界での負数を回避
+		// 垂直方向のシフト修正：時間軸に沿ったインデックス管理
+		int p_idx = (yy - stindex + 0) % 3;
+		int c_idx = (yy - stindex + 1) % 3;
+		int n_idx = (yy - stindex + 2) % 3;
+		// 次の行(yy + 1)を計算してバッファの空いている場所(n_idx)へ
+		blur_h(yy + 1, n_idx);
 
-        // バッファ位置
-        buffptr = gSclLinesPtr[index][yy];
+		LONG *dst = gSclLinesPtr[index][yy];
+		uint16_t *rP = tR[p_idx], *rC = tR[c_idx], *rN = tR[n_idx];
+		uint16_t *gP = tG[p_idx], *gC = tG[c_idx], *gN = tG[n_idx];
+		uint16_t *bP = tB[p_idx], *bC = tB[c_idx], *bN = tB[n_idx];
 
-        orgbuff1 = gLinesPtr[index][yy + HOKAN_DOTS / 2 + 0];
-		orgbuff2 = gLinesPtr[index][yy + HOKAN_DOTS / 2 + 1];
+		for (int xx = 0; xx < Width; xx++) {
+			// 加重平均(横で16倍、縦で16倍されているので256(>>8)で割る)
+			// 中間計算のオーバーフローを防ぐためuint32_tで計算
+			uint32_t red   = ((uint32_t)rP[xx] * w + (uint32_t)rC[xx] * weight_c + (uint32_t)rN[xx] * w) >> 8;
+			uint32_t green = ((uint32_t)gP[xx] * w + (uint32_t)gC[xx] * weight_c + (uint32_t)gN[xx] * w) >> 8;
+			uint32_t blue  = ((uint32_t)bP[xx] * w + (uint32_t)bC[xx] * weight_c + (uint32_t)bN[xx] * w) >> 8;
 
-		yd3 = gDitherY_3bit[yy & 0x07];
-		yd2 = gDitherY_2bit[yy & 0x03];
-
-		for (int xx =  0 ; xx < Width + HOKAN_DOTS; xx++) {
-			rr1 =  RGB888_RED(orgbuff1[xx]);
-			gg1 =  RGB888_GREEN(orgbuff1[xx]);
-			bb1 =  RGB888_BLUE(orgbuff1[xx]);
-
-			rr2 =  RGB888_RED(orgbuff1[xx + 1]);
-			gg2 =  RGB888_GREEN(orgbuff1[xx + 1]);
-			bb2 =  RGB888_BLUE(orgbuff1[xx + 1]);
-
-			rr2 += RGB888_RED(orgbuff2[xx]);
-			gg2 += RGB888_GREEN(orgbuff2[xx]);
-			bb2 += RGB888_BLUE(orgbuff2[xx]);
-
-			rr2 += RGB888_RED(orgbuff2[xx + 1]);
-			gg2 += RGB888_GREEN(orgbuff2[xx + 1]);
-			bb2 += RGB888_BLUE(orgbuff2[xx + 1]);
-
-			// 0～255に収める
-			rr = LIMIT_RGB((rr1 * raito + rr2 * (100 - raito) / 3) / 100);
-			gg = LIMIT_RGB((gg1 * raito + gg2 * (100 - raito) / 3) / 100);
-			bb = LIMIT_RGB((bb1 * raito + bb2 * (100 - raito) / 3) / 100);
-
-            buffptr[xx - HOKAN_DOTS / 2] = MAKE8888(rr, gg, bb);
+			dst[xx] = MAKE8888(red, green, blue);
 		}
-
-		// 補完用の余裕
-        buffptr[-2] = buffptr[0];
-        buffptr[-1] = buffptr[0];
-        buffptr[Width + 0] = buffptr[Width - 1];
-        buffptr[Width + 1] = buffptr[Width - 1];
 	}
-//	LOGD("ImageBlur_ThreadFund : end");
 	return 0;
 }
 
