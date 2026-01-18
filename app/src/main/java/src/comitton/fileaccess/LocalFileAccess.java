@@ -209,8 +209,8 @@ public class LocalFileAccess {
 					name += "/";
 				}
 			}
-
-			FileData fileData = new FileData(activity, name, size, date);
+			// リスト表示用に特別に用意(htmlを認識させるため)
+			FileData fileData = new FileData(activity, name, size, date, true);
 			fileList.add(fileData);
 
 			Logcat.d(logLevel, "index=" + (fileList.size() - 1) + ", name=" + fileData.getName() + ", type=" + fileData.getType() + ", extType=" + fileData.getExtType());

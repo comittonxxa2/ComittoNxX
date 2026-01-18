@@ -478,10 +478,12 @@ public class SafFileAccess {
 				FileData fileData;
 				if (isdir) {
 					// ディレクトリの場合
-					fileData = new FileData(activity, name + "/", size, date);
+					// リスト表示用に特別に用意(htmlを認識させるため)
+					fileData = new FileData(activity, name + "/", size, date, true);
 				}
 				else {
-					fileData = new FileData(activity, name, size, date);
+					// リスト表示用に特別に用意(htmlを認識させるため)
+					fileData = new FileData(activity, name, size, date, true);
 				}
 				fileList.add(fileData);
 			}
