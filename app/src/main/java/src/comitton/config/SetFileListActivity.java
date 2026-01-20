@@ -11,6 +11,7 @@ import src.comitton.config.seekbar.ToolbarSeekbar;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
+import src.comitton.common.Logcat;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -58,6 +59,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ListPreference mReadTextSetting;
 	private ListPreference mReadStyleSetting;
 	private ListPreference mReadProgressbarPosition;
+	private ListPreference mReadProgressbarWidth;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -142,6 +144,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 			{ R.string.readprogresspos00		// ノーマル
 			, R.string.readprogresspos01		// 上側
 			, R.string.readprogresspos02 };	// 下側
+	public static final int[] ReadProgressbarWidth =
+			{ R.string.readprogressbarwidth00		// サムネイル画像に合わせる
+			, R.string.readprogressbarwidth01 };	// サムネイル表示エリアに合わせる
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -188,6 +193,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mReadTextSetting = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READTEXTSETTING);
 		mReadStyleSetting = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READSTYLESETTING);
 		mReadProgressbarPosition = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READPROGRESSBARPOSITION);
+		mReadProgressbarWidth = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READPROGRESSBARWIDTH);
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FILEHELP);
@@ -237,6 +243,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mReadTextSetting.setSummary(getReadTextSettingSummary(sharedPreferences));
 		mReadStyleSetting.setSummary(getReadStyleSettingSummary(sharedPreferences));
 		mReadProgressbarPosition.setSummary(getReadProgressbarPositionSummary(sharedPreferences));
+		mReadProgressbarWidth.setSummary(getReadProgressbarWidthSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 }
 
@@ -339,6 +346,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		}
 		else if(key.equals(DEF.KEY_READPROGRESSBARPOSITION)){
 			mReadProgressbarPosition.setSummary(getReadProgressbarPositionSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_READPROGRESSBARWIDTH)){
+			mReadProgressbarWidth.setSummary(getReadProgressbarWidthSummary(sharedPreferences));
 		}
 	}
 
@@ -688,6 +698,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static int getReadProgressbarWidth(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_READPROGRESSBARWIDTH, "0");
+		if(val < 0 || val >= ReadProgressbarWidth.length){
+			val = 0;
+		}
+		return val;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
@@ -846,5 +864,11 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		int val = getReadProgressbarPosition(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(ReadProgressPosName[val]);
+	}
+
+	private String getReadProgressbarWidthSummary(SharedPreferences sharedPreferences){
+		int val = getReadProgressbarWidth(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(ReadProgressbarWidth[val]);
 	}
 }
