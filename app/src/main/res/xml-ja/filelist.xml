@@ -278,6 +278,14 @@
             android:key="ReadProgressbarPosition"
             android:summary="dummy"
             android:title="読書率の進捗バーの座標" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="読書率の進捗バーの横幅設定"
+            android:entries="@array/readprogressbarwidth_name_list"
+            android:entryValues="@array/readprogressbarwidth_value_list"
+            android:key="ReadProgressbarWidth"
+            android:summary="dummy"
+            android:title="読書率の進捗バーの横幅設定" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ProgressBarMode"
