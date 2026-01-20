@@ -614,6 +614,7 @@ public class DEF {
 	public static final String KEY_READSTYLESETTING = "ReadStyleSetting";
 	public static final String KEY_READPROGRESSBARPOSITION = "ReadProgressbarPosition";
 	public static final String KEY_PROGRESSBARMODE = "ProgressBarMode";
+	public static final String KEY_READPROGRESSBARWIDTH = "ReadProgressbarWidth";
 
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
