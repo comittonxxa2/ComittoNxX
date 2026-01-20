@@ -276,6 +276,14 @@
             android:key="ReadProgressbarPosition"
             android:summary="dummy"
             android:title="Coordinates of the reading rate progress bar" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Setting the width of the progress bar for reading rate"
+            android:entries="@array/readprogressbarwidth_name_list"
+            android:entryValues="@array/readprogressbarwidth_value_list"
+            android:key="ReadProgressbarWidth"
+            android:summary="dummy"
+            android:title="Setting the width of the progress bar for reading rate" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ProgressBarMode"
