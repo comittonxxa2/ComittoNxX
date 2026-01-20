@@ -949,6 +949,9 @@
     <string name="pulldowntappos01">upper left</string>
     <string name="pulldowntappos02">upper right</string>
 
+    <string name="readprogressbarwidth00">Fit to thumbnail image</string>
+    <string name="readprogressbarwidth01">Fit to thumbnail display area</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
