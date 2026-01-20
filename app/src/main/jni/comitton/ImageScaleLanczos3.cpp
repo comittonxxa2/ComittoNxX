@@ -2,6 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
+#include <algorithm> // std::max, std::min用
 #ifdef _WIN32
 #include <stdio.h>
 #else
@@ -20,7 +21,7 @@ extern int	*gSclIntParam1[];
 extern int	*gSclIntParam2[];
 
 // 円周率
-#define PI	3.1415926
+#define PI 3.14159265358979323846f
 // Lanczos3の窓の範囲
 #define	N	3
 
@@ -28,10 +29,16 @@ extern int	*gSclIntParam2[];
 typedef struct {
 	// 参照開始インデックス
 	int start;
-	// Lanczos3(N=3)の場合は最大6つの重み
-	float weights[6];
+	// 参照する画素数
+	int count;     
+	// スケールに応じた重み配列
+	float *weights;
 } WeightInfo;
 
+// 画質優先のため中間データを保持する構造体
+typedef struct {
+	float r, g, b;
+} FloatPixel;
 // スレッド間共有データ
 typedef struct {
 	int stindex, edindex;
@@ -40,8 +47,8 @@ typedef struct {
 	int index;
 	WeightInfo *hWeights;
 	WeightInfo *vWeights;
-	// 中間バッファ(水平リサイズ後)
-	LONG **tempBuffer;
+	// 中間バッファ(水平リサイズ後)を高精度化
+	FloatPixel **tempBuffer;
 } ThreadParam;
 
 // Lanczos3の窓関数
@@ -50,8 +57,8 @@ static float sinc(float x)
 	if (x == 0) {
 		return 1.0f;
 	}
-	x *= PI;
-	return sinf(x) / x;
+	float tx = x * PI;
+	return sinf(tx) / tx;
 }
 
 // Lanczos3の窓関数を演算するかどうかを判定
@@ -68,26 +75,35 @@ static float lanczosWeight(float x)
 }
 
 // 重みテーブルの事前計算
-void PrecomputeWeights(WeightInfo* table, int dstSize, int srcSize, float scale)
+void PrecomputeWeights(WeightInfo* table, int dstSize, int srcSize)
 {
+	float scale = (float)dstSize / srcSize;
 	float rscale = 1.0f / scale;
+	// 縮小時は窓を広げ、拡大時は窓を固定(1.0)にする
 	float filterScale = (scale < 1.0f) ? scale : 1.0f;
 	float support = (float)N / filterScale;
 	// 各ピクセルの位置をサンプリングしてどの重みを掛けるべきかを事前に計算する
 	for (int i = 0; i < dstSize; i++) {
+		// 出力ピクセルの中心に対応する元画像の座標
 		float center = (i + 0.5f) * rscale;
-		int start = (int)floorf(center - support);
+		// 影響範囲の開始と終了
+		int start = (int)ceilf(center - support - 0.5f);
+		int stop  = (int)floorf(center + support - 0.5f);
 		table[i].start = start;
+		table[i].count = stop - start + 1;
+		table[i].weights = (float*)malloc(sizeof(float) * table[i].count);
+
 		float sum = 0;
-		for (int j = 0; j < 6; j++) {
-			int srcPos = start + j;
+		for (int j = 0; j < table[i].count; j++) {
+			float srcPos = (float)(start + j) + 0.5f;
 			// Lanczos3の窓関数を演算して値をテーブルへ格納
-			float w = lanczosWeight((center - (srcPos + 0.5f)) * filterScale);
-			table[i].weights[j] = w;
-			sum += w;
+			float weight = lanczosWeight((center - srcPos) * filterScale);
+			table[i].weights[j] = weight;
+			sum += weight;
 		}
+		// 正規化(明るさの変動を防ぐ)
 		if (sum != 0) {
-			for (int j = 0; j < 6; j++) {
+			for (int j = 0; j < table[i].count; j++) {
 				// 平均を求める
 				table[i].weights[j] /= sum;
 			}
@@ -106,24 +122,24 @@ void *HorizontalPass_ThreadFunc(void *param)
 		}
 
 		LONG *srcRow = gLinesPtr[p->index][y + HOKAN_DOTS / 2];
-		LONG *tmpRow = p->tempBuffer[y];
+		FloatPixel *tmpRow = p->tempBuffer[y];
 
 		for (int x = 0; x < p->SclWidth; x++) {
 			WeightInfo &wi = p->hWeights[x];
 			float rr = 0, gg = 0, bb = 0;
 
-			for (int j = 0; j < 6; j++) {
-				int srcX = wi.start + j;
-				srcX = (srcX < 0) ? 0 : (srcX >= p->OrgWidth) ? p->OrgWidth - 1 : srcX;
+			for (int j = 0; j < wi.count; j++) {
+				int srcX = std::max(0, std::min(p->OrgWidth - 1, wi.start + j));
 				LONG pix = srcRow[srcX + HOKAN_DOTS / 2];
 				// RGBデータを読み出して重み分を掛け算してから加算する
 				rr += (float)RGB888_RED(pix) * wi.weights[j];
 				gg += (float)RGB888_GREEN(pix) * wi.weights[j];
 				bb += (float)RGB888_BLUE(pix) * wi.weights[j];
 			}
-			// 0～255に収める
-			// バッファへRGBデータを書き込む
-			tmpRow[x] = MAKE8888((int)LIMIT_RGB(rr), (int)LIMIT_RGB(gg), (int)LIMIT_RGB(bb));
+			// 精度を維持して中間バッファへ書き込む
+			tmpRow[x].r = rr;
+			tmpRow[x].g = gg;
+			tmpRow[x].b = bb;
 		}
 	}
 	return nullptr;
@@ -147,18 +163,17 @@ void *VerticalPass_ThreadFunc(void *param)
 		for (int x = 0; x < p->SclWidth; x++) {
 			float rr = 0, gg = 0, bb = 0;
 
-			for (int j = 0; j < 6; j++) {
-				int srcY = wi.start + j;
-				srcY = (srcY < 0) ? 0 : (srcY >= p->OrgHeight) ? p->OrgHeight - 1 : srcY;
-				LONG pix = p->tempBuffer[srcY][x];
+			for (int j = 0; j < wi.count; j++) {
+				int srcY = std::max(0, std::min(p->OrgHeight - 1, wi.start + j));
+				FloatPixel &fp = p->tempBuffer[srcY][x];
 				// RGBデータを読み出して重み分を掛け算してから加算する
-				rr += (float)RGB888_RED(pix) * wi.weights[j];
-				gg += (float)RGB888_GREEN(pix) * wi.weights[j];
-				bb += (float)RGB888_BLUE(pix) * wi.weights[j];
+				rr += fp.r * wi.weights[j];
+				gg += fp.g * wi.weights[j];
+				bb += fp.b * wi.weights[j];
 			}
-			// 0～255に収める
+			// 0～255に収める(+0.5fを加えて四捨五入することで画質を改善)
 			// バッファへRGBデータを書き込む
-			dstRow[x] = MAKE8888((int)LIMIT_RGB(rr), (int)LIMIT_RGB(gg), (int)LIMIT_RGB(bb));
+			dstRow[x] = MAKE8888((int)LIMIT_RGB(rr + 0.5f), (int)LIMIT_RGB(gg + 0.5f), (int)LIMIT_RGB(bb + 0.5f));
 		}
 		// 補完用の余裕
 		dstRow[-2] = dstRow[0];
@@ -199,13 +214,13 @@ int CreateScaleLanczos3(int index, int Page, int Half, int Count, int SclWidth, 
 	// 重みテーブル事前計算
 	WeightInfo *hWeights = (WeightInfo*)malloc(sizeof(WeightInfo) * SclWidth);
 	WeightInfo *vWeights = (WeightInfo*)malloc(sizeof(WeightInfo) * SclHeight);
-	PrecomputeWeights(hWeights, SclWidth, OrgWidth, (float)SclWidth / OrgWidth);
-	PrecomputeWeights(vWeights, SclHeight, OrgHeight, (float)SclHeight / OrgHeight);
+	PrecomputeWeights(hWeights, SclWidth, OrgWidth);
+	PrecomputeWeights(vWeights, SclHeight, OrgHeight);
 
-	// 中間バッファ領域確保
-	LONG **tempBuffer = (LONG**)malloc(sizeof(LONG*) * OrgHeight);
+	// 中間バッファ領域確保(画質維持のためFloatPixelを使用)
+	FloatPixel **tempBuffer = (FloatPixel**)malloc(sizeof(FloatPixel*) * OrgHeight);
 	for (int i = 0; i < OrgHeight; i++) {
-		tempBuffer[i] = (LONG*)malloc(sizeof(LONG) * SclWidth);
+		tempBuffer[i] = (FloatPixel*)malloc(sizeof(FloatPixel) * SclWidth);
 	}
 
 	pthread_t thread[gMaxThreadNum];
@@ -261,6 +276,12 @@ int CreateScaleLanczos3(int index, int Page, int Half, int Count, int SclWidth, 
 	}
 
 	// リソース解放
+	for (int i = 0; i < SclWidth; i++) {
+		free(hWeights[i].weights);
+	}
+	for (int i = 0; i < SclHeight; i++) {
+		free(vWeights[i].weights);
+	}
 	for (int i = 0; i < OrgHeight; i++) {
 		free(tempBuffer[i]);
 	}
