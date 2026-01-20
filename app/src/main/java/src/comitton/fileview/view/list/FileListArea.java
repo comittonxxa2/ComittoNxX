@@ -92,6 +92,9 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private final int GAUGE_TOP = 1;
 	private final int GAUGE_BOTTOM = 2;
 
+	private final int GAUGE_WIDTH_THUMBNAIL_IMAGE = 0;
+	private final int GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA = 1;
+
 	private Bitmap[] mIcon;
 	private Bitmap[] mMark;
 
@@ -176,6 +179,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private boolean mBookShelfTextSplitOn;
 	private boolean mGauge;
 	private int mGaugePos;
+	private int mGaugeWidth;
 
 	private String[][][] mText;
 
@@ -295,6 +299,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		}
 		mGauge = (SetFileListActivity.getReadStyleSetting(sharedPreferences) == 1) ? true : false;
 		mGaugePos = SetFileListActivity.getReadProgressbarPosition(sharedPreferences);
+		mGaugeWidth = SetFileListActivity.getReadProgressbarWidth(sharedPreferences);
 		// 先頭項目の位置
 		int ypos = mTopPos;
 //		long clockSt = SystemClock.uptimeMillis();
@@ -483,7 +488,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
 							Logcat.d(logLevel,"fd.getState()=" + fd.getState() + ", fd.getMaxpage()=" + fd.getMaxpage() + ", fd.getName()=" + fd.getName());
-							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + mIconHeight);
+							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? mIconWidth : dstWidth, y + mIconHeight);
 						}
 						else {
 							// サムネイルありかつ画像なし
@@ -567,7 +572,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						mSrcRect.set(0, 0, dstWidth, dstHeight);
 						mDstRect.set(x + dstX, y + dstY, x + dstX + (int)(dstWidth * dsMin), y + dstY + (int)(dstHeight * dsMin));
 						canvas.drawBitmap(bm, mSrcRect, mDstRect, mBitmapPaint);
-						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, dstWidth, y + mIconHeight);
+						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? mIconWidth : dstWidth, y + mIconHeight);
 					}
 				}else{ // タイル表示・サムネ無しの場合は枠で囲む
 					canvas.drawRect(baseX + mDrawLeft + ix * mItemWidth + mItemMargin, y + mIconHeight,
@@ -765,6 +770,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		int ypos = mTopPos;
 		mGauge = (SetFileListActivity.getReadStyleSetting(sharedPreferences) == 1) ? true : false;
 		mGaugePos = SetFileListActivity.getReadProgressbarPosition(sharedPreferences);
+		mGaugeWidth = SetFileListActivity.getReadProgressbarWidth(sharedPreferences);
 		for (int iy = mTopRow ; ypos < cy ; iy ++) {
 			index = iy;
 			Logcat.d(logLevel, "index=" + index + ", listnum=" + listnum);
@@ -959,7 +965,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						if (bmMark != null) {
                             canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 						}
-						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, dstWidth, y + iconHeight);
+						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? iconWidth : dstWidth, y + iconHeight);
 					}
 					else {
 						// サムネイルありかつ画像なし
@@ -1047,7 +1053,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					else if ((fd.getState() >= 0) && (fd.getMaxpage() > 0) || (fd.getState() == -2 && mBookShelfPatternSelect && mBookShelfAfterCircleOn)) {
 						// 読書率を描画
 						// 読書率
-						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, dstWidth, y + iconHeight);
+						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? iconWidth : dstWidth, y + iconHeight);
 						// 記述が同じなのでコメントアウトにした
 						/*
 						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
