@@ -949,4 +949,7 @@
     <string name="pulldowntappos01">左上</string>
     <string name="pulldowntappos02">右上</string>
 
+    <string name="readprogressbarwidth00">サムネイル画像に合わせる</string>
+    <string name="readprogressbarwidth01">サムネイル表示エリアに合わせる</string>
+
 </resources>
