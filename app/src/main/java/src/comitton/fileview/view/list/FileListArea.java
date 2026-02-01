@@ -62,7 +62,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	};
 	private final int[] FILEMARK_ID =
 	{
-		R.drawable.thumb_dir, R.drawable.thumb_pdf, R.drawable.thumb_zip, R.drawable.thumb_rar, R.drawable.thumb_epub
+		R.drawable.thumb_dir, R.drawable.thumb_pdf, R.drawable.thumb_zip, R.drawable.thumb_rar, R.drawable.thumb_epub, R.drawable.thumb_7z, R.drawable.thumb_tar, R.drawable.thumb_cab, R.drawable.thumb_lzh
 	};
 
 	public static final short LISTMODE_LIST = 0;
@@ -78,6 +78,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 	private final int FILEMARK_ZIP = 2;
 	private final int FILEMARK_RAR = 3;
 	private final int FILEMARK_EPUB = 4;
+	private final int FILEMARK_7Z = 5;
+	private final int FILEMARK_TAR = 6;
+	private final int FILEMARK_CAB = 7;
+	private final int FILEMARK_LZH = 8;
 
 	private final int MAXLINE_TITLE = 3;
 	private final int DATETIME_LENGTH = 21;
@@ -434,6 +438,18 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							}
 							else if (exttype == FileData.EXTTYPE_EPUB) {
 								bmMark = mMark[FILEMARK_EPUB];
+							}
+							else if (exttype == FileData.EXTTYPE_7Z) {
+								bmMark = mMark[FILEMARK_7Z];
+							}
+							else if (exttype == FileData.EXTTYPE_TAR) {
+								bmMark = mMark[FILEMARK_TAR];
+							}
+							else if (exttype == FileData.EXTTYPE_CAB) {
+								bmMark = mMark[FILEMARK_CAB];
+							}
+							else if (exttype == FileData.EXTTYPE_LZH) {
+								bmMark = mMark[FILEMARK_LZH];
 							}
 						}
 
@@ -913,6 +929,18 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 						else if (exttype == FileData.EXTTYPE_EPUB) {
 							bmMark = mMark[FILEMARK_EPUB];
+						}
+						else if (exttype == FileData.EXTTYPE_7Z) {
+							bmMark = mMark[FILEMARK_7Z];
+						}
+						else if (exttype == FileData.EXTTYPE_TAR) {
+							bmMark = mMark[FILEMARK_TAR];
+						}
+						else if (exttype == FileData.EXTTYPE_CAB) {
+							bmMark = mMark[FILEMARK_CAB];
+						}
+						else if (exttype == FileData.EXTTYPE_LZH) {
+							bmMark = mMark[FILEMARK_LZH];
 						}
 					}
 
