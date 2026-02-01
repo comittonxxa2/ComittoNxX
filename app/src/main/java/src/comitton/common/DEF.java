@@ -70,6 +70,8 @@ public class DEF {
 	public static final int MESSAGE_IMAGE = 1;
 	public static final int MESSAGE_TEXT = 2;
 	public static final int MESSAGE_EXPAND = 3;
+	public static final int MESSAGE_IMAGE_START = 4;
+	public static final int MESSAGE_IMAGE_END = 5;
 
 	public static final int ERROR_CODE_MALLOC_FAILURE = -1001;
 	public static final int ERROR_CODE_CACHE_COUNT_LIMIT_EXCEEDED = -1002;
@@ -110,6 +112,8 @@ public class DEF {
 	public static final int HMSG_PROGRESS_TEXT = 27;
 	public static final int HMSG_PROGRESS_EXPAND = 28;
 	public static final int HMSG_PROGRESS_CANCEL = 29;
+	public static final int HMSG_PROGRESS_IMAGE_START = 30;
+	public static final int HMSG_PROGRESS_IMAGE_END = 31;
 
 	public static final int HMSG_EVENT_READTIMER = 200;
 	public static final int HMSG_EVENT_EFFECT = 201;
@@ -1133,6 +1137,17 @@ public class DEF {
 	public static final String KEY_BOOKSHELFBMPFILE7 = "BookShelfBmpFile7";
 	public static final String KEY_BOOKSHELFBMPFILE8 = "BookShelfBmpFile8";
 
+	public static final String KEY_PROFILE_SCROLLMODE_01 = "ProfileScrollMode1";
+	public static final String KEY_PROFILE_SCROLLMODE_02 = "ProfileScrollMode2";
+	public static final String KEY_PROFILE_SCROLLMODE_03 = "ProfileScrollMode3";
+	public static final String KEY_PROFILE_SCROLLMODE_04 = "ProfileScrollMode4";
+	public static final String KEY_PROFILE_SCROLLMODE_05 = "ProfileScrollMode5";
+	public static final String KEY_PROFILE_SCROLLMODE_06 = "ProfileScrollMode6";
+	public static final String KEY_PROFILE_SCROLLMODE_07 = "ProfileScrollMode7";
+	public static final String KEY_PROFILE_SCROLLMODE_08 = "ProfileScrollMode8";
+	public static final String KEY_PROFILE_SCROLLMODE_09 = "ProfileScrollMode9";
+	public static final String KEY_PROFILE_SCROLLMODE_10 = "ProfileScrollMode10";
+
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
 	public static final int DEFAULT_QUALITY = 1; //画質を優先する
@@ -2083,6 +2098,7 @@ public class DEF {
 	public static final String KEY_CUSTOMKEY_CODE_10 = "Customkeycode10";
 
 	public static final int HARDWARE_NONE = 0;
+	public static final int FILECACHEMAX = 10000;
 
 	// ハードウェアキー割り当てコード
 	public static final int KEYCODE_HOME = 3;
