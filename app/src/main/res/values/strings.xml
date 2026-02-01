@@ -155,6 +155,7 @@
     <string name="mgnCutColorMenu">Color to remove margin</string>
     <string name="DisplayPositionMenu">Display position on screen</string>
     <string name="AnimationPause">Stop/resume animation playback</string>
+    <string name="ScrollDirectionMenu">Scrolling to select vertical or horizontal page movement</string>
     <string name="SelectContentsMenu">Table of contents selection</string>
     <string name="imgRotaMenu">Image Rotate</string>
     <string name="imgConfMenu">Image Config</string>
@@ -556,6 +557,9 @@
     <string name="expandcompTitle">File expansion</string>
     <string name="expandingcompTitle">in progress...</string>
     <string name="cancelexpandcompTitle">The file expansion has been canceled.</string>
+    <string name="abortimageviewer">Image viewer was forced to close.</string>
+    <string name="readerror">Loading error</string>
+    <string name="readerrormessage">There was a problem parsing the image.\nThis may be fixed by deleting the file list cache or regenerating and opening the file list.</string>
     <string name="loadfilelist">Loading a file list</string>
     <string name="loadingfilelist">Loading...</string>
     <string name="updatefilelist">Update a file list</string>
