@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "BB"
+def revision = "BC"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -83,7 +83,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         debug {
@@ -122,7 +122,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         arm32 {
@@ -137,7 +137,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         x64 {
@@ -152,7 +152,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         x86 {
@@ -167,7 +167,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
@@ -215,4 +215,9 @@ dependencies {
     // 文字コード判定用ライブラリ
     // 2.5.0と2.0.4は同時リリースのため、Android 5でも使用できる2.0.4を選択する
     implementation 'com.github.albfernandez:juniversalchardet:2.0.4'
+
+    implementation 'org.apache.commons:commons-compress:1.26.1'
+    implementation 'org.tukaani:xz:1.9' // これがないと7zのLZMA解凍でエラーになる
+
+    implementation 'com.github.omicronapps:7-Zip-JBinding-4Android:Release-16.02-2.03'
 }

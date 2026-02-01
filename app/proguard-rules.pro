@@ -33,3 +33,14 @@
     public static *** d(...);
     public static *** i(...);
 }
+
+# 7-Zip-JBindingの全クラス・全メソッドをそのまま保持する
+-keep class net.sf.sevenzipjbinding.** { *; }
+
+# 警告を無視する
+-dontwarn net.sf.sevenzipjbinding.**
+
+# ネイティブコード(JNI)との紐付けを保持する
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
