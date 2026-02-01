@@ -37,6 +37,10 @@ public class FileData {
 	public static final short EXTTYPE_GIF = 6;
 	public static final short EXTTYPE_TXT = 7;
 	public static final short EXTTYPE_WEB = 8;
+	public static final short EXTTYPE_7Z = 9;
+	public static final short EXTTYPE_TAR = 10;
+	public static final short EXTTYPE_CAB = 11;
+	public static final short EXTTYPE_LZH = 12;
 	public static final short EXTTYPE_WEBP = 51;
 	public static final short EXTTYPE_AVIF = 52;
 	public static final short EXTTYPE_HEIF = 53;
@@ -290,6 +294,18 @@ public class FileData {
 		if (filename.endsWith(".jxl")) {
 			return EXTTYPE_JXL;
 		}
+		if (filename.endsWith(".7z") || filename.endsWith(".cb7")) {
+			return EXTTYPE_7Z;
+		}
+		if (filename.endsWith(".tar") || filename.endsWith(".cbt")) {
+			return EXTTYPE_TAR;
+		}
+		if (filename.endsWith(".cab")) {
+			return EXTTYPE_CAB;
+		}
+		if (filename.endsWith(".lzh")) {
+			return EXTTYPE_LZH;
+		}
 		return EXTTYPE_NONE;
 	}
 
@@ -383,7 +399,7 @@ public class FileData {
 
 	public static boolean isArchive(String filepath) {
 		String filename = filepath.toLowerCase();
-		return filename.endsWith(".zip") || filename.endsWith(".rar") || filename.endsWith(".cbz") || filename.endsWith(".cbr");
+		return filename.endsWith(".zip") || filename.endsWith(".rar") || filename.endsWith(".cbz") || filename.endsWith(".cbr") || filename.endsWith(".7z") || filename.endsWith(".tar") || filename.endsWith(".cab") || filename.endsWith(".cb7") || filename.endsWith(".cbt") || filename.endsWith(".lzh");
 	}
 	public static boolean isZip(String filepath) {
 		String filename = filepath.toLowerCase();
@@ -392,6 +408,22 @@ public class FileData {
 	public static boolean isRar(String filepath) {
 		String filename = filepath.toLowerCase();
 		return filename.endsWith(".rar") || filename.endsWith(".cbr");
+	}
+	public static boolean is7z(String filepath) {
+		String filename = filepath.toLowerCase();
+		return filename.endsWith(".7z") || filename.endsWith(".cb7");
+	}
+	public static boolean istar(String filepath) {
+		String filename = filepath.toLowerCase();
+		return filename.endsWith(".tar") || filename.endsWith(".cbt");
+	}
+	public static boolean iscab(String filepath) {
+		String filename = filepath.toLowerCase();
+		return filename.endsWith(".cab");
+	}
+	public static boolean islzh(String filepath) {
+		String filename = filepath.toLowerCase();
+		return filename.endsWith(".lzh");
 	}
 	public static boolean isPdf(String filepath) {
 		String filename = filepath.toLowerCase();
@@ -426,6 +458,18 @@ public class FileData {
 		}
 		if (extType == FileData.EXTTYPE_RAR) {
 			return "application/x-rar-compressed";
+		}
+		if (extType == FileData.EXTTYPE_7Z) {
+			return "application/x-7z-compressed";
+		}
+		if (extType == FileData.EXTTYPE_TAR) {
+			return "application/x-tar";
+		}
+		if (extType == FileData.EXTTYPE_CAB) {
+			return "application/vnd.ms-cab-compressed";
+		}
+		if (extType == FileData.EXTTYPE_LZH) {
+			return "application/x-lzh-compressed";
 		}
 		if (extType == FileData.EXTTYPE_PDF) {
 			return "application/pdf";
