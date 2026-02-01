@@ -155,6 +155,7 @@
     <string name="mgnCutColorMenu">余白の削除対象の色</string>
     <string name="DisplayPositionMenu">画面の表示位置</string>
     <string name="AnimationPause">アニメ再生の停止/再開</string>
+    <string name="ScrollDirectionMenu">スクロール操作によるページ移動の縦横選択</string>
     <string name="SelectContentsMenu">目次の選択</string>
     <string name="imgRotaMenu">画像の回転</string>
     <string name="imgConfMenu">画像表示設定</string>
@@ -553,6 +554,9 @@
     <string name="degree">度</string>
     <string name="loadpage">ページの読み込み</string>
     <string name="cancelloadpage">ページの読み込みがキャンセルされました.</string>
+    <string name="abortimageviewer">イメージビューアを強制終了しました.</string>
+    <string name="readerror">読み込みエラー</string>
+    <string name="readerrormessage">画像の解析中に問題が発生しました.\nファイルリストのキャッシュ削除、またはファイルリストを再生成して開くと直る可能性があります.</string>
     <string name="expandcompTitle">ファイルの展開</string>
     <string name="expandingcompTitle">展開中...</string>
     <string name="cancelexpandcompTitle">ファイルの展開がキャンセルされました.</string>
