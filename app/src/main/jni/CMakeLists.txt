@@ -40,10 +40,6 @@ add_library(
   ${COMITTON_SOURCES}
 )
 
-# rar 解凍ライブラリのビルド
-add_subdirectory(unrar)
-target_sources(comitton PRIVATE comitton/callUnrar.cpp)
-
 # 画像フォーマットデコーダーのビルド
 
 # AVIF
