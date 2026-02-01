@@ -300,6 +300,7 @@ public class ExpandThumbnailLoader extends ThumbnailLoader implements Runnable {
 		if (!skipFile) {
 			if (bm == null) {
 				try {
+					mImageMgr.setAccessMode(false);
 					bm = mImageMgr.LoadThumbnail(index, mThumbSizeW, mThumbSizeH);
 				}
 				catch (Exception ex) {
