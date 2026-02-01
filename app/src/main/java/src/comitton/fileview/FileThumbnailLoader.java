@@ -453,6 +453,7 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 				}
 				else {
 					if (debug) {Log.d(TAG, "index=" + index + "loadBitmap3: LoadThumbnail を実行します. page=0, width=" + mThumbSizeW + ", height=" + mThumbSizeH + " filename=" + filename);}
+					mImageMgr.setAccessMode(true);
 					bm = mImageMgr.LoadThumbnail(0, mThumbSizeW, mThumbSizeH);
 				}
 				if (bm != null) {
