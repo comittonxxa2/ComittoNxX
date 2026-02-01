@@ -2,7 +2,12 @@ package src.comitton.imageview;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -10,10 +15,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.FileChannel;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -23,16 +36,31 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
 import java.nio.ByteBuffer;
+import net.sf.sevenzipjbinding.ExtractAskMode;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
+import net.sf.sevenzipjbinding.PropID;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.ArchiveFormat;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.IInStream;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -44,17 +72,30 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.graphics.ColorMatrix;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
+import android.os.SystemClock;
+import android.system.ErrnoException;
+import android.system.Os;
+import android.system.OsConstants;
 import android.util.Log;
 
+import jcifs.CIFSContext;
+import jcifs.config.PropertyConfiguration;
+import jcifs.context.BaseContext;
+import jcifs.context.SingletonContext;
+import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbRandomAccessFile;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
+import src.comitton.dialog.CustomProgressDialog;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
@@ -79,6 +120,17 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public static final int FILETYPE_ZIP = 100;
 	public static final int FILETYPE_RAR = 200;
+	public static final int FILETYPE_7Z = 300;
+	public static final int FILETYPE_TAR = 400;
+	public static final int FILETYPE_CAB = 500;
+	public static final int FILETYPE_LZH = 600;
+
+	public static final int FILESEEK_MAX = 50;
+	public static final int FILESEEK_MAX_SOLID = 500;
+	public static final int FILEERROR_RETRY = 10;
+	public static final int FILEERROR_RETRY_SMB = 50;
+	public static final int FILEERROR_DELAY = 10;
+	public static final int FILEERROR_DELAY_SMB = 100;
 
 	public static final int OPENMODE_VIEW = 0;
 	public static final int OPENMODE_LIST = 1;
@@ -238,7 +290,6 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mTimestamp = 0;
 
 	private PdfRenderer mPdfRenderer = null;
-	private RarInputStream mRarStream = null;
 	private boolean mFileListCacheOff = false;
 
 	private final int mMaxThreadNum;
@@ -253,6 +304,20 @@ public class ImageManager extends InputStream implements Runnable {
 	private static String[] mContentsTltle;
 	private static int[] mContentsPage;
 	private boolean mEnableContentsFile;
+
+	private IInArchive archive = null;
+	private int numberOfItems = 0;
+	private String[] mItems;
+	private int mStart;
+	private boolean mCacheInit = false;
+	private int mCacheMax = DEF.FILECACHEMAX;
+	private boolean mSolid = false;
+	private int mAccessType = DEF.ACCESS_TYPE_LOCAL;
+	private File mCacheDir;
+	private String mCacheName;
+	private String mCacheDirName;
+	private SafInStream safstream;
+	private boolean mAccessMode = false;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -362,7 +427,12 @@ public class ImageManager extends InputStream implements Runnable {
 				return;
 			}
 
-			fileCacheInit(mFileList.length, mHostType != DEF.ACCESS_TYPE_LOCAL);
+			boolean mFileCacheOn = mHostType != DEF.ACCESS_TYPE_LOCAL;
+			if (!mFileListCacheOff && mFileType == FileData.FILETYPE_ARC) {
+				// 自前のキャッシュファイルシステムを有効にする(falseにする)
+				mFileCacheOn = false;
+			}
+			fileCacheInit(mFileList.length, mFileCacheOn);
 			startCacheRead();
 
 		}
@@ -493,6 +563,268 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 	}
 
+	// ストレージのアクセスのタイプを得る
+	private static int accessType(final String uri) {
+		if (uri.startsWith("/")) {
+			return DEF.ACCESS_TYPE_LOCAL;
+		}
+		else if (uri.startsWith("smb://")) {
+			return DEF.ACCESS_TYPE_SMB;
+		}
+		else if (uri.startsWith("content://")) {
+			return DEF.ACCESS_TYPE_SAF;
+		}
+		return DEF.ACCESS_TYPE_LOCAL;
+	}
+	// ストレージアクセスフレームワークのストリームアクセス(7-Zip-JBinding-4Android専用)
+	public class SafInStream implements IInStream {
+		private final ParcelFileDescriptor pfd;
+		private final FileDescriptor fd;
+
+		private SafInStream(ParcelFileDescriptor pfd) {
+			this.pfd = pfd;
+			this.fd = pfd.getFileDescriptor();
+		}
+		@Override
+		public int read(byte[] data) throws SevenZipException {
+			try {
+				// Androidのシステムコールを直接呼び出して読み込み
+				int bytesRead = Os.read(fd, data, 0, data.length);
+				// 7-Zip-JBindingの仕様では、EOFは0ではなく-1を返す必要がある場合があるが、読み取ったバイト数をそのまま返せばよい
+				return bytesRead;
+			}
+			catch (ErrnoException | IOException e) {
+				throw new SevenZipException("読み込みに失敗しました", e);
+			}
+		}
+		@Override
+		public long seek(long offset, int origin) throws SevenZipException {
+			try {
+				int whence;
+				switch (origin) {
+					case SEEK_SET:
+						// 先頭から
+						whence = OsConstants.SEEK_SET;
+						break;
+					case SEEK_CUR:
+						// 現在位置から
+						whence = OsConstants.SEEK_CUR;
+						break;
+					case SEEK_END:
+						// 末尾から
+						whence = OsConstants.SEEK_END;
+						break;
+					default: throw new SevenZipException("無効なseek originです");
+				}
+				return Os.lseek(fd, offset, whence);
+			}
+			catch (ErrnoException e) {
+				throw new SevenZipException("シークに失敗しました", e);
+			}
+		}
+		public void close() throws IOException {
+			if (pfd != null) {
+				pfd.close();
+			}
+		}
+	}
+	// SMBのストリームアクセス(7-Zip-JBinding-4Android専用)
+	public class SmbInStream implements IInStream {
+		private final SmbRandomAccessFile sraf;
+		private SmbInStream(SmbRandomAccessFile sraf) {
+			this.sraf = sraf;
+		}
+		@Override
+		public int read(byte[] data) throws SevenZipException {
+			try {
+				// SmbRandomAccessFileから読み込み
+				return sraf.read(data);
+			}
+			catch (IOException e) {
+				throw new SevenZipException("SMBからの読み込みに失敗しました", e);
+			}
+		}
+		@Override
+		public long seek(long offset, int origin) throws SevenZipException {
+			try {
+				long newPosition;
+				switch (origin) {
+					case SEEK_SET:
+						// 先頭から
+						newPosition = offset;
+						break;
+					case SEEK_CUR:
+						// 現在位置から
+						newPosition = sraf.getFilePointer() + offset;
+						break;
+					case SEEK_END:
+						// 末尾から
+						newPosition = sraf.length() + offset;
+						break;
+					default:
+						throw new SevenZipException("無効なseek originです");
+				}
+				sraf.seek(newPosition);
+				return newPosition;
+			}
+			catch (IOException e) {
+				throw new SevenZipException("SMBでのシークに失敗しました", e);
+			}
+		}
+		public void close() throws IOException {
+			if (sraf != null) {
+				sraf.close();
+			}
+		}
+	}
+	// 7-Zip-JBinding-4Androidのファイル名の文字化け対策
+	private String getDecodedPath(IInArchive archive, int index) {
+		try {
+			Object pathObj = archive.getProperty(index, PropID.PATH);
+			if (pathObj == null) {
+				return null;
+			}
+			String rawPath = pathObj.toString();
+			String format = archive.getArchiveFormat().toString().toUpperCase();
+			// 7z, RARなどのUnicode標準形式はJNI層で正しく処理されるためそのまま返す
+			if (format.matches("7Z|RAR.*|TAR")) {
+				// 基本はそのまま返すが万が一化けを検知したら再デコードへ回す
+				if (!containsControlCharacters(rawPath) && !rawPath.contains("\uFFFD")) {
+					return rawPath;
+				}
+			}
+			// UTF-8の日本語文字が含まれているか判定する
+			if (containsJapanese(rawPath)) {
+				// すでに正しくStringになっているのでそのまま返す
+				return rawPath;
+			}
+			// JNI層での勝手な変換を解除するため一旦ISO-8859-1で生のバイト列に戻す
+			byte[] rawBytes = rawPath.getBytes(StandardCharsets.ISO_8859_1);
+			// UTF-8 として妥当かチェック
+			if (isValidUtf8(rawBytes)) {
+				String decodedUtf8 = new String(rawBytes, StandardCharsets.UTF_8);
+				// UTF-8として成立しても制御文字が含まれていれば誤デコードの可能性が高い
+				if (!containsControlCharacters(decodedUtf8)) {
+					return decodedUtf8;
+				}
+			}
+			// 日本語Windows標準(MS932)でデコードを試みる
+			String decodedMS932 = new String(rawBytes, Charset.forName("MS932"));
+			return decodedMS932;
+		}
+		catch (Exception e) {
+			return "Unknown_Path";
+		}
+	}
+	// 文字化け(代替文字または制御文字)が含まれているか判定
+	private boolean isStillCorrupted(String text) {
+		if (text == null) {
+			return false;
+		}
+		if (text.contains("\uFFFD")) {
+			return true;
+		}
+		return containsControlCharacters(text);
+	}
+	// 制御文字が含まれているか判定
+	private boolean containsControlCharacters(String s) {
+		if (s == null) {
+			return false;
+		}
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			// 通常のテキストに含まれない制御文字(0x00-0x1F, 0x7F)をチェック
+			if ((c < 0x20 && c != '\t' && c != '\n' && c != '\r') || c == 0x7F) {
+				return true;
+			}
+		}
+		return false;
+	}
+	// バイト列がUTF-8として妥当かどうかを厳格に判定する
+	private boolean isValidUtf8(byte[] bytes) {
+		if (bytes == null || bytes.length == 0) return false;
+		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+		// 不正なバイト列や変換できない文字が含まれる場合にエラーを報告させる設定
+		decoder.onMalformedInput(CodingErrorAction.REPORT);
+		decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+		try {
+			decoder.decode(ByteBuffer.wrap(bytes));
+			// 最後までデコードに成功すれば妥当なUTF-8
+			return true;
+		}
+		catch (CharacterCodingException e) {
+			// UTF-8の規格に合わないバイトが含まれている
+			return false;
+		}
+	}
+	// 日本語文字が含まれているか判定する
+	private boolean containsJapanese(String s) {
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			// Unicodeの日本語範囲(平仮名、片仮名、漢字)が含まれているか
+			if ((c >= 0x3040 && c <= 0x309F) || (c >= 0x30A0 && c <= 0x30FF) || (c >= 0x4E00 && c <= 0x9FFF)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	// 圧縮ファイルの判定
+	private boolean IsArchive(short fileType) {
+		// 圧縮ファイルの場合は真を返す
+		return (fileType == FILETYPE_ZIP || fileType == FILETYPE_RAR || fileType == FILETYPE_7Z || fileType == FILETYPE_TAR || fileType == FILETYPE_CAB || fileType == FILETYPE_LZH);
+	}
+	// RandomAccessFileが遅いので作成した(7-Zip-JBinding-4Android専用)
+	public class FastInStream implements IInStream {
+		private RandomAccessFile raf;
+		// バッファを利用することで、RandomAccessFileの生のreadより数十倍速くなる
+		private static final int BUFFER_SIZE = 16 * 1024;
+		public FastInStream(RandomAccessFile raf) {
+			this.raf = raf;
+		}
+		@Override
+		public long seek(long offset, int seekOrigin) throws SevenZipException {
+			try {
+				switch (seekOrigin) {
+					case SEEK_SET:
+						raf.seek(offset);
+						break;
+					case SEEK_CUR:
+						raf.seek(raf.getFilePointer() + offset);
+						break;
+					case SEEK_END:
+						raf.seek(raf.length() + offset);
+						break;
+				}
+				return raf.getFilePointer();
+			}
+			catch (IOException e) {
+				throw new SevenZipException(e);
+			}
+		}
+		@Override
+		public int read(byte[] data) throws SevenZipException {
+			try {
+				// ここで一気に読み込むようにするとOS側のキャッシュも効きやすくなる
+				return raf.read(data);
+			}
+			catch (IOException e) {
+				throw new SevenZipException(e);
+			}
+		}
+		@Override
+		public void close() throws IOException {
+			raf.close();
+		}
+	}
+	// 再帰的な削除メソッド(キャッシュ削除に使用する)
+	private void deleteRecursive(File fileOrDirectory) {
+		if (fileOrDirectory.isDirectory()) {
+			for (File child : fileOrDirectory.listFiles()) {
+				deleteRecursive(child);
+			}
+		}
+		fileOrDirectory.delete();
+	}
 	public int mEpubMode = TextManager.EPUB_MODE_ALL_IMAGE;
 
 	private void epubFileList() throws IOException {
@@ -526,10 +858,8 @@ public class ImageManager extends InputStream implements Runnable {
 		long cmppos = 0;
 		long orgpos = 0;
 		long headpos = 0;
-		long totalSize = 0;
 		int nowPercent = 0;
 		int oldPercent = 0;
-		int count = 0;
 		int maxcmplen = 0;
 		int maxorglen = 0;
 		int timestamp = 0;
@@ -655,122 +985,223 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 		}
 
-		if	(!stop)	{
-			// ZIPかRARか判定
-			Logcat.d(logLevel, "読み込みます.");
-			cmpDirectRead(buf, 0, SIZE_BUFFER);
-			if (buf[0] == 'P' && buf[1] == 'K'){
-				mFileType = FILETYPE_ZIP;
-				Logcat.d(logLevel, "ZIPファイルです.");
+		// 7-Zip-JBinding-4Androidの初期化
+		try {
+			archive = null;
+			// ストレージのアクセスのタイプを得る
+			mAccessType = accessType(mFilePath);
+			switch (mAccessType) {
+				case DEF.ACCESS_TYPE_LOCAL:
+					// ローカルパスの場合はランダムアクセス
+					RandomAccessFile randomAccessFile = null;
+					randomAccessFile = new RandomAccessFile(mFilePath, "r");
+					FastInStream rais = new FastInStream(randomAccessFile);
+					archive = SevenZip.openInArchive(null, rais);
+					break;
+				case DEF.ACCESS_TYPE_SMB:
+					// SMBの場合
+					CIFSContext mSmbContext = SingletonContext.getInstance()
+						.withCredentials(new NtlmPasswordAuthenticator(null, mUser, mPass));
+					
+					SmbFile smbFile = new SmbFile(mFilePath, mSmbContext);
+					SmbRandomAccessFile sraf = new SmbRandomAccessFile(smbFile, "r");
+					// SMBのストリームアクセス
+					SmbInStream smbStream = new SmbInStream(sraf);
+					archive = SevenZip.openInArchive(null, smbStream);
+					break;
+				case DEF.ACCESS_TYPE_SAF:
+					// ストレージアクセスフレームワークの場合
+					// URIを得る
+					Uri uri = Uri.parse(mFilePath);
+					ParcelFileDescriptor pfd = mActivity.getContentResolver().openFileDescriptor(uri, "r");
+					// ストレージアクセスフレームワークのストリームアクセス
+					SafInStream safstream = new SafInStream(pfd);
+					archive = SevenZip.openInArchive(null, safstream);
+					break;
 			}
-			else if (buf[0] == 'R' && buf[1] == 'a' && buf[2] == 'r') {
-				mFileType = FILETYPE_RAR;
-				if (mOpenMode == OPENMODE_THUMBSORT) {
-					// RARファイルかつソートありのサムネイル取得であればソート条件を取得
-					SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
-					thumbSortType = SetFileListActivity.getThumbSortType(sp);
-					Logcat.d(logLevel, "thumbSortType=" + thumbSortType);
+		}
+		catch (Exception e) {
+		}
+		// キャッシュファイルの処理
+		String cachename = mFilePath;
+		// 区切りをアンダーバーへ変換
+		cachename = cachename.replace("\\", "_");
+		cachename = cachename.replace("/", "_");
+		mCacheDirName = DEF.makeCode(cachename, 0, 0);
+		// ファイル名の末尾にキャッシュファイルを加える
+		String rcachename = cachename + "_cachefile";
+		// ファイル名をMD5のハッシュ値へ変換
+		mCacheName = DEF.makeCode(rcachename, 0, 0);
+		String numbername = cachename + "_number";
+		String mNumberName = DEF.makeCode(numbername, 0, 0);
+		String metaname = cachename + "_metafile";
+		String mMetaName = DEF.makeCode(metaname, 0, 0);
+		String solidname = cachename + "_solid";
+		String mSolidName = DEF.makeCode(solidname, 0, 0);
+		mCacheDir = new File(mActivity.getCacheDir(), mCacheDirName);
+		File tempFile;
+
+		if (!stop) {
+			// ファイルリストの取得の場合
+			// キャッシュディレクトリ内のファイルを消す
+			if (mCacheDir.exists()) {
+				// 内部のファイルを再帰的に削除する
+				deleteRecursive(mCacheDir);
+			}
+			// キャッシュディレクトリを作成
+			boolean result = mCacheDir.mkdirs();
+		}
+
+		if (stop) {
+			// ファイルリストの取得を行わない場合
+			// メタデータからそのままファイル名を取ってくる(7-Zip-JBinding-4Androidはインデックスでファイルアクセスするため)
+			if (!mCacheDir.exists()) {
+				// キャッシュディレクトリを作成
+				boolean result = mCacheDir.mkdirs();
+			}
+			tempFile = new File(mCacheDir, mNumberName);
+			// メタデータの総数をキャッシュから読み出す
+			if (tempFile.exists() && tempFile.canRead()) {
+				try (DataInputStream dis = new DataInputStream(new FileInputStream(tempFile))) {
+					numberOfItems = dis.readInt();
 				}
-				Logcat.d(logLevel, "RARファイルです.");
+				catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 			else {
+				// 読み取れなかった場合は新しくメタデータの総数を取得して書き込む
+				numberOfItems = archive.getNumberOfItems();
+				try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(tempFile))) {
+					dos.writeInt(numberOfItems);
+				}
+				catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}
+			mItems = new String[numberOfItems];
+			// ファイル名をキャッシュから読み出す
+			for (int i = 0; i < numberOfItems; i++) {
+				tempFile = new File(mCacheDir, mMetaName + i);
+				if (tempFile.exists() && tempFile.canRead()) {
+					// FileReaderの代わりにInputStreamReaderを使用(API30未満対応)
+					try (BufferedReader reader = new BufferedReader(
+						new InputStreamReader(new FileInputStream(tempFile), StandardCharsets.UTF_8))) {
+						mItems[i] = reader.readLine();
+					}
+					catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				else {
+					// 読み取れなかった場合は新しくファイル名を取得して書き込む
+					mItems[i] = getDecodedPath(archive, i);
+					// 書き込み側も明示的にUTF-8を指定する
+					try (BufferedWriter writer = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(tempFile), StandardCharsets.UTF_8))) {
+						writer.write(mItems[i]);
+					}
+					catch (IOException ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+			tempFile = new File(mCacheDir, mSolidName);
+			// ソリッド書庫の情報をキャッシュから読み出す
+			if (tempFile.exists() && tempFile.canRead()) {
+				try (DataInputStream dis = new DataInputStream(new FileInputStream(tempFile))) {
+					mSolid = dis.readBoolean();
+				}
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				// 読み取れなかった場合は新しくソリッド書庫の情報を取得して書き込む
+				Object isSolid = archive.getArchiveProperty(PropID.SOLID);
+				mSolid = (isSolid instanceof Boolean && (Boolean) isSolid) ? true : false;
+				try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(tempFile))) {
+					dos.writeBoolean(mSolid);
+				}
+				catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+
+		if	(!stop)	{
+			// ファイルリストの取得の場合
+			try {
+				// アーカイブ形式の取得
+				ArchiveFormat format = archive.getArchiveFormat();
+				// 形式名の表示 (例: "7z", "zip", "rar")
+				String formatName = format.getMethodName();
+				if (formatName.equalsIgnoreCase("zip")) {
+					Logcat.d(logLevel, "ZIPファイルです.");
+					mFileType = FILETYPE_ZIP;
+				}
+				else if (formatName.equalsIgnoreCase("rar") || formatName.equalsIgnoreCase("rar5")) {
+					Logcat.d(logLevel, "RARファイルです.");
+					mFileType = FILETYPE_RAR;
+				}
+				else if (formatName.equalsIgnoreCase("7z")) {
+					Logcat.d(logLevel, "7-Zipファイルです.");
+					mFileType = FILETYPE_7Z;
+				}
+				else if (formatName.equalsIgnoreCase("tar")) {
+					Logcat.d(logLevel, "TARファイルです.");
+					mFileType = FILETYPE_TAR;
+				}
+				else if (formatName.equalsIgnoreCase("cab")) {
+					Logcat.d(logLevel, "CABファイルです.");
+					mFileType = FILETYPE_CAB;
+				}
+				else if (formatName.equalsIgnoreCase("lzh")) {
+					Logcat.d(logLevel, "LZHファイルです.");
+					mFileType = FILETYPE_LZH;
+				}
+				else {
+					DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
+					mFileList = new FileListItem[0];
+					return;
+				}
+				Object isSolid = archive.getArchiveProperty(PropID.SOLID);
+				mSolid = (isSolid instanceof Boolean && (Boolean) isSolid) ? true : false;
+			}
+			catch (Exception e) {
+				Logcat.d(logLevel, "アーカイブとして認識できないか、未対応の形式です。");
 				DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
 				mFileList = new FileListItem[0];
 				return;
 			}
-			cmpDirectSeek(0);
 
-			if (mFileType == FILETYPE_ZIP) {
-				// 圧縮されたファイル情報取得
-				headpos = zipSearchCentral();
-				Logcat.d(logLevel, MessageFormat.format("ZIPセントラルディレクトリヘッダ位置: fileLength={0}, headpos={1}", new Object[]{fileLength, headpos}));
-				if (headpos == 0) {
-					cmpDirectSeek(0);
-				} else {
-					//central directory headerが見つかった場合、一括でバッファに読み込む
-					// ZIPはファイル情報が1か所にまとめて格納されている
-					cdhLength = fileLength - headpos;
-					cdhBuf = new byte[(int) cdhLength];
-					cmpDirectRead(cdhBuf, 0, (int) cdhLength);
-					cmpDirectSeek(headpos);
-					Logcat.d(logLevel, MessageFormat.format("セントラルディレクトリヘッダをバッファに読み込みます: cdhLength={0}", new Object[]{cdhLength}));
-				}
-			}
+			if (IsArchive(mFileType)) {
+				Logcat.d(logLevel, "解析を開始します: " + mFilePath);
 
-			// 簡易的なRAR5判定
-			if (mFileType == FILETYPE_RAR) {
-				byte[] sigbuff = new byte[8];
-				cmpDirectRead( sigbuff, 0, 8 );
-				if( sigbuff[0] == 0x52 && sigbuff[1] == 0x61 && sigbuff[2] == 0x72 && sigbuff[3] == 0x21 &&
-					sigbuff[4] == 0x1a && sigbuff[5] == 0x07 && sigbuff[6] == 0x01 && sigbuff[7] == 0x00 ){
-					rar5 = true;
-					Logcat.d(logLevel, "RAR5です.");
-				}
-				else {
-					Logcat.d(logLevel, "RAR5ではありません.");
-				}
-				cmpDirectSeek(0);
-			}
-		}
+				numberOfItems = archive.getNumberOfItems();
+				mItems = new String[numberOfItems];
 
-		FileListItem fl = null;
-		try {
-			while (!stop) {
-
-				if (!mRunningFlag) {
-					mFileList = new FileListItem[0];
-					return;
-				}
-
-				Logcat.d(logLevel, MessageFormat.format("ループ実行: count={0}, fileLength={1}, headpos={2}", new Object[]{count, fileLength, headpos}));
-				if(headpos != 0){
-					if(headpos < fileLength) {
-						readSize = (int) ((fileLength - headpos >= 1024) ? 1024 : fileLength - headpos);
-						int pos = (int) (cdhLength - (fileLength - headpos));
-						buf = Arrays.copyOfRange(cdhBuf, pos, readSize+pos);
-						Logcat.d(logLevel, MessageFormat.format("バッファをコピーします: count={0}, readSize={1}, pos={2}", new Object[]{count, readSize, pos}));
-					}else
-						readSize = -1;
-				}else {
-					// RARはファイル情報とファイルデータが交互に格納されている
-					readSize = cmpDirectRead(buf, 0, SIZE_BUFFER);
-					Logcat.d(logLevel, MessageFormat.format("バッファを読み込みました: count={0}, readSize={1}", new Object[]{count, readSize}));
-				}
-				if (readSize <= 0) {
-					// ファイル終了
-					break;
-				}
-
-				if (mFileType == FILETYPE_ZIP) {
-					// 通常バージョンで読み込み
-					if (headpos == 0) {
-						fl = zipFileListItem(buf, cmppos, orgpos, readSize, true);
-						fl.sizefixed = true;
-					} else {
-						fl = zipFileListOldItemLite(buf, orgpos, readSize);
-						if (fl != null) {
-							fl.sizefixed = false;
-						}
+				for (int i = 0; i < numberOfItems; i++) {
+					if (!mRunningFlag) {
+						mFileList = new FileListItem[0];
+						return;
 					}
-				} else if (mFileType == FILETYPE_RAR) {
-					// RAR読み込み
-					if (rar5) {
-						// RAR5
-						fl = rar5FileListItem(buf, cmppos, orgpos, readSize);
-					} else {
-						// RAR4.x以前
-						fl = rarFileListItem(buf, cmppos, orgpos, readSize);
+					FileListItem fl = new FileListItem();
+					fl.name = getDecodedPath(archive, i);
+					// メタデータからそのままファイル名を取得して格納(7-Zip-JBinding-4Androidはインデックスでファイルアクセスするため)
+					mItems[i] = fl.name;
+					Long size = (Long) archive.getProperty(i, PropID.SIZE);
+					fl.orglen = (size != null) ? size.intValue() : 0;
+					Long packedSize = (Long) archive.getProperty(i, PropID.PACKED_SIZE);
+					fl.cmplen = (packedSize != null) ? packedSize.intValue() : 0;
+					Date mTime = (Date) archive.getProperty(i, PropID.LAST_MODIFICATION_TIME);
+					if (mTime != null) {
+						fl.dtime = mTime.getTime();
 					}
-				} else {
-					// 読み込み不可
-					return;
-				}
-
-				if (fl != null) {
-					Logcat.d(logLevel, "ファイルデータの取得に成功しました. count=" + count + ", fl.name=" + fl.name);
-
+					String method = archive.getStringProperty(i, PropID.METHOD);
+					fl.nocomp = "Store".equalsIgnoreCase(method);
 					// 対象ファイル判定
-					if (fl.name != null && fl.name.length() > 4 && fl.orglen > 0 && fl.cmplen > 0) {
+					if (fl.name != null && fl.name.length() > 4 && (fl.orglen > 0 || fl.cmplen > 0)) {
 						if (!mHidden || !DEF.checkHiddenFile(fl.name)) {
 							fl.type = FileData.getType(mActivity, fl.name);
 							fl.exttype = FileData.getExtType(mActivity, fl.name);
@@ -779,33 +1210,33 @@ public class ImageManager extends InputStream implements Runnable {
 								use = false;
 							}
 							else if (fl.type == FileData.FILETYPE_TXT && mOpenMode != OPENMODE_TEXTVIEW) {
-								if (mFileType == FILETYPE_ZIP) {
-									// ZIPファイルだった場合はテキストファイルを取り出す
-									try (ZipFile zip = new ZipFile(mFilePath)) {
-										// 特定のファイルを指定して取得
-										ZipEntry entry = zip.getEntry(fl.name);
-										if (entry != null) {
-											// ファイルが見つかれば読み込む
-											InputStream fis = zip.getInputStream(entry);
-											int length;
-											if ((length = fis.read(buff)) > 0) {
-												// ファイルが読み込めた場合
-												// 文字列に変換
-												String str = new String(buff, StandardCharsets.UTF_8);
-												// テキストを解析
-												TextAnalysis(str);
-												if (GetContentsLegnth() > 0) {
-													// 解析結果が有れば
-													mContentsFound = true;
-													// サイズとバッファを保存
-													mContentsLen = length;
-													mContentsbuff = Arrays.copyOf(buff, length);
-												}
-											}
-											fis.close();
-										}
-									} catch (Exception e) {
+								// テキストファイルを取り出す
+								try {
+									File cacheFile = new File(mCacheDir, mCacheName + i);
+									if (!cacheFile.exists() || cacheFile.length() == 0) {
+										LoadFileToCache(i);
 									}
+									// キャッシュファイルファイルから直接ストリームを作成
+									InputStream fileStream = new FileInputStream(cacheFile);
+									InputStream inputStream = new BufferedInputStream(fileStream);
+									int length;
+									if ((length = inputStream.read(buff)) > 0) {
+										// ファイルが読み込めた場合
+										// 文字列に変換
+										String str = new String(buff, StandardCharsets.UTF_8);
+										// テキストを解析
+										TextAnalysis(str);
+										if (GetContentsLegnth() > 0) {
+											// 解析結果が有れば
+											mContentsFound = true;
+											// サイズとバッファを保存
+											mContentsLen = length;
+											mContentsbuff = Arrays.copyOf(buff, length);
+										}
+									}
+									fileStream.close();
+								}
+								catch (Exception e) {
 								}
 								use = false;
 							}
@@ -844,95 +1275,24 @@ public class ImageManager extends InputStream implements Runnable {
 									// 最大サイズを求める
 									maxorglen = fl.orglen;
 								}
-								// 先頭5ファイルしか取得できなくなるのでコメントアウトにした
-								/*
-								if (mFileType == FILETYPE_RAR) {
-									// RARファイルの時
-									if (mOpenMode == OPENMODE_THUMBNAIL && list.size() >= 5) {
-										// ソートなしのサムネイル取得であれば先頭5ファイルで終了
-										Logcat.d(logLevel, "ソートなし. thumbSortType=" + thumbSortType + ", mHostType=" + mHostType);
-										break;
-									}
-									else if (mOpenMode == OPENMODE_THUMBSORT && list.size() >= 5) {
-										// ソートありのサムネイル取得であればソート条件で分岐
-										Logcat.d(logLevel, "ソートあり. thumbSortType=" + thumbSortType + ", mHostType=" + mHostType);
-
-										switch (thumbSortType) {
-											case 0:
-												// ソートなし
-												Logcat.d(logLevel, "ソートあり. case 0: SET stop = true");
-												stop = true;
-												break;
-											case 1:
-												if (mHostType != DEF.ACCESS_TYPE_LOCAL) {
-													// ローカルだけソートあり
-													Logcat.d(logLevel, "ソートあり. case 1: SET stop = true");
-													stop = true;
-												}
-												break;
-											case 2:
-												if (mHostType != DEF.ACCESS_TYPE_LOCAL && mHostType != DEF.ACCESS_TYPE_SMB) {
-													// ローカルとSMBはソートあり
-													Logcat.d(logLevel, "ソートあり. case 2: SET stop = true");
-													stop = true;
-												}
-												break;
-											default:
-												// すべてソートあり
-												break;
-										}
-									}
-								}
-								*/
 							}
 						}
 					}
-
 					// 次のファイルへ
 					cmppos += fl.cmplen;
 					orgpos += fl.orglen;
-					if (mFileType == FILETYPE_ZIP && headpos > 0) {
-						// 旧タイプのZIPの場合はセントラルヘッダをアクセス
-						headpos += fl.header;
-						cmpDirectSeek(headpos);
-						Logcat.d(logLevel, MessageFormat.format("シークします: count={0}, headpos={1}", new Object[]{count, headpos}));
-					}
-					else {
-						cmpDirectSeek(cmppos);
-						Logcat.d(logLevel, MessageFormat.format("シークします: count={0}, cmppos={1}", new Object[]{count, cmppos}));
-					}
 
-					count++;
-					if (mFileType == FILETYPE_RAR) {
-						totalSize += fl.cmplen;
-					}
-					else {
-						totalSize += fl.orglen;
-					}
 					oldPercent = nowPercent;
 					// 割合を計算する
-					nowPercent = (int)(((float)totalSize / (float)fileLength + 0.005) * 100);
+					nowPercent = (int)(((float)i / (float)numberOfItems + 0.005) * 100);
+					Logcat.v(1, "numberOfItems=" + numberOfItems + ", i=" + i);
 					// 100パーセントを超えた場合はリミッタを掛ける
 					nowPercent = nowPercent > 100 ? 100 : nowPercent;
 					if (oldPercent != nowPercent) {
 						// 値が変化していればメッセージを送る
-						if (!sendProgress(0, nowPercent, totalSize, fileLength)) {
-							mFileList = new FileListItem[0];
-							return;
-						}
+						sendProgress(0, nowPercent, i, numberOfItems);
 					}
 				}
-				else {
-					Logcat.d(logLevel, "ファイルデータの取得に失敗しました. count=" + count + ", fl=null");
-					break;
-				}
-			}
-		} catch (Exception e) {
-			if (mCloseFlag) {
-				Logcat.w(logLevel, "圧縮ファイルの解析がキャンセルされました. count=" + count, e);
-			}
-			else {
-				Logcat.e(logLevel, "圧縮ファイルの解析でエラーになりました. count=" + count, e);
 			}
 		}
 
@@ -1029,38 +1389,67 @@ public class ImageManager extends InputStream implements Runnable {
 					}
 				}
 			}
-			if (mEnableContentsFile) {
-				// ファイル名の末尾に目次を加える
-				wname = name + "_contents";
-				// ファイル名をMD5のハッシュ値へ変換
-				pathcode = DEF.makeCode(wname, 0, 0);
-				wfile = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+			// 目次のファイルを保存
+			// ファイル名の末尾に目次を加える
+			wname = name + "_contents";
+			// ファイル名をMD5のハッシュ値へ変換
+			pathcode = DEF.makeCode(wname, 0, 0);
+			wfile = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+			try {
+				// 以前のファイルを削除
+				new File(wfile).delete();
+			} catch (Exception e) {
+			}
+			if (mContentsFound) {
+				// 解析結果が有れば
 				try {
-					// 以前のファイルを削除
-					new File(wfile).delete();
+					FileOutputStream fos = new FileOutputStream(wfile);
+					byte[] copiedArray = Arrays.copyOf(mContentsbuff, mContentsLen);
+					// ファイルの中身が直ぐに分からないようにするためにBASE64エンコードする
+					byte[] enc = Base64.getEncoder().encode(copiedArray);
+					// ファイルを書き出す
+					fos.write(enc, 0, enc.length);
+					fos.close();
 				} catch (Exception e) {
 				}
-				// 目次のファイルを保存
-				if (mContentsFound) {
-					// 解析結果が有れば
-					try {
-						FileOutputStream fos = new FileOutputStream(wfile);
-						byte[] copiedArray = Arrays.copyOf(mContentsbuff, mContentsLen);
-						// ファイルの中身が直ぐに分からないようにするためにBASE64エンコードする
-						byte[] enc = Base64.getEncoder().encode(copiedArray);
-						// ファイルを書き出す
-						fos.write(enc, 0, enc.length);
-						fos.close();
-					} catch (Exception e) {
-					}
+			}
+			if (!mCacheDir.exists()) {
+				// キャッシュディレクトリを作成
+				boolean result = mCacheDir.mkdirs();
+			}
+			// メタデータを保存
+			// メタデータの総数を取得して書き込む
+			numberOfItems = archive.getNumberOfItems();
+			tempFile = new File(mCacheDir, mNumberName);
+			try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(tempFile))) {
+				dos.writeInt(numberOfItems);
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
+			// ファイル名を取得して書き込む
+			mItems = new String[numberOfItems];
+			for (int i = 0; i < numberOfItems; i++) {
+				tempFile = new File(mCacheDir, mMetaName + i);
+				mItems[i] = getDecodedPath(archive, i);
+				// FileWriterの代わりにOutputStreamWriterを使用(API30未満対応)
+				try (BufferedWriter writer = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(tempFile), StandardCharsets.UTF_8))) {
+					writer.write(mItems[i]);
+				}
+				catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
-		}
-		// RARであればメモリ確保
-		if (mFileType == FILETYPE_RAR) {
-			int ret = CallJniLibrary.rarAlloc(maxcmplen, maxorglen);
-			if (ret != 0) {
-				throw new IOException("Memory Alloc Error.");
+			// ソリッド書庫の情報を取得して書き込む
+			Object isSolid = archive.getArchiveProperty(PropID.SOLID);
+			mSolid = (isSolid instanceof Boolean && (Boolean) isSolid) ? true : false;
+			tempFile = new File(mCacheDir, mSolidName);
+			try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(tempFile))) {
+				dos.writeBoolean(mSolid);
+			}
+			catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 		mMaxCmpLength = maxcmplen;
@@ -1079,6 +1468,7 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		// 呼び出しの種類でメッセージの送出先を変更する
 		int messagewhat = 0;
+		long delay = 0;
 		if (mMessageMode == DEF.MESSAGE_IMAGE) {
 			// イメージビューアの場合
 			messagewhat = DEF.HMSG_PROGRESS_IMAGE;
@@ -1086,6 +1476,15 @@ public class ImageManager extends InputStream implements Runnable {
 		else if (mMessageMode == DEF.MESSAGE_EXPAND) {
 			// ファイルの展開の場合
 			messagewhat = DEF.HMSG_PROGRESS_EXPAND;
+		}
+		else if (mMessageMode == DEF.MESSAGE_IMAGE_START) {
+			messagewhat = DEF.HMSG_PROGRESS_IMAGE_START;
+			// ソリッド書庫の場合は時間がかかるのが判明しているので先にメッセージを送ってしまう
+			delay = 1000;
+		}
+		else if (mMessageMode == DEF.MESSAGE_IMAGE_END) {
+			mHandler.removeMessages(DEF.HMSG_PROGRESS_IMAGE_START);
+			messagewhat = DEF.HMSG_PROGRESS_IMAGE_END;
 		}
 		else {
 			// 該当なし
@@ -1099,527 +1498,9 @@ public class ImageManager extends InputStream implements Runnable {
 		bundle.putLong("arg3", numerator);
 		bundle.putLong("arg4", denominator);
 		message.setData(bundle);
-		mHandler.sendMessage(message);
+		long NextTime = SystemClock.uptimeMillis() + delay;
+		mHandler.sendMessageAtTime(message, NextTime);
 		return true;
-	}
-
-	private long zipSearchCentral() throws IOException {
-		long fileLength = cmpDirectLength();
-		int pos = -1;
-		int retsize;
-		int buffSize = 1024;
-		byte[] buff = new byte[buffSize];
-
-		if (fileLength < SIZE_TERMHEADER) {
-			throw new IOException("Broken Zip File.");
-		}
-
-		long filePos = fileLength - buffSize;
-		for (int i = 0 ; i < 33 ; i ++) {
-			if (filePos < 0) {
-				// サイズが小さい場合はファイル先頭から
-				buffSize = (int) (buff.length + filePos);
-				filePos = 0;
-			}
-
-			// 終端コードへ移動
-			cmpDirectSeek(filePos);
-			retsize = cmpDirectRead(buff, 0, buffSize);
-			if (retsize < buffSize) {
-				throw new IOException("File Access Error.");
-			}
-
-			int sig;
-			for (pos = buffSize - SIZE_TERMHEADER; pos >= 0; pos--) {
-				if (buff[pos] == 0x50) {
-					sig = getInt(buff, pos + OFFSET_TRM_SIGNA_LEN);
-					if (sig == 0x06054b50) {
-						break;
-					}
-				}
-			}
-			if (pos >= 0) {
-				break;
-			}
-			if (filePos == 0) {
-				// 先頭まできた
-				break;
-			}
-			filePos -= (buffSize - (SIZE_TERMHEADER - 1));
-		}
-		if (pos < 0) {
-			// ヘッダがおかしい
-			throw new IOException("Central header is not found.");
-		}
-		int posCentral = getInt(buff, pos + OFFSET_TRM_CNTRL_LEN);
-		if (posCentral >= fileLength || posCentral < 0) {
-			// ヘッダがおかしい、けどとりあえず先頭から読み込ませてみる
-			//throw new IOException("Broken Zip File.");
-			posCentral = 0;
-		}
-
-		// セントラルヘッダに移動
-		cmpDirectSeek(posCentral);
-		return posCentral;
-	}
-
-	private int getExtraSize(byte [] buf){
-		int sig = getInt(buf, OFFSET_LCL_SIGNA_LEN);
-		if (sig != 0x04034b50) {
-			// LocalFileHeaderじゃない
-			return 0;
-		}
-		return getShort(buf, OFFSET_LCL_EXTRA_LEN);
-	}
-
-	private int getCompressedSize(byte [] buf){
-		int sig = getInt(buf, OFFSET_LCL_SIGNA_LEN);
-		if (sig != 0x04034b50) {
-			// LocalFileHeaderじゃない
-			return 0;
-		}
-		int bflag = getShort(buf, OFFSET_LCL_BFLAG_LEN);
-		int lenCmp = getInt(buf, OFFSET_LCL_CDATA_LEN);
-		int lenFName = getShort(buf, OFFSET_LCL_FNAME_LEN);
-		int lenExtra = getShort(buf, OFFSET_LCL_EXTRA_LEN);
-		int cmplen = SIZE_LOCALHEADER + lenFName + lenExtra + ((bflag & 0x0004) != 0 ? SIZE_BITFLAG : 0) + lenCmp;
-		return cmplen;
-	}
-
-	public FileListItem zipFileListItem(byte buf[], long cmppos, long orgpos, int readsize, boolean isCmpSum) {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します.");
-
-		int sig = getInt(buf, OFFSET_LCL_SIGNA_LEN);
-		int bflag = getShort(buf, OFFSET_LCL_BFLAG_LEN);
-		int ftime = getShort(buf, OFFSET_LCL_FTIME_LEN);
-		int fdate = getShort(buf, OFFSET_LCL_FDATE_LEN);
-		int crc32 = getInt(buf, OFFSET_LCL_CRC32_LEN);
-		int lenCmp = getInt(buf, OFFSET_LCL_CDATA_LEN);
-		int lenOrg = getInt(buf, OFFSET_LCL_OSIZE_LEN);
-		int lenFName = getShort(buf, OFFSET_LCL_FNAME_LEN);
-		int lenExtra = getShort(buf, OFFSET_LCL_EXTRA_LEN);
-
-		if (readsize < SIZE_LOCALHEADER) {
-			// データ不正
-			return null;
-		}
-		if (sig != 0x04034b50) {
-			// データの終わり
-			return null;
-		}
-
-		String name = "";
-		if (readsize >= lenFName + SIZE_LOCALHEADER) {
-			// ファイル名までのデータがあり
-			try {
-				name = DEF.toUTF8(buf, SIZE_LOCALHEADER, lenFName);
-			}
-			catch (Exception e) {
-				name = "Unknown";
-			}
-		}
-
-		int yy = ((fdate >> 9) & 0x7F) + 80;
-		int mm = ((fdate >> 5) & 0x0F) - 1;
-		int dd = fdate & 0x1F;
-		int hh = (ftime >> 11) & 0x1F;
-		int nn = (ftime >> 5) & 0x3F;
-		int ss = (ftime & 0x1F) * 2;
-		Date d = new Date(yy, mm, dd, hh, nn, ss);
-
-		FileListItem file = new FileListItem();
-		file.name = name;
-		file.cmppos = cmppos;
-		file.orgpos = orgpos;
-		file.cmplen = SIZE_LOCALHEADER + lenFName + lenExtra + ((bflag & 0x0004) != 0 ? SIZE_BITFLAG : 0) + (isCmpSum ? lenCmp : 0);
-		file.orglen = lenOrg;
-		file.version = (byte) (((bflag & 0x0008) != 0 && lenCmp == 0 && crc32 == 0) ? 1 : 0); // バージョン 0:通常、 1:古い
-		file.dtime = d.getTime();
-//		file.bmpsize = 0;
-
-		Logcat.d(logLevel, "終了します. name=" + name + ", size=" + lenOrg + ", date=" + d.getTime());
-		return file;
-	}
-
-	public FileListItem zipFileListOldItem(byte buf[], long orgpos, int readsize) throws IOException {
-		int sig = getInt(buf, OFFSET_CTL_SIGNA_LEN);
-
-		if (readsize < SIZE_CENTHEADER) {
-			// データ不正
-			return null;
-		}
-		if (sig != 0x02014b50) {
-			// セントラルディレクトリヘッダでなければデータの終わり
-			return null;
-		}
-
-		int lenCmp = getInt(buf, OFFSET_CTL_CDATA_LEN);
-		int lenOrg = getInt(buf, OFFSET_CTL_OSIZE_LEN);
-		int lenFName = getShort(buf, OFFSET_CTL_FNAME_LEN);
-		int lenExtra = getShort(buf, OFFSET_CTL_EXTRA_LEN);
-		int lenComent = getShort(buf, OFFSET_CTL_CMENT_LEN);
-		int lclOffset = getInt(buf, OFFSET_CTL_LOCAL_LEN);
-
-		cmpDirectSeek(lclOffset);
-		readsize = cmpDirectRead(buf, 0, SIZE_BUFFER);
-		FileListItem file = zipFileListItem(buf, lclOffset, orgpos, readsize, false);
-		if (file != null) {
-			file.cmplen += lenCmp;
-			file.orglen = lenOrg;
-			file.version = 1; // バージョン 0:通常、 1:古い
-			file.header = SIZE_CENTHEADER + lenFName + lenExtra + lenComent;
-		}
-		return file;
-	}
-
-	public FileListItem zipFileListOldItemLite(byte[] buf, long orgpos, int readsize) throws IOException {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します.");
-
-		int sig = getInt(buf, OFFSET_CTL_SIGNA_LEN);
-		if (readsize < SIZE_CENTHEADER) {
-			// データ不正
-			return null;
-		}
-		if (sig != 0x02014b50) {
-			// セントラルディレクトリヘッダでなければデータの終わり
-			return null;
-		}
-
-		int bflag = getShort(buf, OFFSET_CTL_BFLAG_LEN);
-		int lenCmp = getInt(buf, OFFSET_CTL_CDATA_LEN);
-		int lenOrg = getInt(buf, OFFSET_CTL_OSIZE_LEN);
-		int lenFName = getShort(buf, OFFSET_CTL_FNAME_LEN);
-		int lenExtra = getShort(buf, OFFSET_CTL_EXTRA_LEN);
-		int lenComent = getShort(buf, OFFSET_CTL_CMENT_LEN);
-		int lclOffset = getInt(buf, OFFSET_CTL_LOCAL_LEN);
-		int ftime = getShort(buf, OFFSET_CTL_FTIME_LEN);
-		int fdate = getShort(buf, OFFSET_CTL_FDATE_LEN);
-
-		int yy = ((fdate >> 9) & 0x7F) + 80;
-		int mm = ((fdate >> 5) & 0x0F) - 1;
-		int dd = fdate & 0x1F;
-		int hh = (ftime >> 11) & 0x1F;
-		int nn = (ftime >> 5) & 0x3F;
-		int ss = (ftime & 0x1F) * 2;
-		Date d = new Date(yy, mm, dd, hh, nn, ss);
-
-		FileListItem file = new FileListItem();
-		//ローカルファイルヘッダの拡張フィールドのサイズはセントラルディレクトリヘッダからは取得出来ないので、実際の読み込み時に辻褄を合わせる
-		file.cmplen = SIZE_LOCALHEADER + lenFName + 0/*lenExtra*/ + ((bflag & 0x0004) != 0 ? SIZE_BITFLAG : 0) + lenCmp;
-		file.orglen = lenOrg;
-		file.cmppos = lclOffset;
-		file.orgpos = orgpos;
-		file.version = 1; // バージョン 0:通常、 1:古い
-		file.header = SIZE_CENTHEADER + lenFName + lenExtra + lenComent;
-		file.dtime = d.getTime();
-		// ファイル名までのデータがあり
-		try {
-			file.name = DEF.toUTF8(buf, OFFSET_CTL_FNAME, lenFName);
-		}
-		catch (Exception e) {
-			file.name = "Unknown";
-		}
-		return file;
-	}
-
-	public FileListItem rar5FileListItem(byte[] buf, long cmppos, long orgpos, int readsize) throws IOException {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します.");
-
-		// ヘッダを読み込み、ファイルヘッダだけをFileListItemとして返す
-		// シグネチャ(マーカーブロック)やアーカイブヘッダーなどは読み飛ばす
-		// VINTは2byteまでと決め打ちして簡略化 > vint取得関数を実装
-		int pos = 0;
-		VintData vint;
-		int headpos = 0;
-
-		// シグネチャ判定
-		if( cmppos == 0 ){
-			if( buf[0] == 0x52 && buf[1] == 0x61 && buf[2] == 0x72 && buf[3] == 0x21 &&
-				buf[4] == 0x1a && buf[5] == 0x07 && buf[6] == 0x01 && buf[7] == 0x00 ){
-
-//				Logcat.d( logLevel, "RAR5 Signature." );
-
-				// ファイル情報ではない
-				FileListItem file = new FileListItem();
-				file.name = null;
-				file.cmppos = 0;
-				file.orgpos = 0;
-				file.cmplen = 8;
-				file.orglen = 0;
-//				imgfile.bmpsize = 0;
-				file.width = 0;
-				file.height = 0;
-				return file;
-			}
-		}
-
-		// Header CRC32
-		long hcrc = getInt( buf, 0 );
-		pos += 4;
-
-		// Header size
-		vint = readVint( buf, pos );
-		int hsize = vint.vint;
-		pos += vint.count;
-		// Header size以前のサイズ
-		headpos = pos;
-
-		// Header type
-		vint = readVint( buf, pos );
-		int htype = vint.vint;
-		pos += vint.count;
-
-		// Header flags
-		vint = readVint( buf, pos );
-		int hflags = vint.vint;
-		pos += vint.count;
-
-		// Extra area size(flags is set 0x0001)
-		int hextra = 0;
-		if( (hflags & 0x0001) != 0 ){
-			vint = readVint( buf, pos );
-			hextra = vint.vint;
-			pos += vint.count;
-		}
-
-		// Data size(flags is set 0x0002)
-		int hdata = 0;
-		if( (hflags & 0x0002) != 0 ){
-			vint = readVint( buf, pos );
-			hdata = vint.vint;
-			pos += vint.count;
-		}
-
-		// ファイルヘッダー以外はスキップ
-		if( htype != 2 ){
-//			Logcat.d( logLevel, "RAR5 not FileHeader." );
-
-			// ファイル情報ではない
-			FileListItem file = new FileListItem();
-			file.name = null;
-			file.cmppos = 0;
-			file.orgpos = 0;
-			file.cmplen = hdata + hsize + headpos;
-			file.orglen = 0;
-//			file.bmpsize = 0;
-			file.width = 0;
-			file.height = 0;
-			return file;
-		}
-
-
-		// File flags
-		vint = readVint( buf, pos );
-		int fflag = vint.vint;
-		pos += vint.count;
-
-		// Unpacked size
-		vint = readVint( buf, pos );
-		int lenOrg = vint.vint;
-		pos += vint.count;
-
-		// Attributes
-		vint = readVint( buf, pos );
-		pos += vint.count;
-
-		// mtime
-		int ftime = 0;
-		if( (fflag & 0x0002) != 0 ){
-			ftime = getInt( buf, pos );
-			pos += 4;
-		}
-		Date d = new Date( ftime );
-
-		// Data CRC32
-		int dcrc = getInt( buf, pos );
-		pos += 4;
-
-		// Compression information
-		vint = readVint( buf, pos );
-		int cinfo = vint.vint;
-		pos += vint.count;
-
-		// Host OS
-		vint = readVint( buf, pos );
-		pos += vint.count;
-
-		// Name length
-		vint = readVint( buf, pos );
-		int fnlen = vint.vint;
-		pos += vint.count;
-
-		// Name
-		String name = "";
-		if( readsize >= pos + fnlen ){
-			// ファイル名までのデータがあり
-			try {
-				for( int i = 0; i < fnlen; ++i ){
-					if( buf[ pos + i ] == 0 ){
-						fnlen = i;
-						break;
-					}
-				}
-				name = new String( buf, pos, fnlen, mRarCharset );
-				//name = DEF.toUTF8( buf, pos, fnlen);
-			}
-			catch( Exception e ){
-				name = "Unknown";
-			}
-		}
-
-		FileListItem file = new FileListItem();
-		file.name = name;
-		file.cmppos = cmppos;
-		file.orgpos = orgpos;
-		file.cmplen = hdata + hsize + headpos;//lenCmp + hsize;
-		file.orglen = lenOrg;
-		file.header = hsize + headpos;
-		file.version = 50;
-		file.nocomp = (cinfo & 0x0380) == 0;	// 無圧縮か
-//		file.bmpsize = 0;
-		file.dtime = d.getTime();
-		return file;
-	}
-
-	private class VintData {
-		public int vint;
-		public int count;
-
-		public VintData() {
-			init();
-		}
-
-		public void init() {
-			vint = 0;
-			count = 0;
-		}
-	};
-
-	private VintData readVint(byte[] buf, int pos ) {
-		int dat;
-		VintData data = new VintData();
-
-		while( true ){
-			dat = buf[ pos + data.count ];
-			dat &= 0x0FF;
-			data.vint += ((dat & ~0x80) << (data.count * 7));
-			data.count++;
-			if( (dat & 0x80) == 0 ){
-				break;
-			}
-		}
-
-		return data;
-	}
-
-	public FileListItem rarFileListItem(byte[] buf, long cmppos, long orgpos, int readsize) throws IOException {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します.");
-		int hcrc = getShort(buf, OFFSET_RAR_HCRC);
-		int htype = buf[OFFSET_RAR_HTYPE];
-		int hflags = getShort(buf, OFFSET_RAR_HFLAGS);
-		int hsize = getShort(buf, OFFSET_RAR_HSIZE);
-		int asize = (hflags & 0x8000) == 0 ? 0 : getInt(buf, OFFSET_RAR_ASIZE);
-
-		boolean skip = false;
-//		boolean oldFormat = false;
-
-		if (htype != RAR_HTYPE_FILE) {
-			if (htype == RAR_HTYPE_MARK) {
-				if (hcrc != 0x6152 || hflags != 0x1a21 || hsize != 0x0007) {
-					// ヘッダがおかしい
-					throw new IOException("This RAR File Format is not supported.");
-				}
-			}
-			else if (htype == RAR_HTYPE_OLD) {
-				if (hcrc == 0x4552 && (hflags & 0x00FF) == 0x005e) {
-//					oldFormat = true;
-				}
-			}
-			else {
-				// RAR_HTYPE_MAIN
-				// 特にチェックなし
-
-			}
-			skip = true;
-		}
-		else {
-			if ((hflags & 0x0100) != 0) {
-				// 巨大ファイルの時は見ない
-				skip = true;
-			}
-		}
-
-		if (skip) {
-			if (hsize + asize <= 5) {
-				throw new IOException("File is broken.");
-			}
-			// ファイル情報ではない
-			FileListItem imgfile = new FileListItem();
-			imgfile.name = null;
-			imgfile.cmppos = 0;
-			imgfile.orgpos = 0;
-			imgfile.cmplen = hsize + asize;
-			imgfile.orglen = 0;
-//			imgfile.bmpsize = 0;
-			imgfile.width = 0;
-			imgfile.height = 0;
-			return imgfile;
-		}
-
-		// ファイル情報取得
-		int lenFName = getShort(buf, OFFSET_RAR_FNSIZE);
-		int posFName = OFFSET_RAR_FNAME;
-		String name = "";
-
-		if (readsize >= lenFName + posFName) {
-			// ファイル名までのデータがあり
-			try {
-				for (int i = 0; i < lenFName; i++) {
-					if (buf[posFName + i] == 0) {
-						lenFName = i;
-						break;
-					}
-				}
-				name = DEF.toUTF8(buf, posFName, lenFName);
-			}
-			catch (Exception e) {
-				name = "Unknown";
-			}
-		}
-
-		int lenCmp = getInt(buf, OFFSET_RAR_PKSIZE);
-		int lenOrg = getInt(buf, OFFSET_RAR_UNSIZE);
-		byte rarVer = buf[OFFSET_RAR_UNPVER];
-		byte method = buf[OFFSET_RAR_METHOD];
-
-		int ftime = getShort(buf, OFFSET_RAR_FTIME);
-		int fdate = getShort(buf, OFFSET_RAR_FDATE);
-
-		int yy = ((fdate >> 9) & 0x7F) + 80;
-		int mm = ((fdate >> 5) & 0x0F) - 1;
-		int dd = fdate & 0x1F;
-		int hh = (ftime >> 11) & 0x1F;
-		int nn = (ftime >> 5) & 0x3F;
-		int ss = (ftime & 0x1F) * 2;
-		Date d = new Date(yy, mm, dd, hh, nn, ss);
-
-		// Image Fileのみ採用
-		FileListItem imgfile = new FileListItem();
-		imgfile.name = name;
-		imgfile.cmppos = cmppos;
-		imgfile.orgpos = orgpos;
-		imgfile.cmplen = lenCmp + hsize;
-		imgfile.orglen = lenOrg;
-		imgfile.header = hsize;
-		imgfile.version = rarVer;
-		imgfile.nocomp = method == RAR_METHOD_STORING;
-//		imgfile.bmpsize = 0;
-		imgfile.dtime = d.getTime();
-		return imgfile;
 	}
 
 	public class AnimeList{
@@ -2906,10 +2787,6 @@ public class ImageManager extends InputStream implements Runnable {
 						// なにもしない
 					}
 
-					if (mRarStream != null) {
-						mRarStream.close();
-						mRarStream = null;
-					}
 					if (mPdfRenderer != null) {
 						mPdfRenderer.close();
 						mPdfRenderer = null;
@@ -3150,28 +3027,6 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		if (ret <= 0) {
 			return -1;
-		}
-		if (mCmpPos == 0 && mFileType == FILETYPE_ZIP) {
-			// SHIFT-JISで読込み
-			if (ret >= OFFSET_LCL_FNAME_LEN + 2) {
-				int lenFName = getShort(buf, OFFSET_LCL_FNAME_LEN);
-
-				if (ret >= SIZE_LOCALHEADER + lenFName) {
-					String name = DEF.toUTF8(buf, SIZE_LOCALHEADER, lenFName);
-					for (int i = 0; i < lenFName - 4; i++) {
-						buf[off + SIZE_LOCALHEADER + i] = '0';
-					}
-					// セントラルディレクトリヘッダからはExtraSizeが取得出来ないので
-					// ここでローカルヘッダの情報を取得して適宜更新する
-					if(!mFileList[mLoadingPage].sizefixed) {
-						mCmpSize += getExtraSize(buf);
-						mFileList[mLoadingPage].cmplen = mCmpSize;
-						mFileList[mLoadingPage].sizefixed = true;
-					}
-					if(mCheWriteFlag)
-						mCheSize = mCmpSize;
-				}
-			}
 		}
 		if (mCheWriteFlag) {
 			// ファイルにキャッシュ
@@ -3696,20 +3551,27 @@ public class ImageManager extends InputStream implements Runnable {
 					//PdfRenderer.Pageを閉じる、この処理を忘れると次回読み込む時に例外が発生する。
 					pdfPage.close();
 				}
-				else if (mFileType == FILETYPE_ZIP) {
-					Logcat.v(logLevel, "ZIPファイルです.");
-					// メモリキャッシュ読込時のみZIP展開する
-					// ファイルキャッシュを作成するときはZIP展開不要
-					ZipInputStream zipStream = new ZipInputStream(new BufferedInputStream(this, BIS_BUFFSIZE));
-					zipStream.getNextEntry();
-					mLoadingPage = page;
-					inputStream = new BufferedInputStream(zipStream);
-				}
-				else if (mFileType == FILETYPE_RAR) {
-					Logcat.v(logLevel, "RARファイルです.");
-					// メモリキャッシュ読込時のみRAR展開する
-					// ファイルキャッシュを作成するときはRAR展開不要
-					inputStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+				else if (IsArchive(mFileType)) {
+					Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
+					int targetIndex = -1;
+					// ファイル名でインデックスを検索
+					for (int i = 0; i < numberOfItems; i++) {
+						if (mFileList[page].name.equals(mItems[i])) {
+							targetIndex = i;
+							break;
+						}
+					}
+					if (targetIndex == -1) {
+					}
+					else {
+						File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
+						if (!cacheFile.exists() || cacheFile.length() == 0) {
+							LoadFileToCache(targetIndex);
+						}
+						// キャッシュファイルファイルから直接ストリームを作成
+						InputStream fileStream = new FileInputStream(cacheFile);
+	                    inputStream = new BufferedInputStream(fileStream);
+					}
 				}
 				else {
 					Logcat.d(logLevel, "イメージファイルです.");
@@ -4019,31 +3881,37 @@ public class ImageManager extends InputStream implements Runnable {
 			return null;
 		}
 
-		ZipInputStream zipStream = null;
 		try {
 			setLoadBitmapStart(page, notice);
 			if (mFileType == FileData.FILETYPE_PDF) {
 				id = LoadPdfImageData(page, mPdfRenderer);
 			}
-			else if (mFileType == FILETYPE_ZIP) {
-				// メモリキャッシュ読込時のみZIP展開する
-				// ファイルキャッシュを作成するときはZIP展開不要
-				zipStream = new ZipInputStream(new BufferedInputStream(this, BIS_BUFFSIZE));
-				zipStream.getNextEntry();
-				id = LoadImageData(page, zipStream, mFileList[page].orglen);
-				// ファイル破損時に無限ループするのでコメント化
-				// zipStream.closeEntry();
-			}
-			else if (mFileType == FILETYPE_RAR) {
-				// メモリキャッシュ読込時のみRAR展開する
-				// ファイルキャッシュを作成するときはRAR展開不要
-				if (mRarStream == null || mRarStream.getLoadPage() != page) {
-					mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+			else if (IsArchive(mFileType)) {
+				Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
+				int targetIndex = -1;
+				// ファイル名でインデックスを検索
+				for (int i = 0; i < numberOfItems; i++) {
+					if (mFileList[page].name.equals(mItems[i])) {
+						targetIndex = i;
+						break;
+					}
+				}
+				if (targetIndex == -1) {
 				}
 				else {
-					mRarStream.initSeek();
+					File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
+					if (!cacheFile.exists() || cacheFile.length() == 0) {
+						LoadFileToCache(targetIndex);
+					}
+					// キャッシュファイルファイルから直接ストリームを作成
+					InputStream fileStream = new FileInputStream(cacheFile);
+                    InputStream inputStream = new BufferedInputStream(fileStream);
+					try {
+						id = LoadImageData(page, inputStream, mFileList[page].orglen);
+					}
+						catch (IOException e) {
+					}
 				}
-				id = LoadImageData(page, mRarStream, mFileList[page].orglen);
 			}
 			else {
 				id = LoadImageData(page, this, mFileList[page].orglen);
@@ -4115,22 +3983,38 @@ public class ImageManager extends InputStream implements Runnable {
 
 		try {
 			setLoadBitmapStart(page, false);
-			if (mFileType == FILETYPE_ZIP) {
-				// メモリキャッシュ読込時のみZIP展開する
-				// ファイルキャッシュを作成するときはZIP展開不要
-				Logcat.d(logLevel, "mFileType == FILETYPE_ZIP");
-				ZipInputStream zipStream = new ZipInputStream(new BufferedInputStream(this, BIS_BUFFSIZE));
-				zipStream.getNextEntry();
-				CacheInputStream cis = new CacheInputStream(zipStream);
-				cis.read(result, 0, result.length);
-//				zipStream.closeEntry();
-			}
-			else if (mFileType == FILETYPE_RAR) {
-				// メモリキャッシュ読込時のみRAR展開する
-				// ファイルキャッシュを作成するときはRAR展開不要
-				Logcat.d(logLevel, "mFileType == FILETYPE_RAR");
-				mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
-				mRarStream.read(result, 0, result.length);
+			if (IsArchive(mFileType)) {
+				Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
+				int targetIndex = -1;
+				// ファイル名でインデックスを検索
+				for (int i = 0; i < numberOfItems; i++) {
+					if (mFileList[page].name.equals(mItems[i])) {
+						targetIndex = i;
+						break;
+					}
+				}
+				if (targetIndex == -1) {
+				}
+				else {
+					File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
+					if (!cacheFile.exists() || cacheFile.length() == 0) {
+						LoadFileToCache(targetIndex);
+					}
+					// キャッシュファイルから直接ストリームを作成
+					try (InputStream fileStream = new FileInputStream(cacheFile);
+						InputStream inputStream = new BufferedInputStream(fileStream);
+						ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+						byte[] buffer = new byte[16384];
+						int len;
+						while ((len = inputStream.read(buffer)) != -1) {
+							baos.write(buffer, 0, len);
+						}
+						result = baos.toByteArray();
+					}
+					catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 			else {
 				Logcat.d(logLevel, MessageFormat.format("mFileType == 圧縮ファイル以外 result.length={0}", new Object[]{result.length}));
@@ -4215,30 +4099,32 @@ public class ImageManager extends InputStream implements Runnable {
 
 		option.inJustDecodeBounds = false;
 		option.inPreferredConfig = Config.ARGB_8888;
-		InputStream inputStream;
+		InputStream inputStream = null;
 
 		ZipInputStream zipStream = null;
 		try {
 			setLoadBitmapStart(page, false);
-			if (mFileType == FILETYPE_ZIP) {
-				// メモリキャッシュ読込時のみZIP展開する
-				// ファイルキャッシュを作成するときはZIP展開不要
-				zipStream = new ZipInputStream(new BufferedInputStream(this, BIS_BUFFSIZE));
-				zipStream.getNextEntry();
-				inputStream = new CacheInputStream(zipStream);
-				// ファイル破損時に無限ループするのでコメント化
-				// zipStream.closeEntry();
-			}
-			else if (mFileType == FILETYPE_RAR) {
-				// メモリキャッシュ読込時のみRAR展開する
-				// ファイルキャッシュを作成するときはRAR展開不要
-				if (mRarStream == null || mRarStream.getLoadPage() != page) {
-					mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+			if (IsArchive(mFileType)) {
+				Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
+				int targetIndex = -1;
+				// ファイル名でインデックスを検索
+				for (int i = 0; i < numberOfItems; i++) {
+					if (mFileList[page].name.equals(mItems[i])) {
+						targetIndex = i;
+						break;
+					}
+				}
+				if (targetIndex == -1) {
 				}
 				else {
-					mRarStream.initSeek();
+					File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
+					if (!cacheFile.exists() || cacheFile.length() == 0) {
+						LoadFileToCache(targetIndex);
+					}
+					// キャッシュファイルファイルから直接ストリームを作成
+					InputStream fileStream = new FileInputStream(cacheFile);
+					inputStream = new BufferedInputStream(fileStream);
 				}
-				inputStream = mRarStream;
 			}
 			else {
 				inputStream = this;
@@ -4320,8 +4206,6 @@ public class ImageManager extends InputStream implements Runnable {
 		option.inSampleSize = sampleSize;
 		InputStream inputStream = null;
 
-		ZipInputStream zipStream;
-
 		Logcat.d(logLevel, "開始します. page=" + page + ", sampleSize=" + sampleSize + ", filename=" + mFileList[page].name);
 
 		try {
@@ -4362,25 +4246,27 @@ public class ImageManager extends InputStream implements Runnable {
 					}
 				}
 			}
-			else if (mFileType == FILETYPE_ZIP) {
-				// メモリキャッシュ読込時のみZIP展開する
-				// ファイルキャッシュを作成するときはZIP展開不要
-				zipStream = new ZipInputStream(new BufferedInputStream(this, BIS_BUFFSIZE));
-				zipStream.getNextEntry();
-				inputStream = new BufferedInputStream(zipStream);
-				// ファイル破損時に無限ループするのでコメント化
-				// zipStream.closeEntry();
-			}
-			else if (mFileType == FILETYPE_RAR) {
-				// メモリキャッシュ読込時のみRAR展開する
-				// ファイルキャッシュを作成するときはRAR展開不要
-				if (mRarStream == null || mRarStream.getLoadPage() != page) {
-					mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
-				}
-				else {
-					mRarStream.initSeek();
-				}
-				inputStream = new BufferedInputStream(mRarStream);
+			else if (IsArchive(mFileType)) {
+					Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
+					int targetIndex = -1;
+					// ファイル名でインデックスを検索
+					for (int i = 0; i < numberOfItems; i++) {
+						if (mFileList[page].name.equals(mItems[i])) {
+							targetIndex = i;
+							break;
+						}
+					}
+					if (targetIndex == -1) {
+					}
+					else {
+						File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
+						if (!cacheFile.exists() || cacheFile.length() == 0) {
+							LoadFileToCache(targetIndex);
+						}
+						// キャッシュファイルファイルから直接ストリームを作成
+						InputStream fileStream = new FileInputStream(cacheFile);
+						inputStream = new BufferedInputStream(fileStream);
+					}
 			}
 			else {
 				inputStream = new BufferedInputStream(this);
@@ -5507,44 +5393,34 @@ public class ImageManager extends InputStream implements Runnable {
 							bm.compress(Bitmap.CompressFormat.JPEG, 100, os);
 						}
 					}
-					else if (mFileType == FILETYPE_ZIP) {
-						// メモリキャッシュ読込時のみZIP展開する
-						// ファイルキャッシュを作成するときはZIP展開不要
-						ZipInputStream zipStream = new ZipInputStream(new BufferedInputStream(this, BIS_BUFFSIZE));
-						zipStream.getNextEntry();
-						int readsum = 0;
-						while (mRunningFlag) {
-							if (mCloseFlag) {
+					else if (IsArchive(mFileType)) {
+						Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
+						int targetIndex = -1;
+						// ファイル名でインデックスを検索
+						for (int i = 0; i < numberOfItems; i++) {
+							if (mFileList[page].name.equals(mItems[i])) {
+								targetIndex = i;
 								break;
-							}
-							int readsize = zipStream.read(buff, 0, buff.length);
-							if (readsize <= 0) {
-								break;
-							} else
-								readsum += readsize;
-							os.write(buff, 0, readsize);
-							// ロード経過をcallback
-							long nowTime = System.currentTimeMillis();
-							if (nowTime - mStartTime > (mMsgCount + 1) * 200) {
-								mMsgCount++;
-								int prog = (int) ((long) readsum * 100 / mDataSize);
-								int rate = (int) ((long) readsum * 10 / (nowTime - mStartTime));
-								sendHandler(DEF.HMSG_LOADING, prog << 24, rate, null);
 							}
 						}
-					} else if (mFileType == FILETYPE_RAR) {
-						// メモリキャッシュ読込時のみRAR展開する
-						// ファイルキャッシュを作成するときはRAR展開不要
-						mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page], mHandler);
-						while (mRunningFlag) {
-							if (mCloseFlag) {
-								break;
+						if (targetIndex == -1) {
+						}
+						else {
+							File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
+							if (!cacheFile.exists() || cacheFile.length() == 0) {
+								LoadFileToCache(targetIndex);
 							}
-							int readsize = mRarStream.read(buff, 0, buff.length);
-							if (readsize <= 0) {
-								break;
+							// キャッシュファイルファイルから直接ストリームを作成
+							InputStream fileStream = new FileInputStream(cacheFile);
+							InputStream inputStream = new BufferedInputStream(fileStream);
+							ByteArrayOutputStream bos = new ByteArrayOutputStream();
+							byte[] buffer = new byte[8192];
+							int len;
+							while ((len = inputStream.read(buffer)) != -1) {
+								bos.write(buffer, 0, len);
 							}
-							os.write(buff, 0, readsize);
+							byte[] inputbuff = bos.toByteArray();
+							os.write(inputbuff, 0, inputbuff.length);
 						}
 					} else {
 						while (mRunningFlag) {
@@ -5641,5 +5517,179 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public int getCacheIndex() {
 		return mCacheIndex;
+	}
+	// 展開の手順でソリッド書庫の先読みの有無を設定する(サムネイル画像の作成時は先読みをさせない)
+	public void setAccessMode(boolean mode) {
+		mAccessMode = mode;
+	}
+	// 圧縮ファイルからキャッシュファイルへ書き出す
+	public void LoadFileToCache(int currentPage) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
+		int[] indices;
+		boolean[] checklist;
+		// ここで登録(リトライ中に変更されておかしな動きになるのを防ぐ)
+		boolean mode = !mAccessMode;
+		int mStart = 0;
+		int countmax = 0;
+		int count = 0;
+		int fileseek_max = 0;
+		int error_retry_max;
+		int error_delay_max;
+		final int[] countstart = {0};
+		if (archive == null) {
+			Logcat.d(logLevel, "アーカイブが既に閉じられています.");
+			return;
+		}
+		if (mAccessType == DEF.ACCESS_TYPE_SMB) {
+			// SMBのアクセスは特別にリトライ回数と時間待ちを工夫する
+			error_retry_max = FILEERROR_RETRY_SMB;
+			error_delay_max = FILEERROR_DELAY_SMB;
+		}
+		else {
+			// ローカルパス/ストレージアクセスフレームワークの場合はリトライの必要はないがもしものために設定する
+			error_retry_max = FILEERROR_RETRY;
+			error_delay_max = FILEERROR_DELAY;
+		}
+		boolean errorcheck = false;
+		int errorcount = 0;
+		do {
+			// 中断フラグをクリア(7-Zip-JBinding-4Androidが実行を中断しないようにする)
+			if (Thread.interrupted()) {
+				Logcat.d(logLevel, "中断フラグが立っていたためクリアしました.");
+			}
+			if (mSolid && mode) {
+				// ソリッド書庫でサムネイル画像の作成以外の場合
+				int total = 0;
+				int fileseek;
+				// ソリッド書庫の場合は先読みの範囲を前後に広げる
+				fileseek = FILESEEK_MAX_SOLID;
+				fileseek_max = fileseek * 2;
+				// 先読みの先頭位置を設定
+				if (currentPage < fileseek) {
+					mStart = 0;
+				}
+				else {
+					mStart = currentPage - fileseek;
+				}
+				// 圧縮ファイルのエントリー数を得る
+				total = numberOfItems;
+				for (int i = 0; i < fileseek_max; i++) {
+					// ソリッド書庫の場合は必ず先頭から連続する必要がある
+					if ((mStart + i) >= total) {
+						// 圧縮ファイルのエントリー数を超えた場合はループ終了
+						break;
+					}
+					countmax++;
+
+				}
+				// ページの前後を先読みさせるためのリストを作成
+				indices = new int[countmax];
+				for (int i = 0; i < countmax; i++) {
+					// 登録
+					indices[count] = mStart + i;
+					count++;
+				}
+				// ソートを行う
+				indices = IntStream.of(indices).distinct().sorted().toArray();
+			}
+			else {
+				// 通常の書庫の場合は1ファイル毎に解凍する
+				indices = new int[1];
+				indices[0] = currentPage;
+			}
+			if (mSolid) {
+				// メッセージを送る
+				mMessageMode = DEF.MESSAGE_IMAGE_START;
+				sendProgress(0, 0, 0, mStart);
+			}
+			// 解凍処理を実行
+			errorcheck = false;
+			try {
+				int finalMStart = mStart;
+				int finalCount = count;
+				// 圧縮ファイルからの解凍を行う(7-Zip-JBinding-4Android)
+				archive.extract(indices, false, new IArchiveExtractCallback() {
+					BufferedOutputStream currentBufferedStream = null;
+					@Override
+					public ISequentialOutStream getStream(int index, ExtractAskMode mode) throws SevenZipException {
+						if (!mRunningFlag) {
+							// 外部から中断させる場合
+							// 例外を投げて全体の処理を強制終了させる
+							throw new SevenZipException("User cancelled extraction.");
+						}
+						if (mode != ExtractAskMode.EXTRACT) {
+							// 処理中なら
+							return null;
+						}
+						// 展開中の進捗のメッセージを送る
+						sendProgress(0, (int)((float) countstart[0] / (float)finalCount * 100), index, finalMStart + finalCount);
+						countstart[0]++;
+						try {
+							// キャッシュファイルを開く
+							File tempFile = new File(mCacheDir, mCacheName + index);
+							currentBufferedStream = new BufferedOutputStream(new FileOutputStream(tempFile), 32768);
+					        // 毎回新しくストリームを開く(EMFILEエラー対策)
+							final BufferedOutputStream fos = currentBufferedStream;
+							// ラムダ式を返す
+							return data -> {
+								try {
+									fos.write(data, 0, data.length);
+									return data.length;
+								}
+								catch (IOException e) {
+									throw new SevenZipException("Write error", e);
+								}
+							};
+					    }
+						catch (IOException e) {
+							// エラーが発生した場合もSevenZipExceptionを投げて中断させる
+							throw new SevenZipException("Failed to open stream for index " + index, e);
+						}
+					}
+	    			@Override
+					public void setOperationResult(ExtractOperationResult result) {
+						// 処理が終了した場合
+						if (currentBufferedStream != null) {
+							try {
+								currentBufferedStream.flush();
+								currentBufferedStream.close();
+							}
+							catch (IOException e) {
+							}
+							finally {
+								// 参照をクリア
+								currentBufferedStream = null;
+							}
+						}
+					}
+					public void prepareOperation(ExtractAskMode mode) {}
+					public void setCompleted(long completeValue) {}
+					public void setTotal(long totalValue) {}
+				});
+			}
+			catch (IOException e) {
+				// エラーになった
+				errorcheck = true;
+				errorcount++;
+				Logcat.e(logLevel, "", e);
+				// 中断フラグをクリア
+				Thread.interrupted();
+				// リトライ前に時間待ちを入れる
+				try {
+					Thread.sleep(error_delay_max);
+				}
+				catch (Exception ex) {
+				}
+			}
+			// もしもエラーになった場合はリトライを行う
+		} while (errorcheck && errorcount < error_retry_max && mRunningFlag);
+		if (errorcount > 0) {
+			Logcat.v(logLevel, "errorcount=" + errorcount);
+		}
+		if (mSolid) {
+			mMessageMode = DEF.MESSAGE_IMAGE_END;
+			sendProgress(0, 0, 0, 0);
+		}
 	}
 }

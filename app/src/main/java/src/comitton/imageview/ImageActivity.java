@@ -424,6 +424,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int mMgnCutColorBackup;
 	private int mPinchScaleBackup;
 	private int mDisplayPositionBackup;
+	private int mScrollModeBackup;
 
 	private boolean mHidden;
 	private boolean mDelShare;
@@ -1211,6 +1212,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 	}
 
+	private void AbortToast() {
+		Resources res = mActivity.getResources();
+		Toast.makeText(this, res.getString(R.string.abortimageviewer), Toast.LENGTH_SHORT).show();
+	}
+
 	public class ZipLoad implements Runnable {
 		private Handler handler;
 		private AppCompatActivity mActivity;
@@ -1639,6 +1645,28 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				return true;
 
+			case DEF.HMSG_PROGRESS_IMAGE_START:
+				// 読込中の表示
+				synchronized (this) {
+					if (mProgressDialog == null) {
+						Resources res = getResources();
+						mProgressDialog = new CustomProgressDialog(res.getString(R.string.expandcompTitle), res.getString(R.string.expandingcompTitle),true, mHandler, mProgressbarMode);
+						supportFragmentManager = mActivity.getSupportFragmentManager();
+						try {
+							// ダイアログの表示
+							mProgressDialog.show(supportFragmentManager, TAG);
+						}
+						catch (Exception ex) {
+						}
+					}
+					// ページ読み込み中
+					Bundle bundle = msg.getData();
+					long arg3 = bundle.getLong("arg3");
+					long arg4 = bundle.getLong("arg4");
+					mProgressDialog.setProgress(msg.arg1, arg3, arg4);
+				}
+				return true;
+
 			case DEF.HMSG_EPUB_PARSE:
 			case DEF.HMSG_HTML_PARSE:
 				// 読込中の表示
@@ -1834,6 +1862,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						this.updateOverSize(false);
 					}
 					if (mTerminate) {
+						AbortToast();
 						finish();
 					}
 
@@ -1902,8 +1931,17 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				return true;
 
 			case DEF.HMSG_ERROR:
-				// 読込中の表示
-				Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+				Resources abortres = mActivity.getResources();
+				// 警告のダイアログを出してビューアを終了させる
+				new AlertDialog.Builder(this, R.style.MyDialog)
+					.setTitle(abortres.getString(R.string.readerror))
+					.setMessage(abortres.getString(R.string.readerrormessage))
+					.setPositiveButton(abortres.getString(R.string.aboutOK), (dialog, which) -> {
+					dialog.dismiss();
+					finish();
+				})
+				.setIcon(android.R.drawable.ic_dialog_alert)
+				.show();
 				return true;
 
 			case DEF.HMSG_CACHE:
@@ -1973,6 +2011,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				return true;
 
+			case DEF.HMSG_PROGRESS_IMAGE_END:
+				if (mProgressDialog != null) {
+					mProgressDialog.dismiss();
+					mProgressDialog = null;
+				}
+				return true;
+
 			case DEF.HMSG_READ_END:
 				// 読込中の表示
 				if (!isFinishing() && mProgressDialog != null) {
@@ -1981,6 +2026,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				mListLoading = false;
 				if (mTerminate) {
+					AbortToast();
 					finish();
 				}
 
@@ -2132,6 +2178,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		// Loadingのダイアログを表示
 		if (mTerminate) {
+			AbortToast();
 			finish();
 		}
 
@@ -2249,11 +2296,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						if (mPageBack) {
 							// 戻りの場合は2ページ目にする
 							mSourceImage[0] = (mPageWay != DEF.PAGEWAY_LEFT) ? bm[1] : bm[0];
+							mSourceImage[1] = null;
 							mCurrentPage = 1;
 						}
 						else {
 							// 戻りじゃない場合は1ページ目にする
 							mSourceImage[0] = (mPageWay != DEF.PAGEWAY_LEFT) ? bm[0] : bm[1];
+							mSourceImage[1] = null;
 							mCurrentPage = 0;
 						}
 						isSingle = true;
@@ -2278,6 +2327,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// 1ページをそのまま出力
 					mHalfPos = HALFPOS_1ST;
 					mSourceImage[0] = bm[0];
+					mSourceImage[1] = null;
 					if (mPageBack) {
 						// 戻りの場合は2ページ目にする
 						mCurrentPage++;
@@ -2289,6 +2339,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 1ページをそのまま出力
 				mHalfPos = HALFPOS_1ST;
 				mSourceImage[0] = bm[0];
+				mSourceImage[1] = null;
 			}
 			bm[0] = null;
 			bm[1] = null;
@@ -2490,6 +2541,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			synchronized (lock) {
 				Logcat.d(logLevel, "Call LoadThumbnail(" + page + ", " + thumW + ", " + thumH + ") start.");
 				// 読み込み処理とは排他する
+				mImageMgr.setAccessMode(true);
 				bm = mImageMgr.LoadThumbnail(page, thumW, thumH);
 			}
 		} catch (Exception e) {
@@ -2603,6 +2655,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mImageMgr.closeFiles();
 			}
 			setResult(RESULT_OK);
+			AbortToast();
 			finish();
 			return true;
 		}
@@ -4451,14 +4504,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			}
 		}
-		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring);
+		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollMode);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring) {
+				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring || mScrollMode != scrollmode) {
 					ischange = true;
 				}
 				mGray = gray;
@@ -4487,6 +4540,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// イメージ拡大縮小
 					ImageScaling();
 					updateOverSize(false);
+				}
+				if (mScrollMode != scrollmode) {
+					mScrollMode = scrollmode;
+					// 表示のコンフィグレーション
+					setViewConfig();
 				}
 				if (mScaleMode != SCALENAME_ORDER[scalemode]) {
 					// 画像拡大率の変更
@@ -4543,6 +4601,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					ed.putString(DEF.KEY_MARGINCUTCOLOR, Integer.toString(mMgnCutColor));
 					ed.putString(DEF.KEY_INISCALE, Integer.toString(mScaleMode));
 					ed.putString(DEF.KEY_DISPLAYPOSITION, Integer.toString(mDisplayPosition));
+					ed.putString(DEF.KEY_SCROLLMODE, Integer.toString(mScrollMode));
 					
 					ed.apply();
 				}
@@ -6929,6 +6988,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMgnCutColorBackup = mMgnCutColor;
 		mPinchScaleBackup = mPinchScaleSel;
 		mDisplayPositionBackup = mDisplayPosition;
+		mScrollModeBackup = mScrollMode;
 	}
 
 	// 他アクティビティからの復帰通知時に元に戻す
@@ -6957,6 +7017,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mMgnCutColor = mMgnCutColorBackup;
 		mPinchScaleSel = mPinchScaleBackup;
 		mDisplayPosition = mDisplayPositionBackup;
+		mScrollMode = mScrollModeBackup;
 	}
 
 	// 起動時のページ情報に戻す
@@ -7068,6 +7129,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_01, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_01, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_01, mScrollMode);
 				break;
 			case 1:
 				ed.putString(DEF.KEY_PROFILE_WORD_02, mProfileWord[1]);
@@ -7095,6 +7157,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_02, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_02, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_02, mScrollMode);
 				break;
 			case 2:
 				ed.putString(DEF.KEY_PROFILE_WORD_03, mProfileWord[2]);
@@ -7122,6 +7185,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_03, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_03, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_03, mScrollMode);
 				break;
 			case 3:
 				ed.putString(DEF.KEY_PROFILE_WORD_04, mProfileWord[3]);
@@ -7149,6 +7213,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_04, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_04, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_04, mScrollMode);
 				break;
 			case 4:
 				ed.putString(DEF.KEY_PROFILE_WORD_05, mProfileWord[4]);
@@ -7176,6 +7241,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_05, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_05, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_05, mScrollMode);
 				break;
 			case 5:
 				ed.putString(DEF.KEY_PROFILE_WORD_06, mProfileWord[5]);
@@ -7203,6 +7269,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_06, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_06, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_06, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_06, mScrollMode);
 				break;
 			case 6:
 				ed.putString(DEF.KEY_PROFILE_WORD_07, mProfileWord[6]);
@@ -7230,6 +7297,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_07, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_07, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_07, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_07, mScrollMode);
 				break;
 			case 7:
 				ed.putString(DEF.KEY_PROFILE_WORD_08, mProfileWord[7]);
@@ -7257,6 +7325,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_08, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_08, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_08, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_08, mScrollMode);
 				break;
 			case 8:
 				ed.putString(DEF.KEY_PROFILE_WORD_09, mProfileWord[8]);
@@ -7284,6 +7353,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_09, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_09, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_09, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_09, mScrollMode);
 				break;
 			case 9:
 				ed.putString(DEF.KEY_PROFILE_WORD_10, mProfileWord[9]);
@@ -7311,6 +7381,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_MGNCUTCOLOR_10, mMgnCutColor);
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_10, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_10, mDisplayPosition);
+				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_10, mScrollMode);
 				break;
 		}
 		ed.apply();
@@ -7349,6 +7420,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_01, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_01, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_01, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_01, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -7380,6 +7452,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_02, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_02, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_02, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_02, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -7411,6 +7484,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_03, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_03, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_03, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_03, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -7442,6 +7516,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_04, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_04, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_04, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_04, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -7473,6 +7548,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_05, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_05, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_05, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 5:
 				if (mProfileWord[5].equals("")) {
@@ -7504,6 +7580,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_06, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_06, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_06, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_06, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 6:
 				if (mProfileWord[6].equals("")) {
@@ -7535,6 +7612,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_07, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_07, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_07, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_07, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 7:
 				if (mProfileWord[7].equals("")) {
@@ -7566,6 +7644,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_08, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_08, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_08, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_08, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 8:
 				if (mProfileWord[8].equals("")) {
@@ -7597,6 +7676,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_09, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_09, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_09, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_09, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 			case 9:
 				if (mProfileWord[9].equals("")) {
@@ -7628,6 +7708,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCutColor = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_MGNCUTCOLOR_10, SetImageActivity.getMgnCutColor(mSharedPreferences));
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_10, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_10, SetImageActivity.getDisplayPosition(mSharedPreferences));
+				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_10, SetImageActivity.getScrollMode(mSharedPreferences));
 				break;
 		}
 		if (mReverseOrder != mReverseOrderProfile) {
@@ -7710,6 +7791,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_01);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_01);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_01);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_01);
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -7742,6 +7824,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_02);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_02);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_02);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_02);
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -7774,6 +7857,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_03);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_03);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_03);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_03);
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -7806,6 +7890,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_04);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_04);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_04);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_04);
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -7838,6 +7923,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_05);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_05);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_05);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_05);
 				break;
 			case 5:
 				if (mProfileWord[5].equals("")) {
@@ -7870,6 +7956,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_06);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_06);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_06);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_06);
 				break;
 			case 6:
 				if (mProfileWord[6].equals("")) {
@@ -7902,6 +7989,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_07);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_07);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_07);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_07);
 				break;
 			case 7:
 				if (mProfileWord[7].equals("")) {
@@ -7934,6 +8022,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_08);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_08);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_08);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_08);
 				break;
 			case 8:
 				if (mProfileWord[8].equals("")) {
@@ -7966,6 +8055,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_09);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_09);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_09);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_09);
 				break;
 			case 9:
 				if (mProfileWord[9].equals("")) {
@@ -7998,6 +8088,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_MGNCUTCOLOR_10);
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_10);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_10);
+				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_10);
 				break;
 		}
 		ed.apply();

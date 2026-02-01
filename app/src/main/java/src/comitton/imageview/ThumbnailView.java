@@ -53,6 +53,7 @@ public class ThumbnailView extends View implements Runnable, Callback {
 	private int mDrawTop;
 	private int mDrawLast;
 	private boolean mReverse;
+	private boolean mInit = false;
 
 	private WaitFor mWaitFor;
 	private Object mLock;
@@ -103,6 +104,7 @@ public class ThumbnailView extends View implements Runnable, Callback {
 		mLock = im.getLockObject();
 		mThumID = thumid;
 		mThumQuality = thumquality;
+		mInit = false;
 	}
 
 	public void setPosition(int page) {
@@ -144,7 +146,8 @@ public class ThumbnailView extends View implements Runnable, Callback {
 
 		int page = (xpos + halfWidth) / width;
 		int newpage = calcReversePage(page);
-		if (newpage != mDispPage) {
+		// 起動フラグを追加して起動時の表示の乱れでページがランダムに発生するのを防ぐ(これを入れないとソリッド書庫のサムネイル表示で余計な頭出しが発生して遅くなる)
+		if ((newpage != mDispPage) && mInit) {
 			mDispPage = newpage;
 			// スレッドにページ変更通知
 			mWaitFor.interrupt();
@@ -532,6 +535,7 @@ public class ThumbnailView extends View implements Runnable, Callback {
             				synchronized (mLock) {
 								Logcat.d(logLevel, "page=" + page + " LoadThumbnailを実行します. width=" + thumDataW + ", height=" + thumDataH);
 								// 読み込み処理とは排他する
+								mImageMgr.setAccessMode(false);
 								bm = mImageMgr.LoadThumbnail(page, thumDataW, thumDataH);
 								Logcat.d(logLevel, "page=" + page + " LoadThumbnailを実行しました. width=" + bm.getWidth() + ", height=" + bm.getHeight());
             				}
@@ -596,6 +600,8 @@ public class ThumbnailView extends View implements Runnable, Callback {
 			}
 			else if (count >= range || (prevflag && nextflag) || firstindex == mDispPage) {
 				// ページ選択待ちに入る
+				// 初回起動完了にする
+				mInit = true;
 //				Logcat.d(logLevel, "sleep");
 				mWaitFor.sleep();
 			}
