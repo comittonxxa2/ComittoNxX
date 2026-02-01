@@ -138,6 +138,22 @@
 				android:layout_gravity="center"
 				android:textSize="17sp" />
 
+			<TextView
+				android:id="@+id/label_scrolldirection"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:gravity="left"
+				android:text="@string/ScrollDirectionMenu" />
+
+			<Button
+				android:id="@+id/btn_scrolldirection"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:textSize="17sp" />
+
 		</LinearLayout>
 	</ScrollView>
 
