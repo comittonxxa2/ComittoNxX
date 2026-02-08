@@ -51,6 +51,7 @@ import src.comitton.dialog.ImageConfigDialog;
 import src.comitton.dialog.TabDialogFragment;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.dialog.MenuDialog.MenuSelectListener;
+import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.PageSelectListener;
 import src.comitton.dialog.BookmarkDialog.BookmarkListenerInterface;
 import src.comitton.config.SetCommonActivity;
@@ -112,6 +113,11 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 	private int mGamma;
 	private int mBright;
 	private boolean mIsConfSave;
+	private int mKelvin;
+	private boolean mCheckRgbLevel;
+	private int mRedLevel;
+	private int mGreenLevel;
+	private int mBlueLevel;
 
 	// RenderScriptの再利用に用いる
 	private RenderScript mRS;
@@ -167,6 +173,12 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		mContrast = SetWebViewActivity.getWebviewContrast(sharedPreferences) * 5;
 		mHue = (SetWebViewActivity.getWebviewHue(sharedPreferences) - 20) * 5;
 		mSaturation = SetWebViewActivity.getWebviewSaturation(sharedPreferences) * 5;
+		mKelvin = SetWebViewActivity.getKelvin(sharedPreferences);
+		mCheckRgbLevel = SetWebViewActivity.getCheckRgbLevel(sharedPreferences);
+		mRedLevel = SetWebViewActivity.getRedLevel(sharedPreferences);
+		mGreenLevel = SetWebViewActivity.getGreenLevel(sharedPreferences);
+		mBlueLevel = SetWebViewActivity.getBlueLevel(sharedPreferences);
+
 		mIsConfSave = true;
 
 		SetColorEffect();
@@ -381,14 +393,14 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		}
 		mImageConfigDialog = new ImageConfigDialog(this, R.style.MyDialog, command_id, false, this);
 
-		mImageConfigDialog.setConfig(mGray, mInvert, false, false, mSharpen, mBright, mGamma, 0, 0, 0, 0, 0, 0, mIsConfSave, 0, mContrast, mHue, mSaturation, mColoring, 0);
+		mImageConfigDialog.setConfig(mGray, mInvert, false, false, mSharpen, mBright, mGamma, 0, 0, 0, 0, 0, 0, mIsConfSave, 0, mContrast, mHue, mSaturation, mColoring, 0, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigDialog.ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mGray != gray || mInvert != invert || mSharpen != sharpen || mBright != bright || mGamma != gamma || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring) {
+				if (mGray != gray || mInvert != invert || mSharpen != sharpen || mBright != bright || mGamma != gamma || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring || mKelvin != kelvin || mCheckRgbLevel != chkrgblevel || mRedLevel != redrevel || mGreenLevel != greenlevel || mBlueLevel != bluerevel) {
 					ischange = true;
 				}
 				mGray = gray;
@@ -400,6 +412,11 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 				mContrast = contrast;
 				mHue = hue;
 				mSaturation = saturation;
+				mKelvin = kelvin;
+				mCheckRgbLevel = chkrgblevel;
+				mRedLevel = redrevel;
+				mGreenLevel = greenlevel;
+				mBlueLevel = bluerevel;
 				mIsConfSave = issave;
 
 				if (mywebView != null) {
@@ -419,6 +436,14 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 					ed.putInt(DEF.KEY_WEBVIEWCONTRAST, mContrast / 5);
 					ed.putInt(DEF.KEY_WEBVIEWHUE, mHue / 5 + 20);
 					ed.putInt(DEF.KEY_WEBVIEWSATURATION, mSaturation / 5);
+					ed.putInt(DEF.KEY_WEBVIEWKELVIN, mKelvin);
+					ed.putBoolean(DEF.KEY_WEBVIEWCHECKRGBLEVEL, mCheckRgbLevel);
+					if (mCheckRgbLevel) {
+						// RGBレベルをマニュアル設定する場合のみ保存
+						ed.putInt(DEF.KEY_WEBVIEWREDLEVEL, mRedLevel);
+						ed.putInt(DEF.KEY_WEBVIEWGREENLEVEL, mGreenLevel);
+						ed.putInt(DEF.KEY_WEBVIEWBLUELEVEL, mBlueLevel);
+					}
 
 					ed.apply();
 				}
@@ -627,6 +652,22 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		hueCM.set(hueMatrix);
 		// 連結する
 		cm.postConcat(hueCM);
+		// ケルビン値からRGBの乗算係数を計算
+		ColorMatrix kelvinCM = new ColorMatrix();
+		int[] kelvinrgb = { 100, 100, 100 };
+		kelvinrgb = ImageManager.getRGBFromKelvin(mKelvin);
+		float redrevel = (mCheckRgbLevel) ? (float)mRedLevel / 100 : (float)kelvinrgb[0] / 100;
+		float greenrevel = (mCheckRgbLevel) ? (float)mGreenLevel / 100 : (float)kelvinrgb[1] / 100;
+		float bluerevel = (mCheckRgbLevel) ? (float)mBlueLevel / 100 : (float)kelvinrgb[2] / 100;
+		float[] rgbvalues = {
+			redrevel, 0, 0, 0, 1,
+			0, greenrevel, 0, 0, 1,
+			0, 0, bluerevel, 0, 1,
+			0, 0, 0, 1, 0
+		};
+		kelvinCM.set(rgbvalues);
+		// 連結する
+		cm.postConcat(kelvinCM);
 		// マトリックスを取り出す
 		mColorMatrix = cm.getArray();
 	}
