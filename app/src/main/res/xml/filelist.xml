@@ -289,6 +289,11 @@
             android:key="ProgressBarMode"
             android:summary="Check this box if you want to use the reference value instead of a percentage."
             android:title="The rightmost value of the progress bar is the actual value." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ExpandTextEnable"
+            android:summary="If you select a text page in the image viewer, an error will occur, so check it at your own risk."
+            android:title="Enable text in file extraction" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

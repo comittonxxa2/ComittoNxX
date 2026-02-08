@@ -83,5 +83,38 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="image saturation" />
+        <src.comitton.config.seekbar.KelvinSeekbar
+            android:dialogMessage="Select the color temperature value"
+            android:dialogTitle="Color temperature"
+            android:key="WebviewKelvin"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Color temperature" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewCheckRgbLevel"
+            android:summary="@null"
+            android:title="Manually set RGB levels" />
+        <src.comitton.config.seekbar.RedLevelSeekbar
+            android:dialogMessage="Select red level value"
+            android:dialogTitle="Red level"
+            android:key="WebviewRedLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Red level" />
+        <src.comitton.config.seekbar.GreenLevelSeekbar
+            android:dialogMessage="Select green level value"
+            android:dialogTitle="Green level"
+            android:key="WebviewGreenLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Green level" />
+        <src.comitton.config.seekbar.BlueLevelSeekbar
+            android:dialogMessage="Select blue level value"
+            android:dialogTitle="Blue level"
+            android:key="WebviewBlueLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Blue level" />
     </PreferenceCategory>
 </PreferenceScreen>
