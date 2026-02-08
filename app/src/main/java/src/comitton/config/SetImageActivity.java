@@ -2,6 +2,7 @@ package src.comitton.config;
 
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
+import src.comitton.common.Logcat;
 import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Intent;
@@ -514,6 +515,32 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 	public static int getSaturation(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_SATURATION, "100");
+		return val;
+	}
+
+	public static int getKelvin(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_KELVIN, "35");
+		return val;
+	}
+
+	public static boolean getCheckRgbLevel(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CHECKRGBLEVEL, false);
+		return flag;
+	}
+
+	public static int getRedLevel(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_REDLEVEL, "100");
+		return val;
+	}
+
+	public static int getGreenLevel(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_GREENLEVEL, "100");
+		return val;
+	}
+
+	public static int getBlueLevel(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_BLUELEVEL, "100");
 		return val;
 	}
 

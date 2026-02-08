@@ -9,6 +9,11 @@ import android.view.View;
 import android.view.WindowManager;
 
 import android.preference.ListPreference;
+import android.widget.CheckBox;
+
+import android.preference.CheckBoxPreference;
+
+import androidx.preference.Preference;
 import androidx.preference.PreferenceManager;
 
 import src.comitton.config.SetCommonActivity;
@@ -18,6 +23,10 @@ import src.comitton.config.seekbar.GammaSeekbar;
 import src.comitton.config.seekbar.HueSeekbar;
 import src.comitton.config.seekbar.SaturationSeekbar;
 import src.comitton.config.seekbar.SharpenSeekbar;
+import src.comitton.config.seekbar.KelvinSeekbar;
+import src.comitton.config.seekbar.RedLevelSeekbar;
+import src.comitton.config.seekbar.GreenLevelSeekbar;
+import src.comitton.config.seekbar.BlueLevelSeekbar;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
@@ -38,6 +47,11 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 	private ConsrastSeekbar mConsrast;
 	private HueSeekbar mHue;
 	private SaturationSeekbar mSaturation;
+	private KelvinSeekbar mKelvin;
+	private RedLevelSeekbar mRedLevel;
+	private GreenLevelSeekbar mGreenLevel;
+	private BlueLevelSeekbar mBlueLevel;
+	private CheckBoxPreference mChkRgbLevel;
 
 	public static final int[] PulldownTap =
 		{ R.string.pulldowntappos00
@@ -73,6 +87,28 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 		mConsrast = (ConsrastSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWCONTRAST);
 		mHue = (HueSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWHUE);
 		mSaturation = (SaturationSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWSATURATION);
+		mKelvin = (KelvinSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWKELVIN);
+		mRedLevel = (RedLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWREDLEVEL);
+		mGreenLevel = (GreenLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWGREENLEVEL);
+		mBlueLevel = (BlueLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_WEBVIEWBLUELEVEL);
+		mChkRgbLevel = (CheckBoxPreference) findPreference(DEF.KEY_WEBVIEWCHECKRGBLEVEL);
+		if (!getCheckRgbLevel(sharedPreferences)) {
+			mRedLevel.setEnabled(false);
+			mGreenLevel.setEnabled(false);
+			mBlueLevel.setEnabled(false);
+		}
+
+    mChkRgbLevel.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+            // newValue には新しいチェック状態(Boolean)が入ってくる
+            boolean isChecked = (Boolean) newValue;
+            mRedLevel.setEnabled(isChecked); 
+            mGreenLevel.setEnabled(isChecked); 
+            mBlueLevel.setEnabled(isChecked); 
+            return true; // trueを返すと設定値が保存される
+        }
+    });
 
 	}
 
@@ -90,6 +126,10 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 		mConsrast.setSummary(getConsrastSummary(sharedPreferences));
 		mHue.setSummary(getHueSummary(sharedPreferences));
 		mSaturation.setSummary(getSaturationSummary(sharedPreferences));
+		mKelvin.setSummary(getKelvinSummary(sharedPreferences));
+		mRedLevel.setSummary(getRedLevelSummary(sharedPreferences));
+		mGreenLevel.setSummary(getGreenLevelSummary(sharedPreferences));
+		mBlueLevel.setSummary(getBlueLevelSummary(sharedPreferences));
 	}
 
 	@Override
@@ -120,6 +160,18 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 		}
 		else if(key.equals(DEF.KEY_WEBVIEWSATURATION)){
 			mSaturation.setSummary(getSaturationSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_WEBVIEWKELVIN)){
+			mKelvin.setSummary(getKelvinSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_WEBVIEWREDLEVEL)){
+			mRedLevel.setSummary(getRedLevelSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_WEBVIEWGREENLEVEL)){
+			mGreenLevel.setSummary(getGreenLevelSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_WEBVIEWBLUELEVEL)){
+			mBlueLevel.setSummary(getBlueLevelSummary(sharedPreferences));
 		}
 	}
 
@@ -198,6 +250,32 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 		return flag;
 	}
 
+	public static int getKelvin(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_WEBVIEWKELVIN, 35);
+		return val;
+	}
+
+	public static boolean getCheckRgbLevel(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_WEBVIEWCHECKRGBLEVEL, false);
+		return flag;
+	}
+
+	public static int getRedLevel(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_WEBVIEWREDLEVEL, 100);
+		return val;
+	}
+
+	public static int getGreenLevel(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_WEBVIEWGREENLEVEL, 100);
+		return val;
+	}
+
+	public static int getBlueLevel(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_WEBVIEWBLUELEVEL, 100);
+		return val;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getPulldownTapSummary(SharedPreferences sharedPreferences){
 		int val = getPulldownTap(sharedPreferences);
@@ -240,5 +318,30 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 		String str = ImageConfigDialog.getSaturationStr(val);
 		return	str;
 	}
+
+	private String getKelvinSummary(SharedPreferences sharedPreferences){
+		int val = getKelvin(sharedPreferences);
+		String str = ImageConfigDialog.getKelvinStr(this, val);
+		return	str;
+	}
+
+	private String getRedLevelSummary(SharedPreferences sharedPreferences){
+		int val = getRedLevel(sharedPreferences);
+		String str = ImageConfigDialog.getRgbLevelStr(val);
+		return	str;
+	}
+
+	private String getGreenLevelSummary(SharedPreferences sharedPreferences){
+		int val = getGreenLevel(sharedPreferences);
+		String str = ImageConfigDialog.getRgbLevelStr(val);
+		return	str;
+	}
+
+	private String getBlueLevelSummary(SharedPreferences sharedPreferences){
+		int val = getBlueLevel(sharedPreferences);
+		String str = ImageConfigDialog.getRgbLevelStr(val);
+		return	str;
+	}
+
 
 }
