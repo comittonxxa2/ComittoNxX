@@ -150,6 +150,11 @@
     <string name="contrastMenu">コントラスト(%)</string>
     <string name="hueMenu">色相(%)</string>
     <string name="saturationMenu">彩度(%)</string>
+    <string name="kelvinMenu">色温度(%)</string>
+    <string name="rgblevelMenu">RGBレベルをマニュアル設定</string>
+    <string name="redlevelMenu">赤レベル(%)</string>
+    <string name="greenlevelMenu">緑レベル(%)</string>
+    <string name="bluelevelMenu">青レベル(%)</string>
     <string name="bklightMenu">バックライト(%)</string>
     <string name="mgnCutMenu">余白の削除</string>
     <string name="mgnCutColorMenu">余白の削除対象の色</string>
@@ -955,5 +960,12 @@
 
     <string name="readprogressbarwidth00">サムネイル画像に合わせる</string>
     <string name="readprogressbarwidth01">サムネイル表示エリアに合わせる</string>
+    <string name="kelvin00">昼光色/フラッシュ(中央)</string>
+    <string name="kelvin01">電球</string>
+    <string name="kelvin02">温白色/蛍光灯</string>
+    <string name="kelvin03">昼白色/太陽光</string>
+    <string name="kelvin04">昼光色/フラッシュ</string>
+    <string name="kelvin05">曇天</string>
+    <string name="kelvin06">日陰/青空</string>
 
 </resources>
