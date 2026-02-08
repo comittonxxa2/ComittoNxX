@@ -239,6 +239,7 @@ public class TouchPanelView extends View {
 		true,
 		true,
 		true,
+		true,
 	};
 
 	// タッチパネル設定に有効な項目をtrueにする(テキストビューア)
@@ -358,6 +359,7 @@ public class TouchPanelView extends View {
 		false,
 		false,
 		true,
+		false,
 		false,
 		false,
 	};
@@ -482,6 +484,7 @@ public class TouchPanelView extends View {
 		R.string.SwitchingScreenOrientation,	// 表示方向の切り替え
 		R.string.AnimationPause,
 		R.string.selContentsMenu,
+		R.string.kelvinMenu,	// 色温度
 	};
 
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル

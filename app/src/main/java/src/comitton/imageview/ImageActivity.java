@@ -190,9 +190,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			8,	// シャープ化
 			23,	// 明るさ補正
 			24,	// ガンマ補正
-			32,
-			33,
-			34,
+			32,	// コントラスト
+			33,	// 色相
+			34,	// 彩度
+			43,	// 色温度
 			25,	// バックライト
 			9,	// 白黒反転
 			10,	// グレースケール
@@ -207,8 +208,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			18,	// 設定
 			19,	// 中央余白表示
 			20,	// 中央影表示,
-			31,
-			41,
+			31,	// 画面の表示位置
+			41,	// アニメーション再生の一時停止
 			LIST_PROFILE1,	// プロファイル1
 			LIST_PROFILE2,	// プロファイル2
 			LIST_PROFILE3,	// プロファイル3
@@ -240,6 +241,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		DEF.MENU_CONTRAST,	// コントラスト
 		DEF.MENU_HUE,		// 色相
 		DEF.MENU_SATURATION,	// 彩度
+		DEF.MENU_KELVIN,	// 色温度
 		DEF.MENU_BKLIGHT,	// バックライト
 		DEF.MENU_INVERT,	// 白黒反転
 		DEF.MENU_GRAY,		// グレースケール
@@ -286,6 +288,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.contrastMenu,	// コントラスト
 		R.string.hueMenu,		// 色相
 		R.string.saturationMenu,	// 彩度
+		R.string.kelvinMenu,	// 色温度
 		R.string.bklightMenu,	// バックライト
 		R.string.invertMenu,	// 白黒反転
 		R.string.grayMenu,		// グレースケール
@@ -396,6 +399,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int mContrast;
 	private int mHue;
 	private int mSaturation;
+	private int mKelvin;
+	private boolean mCheckRgbLevel;
+	private int mRedLevel;
+	private int mGreenLevel;
+	private int mBlueLevel;
 	private int mMaxThread;
 	private boolean mOldMenu;
 	private int mLoupeSize;
@@ -410,6 +418,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int mContrastBackup;
 	private int mHueBackup;
 	private int mSaturationBackup;
+	private int mKelvinBackup;
+	private boolean mCheckRgbLevelBackup;
+	private int mRedLevelBackup;
+	private int mGreenLevelBackup;
+	private int mBlueLevelBackup;
 	private int mRotateBackup;
 	private boolean mReverseOrderBackup;
 	private boolean mChgPageBackup;
@@ -2581,7 +2594,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (mImageMgr != null) {
 			mImageMgr.setConfig(mScaleMode, mCenter, mFitDual, mDispMode, mNoExpand, mAlgoMode, mRotate, mWAdjust
-					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation, mColoring, mMgnBlkMsk, mMarginLevel, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginAspectMask, mMarginForceIgnoreAspect, mEnableContentsFile);
+					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation, mColoring, mMgnBlkMsk, mMarginLevel, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginAspectMask, mMarginForceIgnoreAspect, mEnableContentsFile, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel);
 		}
 		// モードが変わればスケールは初期化
 		if (scaleinit) {
@@ -4031,6 +4044,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 彩度
 				execCommand(DEF.MENU_SATURATION);
 				break;
+			case DEF.TAP_KELVINMENU:
+				// 彩度
+				execCommand(DEF.MENU_KELVIN);
+				break;
 			case DEF.TAP_BKLIGHTMENU:
 				// バックライト
 				execCommand(DEF.MENU_BKLIGHT);
@@ -4504,14 +4521,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			}
 		}
-		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollMode);
+		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollMode, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring || mScrollMode != scrollmode) {
+				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring || mScrollMode != scrollmode || mKelvin != kelvin || mCheckRgbLevel != chkrgblevel || mRedLevel != redrevel || mGreenLevel != greenlevel || mBlueLevel != bluerevel) {
 					ischange = true;
 				}
 				mGray = gray;
@@ -4525,6 +4542,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mContrast = contrast;
 				mHue = hue;
 				mSaturation = saturation;
+				mKelvin = kelvin;
+				mCheckRgbLevel = chkrgblevel;
+				mRedLevel = redrevel;
+				mGreenLevel = greenlevel;
+				mBlueLevel = bluerevel;
 				mAlgoMode = algomode;
 				mMgnCut = mgncut;
 				mMgnCutColor = mgncutcolor;
@@ -4595,6 +4617,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					ed.putString(DEF.KEY_CONTRAST, Integer.toString(mContrast));
 					ed.putString(DEF.KEY_HUE, Integer.toString(mHue));
 					ed.putString(DEF.KEY_SATURATION, Integer.toString(mSaturation));
+					ed.putString(DEF.KEY_KELVIN, Integer.toString(mKelvin));
+					ed.putBoolean(DEF.KEY_CHECKRGBLEVEL, mCheckRgbLevel);
+					if (mCheckRgbLevel) {
+						// RGBレベルをマニュアル設定する場合のみ保存
+						ed.putString(DEF.KEY_REDLEVEL, Integer.toString(mRedLevel));
+						ed.putString(DEF.KEY_GREENLEVEL, Integer.toString(mGreenLevel));
+						ed.putString(DEF.KEY_BLUELEVEL, Integer.toString(mBlueLevel));
+					}
 					ed.putString(DEF.KEY_ALGOMODE, Integer.toString(mAlgoMode));
 					ed.putString(DEF.KEY_INITVIEW, Integer.toString(mDispMode));
 					ed.putString(DEF.KEY_MARGINCUT, Integer.toString(mMgnCut));
@@ -5442,6 +5472,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				showImageConfigDialog(DEF.MENU_SATURATION);
 				break;
 			}
+			case DEF.MENU_KELVIN: {
+				// 色温度
+				showImageConfigDialog(DEF.MENU_KELVIN);
+				break;
+			}
 			case DEF.MENU_BKLIGHT: {
 				// バックライト
 				showImageConfigDialog(DEF.MENU_BKLIGHT);
@@ -6231,6 +6266,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mContrast = SetImageActivity.getContrast(sharedPreferences);
 			mHue = SetImageActivity.getHue(sharedPreferences);
 			mSaturation = SetImageActivity.getSaturation(sharedPreferences);
+			mKelvin = SetImageActivity.getKelvin(sharedPreferences);
+			mCheckRgbLevel = SetImageActivity.getCheckRgbLevel(sharedPreferences);
+			mRedLevel = SetImageActivity.getRedLevel(sharedPreferences);
+			mGreenLevel = SetImageActivity.getGreenLevel(sharedPreferences);
+			mBlueLevel = SetImageActivity.getBlueLevel(sharedPreferences);
 			mSharpen = SetImageActivity.getSharpen(sharedPreferences);
 			mInvert = SetImageActivity.getInvert(sharedPreferences);
 			mGray = SetImageActivity.getGray(sharedPreferences);
@@ -6974,6 +7014,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mContrastBackup = mContrast;
 		mHueBackup = mHue;
 		mSaturationBackup = mSaturation;
+		mKelvinBackup = mKelvin;
+		mCheckRgbLevelBackup = mCheckRgbLevel;
+		mRedLevelBackup = mRedLevel;
+		mGreenLevelBackup = mGreenLevel;
+		mBlueLevelBackup = mBlueLevel;
 		mRotateBackup = mRotate;
 		mReverseOrderBackup = mReverseOrder;
 		mChgPageBackup = mChgPage;
@@ -7003,6 +7048,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mContrast = mContrastBackup;
 		mHue = mHueBackup;
 		mSaturation = mSaturationBackup;
+		mKelvin = mKelvinBackup;
+		mCheckRgbLevel = mCheckRgbLevelBackup;
+		mRedLevel = mRedLevelBackup;
+		mGreenLevel = mGreenLevelBackup;
+		mBlueLevel = mBlueLevelBackup;
 		mRotate = mRotateBackup;
 		mReverseOrder = mReverseOrderBackup;
 		mChgPage = mChgPageBackup;
@@ -7130,6 +7180,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_01, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_01, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_01, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_01, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_01, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_01, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_01, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_01, mBlueLevel);
 				break;
 			case 1:
 				ed.putString(DEF.KEY_PROFILE_WORD_02, mProfileWord[1]);
@@ -7158,6 +7213,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_02, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_02, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_02, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_02, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_02, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_02, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_02, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_02, mBlueLevel);
 				break;
 			case 2:
 				ed.putString(DEF.KEY_PROFILE_WORD_03, mProfileWord[2]);
@@ -7186,6 +7246,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_03, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_03, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_03, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_03, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_03, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_03, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_03, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_03, mBlueLevel);
 				break;
 			case 3:
 				ed.putString(DEF.KEY_PROFILE_WORD_04, mProfileWord[3]);
@@ -7214,6 +7279,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_04, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_04, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_04, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_04, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_04, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_04, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_04, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_04, mBlueLevel);
 				break;
 			case 4:
 				ed.putString(DEF.KEY_PROFILE_WORD_05, mProfileWord[4]);
@@ -7242,6 +7312,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_05, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_05, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_05, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_05, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_05, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_05, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_05, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_05, mBlueLevel);
 				break;
 			case 5:
 				ed.putString(DEF.KEY_PROFILE_WORD_06, mProfileWord[5]);
@@ -7270,6 +7345,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_06, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_06, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_06, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_06, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_06, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_06, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_06, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_06, mBlueLevel);
 				break;
 			case 6:
 				ed.putString(DEF.KEY_PROFILE_WORD_07, mProfileWord[6]);
@@ -7298,6 +7378,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_07, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_07, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_07, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_07, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_07, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_07, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_07, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_07, mBlueLevel);
 				break;
 			case 7:
 				ed.putString(DEF.KEY_PROFILE_WORD_08, mProfileWord[7]);
@@ -7326,6 +7411,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_08, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_08, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_08, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_08, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_08, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_08, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_08, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_08, mBlueLevel);
 				break;
 			case 8:
 				ed.putString(DEF.KEY_PROFILE_WORD_09, mProfileWord[8]);
@@ -7354,6 +7444,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_09, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_09, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_09, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_09, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_09, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_09, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_09, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_09, mBlueLevel);
 				break;
 			case 9:
 				ed.putString(DEF.KEY_PROFILE_WORD_10, mProfileWord[9]);
@@ -7382,6 +7477,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_PINCHSCALE_10, mPinchScale);
 				ed.putInt(DEF.KEY_PROFILE_DISPLAYPOSITION_10, mDisplayPosition);
 				ed.putInt(DEF.KEY_PROFILE_SCROLLMODE_10, mScrollMode);
+				ed.putInt(DEF.KEY_PROFILE_KELVIN_10, mKelvin);
+				ed.putBoolean(DEF.KEY_PROFILE_CHKRGBLEVEL_10, mCheckRgbLevel);
+				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_10, mRedLevel);
+				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_10, mGreenLevel);
+				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_10, mBlueLevel);
 				break;
 		}
 		ed.apply();
@@ -7421,6 +7521,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_01, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_01, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_01, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_01, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_01, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_01, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_01, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_01, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -7453,6 +7558,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_02, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_02, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_02, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_02, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_02, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_02, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_02, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_02, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -7485,6 +7595,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_03, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_03, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_03, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_03, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_03, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_03, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_03, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_03, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -7517,6 +7632,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_04, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_04, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_04, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_04, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_04, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_04, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_04, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_04, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -7549,6 +7669,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_05, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_05, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_05, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_05, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_05, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_05, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_05, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_05, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 5:
 				if (mProfileWord[5].equals("")) {
@@ -7581,6 +7706,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_06, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_06, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_06, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_06, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_06, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_06, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_06, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_06, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 6:
 				if (mProfileWord[6].equals("")) {
@@ -7613,6 +7743,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_07, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_07, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_07, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_07, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_07, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_07, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_07, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_07, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 7:
 				if (mProfileWord[7].equals("")) {
@@ -7645,6 +7780,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_08, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_08, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_08, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_08, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_08, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_08, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_08, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_08, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 8:
 				if (mProfileWord[8].equals("")) {
@@ -7677,6 +7817,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_09, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_09, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_09, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_09, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_09, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_09, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_09, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_09, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 			case 9:
 				if (mProfileWord[9].equals("")) {
@@ -7709,6 +7854,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mPinchScale = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_PINCHSCALE_10, SetImageActivity.getPinScale(mSharedPreferences));
 				mDisplayPosition = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_DISPLAYPOSITION_10, SetImageActivity.getDisplayPosition(mSharedPreferences));
 				mScrollMode = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SCROLLMODE_10, SetImageActivity.getScrollMode(mSharedPreferences));
+				mKelvin = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_KELVIN_10, SetImageActivity.getKelvin(mSharedPreferences));
+				mCheckRgbLevel = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_CHKRGBLEVEL_10, SetImageActivity.getCheckRgbLevel(mSharedPreferences));
+				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_10, SetImageActivity.getRedLevel(mSharedPreferences));
+				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_10, SetImageActivity.getGreenLevel(mSharedPreferences));
+				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_10, SetImageActivity.getBlueLevel(mSharedPreferences));
 				break;
 		}
 		if (mReverseOrder != mReverseOrderProfile) {
@@ -7792,6 +7942,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_01);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_01);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_01);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_01);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_01);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_01);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_01);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_01);
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -7825,6 +7980,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_02);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_02);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_02);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_02);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_02);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_02);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_02);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_02);
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -7858,6 +8018,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_03);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_03);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_03);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_03);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_03);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_03);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_03);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_03);
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -7891,6 +8056,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_04);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_04);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_04);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_04);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_04);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_04);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_04);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_04);
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -7924,6 +8094,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_05);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_05);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_05);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_05);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_05);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_05);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_05);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_05);
 				break;
 			case 5:
 				if (mProfileWord[5].equals("")) {
@@ -7957,6 +8132,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_06);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_06);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_06);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_06);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_06);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_06);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_06);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_06);
 				break;
 			case 6:
 				if (mProfileWord[6].equals("")) {
@@ -7990,6 +8170,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_07);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_07);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_07);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_07);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_07);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_07);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_07);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_07);
 				break;
 			case 7:
 				if (mProfileWord[7].equals("")) {
@@ -8023,6 +8208,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_08);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_08);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_08);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_08);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_08);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_08);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_08);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_08);
 				break;
 			case 8:
 				if (mProfileWord[8].equals("")) {
@@ -8056,6 +8246,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_09);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_09);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_09);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_09);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_09);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_09);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_09);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_09);
 				break;
 			case 9:
 				if (mProfileWord[9].equals("")) {
@@ -8089,6 +8284,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_PINCHSCALE_10);
 				ed.remove(DEF.KEY_PROFILE_DISPLAYPOSITION_10);
 				ed.remove(DEF.KEY_PROFILE_SCROLLMODE_10);
+				ed.remove(DEF.KEY_PROFILE_KELVIN_10);
+				ed.remove(DEF.KEY_PROFILE_CHKRGBLEVEL_10);
+				ed.remove(DEF.KEY_PROFILE_REDLEVEL_10);
+				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_10);
+				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_10);
 				break;
 		}
 		ed.apply();
