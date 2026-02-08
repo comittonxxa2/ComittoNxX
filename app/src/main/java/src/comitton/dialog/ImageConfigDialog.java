@@ -3,9 +3,12 @@ package src.comitton.dialog;
 import java.util.EventListener;
 
 import src.comitton.common.DEF;
+import src.comitton.common.Logcat;
 import src.comitton.config.SetImageActivity;
 import src.comitton.dialog.ListDialog.ListSelectListener;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.imageview.ImageManager;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -20,6 +23,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -62,6 +66,14 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private int mContrast;
 	private int mHue;
 	private int mSaturation;
+	private int mKelvin;
+	private int mRedLevel;
+	private int mGreenLevel;
+	private int mBlueLevel;
+	private int mRedLevelBackup;
+	private int mGreenLevelBackup;
+	private int mBlueLevelBackup;
+	private static boolean mCheckRgbLevel;
 	private int mAlgoMode;
 	private int mDispMode;
 	private int mScaleMode;
@@ -88,6 +100,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private CheckBox mChkMoire;
 	private CheckBox mChkTopSingle;
 	private CheckBox mChkIsSave;
+	private CheckBox mChkRgbLevel;
 	private TextView mTxtSharpen;
 	private TextView mTxtBright;
 	private TextView mTxtGamma;
@@ -95,6 +108,10 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private TextView mTxtContrast;
 	private TextView mTxtHue;
 	private TextView mTxtSaturation;
+	private TextView mTxtKelvin;
+	private TextView mTxtRedLevel;
+	private TextView mTxtGreenLevel;
+	private TextView mTxtBlueLevel;
 	private SeekBar mSkbSharpen;
 	private SeekBar mSkbBright;
 	private SeekBar mSkbGamma;
@@ -102,6 +119,10 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private SeekBar mSkbContrast;
 	private SeekBar mSkbHue;
 	private SeekBar mSkbSaturation;
+	private SeekBar mSkbKelvin;
+	private SeekBar mSkbRedLevel;
+	private SeekBar mSkbGreenLevel;
+	private SeekBar mSkbBlueLevel;
 	private TextView mTxtAlgoMode;
 	private TextView mTxtDispMode;
 	private TextView mTxtScaleMode;
@@ -132,6 +153,10 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private String mContrastStr;
 	private String mHueStr;
 	private String mSaturationStr;
+	private String mKelvinStr;
+	private String mRedLevelStr;
+	private String mGreenLevelStr;
+	private String mBlueLevelStr;
 
 	private String mAutoStr;
 	private static String mNoneStr;
@@ -147,6 +172,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 	private int mSelectMode;
 	private int mCommandId;
+	private static int[] mKelvinRgb = { 100, 100, 100 };
 
 	public ImageConfigDialog(AppCompatActivity activity, @StyleRes int themeResId, int command_id, boolean isclose, MenuDialog.MenuSelectListener listener) {
 		super(activity, themeResId, isclose, false, false, true, listener);
@@ -227,7 +253,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		addItem(inflater.inflate(R.layout.imageconfig_other, null, false));
 	}
 
-	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection) {
+	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
 		mGray = gray;
 		mColoring = coloring;
 		mInvert = invert;
@@ -240,6 +266,14 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mContrast = contrast;
 		mHue = hue;
 		mSaturation = saturation;
+		mKelvin = kelvin;
+		mCheckRgbLevel = chkrgblevel;
+		mRedLevel = redrevel;
+		mGreenLevel = greenlevel;
+		mBlueLevel = bluerevel;
+		mRedLevelBackup = redrevel;
+		mGreenLevelBackup = greenlevel;
+		mBlueLevelBackup = bluerevel;
 		mAlgoModeTemp  = mAlgoMode  = algomode;
 		mDispModeTemp  = mDispMode  = dispmode;
 		mScaleModeTemp = mScaleMode = scalemode;
@@ -247,6 +281,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mMgnCutColorTemp    = mMgnCutColor    = mgncutcolor;
 		mDisplayPositionTemp = mDisplayPosition = displayposition;
 		mScrollDirectionTemp = mScrollDirection = scrolldirection;
+		mKelvinRgb = ImageManager.getRGBFromKelvin(kelvin);
 
 		mIsSave = issave;
 	}
@@ -272,13 +307,18 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mChkInvert = mChkInvert != null ? mChkInvert : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_invert);
 			mChkMoire = mChkMoire != null ? mChkMoire : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_moire);
 			mChkTopSingle = mChkTopSingle != null ? mChkTopSingle : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_topsingle);
+			mChkRgbLevel = mChkRgbLevel != null ? mChkRgbLevel : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_rgblevelenable);
 
 			mTxtSharpen = mTxtSharpen != null ? mTxtSharpen : (TextView) mViewArray.get(i).findViewById(R.id.label_sharpen);
 			mTxtBright = mTxtBright != null ? mTxtBright : (TextView) mViewArray.get(i).findViewById(R.id.label_bright);
 			mTxtGamma = mTxtGamma != null ? mTxtGamma : (TextView) mViewArray.get(i).findViewById(R.id.label_gamma);
 			mTxtContrast = mTxtContrast != null ? mTxtContrast : (TextView) mViewArray.get(i).findViewById(R.id.label_contrast);
 			mTxtHue = mTxtHue != null ? mTxtHue : (TextView) mViewArray.get(i).findViewById(R.id.label_hue);
-			mTxtSaturation = mTxtSaturation != null ? mTxtSaturation : (TextView) mViewArray.get(i).findViewById(R.id.label_saturation);
+			mTxtSaturation = mTxtSaturation != null ? mTxtSaturation : (TextView) mViewArray.get(i).findViewById(R.id.label_saturation) ;
+			mTxtKelvin = mTxtKelvin != null ? mTxtKelvin : (TextView) mViewArray.get(i).findViewById(R.id.label_kelvin) ;
+			mTxtRedLevel = mTxtRedLevel != null ? mTxtRedLevel : (TextView) mViewArray.get(i).findViewById(R.id.label_redlevel) ;
+			mTxtGreenLevel = mTxtGreenLevel != null ? mTxtGreenLevel : (TextView) mViewArray.get(i).findViewById(R.id.label_greenlevel) ;
+			mTxtBlueLevel = mTxtBlueLevel != null ? mTxtBlueLevel : (TextView) mViewArray.get(i).findViewById(R.id.label_bluelevel) ;
 			mTxtBkLight = mTxtBkLight != null ? mTxtBkLight : (TextView) mViewArray.get(i).findViewById(R.id.label_bklight);
 
 			mSkbSharpen = mSkbSharpen != null ? mSkbSharpen : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_sharpen);
@@ -287,6 +327,10 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mSkbContrast = mSkbContrast != null ? mSkbContrast : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_contrast);
 			mSkbHue = mSkbHue != null ? mSkbHue : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_hue);
 			mSkbSaturation = mSkbSaturation != null ? mSkbSaturation : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_saturation);
+			mSkbKelvin = mSkbKelvin != null ? mSkbKelvin : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_kelvin);
+			mSkbRedLevel = mSkbRedLevel != null ? mSkbRedLevel : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_redlevel);
+			mSkbGreenLevel = mSkbGreenLevel != null ? mSkbGreenLevel : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_greenlevel);
+			mSkbBlueLevel = mSkbBlueLevel != null ? mSkbBlueLevel : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bluelevel);
 			mSkbBkLight = mSkbBkLight != null ? mSkbBkLight : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bklight);
 
 			mTxtAlgoMode = mTxtAlgoMode != null ? mTxtAlgoMode : (TextView) mViewArray.get(i).findViewById(R.id.label_algomode);
@@ -304,10 +348,50 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mBtnMgncutColor = mBtnMgncutColor != null ? mBtnMgncutColor : (Button) mViewArray.get(i).findViewById(R.id.btn_mgncutcolor);
 			mBtnDisplayPosition = mBtnDisplayPosition != null ? mBtnDisplayPosition : (Button) mViewArray.get(i).findViewById(R.id.btn_displayposition);
 			mBtnScrollDirection = mBtnScrollDirection != null ? mBtnScrollDirection : (Button) mViewArray.get(i).findViewById(R.id.btn_scrolldirection);
-
 		}
 
+		mKelvinRgb = ImageManager.getRGBFromKelvin(mKelvin);
 
+		if (mTxtRedLevel != null) mRedLevelStr = mTxtRedLevel.getText().toString();
+		if (mTxtGreenLevel != null) mGreenLevelStr = mTxtGreenLevel.getText().toString();
+		if (mTxtBlueLevel != null) mBlueLevelStr = mTxtBlueLevel.getText().toString();
+		mChkRgbLevel.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (isChecked) {
+					// チェックされた時の処理
+					mSkbRedLevel.setEnabled(true);
+					mSkbGreenLevel.setEnabled(true);
+					mSkbBlueLevel.setEnabled(true);
+					String str;
+					str = getRgbLevelStr(mRedLevel);
+					mTxtRedLevel.setText(mRedLevelStr.replaceAll("%", str));
+					mSkbRedLevel.setProgress(mRedLevel);
+					str = getRgbLevelStr(mGreenLevel);
+					mTxtGreenLevel.setText(mGreenLevelStr.replaceAll("%", str));
+					mSkbGreenLevel.setProgress(mGreenLevel);
+					str = getRgbLevelStr(mBlueLevel);
+					mTxtBlueLevel.setText(mBlueLevelStr.replaceAll("%", str));
+					mSkbBlueLevel.setProgress(mBlueLevel);
+				}
+				else {
+					// チェックが外れた時の処理
+					mSkbRedLevel.setEnabled(false);
+					mSkbGreenLevel.setEnabled(false);
+					mSkbBlueLevel.setEnabled(false);
+					String str;
+					str = getRgbLevelStr(mKelvinRgb[0]);
+					mTxtRedLevel.setText(mRedLevelStr.replaceAll("%", str));
+					mSkbRedLevel.setProgress(mKelvinRgb[0]);
+					str = getRgbLevelStr(mKelvinRgb[1]);
+					mTxtGreenLevel.setText(mGreenLevelStr.replaceAll("%", str));
+					mSkbGreenLevel.setProgress(mKelvinRgb[1]);
+					str = getRgbLevelStr(mKelvinRgb[2]);
+					mTxtBlueLevel.setText(mBlueLevelStr.replaceAll("%", str));
+					mSkbBlueLevel.setProgress(mKelvinRgb[2]);
+				}
+			}
+		});
 
 		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF) {
 			mChkGray.setVisibility(View.GONE);
@@ -381,6 +465,17 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtSaturation.setVisibility(View.GONE);
 			mSkbSaturation.setVisibility(View.GONE);
 		}
+		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_KELVIN) {
+			mTxtKelvin.setVisibility(View.GONE);
+			mSkbKelvin.setVisibility(View.GONE);
+			mChkRgbLevel.setVisibility(View.GONE);
+			mTxtRedLevel.setVisibility(View.GONE);
+			mSkbRedLevel.setVisibility(View.GONE);
+			mTxtGreenLevel.setVisibility(View.GONE);
+			mSkbGreenLevel.setVisibility(View.GONE);
+			mTxtBlueLevel.setVisibility(View.GONE);
+			mSkbBlueLevel.setVisibility(View.GONE);
+		}
 
 		if (mChkGray != null) mChkGray.setChecked(mGray);
 		if (mChkColoring != null) mChkColoring.setChecked(mColoring);
@@ -388,6 +483,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mChkMoire != null) mChkMoire.setChecked(mMoire);
 		if (mChkTopSingle != null) mChkTopSingle.setChecked(mTopSingle);
 		if (mChkIsSave != null) mChkIsSave.setChecked(mIsSave);
+		if (mChkRgbLevel != null) mChkRgbLevel.setChecked(mCheckRgbLevel);
 
 		if (mTxtSharpen != null) mSharpenStr = mTxtSharpen.getText().toString();
 		if (mTxtBright != null) mBrightStr = mTxtBright.getText().toString();
@@ -396,7 +492,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mTxtContrast != null) mContrastStr = mTxtContrast.getText().toString();
 		if (mTxtHue != null) mHueStr = mTxtHue.getText().toString();
 		if (mTxtSaturation != null) mSaturationStr = mTxtSaturation.getText().toString();
-
+		if (mTxtKelvin != null) mKelvinStr = mTxtKelvin.getText().toString();
 		if (mTxtSharpen != null && mTxtSharpen != null) mTxtSharpen.setText(mSharpenStr.replaceAll("%", getSharpenStr(getContext(), mSharpen)));
 		if (mTxtBright != null && mTxtBright != null) mTxtBright.setText(mBrightStr.replaceAll("%", getBrightGammaStr(getContext(), mBright)));
 		if (mTxtGamma != null && mTxtGamma != null) mTxtGamma.setText(mGammaStr.replaceAll("%", getBrightGammaStr(getContext(), mGamma)));
@@ -404,6 +500,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mTxtContrast != null && mTxtContrast != null) mTxtContrast.setText(mContrastStr.replaceAll("%", getBrightGammaStr(getContext(), mContrast)));
 		if (mTxtHue != null && mTxtHue != null) mTxtHue.setText(mHueStr.replaceAll("%", getBrightGammaStr(getContext(), mHue)));
 		if (mTxtSaturation != null && mTxtSaturation != null) mTxtSaturation.setText(mSaturationStr.replaceAll("%", getBrightGammaStr(getContext(), mSaturation)));
+		if (mTxtKelvin != null && mTxtKelvin != null) mTxtKelvin.setText(mKelvinStr.replaceAll("%", getBrightGammaStr(getContext(), mKelvin)));
 
 		if (mSkbSharpen != null) mSkbSharpen.setMax(32);
 		if (mSkbSharpen != null) mSkbSharpen.setOnSeekBarChangeListener(this);
@@ -419,6 +516,14 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbHue != null) mSkbHue.setOnSeekBarChangeListener(this);
 		if (mSkbSaturation != null) mSkbSaturation.setMax(80);
 		if (mSkbSaturation != null) mSkbSaturation.setOnSeekBarChangeListener(this);
+		if (mSkbKelvin != null) mSkbKelvin.setMax(70);
+		if (mSkbKelvin != null) mSkbKelvin.setOnSeekBarChangeListener(this);
+		if (mSkbRedLevel != null) mSkbRedLevel.setMax(100);
+		if (mSkbRedLevel != null) mSkbRedLevel.setOnSeekBarChangeListener(this);
+		if (mSkbGreenLevel != null) mSkbGreenLevel.setMax(100);
+		if (mSkbGreenLevel != null) mSkbGreenLevel.setOnSeekBarChangeListener(this);
+		if (mSkbBlueLevel != null) mSkbBlueLevel.setMax(100);
+		if (mSkbBlueLevel != null) mSkbBlueLevel.setOnSeekBarChangeListener(this);
 
 		if (mSkbSharpen != null) mSkbSharpen.setProgress(mSharpen);
 		if (mSkbBright != null) mSkbBright.setProgress(mBright + 5);
@@ -427,7 +532,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbContrast != null) mSkbContrast.setProgress(mContrast / 5);
 		if (mSkbHue != null) mSkbHue.setProgress(mHue / 5 + 20);
 		if (mSkbSaturation != null) mSkbSaturation.setProgress(mSaturation / 5);
-
+		if (mSkbKelvin != null) mSkbKelvin.setProgress(mKelvin);
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setText(mAlgoModeItems[mAlgoMode]);
 		// ボタンの文字を小文字対応にする(Lanczos3を表示させるため)
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setAllCaps(false);
@@ -465,7 +570,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public interface ImageConfigListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection);
+	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel);
 	    public void onClose();
 	}
 
@@ -630,7 +735,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 
 		if (select == CLICK_REVERT) {
 			// 戻すは元の値を通知
-			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollDirection);
+			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollDirection, mKelvin, mCheckRgbLevel, mRedLevelBackup, mGreenLevelBackup, mBlueLevelBackup);
 		}
 		else {
 			// OK/適用は設定された値を通知
@@ -647,8 +752,18 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			int contrast = mSkbContrast.getProgress() * 5;
 			int hue = (mSkbHue.getProgress() - 20) * 5;
 			int saturation = mSkbSaturation.getProgress() * 5;
+			int kelvin = mSkbKelvin.getProgress();
+			boolean chkrgblevel = mChkRgbLevel.isChecked();
+			int redrevel = mSkbRedLevel.getProgress();
+			int greenlevel = mSkbGreenLevel.getProgress();
+			int bluerevel = mSkbBlueLevel.getProgress();
+			if (chkrgblevel) {
+				mRedLevel = redrevel;
+				mGreenLevel = greenlevel;
+				mBlueLevel = bluerevel;
+			}
 
-			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation, coloring, mScrollDirectionTemp);
+			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation, coloring, mScrollDirectionTemp, kelvin, chkrgblevel, redrevel, greenlevel, bluerevel);
 		}
 
 		if (select != CLICK_APPLY) {
@@ -693,6 +808,34 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		else if (seekBar == mSkbSaturation) {
 			String str = getSaturationStr(progress);
 			mTxtSaturation.setText(mSaturationStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbKelvin) {
+			String str = getKelvinStr(getContext(), progress);
+			mTxtKelvin.setText(mKelvinStr.replaceAll("%", str));
+			mKelvinRgb = ImageManager.getRGBFromKelvin(progress);
+			if (!mChkRgbLevel.isChecked()) {
+				str = getRgbLevelStr(mKelvinRgb[0]);
+				mTxtRedLevel.setText(mRedLevelStr.replaceAll("%", str));
+				mSkbRedLevel.setProgress(mKelvinRgb[0]);
+				str = getRgbLevelStr(mKelvinRgb[1]);
+				mTxtGreenLevel.setText(mGreenLevelStr.replaceAll("%", str));
+				mSkbGreenLevel.setProgress(mKelvinRgb[1]);
+				str = getRgbLevelStr(mKelvinRgb[2]);
+				mTxtBlueLevel.setText(mBlueLevelStr.replaceAll("%", str));
+				mSkbBlueLevel.setProgress(mKelvinRgb[2]);
+			}
+		}
+		else if (seekBar == mSkbRedLevel) {
+			String str = getRgbLevelStr(progress);
+			mTxtRedLevel.setText(mRedLevelStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbGreenLevel) {
+			String str = getRgbLevelStr(progress);
+			mTxtGreenLevel.setText(mGreenLevelStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbBlueLevel) {
+			String str = getRgbLevelStr(progress);
+			mTxtBlueLevel.setText(mBlueLevelStr.replaceAll("%", str));
 		}
 		else {
 		}
@@ -758,6 +901,40 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public static String getSaturationStr(int progress) {
 		String str;
 		str = String.valueOf(progress * 5) + "%";
+		return str;
+	}
+
+	public static String getKelvinStr(Context context, int progress) {
+		Resources res = context.getResources();
+		String str;
+		str = String.valueOf(progress * 100 + 3000) + "K";
+		if (progress == 35) {
+			str += " : " + res.getString(R.string.kelvin00);
+		}
+		else if (progress <= 4) {
+			str += " : " + res.getString(R.string.kelvin01);
+		}
+		else if (progress > 4 && progress <= 13) {
+			str += " : " + res.getString(R.string.kelvin02);
+		}
+		else if (progress > 13 && progress <= 24) {
+			str += " : " + res.getString(R.string.kelvin03);
+		}
+		else if (progress > 24 && progress <= 38) {
+			str += " : " + res.getString(R.string.kelvin04);
+		}
+		else if (progress > 38 && progress <= 55) {
+			str += " : " + res.getString(R.string.kelvin05);
+		}
+		else if (progress > 55) {
+			str += " : " + res.getString(R.string.kelvin06);
+		}
+		return str;
+	}
+
+	public static String getRgbLevelStr(int progress) {
+		String str;
+		str = String.valueOf(progress) + "%";
 		return str;
 	}
 
