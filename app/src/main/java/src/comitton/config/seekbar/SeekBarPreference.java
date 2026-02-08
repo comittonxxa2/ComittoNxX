@@ -194,7 +194,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = mContext.getString(R.string.srngSumm2);
 			mSummary2 = "";
 		}
-		else if (mKey.equals(DEF.KEY_WEBVIEWSHARPEN) || mKey.equals(DEF.KEY_WEBVIEWBRIGHT) || mKey.equals(DEF.KEY_WEBVIEWGAMMA) || mKey.equals(DEF.KEY_WEBVIEWCONTRAST) || mKey.equals(DEF.KEY_WEBVIEWHUE) || mKey.equals(DEF.KEY_WEBVIEWSATURATION)) {
+		else if (mKey.equals(DEF.KEY_WEBVIEWSHARPEN) || mKey.equals(DEF.KEY_WEBVIEWBRIGHT) || mKey.equals(DEF.KEY_WEBVIEWGAMMA) || mKey.equals(DEF.KEY_WEBVIEWCONTRAST) || mKey.equals(DEF.KEY_WEBVIEWHUE) || mKey.equals(DEF.KEY_WEBVIEWSATURATION) || mKey.equals(DEF.KEY_WEBVIEWKELVIN) || mKey.equals(DEF.KEY_WEBVIEWREDLEVEL) || mKey.equals(DEF.KEY_WEBVIEWGREENLEVEL) || mKey.equals(DEF.KEY_WEBVIEWBLUELEVEL)) {
 			mSummary1 = "";
 			mSummary2 = "";
 		}
@@ -331,6 +331,12 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		}
 		else if (mKey.equals(DEF.KEY_WEBVIEWSATURATION)) {
 			strSummary = ImageConfigDialog.getSaturationStr(num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWKELVIN)) {
+			strSummary = ImageConfigDialog.getKelvinStr(getContext(), num);
+		}
+		else if (mKey.equals(DEF.KEY_WEBVIEWREDLEVEL) || mKey.equals(DEF.KEY_WEBVIEWGREENLEVEL) || mKey.equals(DEF.KEY_WEBVIEWBLUELEVEL)) {
+			strSummary = ImageConfigDialog.getRgbLevelStr(num);
 		}
 		else {
 			strSummary = DEF.getSizeStr(num, mSummary1, mSummary2);
