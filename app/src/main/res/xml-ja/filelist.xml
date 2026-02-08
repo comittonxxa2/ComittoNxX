@@ -291,6 +291,11 @@
             android:key="ProgressBarMode"
             android:summary="割合では無く参照している値にする場合にチェックを入れる"
             android:title="プログレスバーの右端の表示を実際の値にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ExpandTextEnable"
+            android:summary="イメージビューアでテキストのページを選択してしまうとエラーになるためチェックを入れる際には自己責任で行う"
+            android:title="ファイルの展開でテキストを有効にする" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

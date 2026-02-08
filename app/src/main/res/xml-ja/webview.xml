@@ -83,5 +83,38 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="彩度" />
+        <src.comitton.config.seekbar.KelvinSeekbar
+            android:dialogMessage="色温度の数値を選択"
+            android:dialogTitle="色温度"
+            android:key="WebviewKelvin"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="色温度" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebviewCheckRgbLevel"
+            android:summary="@null"
+            android:title="RGBレベルをマニュアル設定" />
+        <src.comitton.config.seekbar.RedLevelSeekbar
+            android:dialogMessage="赤レベルの数値を選択"
+            android:dialogTitle="赤レベル"
+            android:key="WebviewRedLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="赤レベル" />
+        <src.comitton.config.seekbar.GreenLevelSeekbar
+            android:dialogMessage="緑レベルの数値を選択"
+            android:dialogTitle="緑レベル"
+            android:key="WebviewGreenLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="緑レベル" />
+        <src.comitton.config.seekbar.BlueLevelSeekbar
+            android:dialogMessage="青レベルの数値を選択"
+            android:dialogTitle="青レベル"
+            android:key="WebviewBlueLevel"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="青レベル" />
     </PreferenceCategory>
 </PreferenceScreen>
