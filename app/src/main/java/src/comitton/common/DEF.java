@@ -230,6 +230,7 @@ public class DEF {
 	public static final int MENU_DISPLAY_ANIMEPAUSE = Menu.FIRST + 76;
 	public static final int MENU_CONTENTS = Menu.FIRST + 77;
 	public static final int MENU_WEBIMGCONF = Menu.FIRST + 78;
+	public static final int MENU_KELVIN = Menu.FIRST + 79;
 	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
 	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
@@ -690,6 +691,11 @@ public class DEF {
 	public static final String KEY_CONTRAST = "Contrast";
 	public static final String KEY_HUE = "Hue";
 	public static final String KEY_SATURATION = "Saturation";
+	public static final String KEY_KELVIN = "Kelvin";
+	public static final String KEY_CHECKRGBLEVEL = "CheckRgbLevel";
+	public static final String KEY_REDLEVEL = "RedLevel";
+	public static final String KEY_GREENLEVEL = "GreenLevel";
+	public static final String KEY_BLUELEVEL = "BlueLevel";
 	public static final String KEY_MOIRE = "Moire";
 	public static final String KEY_GRAY = "Gray";
 	public static final String KEY_COLORING = "Coloring";
@@ -725,6 +731,11 @@ public class DEF {
 	public static final String KEY_WEBVIEWCOLORING = "WebviewColoring";
 	public static final String KEY_WEBVIEWINVERT = "WebviewInvert";
 	public static final String KEY_WEBVIEWSHARPEN = "WebviewSharpen";
+	public static final String KEY_WEBVIEWKELVIN = "WebviewKelvin";
+	public static final String KEY_WEBVIEWCHECKRGBLEVEL = "WebviewCheckRgbLevel";
+	public static final String KEY_WEBVIEWREDLEVEL = "WebviewRedLevel";
+	public static final String KEY_WEBVIEWGREENLEVEL = "WebviewGreenLevel";
+	public static final String KEY_WEBVIEWBLUELEVEL = "WebviewBlueLevel";
 
 	public static final String KEY_SHOWTOOLBAR = "ShowToolbar";
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
@@ -788,6 +799,7 @@ public class DEF {
 	public static final String KEY_BOOKSHELFCOLOREXTON = "BookShelfColorExtOn";
 	public static final String KEY_BOOKSHELFAFTERCURCLEON = "BookShelfAfterCircleOn";
 	public static final String KEY_BOOKSHELFTEXTSPLITON = "BookShelfTextSplitOn";
+	public static final String KEY_EXPANDTEXTENABLE = "ExpandTextEnable";
 
 	public static final String KEY_CORNERENDIENABLE = "CornerEndIEnable";
 	public static final String KEY_CORNERENDIWIDTHLEVEL = "CornerEndIWidthLevel";
@@ -1148,6 +1160,61 @@ public class DEF {
 	public static final String KEY_PROFILE_SCROLLMODE_09 = "ProfileScrollMode9";
 	public static final String KEY_PROFILE_SCROLLMODE_10 = "ProfileScrollMode10";
 
+	public static final String KEY_PROFILE_KELVIN_01 = "ProfileKelvin1";
+	public static final String KEY_PROFILE_KELVIN_02 = "ProfileKelvin2";
+	public static final String KEY_PROFILE_KELVIN_03 = "ProfileKelvin3";
+	public static final String KEY_PROFILE_KELVIN_04 = "ProfileKelvin4";
+	public static final String KEY_PROFILE_KELVIN_05 = "ProfileKelvin5";
+	public static final String KEY_PROFILE_KELVIN_06 = "ProfileKelvin6";
+	public static final String KEY_PROFILE_KELVIN_07 = "ProfileKelvin7";
+	public static final String KEY_PROFILE_KELVIN_08 = "ProfileKelvin8";
+	public static final String KEY_PROFILE_KELVIN_09 = "ProfileKelvin9";
+	public static final String KEY_PROFILE_KELVIN_10 = "ProfileKelvin10";
+
+	public static final String KEY_PROFILE_CHKRGBLEVEL_01 = "ProfileCheckRgbLevel1";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_02 = "ProfileCheckRgbLevel2";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_03 = "ProfileCheckRgbLevel3";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_04 = "ProfileCheckRgbLevel4";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_05 = "ProfileCheckRgbLevel5";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_06 = "ProfileCheckRgbLevel6";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_07 = "ProfileCheckRgbLevel7";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_08 = "ProfileCheckRgbLevel8";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_09 = "ProfileCheckRgbLevel9";
+	public static final String KEY_PROFILE_CHKRGBLEVEL_10 = "ProfileCheckRgbLevel10";
+
+	public static final String KEY_PROFILE_REDLEVEL_01 = "ProfileRedLevel1";
+	public static final String KEY_PROFILE_REDLEVEL_02 = "ProfileRedLevel2";
+	public static final String KEY_PROFILE_REDLEVEL_03 = "ProfileRedLevel3";
+	public static final String KEY_PROFILE_REDLEVEL_04 = "ProfileRedLevel4";
+	public static final String KEY_PROFILE_REDLEVEL_05 = "ProfileRedLevel5";
+	public static final String KEY_PROFILE_REDLEVEL_06 = "ProfileRedLevel6";
+	public static final String KEY_PROFILE_REDLEVEL_07 = "ProfileRedLevel7";
+	public static final String KEY_PROFILE_REDLEVEL_08 = "ProfileRedLevel8";
+	public static final String KEY_PROFILE_REDLEVEL_09 = "ProfileRedLevel9";
+	public static final String KEY_PROFILE_REDLEVEL_10 = "ProfileRedLevel10";
+
+	public static final String KEY_PROFILE_GREENLEVEL_01 = "ProfileGreenLevel1";
+	public static final String KEY_PROFILE_GREENLEVEL_02 = "ProfileGreenLevel2";
+	public static final String KEY_PROFILE_GREENLEVEL_03 = "ProfileGreenLevel3";
+	public static final String KEY_PROFILE_GREENLEVEL_04 = "ProfileGreenLevel4";
+	public static final String KEY_PROFILE_GREENLEVEL_05 = "ProfileGreenLevel5";
+	public static final String KEY_PROFILE_GREENLEVEL_06 = "ProfileGreenLevel6";
+	public static final String KEY_PROFILE_GREENLEVEL_07 = "ProfileGreenLevel7";
+	public static final String KEY_PROFILE_GREENLEVEL_08 = "ProfileGreenLevel8";
+	public static final String KEY_PROFILE_GREENLEVEL_09 = "ProfileGreenLevel9";
+	public static final String KEY_PROFILE_GREENLEVEL_10 = "ProfileGreenLevel10";
+
+	public static final String KEY_PROFILE_BLUELEVEL_01 = "ProfileBlueLevel1";
+	public static final String KEY_PROFILE_BLUELEVEL_02 = "ProfileBlueLevel2";
+	public static final String KEY_PROFILE_BLUELEVEL_03 = "ProfileBlueLevel3";
+	public static final String KEY_PROFILE_BLUELEVEL_04 = "ProfileBlueLevel4";
+	public static final String KEY_PROFILE_BLUELEVEL_05 = "ProfileBlueLevel5";
+	public static final String KEY_PROFILE_BLUELEVEL_06 = "ProfileBlueLevel6";
+	public static final String KEY_PROFILE_BLUELEVEL_07 = "ProfileBlueLevel7";
+	public static final String KEY_PROFILE_BLUELEVEL_08 = "ProfileBlueLevel8";
+	public static final String KEY_PROFILE_BLUELEVEL_09 = "ProfileBlueLevel9";
+	public static final String KEY_PROFILE_BLUELEVEL_10 = "ProfileBlueLevel10";
+
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
 	public static final int DEFAULT_QUALITY = 1; //画質を優先する
@@ -1265,6 +1332,15 @@ public class DEF {
 	public static final int MAX_WEBVIEWHUE = 40;
 	public static final int DEFAULT_WEBVIEWSATURATION = 20;
 	public static final int MAX_WEBVIEWSATURATION = 80;
+
+	public static final int DEFAULT_WEBVIEWKELVIN = 35;
+	public static final int MAX_WEBVIEWKELVIN = 70;
+	public static final int DEFAULT_WEBVIEWREDLEVEL = 100;
+	public static final int MAX_WEBVIEWREDLEVEL = 100;
+	public static final int DEFAULT_WEBVIEWGREENLEVEL = 100;
+	public static final int MAX_WEBVIEWGREENLEVEL = 100;
+	public static final int DEFAULT_WEBVIEWBLUELEVEL = 100;
+	public static final int MAX_WEBVIEWBLUELEVEL = 100;
 
 	public static final int DEFAULT_THUMBNAILTOPSPACE = 5;
 	public static final int MAX_THUMBNAILTOPSPACE = 100;
@@ -1702,6 +1778,7 @@ public class DEF {
 	public static final int TAP_SWSCREENORIENT = 113;	// 表示方向の切り替え
 	public static final int TAP_ANIMEPAUSE = 114;	//アニメーションの一時停止
 	public static final int TAP_SELECTCONTENTSMENU = 115;	// 目次の選択
+	public static final int TAP_KELVINMENU = 116;	// 色温度
 
 	// イメージビューア用のタップ操作の初期値
 	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
