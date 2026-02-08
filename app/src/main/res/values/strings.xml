@@ -150,6 +150,11 @@
     <string name="contrastMenu">Contrast(%)</string>
     <string name="hueMenu">Hue(%)</string>
     <string name="saturationMenu">Saturation(%)</string>
+    <string name="kelvinMenu">Color temperature(%)</string>
+    <string name="rgblevelMenu">Manually set RGB levels</string>
+    <string name="redlevelMenu">Red level(%)</string>
+    <string name="greenlevelMenu">Green level(%)</string>
+    <string name="bluelevelMenu">Blue level(%)</string>
     <string name="bklightMenu">Backlight(%)</string>
     <string name="mgnCutMenu">Remove white space</string>
     <string name="mgnCutColorMenu">Color to remove margin</string>
@@ -955,6 +960,13 @@
 
     <string name="readprogressbarwidth00">Fit to thumbnail image</string>
     <string name="readprogressbarwidth01">Fit to thumbnail display area</string>
+    <string name="kelvin00">Daylight/Flash(center)</string>
+    <string name="kelvin01">light bulb</string>
+    <string name="kelvin02">Warm white/fluorescent</string>
+    <string name="kelvin03">Daylight/Sunlight</string>
+    <string name="kelvin04">Daylight/Flash</string>
+    <string name="kelvin05">cloudy sky</string>
+    <string name="kelvin06">Shade/Blue Sky</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
