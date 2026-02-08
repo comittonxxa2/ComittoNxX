@@ -6079,6 +6079,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// ファイル名をMD5のハッシュ値へ変換
 		String pathcode = DEF.makeCode(name, 0, 0);
 		String file = DEF.getBaseDirectory() + "filelist/" + pathcode + ".cache";
+		String filelist1name = name + "_filelist1";
+		String mFilelist1Name = DEF.makeCode(filelist1name, 0, 0);
+		String filelist2name = name + "_filelist2";
+		String mFilelist2Name = DEF.makeCode(filelist2name, 0, 0);
+		File mCacheDir = new File(mActivity.getCacheDir(), pathcode);
+
 		try {
 			// ファイルを削除
 			new File(file).delete();
@@ -6094,6 +6100,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			new File(file).delete();
 		} catch (Exception e) {
 			Logcat.e(logLevel, "Delete error.", e);
+		}
+		File tempFile;
+		tempFile = new File(mCacheDir, mFilelist1Name);
+		try {
+			// ファイルを削除
+			tempFile.delete();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		tempFile = new File(mCacheDir, mFilelist2Name);
+		try {
+			// ファイルを削除
+			tempFile.delete();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
