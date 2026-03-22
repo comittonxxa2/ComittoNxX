@@ -853,7 +853,7 @@ public class GuideView {
 	}
 
 	// downイベント
-	public void eventTouchDown(int x, int y, int cx, int cy, boolean enable) {
+	public int eventTouchDown(int x, int y, int cx, int cy, boolean enable) {
 		mFirstX = x;
 		mFirstY = y;
 		mFirstCX = cx;
@@ -861,7 +861,10 @@ public class GuideView {
 		mCommandOn = enable;
 
 		if (mButtonSize <= 0) {
-			return;
+			return 0;
+		}
+		if (!enable) {
+			return mButtonSize;
 		}
 
 		setButtonLayout();
@@ -876,7 +879,7 @@ public class GuideView {
 		mBattery = level * 100 / scale;
 
 		this.invalidate();
-		return;
+		return mButtonSize;
 	}
 
 	public void eventTouchTimer() {
@@ -1484,7 +1487,6 @@ public class GuideView {
 
 	private void invalidate() {
 		if (mListener != null) {
-//			Logcat.v(1, "invalidate()");
 			mListener.onUpdate();
 		}
 	}

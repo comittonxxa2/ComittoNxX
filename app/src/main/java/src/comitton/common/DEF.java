@@ -137,6 +137,9 @@ public class DEF {
 	public static final int HMSG_EVENT_TOOLBAR = 219;
 	public static final int HMSG_EVENT_TOUCH_ZOOM_OFF = 220;
 	public static final int HMSG_EVENT_BACKGROUND_CACHE = 221;
+	public static final int HMSG_EVENT_SEARCHWORD = 222;
+	public static final int HMSG_EVENT_SEARCHNEXT = 223;
+	public static final int HMSG_EVENT_SEARCHCLEAR = 224;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -231,9 +234,11 @@ public class DEF {
 	public static final int MENU_CONTENTS = Menu.FIRST + 77;
 	public static final int MENU_WEBIMGCONF = Menu.FIRST + 78;
 	public static final int MENU_KELVIN = Menu.FIRST + 79;
+	public static final int MENU_SEARCHJUMPTEST = Menu.FIRST + 80;
 	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
 	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
+	public static final int MENU_HTMLTAG = Menu.FIRST + 300000;
 	public static final int MENU_DIR_TREE = MENU_CHAPTER;
 
 	public static final int MENU_CMARGIN = Menu.FIRST + 101;
@@ -517,6 +522,8 @@ public class DEF {
 	public static final String KEY_BSECOLOR = "BseColor";
 	public static final String KEY_FIFCOLOR = "FifColor";
 	public static final String KEY_FIBCOLOR = "FibColor";
+	public static final String KEY_EVTCOLOR = "EvtColor";
+	public static final String KEY_EVBCOLOR = "EvbColor";
 
 	public static final String KEY_TXTRGB = "TxtRGB";
 	public static final String KEY_DIRRGB = "DirRGB";
@@ -537,6 +544,8 @@ public class DEF {
 	public static final String KEY_BSERGB = "BseRGB";
 	public static final String KEY_FIFRGB = "FifRGB";
 	public static final String KEY_FIBRGB = "FibRGB";
+	public static final String KEY_EVTRGB = "EvtRGB";
+	public static final String KEY_EVBRGB = "EvbRGB";
 
 	// public static final String KEY_TITLECLR = "TitleColor";
 	// public static final String KEY_TOOLBCLR = "ToolbarColor";
@@ -837,6 +846,24 @@ public class DEF {
 	public static final String KEY_CORNEREND_T_TAP_13 = "CornerEndTTap13";
 	public static final String KEY_CORNEREND_T_TAP_14 = "CornerEndTTap14";
 
+	public static final String KEY_CORNERENDEENABLE = "CornerEndEEnable";
+	public static final String KEY_CORNERENDEWIDTHLEVEL = "CornerEndEWidthLevel";
+	public static final String KEY_CORNERENDEHEIGHTLEVEL = "CornerEndEHeightLevel";
+	public static final String KEY_CORNEREND_E_TAP_01 = "CornerEndETap01";
+	public static final String KEY_CORNEREND_E_TAP_02 = "CornerEndETap02";
+	public static final String KEY_CORNEREND_E_TAP_03 = "CornerEndETap03";
+	public static final String KEY_CORNEREND_E_TAP_04 = "CornerEndETap04";
+	public static final String KEY_CORNEREND_E_TAP_05 = "CornerEndETap05";
+	public static final String KEY_CORNEREND_E_TAP_06 = "CornerEndETap06";
+	public static final String KEY_CORNEREND_E_TAP_07 = "CornerEndETap07";
+	public static final String KEY_CORNEREND_E_TAP_08 = "CornerEndETap08";
+	public static final String KEY_CORNEREND_E_TAP_09 = "CornerEndETap09";
+	public static final String KEY_CORNEREND_E_TAP_10 = "CornerEndETap10";
+	public static final String KEY_CORNEREND_E_TAP_11 = "CornerEndETap11";
+	public static final String KEY_CORNEREND_E_TAP_12 = "CornerEndETap12";
+	public static final String KEY_CORNEREND_E_TAP_13 = "CornerEndETap13";
+	public static final String KEY_CORNEREND_E_TAP_14 = "CornerEndETap14";
+
 	// スケーリング設定
 	public static final String KEY_ALGOMODE = "AlgoMode";
 
@@ -856,6 +883,8 @@ public class DEF {
 
 	public static final String KEY_CUSTOM_URL_SCHEME_KEY = "CustomUrlSchemeAuthenticationKey";
 	public static final String KEY_SMB_MODE = "ComittoNMode";
+	public static final String KEY_MARKERFILTERON = "MarkerFilterOn";
+	public static final String KEY_MARKERDIRON = "MarkerDirOn";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -1413,6 +1442,8 @@ public class DEF {
 	public static final String KEY_EP_VIEWER = "epubViewer";
 	public static final String KEY_EP_ORDER = "epubOrder";
 	public static final String KEY_EP_THUMB = "epubThumb";
+	public static final String KEY_EP_WEBVIEW = "epubWebView";
+	public static final String KEY_EP_INITVIEW = "epubInitView";
 
 	public static final String KEY_TX_MGNRGB = "txMgnRGB";
 	public static final String KEY_TX_CNTRGB = "txCntRGB";
@@ -1439,6 +1470,25 @@ public class DEF {
 
 	public static final String KEY_TX_BKLIGHT = "txBright";
 
+	public static final String KEY_EP_NOTICE = "epNotice";
+	public static final String KEY_EP_NOSLEEP = "epNoSleep";
+	public static final String KEY_EP_FONTTEXT = "epFontTextSp";
+	public static final String KEY_EP_FONTBODY = "epFontBodySp";
+	public static final String KEY_EP_FONTINFO = "epFontInfoSp";
+	public static final String KEY_EP_MARGINW = "epMarginW";
+	public static final String KEY_EP_MARGINH = "epMarginH";
+	public static final String KEY_EP_DISABLETEXTINFO = "epDisableTextInfo";
+	public static final String KEY_EP_TEXTFRAME = "epTextFrame";
+	public static final String KEY_EP_TEXTSIZEVALIABLE = "epTextSizeVariable";
+	public static final String KEY_EP_TEXTCOLORFIX = "epTextColorFix";
+	public static final String KEY_EP_TEXTBAKCOLORFIX = "epTextBakColorFix";
+	public static final String KEY_EP_FONTNAME = "epFontName";
+	public static final String KEY_EP_SEARCHDIALOGPOS = "epSearchdialogPos";
+	public static final String KEY_EP_VIEWROTA = "epViewRota";
+
+	public static final String KEY_EP_TVTRGB = "epTvtRGB";
+	public static final String KEY_EP_TVBRGB = "epTvbRGB";
+
 	public static final int DEFAULT_TX_FONTTOP = 18; // 32(8～64)
 	public static final int DEFAULT_TX_FONTBODY = 14; // 24(8～64)
 	public static final int DEFAULT_TX_FONTRUBI = 6; // 16(8～64)
@@ -1461,10 +1511,25 @@ public class DEF {
 	public static final int MAX_TX_SCRLRNGW = 19; // 100% ((19+1)*5)
 	public static final int MAX_TX_SCRLRNGH = 19; // 100% ((19+1)*5)
 
+	public static final int DEFAULT_EP_FONTTEXT = 50; // 32(8～64)
+	public static final int DEFAULT_EP_FONTBODY = 50; // 24(8～64)
+	public static final int DEFAULT_EP_FONTINFO = 10; // 18(8～64)
+	public static final int DEFAULT_EP_MARGINW = 0; // 32(0～100,x2)
+	public static final int DEFAULT_EP_MARGINH = 0; // 32(0～100,x2)
+
+	public static final int MAX_EP_FONTTEXT = 50; // 64ドット
+	public static final int MAX_EP_FONTBODY = 100; // 64ドット
+	public static final int MAX_EP_FONTINFO = 56; // 64ドット
+	public static final int MAX_EP_MARGINW = 50; // 100ドット
+	public static final int MAX_EP_MARGINH = 50; // 100ドット
+
 	public static final int COLOR_TX_TVTRGB = 0xFF000000;
 	public static final int COLOR_TX_TVBRGB = 0xFFFFFFC8;
 	public static final int COLOR_TX_TVGRGB = 0xFFFFFFFF;
 	public static final int COLOR_TX_HITRGB = 0xFFEBC5E2;
+
+	public static final int COLOR_EP_TVTRGB = 0xFF000000;
+	public static final int COLOR_EP_TVBRGB = 0xFFE0E0E0;
 
 	public static final int VOLKEY_NONE = 0;
 	public static final int VOLKEY_DOWNTONEXT = 1;
@@ -1502,6 +1567,11 @@ public class DEF {
 	public static final int DISPMODE_TX_HALF = 1;
 	public static final int DISPMODE_TX_SERIAL = 2;
 
+	public static final int DISPMODE_EPUB_NORMAL = 0;
+	public static final int DISPMODE_EPUB_DUAL_HORIZON = 1;
+	public static final int DISPMODE_EPUB_DUAL_VARTICAL = 2;
+	public static final int DISPMODE_EPUB_DUAL_BOTH = 3;
+
 	public static final int LASTOPEN_NONE = 0;
 	public static final int LASTOPEN_TEXT = 1;
 	public static final int LASTOPEN_IMAGE = 2;
@@ -1522,6 +1592,7 @@ public class DEF {
 
 	public static final String KEY_TAP_I_PATTERN_NUMBER = "TapPatINum";
 	public static final String KEY_TAP_T_PATTERN_NUMBER = "TapPatTNum";
+	public static final String KEY_TAP_E_PATTERN_NUMBER = "TapPatENum";
 
 	public static final String KEY_TAP_PATTERN_01_01 = "TapPat0101";
 	public static final String KEY_TAP_PATTERN_01_02 = "TapPat0102";
@@ -1592,10 +1663,10 @@ public class DEF {
 	public static final String KEY_TAP_PATTERN_09_06 = "TapPat0906";
 	public static final String KEY_TAP_PATTERN_09_07 = "TapPat0907";
 
-	public static final String KEY_TAP_PATTERN_T_01_01 = "TapPat0101";
-	public static final String KEY_TAP_PATTERN_T_01_02 = "TapPat0102";
-	public static final String KEY_TAP_PATTERN_T_01_03 = "TapPat0103";
-	public static final String KEY_TAP_PATTERN_T_01_04 = "TapPat0104";
+	public static final String KEY_TAP_PATTERN_T_01_01 = "TapPatt0101";
+	public static final String KEY_TAP_PATTERN_T_01_02 = "TapPatt0102";
+	public static final String KEY_TAP_PATTERN_T_01_03 = "TapPatt0103";
+	public static final String KEY_TAP_PATTERN_T_01_04 = "TapPatt0104";
 
 	public static final String KEY_TAP_PATTERN_T_02_01 = "TapPatt0201";
 	public static final String KEY_TAP_PATTERN_T_02_02 = "TapPatt0202";
@@ -1660,6 +1731,75 @@ public class DEF {
 	public static final String KEY_TAP_PATTERN_T_09_05 = "TapPatt0905";
 	public static final String KEY_TAP_PATTERN_T_09_06 = "TapPatt0906";
 	public static final String KEY_TAP_PATTERN_T_09_07 = "TapPatt0907";
+
+	public static final String KEY_TAP_PATTERN_E_01_01 = "TapPate0101";
+	public static final String KEY_TAP_PATTERN_E_01_02 = "TapPate0102";
+	public static final String KEY_TAP_PATTERN_E_01_03 = "TapPate0103";
+	public static final String KEY_TAP_PATTERN_E_01_04 = "TapPate0104";
+
+	public static final String KEY_TAP_PATTERN_E_02_01 = "TapPate0201";
+	public static final String KEY_TAP_PATTERN_E_02_02 = "TapPate0202";
+	public static final String KEY_TAP_PATTERN_E_02_03 = "TapPate0203";
+	public static final String KEY_TAP_PATTERN_E_02_04 = "TapPate0204";
+	public static final String KEY_TAP_PATTERN_E_02_05 = "TapPate0205";
+	public static final String KEY_TAP_PATTERN_E_02_06 = "TapPate0206";
+
+	public static final String KEY_TAP_PATTERN_E_03_01 = "TapPate0301";
+	public static final String KEY_TAP_PATTERN_E_03_02 = "TapPate0302";
+	public static final String KEY_TAP_PATTERN_E_03_03 = "TapPate0303";
+	public static final String KEY_TAP_PATTERN_E_03_04 = "TapPate0304";
+	public static final String KEY_TAP_PATTERN_E_03_05 = "TapPate0305";
+	public static final String KEY_TAP_PATTERN_E_03_06 = "TapPate0306";
+
+	public static final String KEY_TAP_PATTERN_E_04_01 = "TapPate0401";
+	public static final String KEY_TAP_PATTERN_E_04_02 = "TapPate0402";
+	public static final String KEY_TAP_PATTERN_E_04_03 = "TapPate0403";
+	public static final String KEY_TAP_PATTERN_E_04_04 = "TapPate0404";
+	public static final String KEY_TAP_PATTERN_E_04_05 = "TapPate0405";
+	public static final String KEY_TAP_PATTERN_E_04_06 = "TapPate0406";
+	public static final String KEY_TAP_PATTERN_E_04_07 = "TapPate0407";
+	public static final String KEY_TAP_PATTERN_E_04_08 = "TapPate0408";
+	public static final String KEY_TAP_PATTERN_E_04_09 = "TapPate0409";
+
+	public static final String KEY_TAP_PATTERN_E_05_01 = "TapPate0501";
+	public static final String KEY_TAP_PATTERN_E_05_02 = "TapPate0502";
+	public static final String KEY_TAP_PATTERN_E_05_03 = "TapPate0503";
+	public static final String KEY_TAP_PATTERN_E_05_04 = "TapPate0504";
+	public static final String KEY_TAP_PATTERN_E_05_05 = "TapPate0505";
+	public static final String KEY_TAP_PATTERN_E_05_06 = "TapPate0506";
+	public static final String KEY_TAP_PATTERN_E_05_07 = "TapPate0507";
+	public static final String KEY_TAP_PATTERN_E_05_08 = "TapPate0508";
+	public static final String KEY_TAP_PATTERN_E_05_09 = "TapPate0509";
+	public static final String KEY_TAP_PATTERN_E_05_10 = "TapPate0510";
+	public static final String KEY_TAP_PATTERN_E_05_11 = "TapPate0511";
+
+	public static final String KEY_TAP_PATTERN_E_06_01 = "TapPate0601";
+	public static final String KEY_TAP_PATTERN_E_06_02 = "TapPate0602";
+	public static final String KEY_TAP_PATTERN_E_06_03 = "TapPate0603";
+	public static final String KEY_TAP_PATTERN_E_06_04 = "TapPate0604";
+	public static final String KEY_TAP_PATTERN_E_06_05 = "TapPate0605";
+
+	public static final String KEY_TAP_PATTERN_E_07_01 = "TapPate0701";
+	public static final String KEY_TAP_PATTERN_E_07_02 = "TapPate0702";
+	public static final String KEY_TAP_PATTERN_E_07_03 = "TapPate0703";
+	public static final String KEY_TAP_PATTERN_E_07_04 = "TapPate0604";
+	public static final String KEY_TAP_PATTERN_E_07_05 = "TapPate0605";
+	public static final String KEY_TAP_PATTERN_E_07_06 = "TapPate0606";
+	public static final String KEY_TAP_PATTERN_E_07_07 = "TapPate0607";
+
+	public static final String KEY_TAP_PATTERN_E_08_01 = "TapPate0801";
+	public static final String KEY_TAP_PATTERN_E_08_02 = "TapPate0802";
+	public static final String KEY_TAP_PATTERN_E_08_03 = "TapPate0803";
+	public static final String KEY_TAP_PATTERN_E_08_04 = "TapPate0804";
+	public static final String KEY_TAP_PATTERN_E_08_05 = "TapPate0805";
+
+	public static final String KEY_TAP_PATTERN_E_09_01 = "TapPate0901";
+	public static final String KEY_TAP_PATTERN_E_09_02 = "TapPate0902";
+	public static final String KEY_TAP_PATTERN_E_09_03 = "TapPate0903";
+	public static final String KEY_TAP_PATTERN_E_09_04 = "TapPate0904";
+	public static final String KEY_TAP_PATTERN_E_09_05 = "TapPate0905";
+	public static final String KEY_TAP_PATTERN_E_09_06 = "TapPate0906";
+	public static final String KEY_TAP_PATTERN_E_09_07 = "TapPate0907";
 
 	public static final int TAP_NONE = 0;
 	public static final int TAP_NOSELECT = 1;
@@ -1920,6 +2060,76 @@ public class DEF {
 	public static final int TAP_PATTERN_T09_DEFAULT_06 = TAP_TOOLBARMENU;
 	public static final int TAP_PATTERN_T09_DEFAULT_07 = TAP_TOOLBARPREVSCROLL;
 
+	// EPUBビューア用のタップ操作の初期値
+	public static final int TAP_PATTERN_E01_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_E01_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E01_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E01_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+
+	public static final int TAP_PATTERN_E02_DEFAULT_01 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E02_DEFAULT_02 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_E02_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E02_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_E02_DEFAULT_05 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_E02_DEFAULT_06 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_E03_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_E03_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_E03_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E03_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E03_DEFAULT_05 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E03_DEFAULT_06 = TAP_TOOLBARPREVSCROLL;
+
+	public static final int TAP_PATTERN_E04_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_E04_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_E04_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E04_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E04_DEFAULT_05 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E04_DEFAULT_06 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_E04_DEFAULT_07 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_E04_DEFAULT_08 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_E04_DEFAULT_09 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_E05_DEFAULT_01 = TAP_TOOLBARLEFT10;
+	public static final int TAP_PATTERN_E05_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_E05_DEFAULT_03 = TAP_TOOLBARRIGHT10;
+	public static final int TAP_PATTERN_E05_DEFAULT_04 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E05_DEFAULT_05 = TAP_NOSELECT;
+	public static final int TAP_PATTERN_E05_DEFAULT_06 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E05_DEFAULT_07 = TAP_NOSELECT;
+	public static final int TAP_PATTERN_E05_DEFAULT_08 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_E05_DEFAULT_09 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_E05_DEFAULT_10 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_E05_DEFAULT_11 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_E06_DEFAULT_01 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E06_DEFAULT_02 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E06_DEFAULT_03 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E06_DEFAULT_04 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_E06_DEFAULT_05 = TAP_TOOLBARLEFT1;
+
+	public static final int TAP_PATTERN_E07_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_E07_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E07_DEFAULT_03 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E07_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E07_DEFAULT_05 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_E07_DEFAULT_06 = TAP_TOOLBARLEFTMOST;
+	public static final int TAP_PATTERN_E07_DEFAULT_07 = TAP_TOOLBARRIGHTMOST;
+
+	public static final int TAP_PATTERN_E08_DEFAULT_01 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E08_DEFAULT_02 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E08_DEFAULT_03 = TAP_TOOLBARPREVSCROLL;
+	public static final int TAP_PATTERN_E08_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E08_DEFAULT_05 = TAP_TOOLBARLEFT1;
+
+	public static final int TAP_PATTERN_E09_DEFAULT_01 = TAP_TOOLBARLEFT1;
+	public static final int TAP_PATTERN_E09_DEFAULT_02 = TAP_PULLDOWNMENU;
+	public static final int TAP_PATTERN_E09_DEFAULT_03 = TAP_TOOLBARRIGHT1;
+	public static final int TAP_PATTERN_E09_DEFAULT_04 = TAP_TOOLBARCONFIG;
+	public static final int TAP_PATTERN_E09_DEFAULT_05 = TAP_TOOLBARNEXTSCROLL;
+	public static final int TAP_PATTERN_E09_DEFAULT_06 = TAP_TOOLBARMENU;
+	public static final int TAP_PATTERN_E09_DEFAULT_07 = TAP_TOOLBARPREVSCROLL;
+
 	// スマホ/タブレット
 	public static final int CODE_BACK = 1;		//	バックキー
 	public static final int CODE_VOLUME_UP = 2;	//	ボリュームUPキー
@@ -2079,6 +2289,59 @@ public class DEF {
 	public static final String KEY_CODE_T_CUSTOMKEY08 = "CustomKeyT08";	//	カスタムキー8
 	public static final String KEY_CODE_T_CUSTOMKEY09 = "CustomKeyT09";	//	カスタムキー9
 	public static final String KEY_CODE_T_CUSTOMKEY10 = "CustomKeyT10";	//	カスタムキー10
+
+	// EPUBビューア用
+	// スマホ/タブレット
+	public static final String KEY_CODE_E_BACK = "CodeEBack";		//	バックキー
+	public static final String KEY_CODE_E_VOLUME_UP = "CodeEVolUp";	//	ボリュームUPキー
+	public static final String KEY_CODE_E_VOLUME_DOWN = "CodeEVolDown";	//	ボリュームDOWNキー
+	public static final String KEY_CODE_E_CAMERA = "CodeECamera";	//	カメラボタン
+	public static final String KEY_CODE_E_FOCUS = "CodeEFocus";	//	フォーカスボタン
+	// キーボード
+	public static final String KEY_CODE_E_MENU = "CodeEMenu";		//	メニューキー
+	public static final String KEY_CODE_E_DPAD_LEFT = "CodeEDpadLeft";	//	カーソル左キー
+	public static final String KEY_CODE_E_DPAD_RIGHT = "CodeEDpadRight";	//	カーソル右キー
+	public static final String KEY_CODE_E_DPAD_UP = "CodeEDpadUp";	//	カーソル上キー
+	public static final String KEY_CODE_E_DPAD_DOWN = "CodeEDpadDown";	//	カーソル下キー
+	public static final String KEY_CODE_E_DPAD_CENTER = "CodeEDpadCenter";	// 決定キー
+	public static final String KEY_CODE_E_ENTER = "CodeEEnter";	//	エンターキー
+	public static final String KEY_CODE_E_DEL = "CodeEDel";	//	削除キー
+	public static final String KEY_CODE_E_SPACE = "CodeESpace";	//	スペースキー
+	public static final String KEY_CODE_E_SEARCH = "CodeESearch";	//	検索キー
+	public static final String KEY_CODE_E_PAGE_UP = "CodeEPageUp";	//	ページアップキー
+	public static final String KEY_CODE_E_PAGE_DOWN = "CodeEPageDown";	//	ページダウンキー
+	public static final String KEY_CODE_E_ESCAPE = "CodeEEscape";	//	エスケープキー
+	public static final String KEY_CODE_E_MOVEHOME = "CodeEMoveHome";	//	ホームキー
+	public static final String KEY_CODE_E_MOVEEND = "CodeEMoveEnd";	//	エンドキー
+	public static final String KEY_CODE_E_FORWARD = "CodeEForward";	//	フォワードボタン
+	// ゲームパッド
+	public static final String KEY_CODE_E_BUTTON_L1 = "CodeEL1";		//	L1ボタン
+	public static final String KEY_CODE_E_BUTTON_L2 = "CodeEL2";		//	L2ボタン
+	public static final String KEY_CODE_E_BUTTON_THUMBL = "CodeEThumbL";	//	L3ボタン
+	public static final String KEY_CODE_E_BUTTON_R1 = "CodeER1";		//	R1ボタン
+	public static final String KEY_CODE_E_BUTTON_R2 = "CodeER2";		//	R2ボタン
+	public static final String KEY_CODE_E_BUTTON_THUMBR = "CodeEThumbR";	//	R3ボタン
+	public static final String KEY_CODE_E_BUTTON_A = "CodeEA";		//	Aボタン
+	public static final String KEY_CODE_E_BUTTON_B = "CodeEB";		//	Bボタン
+	public static final String KEY_CODE_E_BUTTON_X = "CodeEX";		//	Xボタン
+	public static final String KEY_CODE_E_BUTTON_Y = "CodeEY";		//	Yボタン
+	public static final String KEY_CODE_E_BUTTON_SELECT = "CodeESelect";	//	SELECTボタン
+	public static final String KEY_CODE_E_BUTTON_START = "CodeEStart";	//	STARTボタン
+	// メディアプレイヤー
+	public static final String KEY_CODE_E_MEDIA_NEXT = "CodeEMediaNext";	//	曲送りボタン
+	public static final String KEY_CODE_E_MEDIA_PREVIOUS = "CodeEMediaPrev";	//	曲戻しボタン
+	public static final String KEY_CODE_E_MEDIA_PLAY_PAUSE = "CodeEMediaPlayPause";	//	再生一時停止ボタン
+	// カスタムキー
+	public static final String KEY_CODE_E_CUSTOMKEY01 = "CustomKeyE01";	//	カスタムキー1
+	public static final String KEY_CODE_E_CUSTOMKEY02 = "CustomKeyE02";	//	カスタムキー2
+	public static final String KEY_CODE_E_CUSTOMKEY03 = "CustomKeyE03";	//	カスタムキー3
+	public static final String KEY_CODE_E_CUSTOMKEY04 = "CustomKeyE04";	//	カスタムキー4
+	public static final String KEY_CODE_E_CUSTOMKEY05 = "CustomKeyE05";	//	カスタムキー5
+	public static final String KEY_CODE_E_CUSTOMKEY06 = "CustomKeyE06";	//	カスタムキー6
+	public static final String KEY_CODE_E_CUSTOMKEY07 = "CustomKeyE07";	//	カスタムキー7
+	public static final String KEY_CODE_E_CUSTOMKEY08 = "CustomKeyE08";	//	カスタムキー8
+	public static final String KEY_CODE_E_CUSTOMKEY09 = "CustomKeyE09";	//	カスタムキー9
+	public static final String KEY_CODE_E_CUSTOMKEY10 = "CustomKeyE10";	//	カスタムキー10
 
 	// ファイルリスト用
 	// スマホ/タブレット
@@ -2448,6 +2711,54 @@ public class DEF {
 		, DEF.KEY_CODE_F_CUSTOMKEY09
 		, DEF.KEY_CODE_F_CUSTOMKEY10 };
 
+	public static final String[] HardwareEpubKeyIdName =
+		{ DEF.KEY_CODE_E_BACK
+		, DEF.KEY_CODE_E_VOLUME_UP
+		, DEF.KEY_CODE_E_VOLUME_DOWN
+		, DEF.KEY_CODE_E_CAMERA
+		, DEF.KEY_CODE_E_FOCUS
+		, DEF.KEY_CODE_E_MENU
+		, DEF.KEY_CODE_E_DPAD_LEFT
+		, DEF.KEY_CODE_E_DPAD_RIGHT
+		, DEF.KEY_CODE_E_DPAD_UP
+		, DEF.KEY_CODE_E_DPAD_DOWN
+		, DEF.KEY_CODE_E_DPAD_CENTER
+		, DEF.KEY_CODE_E_ENTER
+		, DEF.KEY_CODE_E_DEL
+		, DEF.KEY_CODE_E_SPACE
+		, DEF.KEY_CODE_E_SEARCH
+		, DEF.KEY_CODE_E_PAGE_UP
+		, DEF.KEY_CODE_E_PAGE_DOWN
+		, DEF.KEY_CODE_E_ESCAPE
+		, DEF.KEY_CODE_E_MOVEHOME
+		, DEF.KEY_CODE_E_MOVEEND
+		, DEF.KEY_CODE_E_FORWARD
+		, DEF.KEY_CODE_E_BUTTON_L1
+		, DEF.KEY_CODE_E_BUTTON_L2
+		, DEF.KEY_CODE_E_BUTTON_THUMBL
+		, DEF.KEY_CODE_E_BUTTON_R1
+		, DEF.KEY_CODE_E_BUTTON_R2
+		, DEF.KEY_CODE_E_BUTTON_THUMBR
+		, DEF.KEY_CODE_E_BUTTON_A
+		, DEF.KEY_CODE_E_BUTTON_B
+		, DEF.KEY_CODE_E_BUTTON_X
+		, DEF.KEY_CODE_E_BUTTON_Y
+		, DEF.KEY_CODE_E_BUTTON_SELECT
+		, DEF.KEY_CODE_E_BUTTON_START
+		, DEF.KEY_CODE_E_MEDIA_NEXT
+		, DEF.KEY_CODE_E_MEDIA_PREVIOUS
+		, DEF.KEY_CODE_E_MEDIA_PLAY_PAUSE
+		, DEF.KEY_CODE_E_CUSTOMKEY01
+		, DEF.KEY_CODE_E_CUSTOMKEY02
+		, DEF.KEY_CODE_E_CUSTOMKEY03
+		, DEF.KEY_CODE_E_CUSTOMKEY04
+		, DEF.KEY_CODE_E_CUSTOMKEY05
+		, DEF.KEY_CODE_E_CUSTOMKEY06
+		, DEF.KEY_CODE_E_CUSTOMKEY07
+		, DEF.KEY_CODE_E_CUSTOMKEY08
+		, DEF.KEY_CODE_E_CUSTOMKEY09
+		, DEF.KEY_CODE_E_CUSTOMKEY10 };
+
 	public static final int DEFAULT_CORNERENDLEVEL = 25;
 	public static final int MAX_CORNERENDLEVEL = 50;
 
@@ -2482,6 +2793,22 @@ public class DEF {
 		, DEF.KEY_CORNEREND_T_TAP_12
 		, DEF.KEY_CORNEREND_T_TAP_13
 		, DEF.KEY_CORNEREND_T_TAP_14 };
+
+	public static final String[] CornerEndKeyEIdName =
+		{ DEF.KEY_CORNEREND_E_TAP_01
+		, DEF.KEY_CORNEREND_E_TAP_02
+		, DEF.KEY_CORNEREND_E_TAP_03
+		, DEF.KEY_CORNEREND_E_TAP_04
+		, DEF.KEY_CORNEREND_E_TAP_05
+		, DEF.KEY_CORNEREND_E_TAP_06
+		, DEF.KEY_CORNEREND_E_TAP_07
+		, DEF.KEY_CORNEREND_E_TAP_08
+		, DEF.KEY_CORNEREND_E_TAP_09
+		, DEF.KEY_CORNEREND_E_TAP_10
+		, DEF.KEY_CORNEREND_E_TAP_11
+		, DEF.KEY_CORNEREND_E_TAP_12
+		, DEF.KEY_CORNEREND_E_TAP_13
+		, DEF.KEY_CORNEREND_E_TAP_14 };
 
 	public static final int[] CornerEndTitleName =
 		{ R.string.CornerEndTitle00
@@ -2522,7 +2849,8 @@ public class DEF {
 			, Color.rgb(97, 97, 0) // 20
 			, Color.rgb(0, 97, 97) // 21
 			, Color.rgb(97, 97, 97) // 22
-			, Color.rgb(128, 128, 128)}; // 23
+			, Color.rgb(128, 128, 128) // 23
+			, Color.rgb(224, 224, 224)}; // 24
 	public static final int[] GuideList = {0x80000000 // 0 : 黒
 			, 0x80000070 // 1 : 青
 			, 0x80700000 // 2 : 赤
