@@ -120,6 +120,13 @@
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
         <activity
+            android:name="src.comitton.textview.EpubWebViewActivity"
+            android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyAppCompat"></activity>
+        <activity
             android:name="src.comitton.config.SetConfigActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
@@ -210,6 +217,11 @@
             android:resizeableActivity="true"
             android:theme="@style/MyTheme"></activity>
         <activity
+            android:name="src.comitton.config.SetHardwareEpubWebViewKeyActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
             android:name="src.comitton.config.SetHardwareFileListKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
@@ -236,6 +248,11 @@
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCornerEndTextViewerActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetCornerEndEpubWebViewActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyTheme"></activity>
