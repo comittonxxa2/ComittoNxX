@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">>
+    <!-- ここに ID 付きで定義 -->
+	    <ProgressBar
+	        android:id="@+id/loading_spinner"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+	        android:layout_gravity="center"
+			android:indeterminateTint="#008000"
+	        android:visibility="gone" />
+</FrameLayout>
