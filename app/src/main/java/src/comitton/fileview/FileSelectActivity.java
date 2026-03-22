@@ -25,6 +25,7 @@ import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.TouchPanelView;
 import src.comitton.textview.TextActivity;
 import src.comitton.textview.TextManager;
+import src.comitton.textview.EpubWebViewActivity;
 import src.comitton.common.DEF;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.fileaccess.FileAccess;
@@ -239,6 +240,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int mShowRenMenu;
 	private boolean mEpubViewer;
 	private boolean mEpubThumb;
+	private boolean mEpubWebView;
 	private boolean mKeepSortShuffle;
 	private boolean mKeepFilelistCursor;
 
@@ -1161,6 +1163,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// 新しいバージョンがリリースされているか確認する
 				mInformation.checkRecentRelease(mHandler, false);
 
+				if (requestCode == DEF.REQUEST_SETTING) {
+					// 設定を更新
+					readConfig();
+				}
 				if (requestCode == DEF.REQUEST_IMAGE || requestCode == DEF.REQUEST_TEXT || requestCode == DEF.REQUEST_EPUB || requestCode == DEF.REQUEST_EXPAND) {
 					Logcat.d(logLevel, "REQUEST_IMAGE || REQUEST_TEXT || REQUEST_EPUB || REQUEST_EXPAND");
 					if (resultCode == RESULT_OK && data != null) {
@@ -1526,6 +1532,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		mEpubViewer = SetFileListActivity.getEpubViewer(mSharedPreferences);
 		mEpubThumb = SetEpubActivity.getEpubThumb(mSharedPreferences);
+		mEpubWebView = SetEpubActivity.getEpubWebView(mSharedPreferences);
 
 		mImageDispMode = SetImageActivity.getInitView(mSharedPreferences); // 表示モード(NORMAL/DUAL/HALF/縦横で切替)
 		mTextDispMode = SetTextActivity.getInitView(mSharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
@@ -1539,6 +1546,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mForceNotice = SetCommonActivity.getForceHideStatusBar(mSharedPreferences);
 		mImmForce = SetCommonActivity.getForceHideNavigationBar(mSharedPreferences);
 		mProgressbarMode = SetFileListActivity.getProgressBarMode(mSharedPreferences);
+		mFilter = SetFileListActivity.getMarkerFilterOn(mSharedPreferences);
+		mApplyDir = SetFileListActivity.getMarkerDirOn(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -2279,6 +2288,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									ed.remove(file);
 									ed.remove(file + "META-INF/container.xml" + "#maxpage");
 									ed.remove(file + "META-INF/container.xml");
+									ed.remove(file + "#newepub");
 									ed.apply();
 									ThumbnailLoader.deleteThumbnailCache(uri, mThumbSizeW, mThumbSizeH);
 								}
@@ -2523,11 +2533,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									if (state_epub != DEF.PAGENUMBER_UNREAD) {
 										ed.putInt(to + "META-INF/container.xml", state_epub);
 									}
+									String result = mSharedPreferences.getString(from + "#newepub", null);
+									if (result != null) {
+										ed.putString(to + "#newepub", result);
+									}
 									ed.remove(from + "#date");
 									ed.remove(from + "#maxpage");
 									ed.remove(from);
 									ed.remove(from + "META-INF/container.xml" + "#maxpage");
 									ed.remove(from + "META-INF/container.xml");
+									ed.remove(from + "#newepub");
 									ed.apply();
 									ThumbnailLoader.renameThumbnailCache(fromUri, toUri, mThumbSizeW, mThumbSizeH);
 								}
@@ -3015,7 +3030,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// ファイルリスト取得条件セット
 		mFileList.setPath(mURI, mPath, user, pass);
-		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer);
+		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer, mEpubWebView);
 
 		mListScreenView.mFileListArea.setThumbnailId(0);
 
@@ -3198,7 +3213,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, path, name);
 					}
-					if (DEF.TEXT_VIEWER == mEpubViewer) {
+					if (DEF.TEXT_VIEWER == mEpubViewer && !mEpubWebView) {
 						maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#maxpage", DEF.PAGENUMBER_NONE);
 						state = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml", DEF.PAGENUMBER_UNREAD);
 						if (state >= 0) { // 先頭ページでも動作するようにした
@@ -3230,6 +3245,22 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							data.setMaxpage(maxpage - 1);
 						}
 						data.setState(state);
+					}
+					else if (DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
+						String rawValue = sharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "0,0,0,0,0.0,0.0");
+						if (rawValue != null) {
+							String[] parts = rawValue.split(",");
+							if (parts.length >= 6) {
+								try {
+									state = Integer.parseInt(parts[0]);
+									maxpage = Integer.parseInt(parts[1]);
+									data.setMaxpage(maxpage - 1);
+									data.setState(state - 1);
+								}
+		    				    catch (Exception e) {
+								}
+							}
+						}
 					}
 					else {
 						maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
@@ -4823,6 +4854,22 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 描画停止
 		setDrawEnable();
 
+		if (mEpubWebView) {
+			// WebベースのEPUBビューアの場合
+			Intent intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			// Uriとしてではなく、Extraとして生のパスを渡す
+			intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
+			intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
+			intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
+			intent.putExtra("User", mServer.getUser());		// SMB認証用
+			intent.putExtra("Pass", mServer.getPass());		// SMB認証用
+			intent.putExtra("File", name);					// EPUBファイル名
+			intent.putExtra("Text", "META-INF/container.xml"); // 中身のファイル名
+			startActivityForResult(intent, DEF.REQUEST_EPUB);
+			return;
+		}
+
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, TextActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -5505,7 +5552,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				else {
 					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 				}
-				if	(DEF.TEXT_VIEWER == mEpubViewer) {
+				if	(DEF.TEXT_VIEWER == mEpubViewer && !mEpubWebView) {
 					int openmode = 0;
 					// ファイルリストの読み込み
 					openmode = ImageManager.OPENMODE_TEXTVIEW;
@@ -5518,6 +5565,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#date", (int)((mFileData.getDate() / 1000)));
 					ed.apply();
 					releaseManager();
+				}
+				else if (DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
+					ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "999999,999999,0,999999,1.0,1.0");
+					ed.apply();
 				}
 				else {
 					int openmode = 0;
@@ -5632,7 +5683,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		if (mNowItem != -1 && (mOperate[mNowItem] == OPERATE_NONREAD || mOperate[mNowItem] == OPERATE_FIRST)) {
 			// 未読/先頭ページを開く
-			if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer) {
+			if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer && !mEpubWebView) {
 				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
 					// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
 					mUriFilePath = mURI + mFileData.getName();
@@ -5643,6 +5694,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#maxpage");
 				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml");
 				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "META-INF/container.xml" + "#date");
+			}
+			else if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
+				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値を操作できない)
+					mUriFilePath = mURI + mFileData.getName();
+				}
+				else {
+					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+				}
+				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#newepub");
 			}
 			else if (mFileData.getType() == FileData.FILETYPE_TXT) {
 				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
