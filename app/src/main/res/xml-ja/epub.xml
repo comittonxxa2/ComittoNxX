@@ -16,5 +16,191 @@
             android:key="epubThumb"
             android:summary="ファイル選択画面のサムネイルにEPUBファイル内で指定された表紙画像を使用する"
             android:title="サムネイルに表紙画像を使う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epubWebView"
+            android:summary="WebViewでEPUBのxhtmlファイルを表示する(Webブラウザでの表示になるため読み込みに時間が掛かります)"
+            android:title="WebViewベースのEPUBビューアを使用する" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="WebViewベースのEPUBビューア設定(＊はテキストと共通)" >
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="見開きモード"
+            android:entries="@array/epubinitview_name_list"
+            android:entryValues="@array/epubinitview_value_list"
+            android:key="epubInitView"
+            android:summary="dummy"
+            android:title="見開きモード" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="epNotice"
+            android:summary="EPUBビューア表示画面を一旦閉じたあと有効"
+            android:title="通知領域を非表示にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epNoSleep"
+            android:summary="EPUBビューア表示画面を一旦閉じたあと有効"
+            android:title="スリープさせない" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="表示方向"
+            android:entries="@array/rotate_name_list"
+            android:entryValues="@array/rotate_value_list"
+            android:key="epViewRota"
+            android:summary="dummy"
+            android:title="表示方向" />
+        <src.comitton.config.TimeAndBatteryPreference
+            android:dialogTitle="時刻と充電表示"
+            android:key="TimeAndBattery"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="時刻と充電表示＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReturnListView"
+            android:summary="ホームボタンで画面を閉じたりスタンバイ状態から復帰するときにビューアが固まる場合にチェックを入れる"
+            android:title="画面が裏に入った場合にリスト一覧へ戻る＊" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="ConfirmBack"
+            android:summary="戻るボタンで画面を閉じるときに確認メッセージを表示する"
+            android:title="戻るボタンで確認表示＊" />
+        <ListPreference
+            android:defaultValue="1"
+            android:dialogTitle="最終/先頭ページでの動作"
+            android:entries="@array/lastpage_name_list"
+            android:entryValues="@array/lastpage_value_list"
+            android:key="LastPage"
+            android:summary="dummy"
+            android:title="最終/先頭ページでの動作＊" />
+        <src.comitton.config.OperationPreference
+            android:dialogMessage="ページめくりするタップ位置を選択してください\n（&lt;:次ページ、&gt;:前ページ）"
+            android:dialogTitle="タップ位置のパターン"
+            android:key="TapPattern"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="タップ操作のパターン＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ChgPage"
+            android:summary="チェックにより画面左:次ページ/画面右:前ページの移動になります"
+            android:title="タップ操作の入替え＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="VibFlag"
+            android:summary="イメージの操作・選択により振動させる"
+            android:title="振動を有効にする＊" />
+        <ListPreference
+            android:defaultValue="1"
+            android:dialogTitle="音量ボタンでのページめくり"
+            android:entries="@array/volkey_name_list"
+            android:entryValues="@array/volkey_value_list"
+            android:key="VolKey"
+            android:summary="dummy"
+            android:title="音量ボタンでのページめくり＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="TapScrl"
+            android:summary="タップでスクロールも行う"
+            android:title="タップでのスクロール＊" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="FlickPage"
+            android:summary="フリックでページめくりする"
+            android:title="フリックでページめくり＊" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="FlickEdge"
+            android:summary="ページ端からフリックを開始したしたときのみページめくりする"
+            android:title="ページ端からフリック＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ChgPageKey"
+            android:summary="チェックにより右キーが前ページの移動になります"
+            android:title="左右キー操作の入替え＊" />
+        <PreferenceScreen
+            android:key="CornerEndSet"
+            android:title="四隅と端をタップエリアにして動作を割り当て"
+            android:summary="タップ操作の割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetCornerEndEpubWebViewActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SoftChgPage"
+            android:summary="ページめくりでページ端に達した時にリスト表示の内容で前後のファイルへページ移動する場合にチェックを入れる"
+            android:title="ページ端で開くファイル名をソート＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="先頭/末尾ボタンを無効にする場合にチェックを入れる"
+            android:title="画面下の先頭/末尾ボタンを無効にする＊" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epDisableTextInfo"
+            android:summary="上下のヘッダー/フッターを表示しない場合にチェックを入れる"
+            android:title="ヘッダー/フッターを表示しない" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextColorFix"
+            android:summary="テキストの文字色を上書きする場合にチェックを入れる"
+            android:title="テキストの文字色を強制的にセットする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextBakColorFix"
+            android:summary="テキストの背景色を上書きする場合にチェックを入れる"
+            android:title="テキストの背景色を強制的にセットする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextSizeVariable"
+            android:summary="テキストの表示領域を変更する場合にチェックを入れる(レイアウトが崩れる可能性があります)"
+            android:title="テキストの拡大率を可変させる" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextFrame"
+            android:summary="本文の表示領域に外枠を表示する場合にチェックを入れる"
+            android:title="本文に外枠を表示する" />
+        <ListPreference
+            android:defaultValue=""
+            android:dialogTitle="フォント選択 ([sdcard]/comittona/font/から選択)"
+            android:key="epFontName"
+            android:summary="dummy"
+            android:title="フォント選択 ([sdcard]/comittona/font/から選択)" />
+        <src.comitton.config.seekbar.EpubFontBodySeekbar
+            android:dialogMessage="本文のフォントの拡大率を選択"
+            android:dialogTitle="本文のフォントの拡大率"
+            android:key="epFontBodySp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="本文フォントの拡大率" />
+        <src.comitton.config.seekbar.EpubFontTextSeekbar
+            android:dialogMessage="テキストの拡大率を選択"
+            android:dialogTitle="テキストの拡大率"
+            android:key="epFontTextSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="テキストの拡大率" />
+        <src.comitton.config.seekbar.EpubFontInfoSeekbar
+            android:dialogMessage="ヘッダー/フッターのフォントサイズを選択"
+            android:dialogTitle="ヘッダー/フッターのフォントサイズ"
+            android:key="epFontInfoSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="ヘッダー/フッターのフォントサイズ" />
+        <src.comitton.config.seekbar.EpubMarginWSeekbar
+            android:dialogMessage="左右の余白サイズを選択"
+            android:dialogTitle="左右の余白サイズ"
+            android:key="epMarginW"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="左右の余白サイズ" />
+        <src.comitton.config.seekbar.EpubMarginHSeekbar
+            android:dialogMessage="上下の余白サイズを選択"
+            android:dialogTitle="上下の余白サイズ"
+            android:key="epMarginH"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="上下の余白サイズ" />
     </PreferenceCategory>
 </PreferenceScreen>

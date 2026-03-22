@@ -296,6 +296,16 @@
             android:key="ExpandTextEnable"
             android:summary="イメージビューアでテキストのページを選択してしまうとエラーになるためチェックを入れる際には自己責任で行う"
             android:title="ファイルの展開でテキストを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarkerFilterOn"
+            android:summary="マーカー設定のフィルタのチェックをデフォルトでオンにする"
+            android:title="マーカー設定のフィルタのチェック" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarkerDirOn"
+            android:summary="マーカー設定のディレクトリのチェックをデフォルトでオンにする"
+            android:title="マーカー設定のディレクトリのチェック" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
