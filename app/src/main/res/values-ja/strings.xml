@@ -726,6 +726,7 @@
 
     <string name="imageviwerhardwarekeytitle">イメージビューアのハードウェアキーの割り当て</string>
     <string name="textviewerhardwarekeytitle">テキストビューアのハードウェアキーの割り当て</string>
+    <string name="epubviewerhardwarekeytitle">WebベースのEPUBビューアのハードウェアキーの割り当て</string>
     <string name="filelisthardwarekeytitle">ファイルリストのハードウェアキーの割り当て</string>
 
     <string name="hardwarekeytitle00">バックキーの割り当て</string>
@@ -967,5 +968,33 @@
     <string name="kelvin04">昼光色/フラッシュ</string>
     <string name="kelvin05">曇天</string>
     <string name="kelvin06">日陰/青空</string>
+
+    <string name="searchwordsetting">検索文字列設定</string>
+    <string name="searchwordinput">ここに検索文字列を入力</string>
+    <string name="searchwordok">決定</string>
+    <string name="searchwordcansel">キャンセル</string>
+    <string name="searchwordclear">検索クリア</string>
+    <string name="searchwordprev2">前の章</string>
+    <string name="searchwordnext2">次の章</string>
+    <string name="searchwordprev1">前検索</string>
+    <string name="searchwordnext1">次検索</string>
+    <string name="searchwordchapter">章</string>
+    <string-array name="searchdialogpositionlist">
+        <item>中央</item>
+        <item>上</item>
+        <item>下</item>
+        <item>左</item>
+        <item>右</item>
+        <item>左上</item>
+        <item>右上</item>
+        <item>左下</item>
+        <item>右下</item>
+    </string-array>
+    <string name="selepubview01">単ページ表示</string>
+    <string name="selepubview02">見開き表示(左右)</string>
+    <string name="selepubview03">見開き表示(上下)</string>
+    <string name="selepubview04">見開き表示(上下左右)</string>
+    <string name="fontEpubBody">本文フォントの拡大率(%)</string>
+    <string name="fontEpubText">テキストの拡大率(%)</string>
 
 </resources>
