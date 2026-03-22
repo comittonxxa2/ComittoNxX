@@ -168,6 +168,22 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatorfibrgb"
             android:title="Floating icon background color" />
+        <src.comitton.config.color.ColorEvtSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="WebベースのEPUBファイルの文字色"
+            android:key="EvtRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:widgetLayout="@layout/indicatorevtrgb"
+            android:title="WebベースのEPUBファイルの文字色" />
+        <src.comitton.config.color.ColorEvbSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="WebベースのEPUBファイルの背景色"
+            android:key="EvbRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:widgetLayout="@layout/indicatorevbrgb"
+            android:title="WebベースのEPUBファイルの背景色" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

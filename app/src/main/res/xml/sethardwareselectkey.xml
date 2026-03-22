@@ -18,6 +18,14 @@
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
         <PreferenceScreen
+            android:key="EpubViewerHardKeySet"
+            android:title="WebベースのEPUBビューアのハードウェアキーの管理"
+            android:summary="ハードウェアキーの割り当てを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetHardwareEpubWebViewKeyActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
             android:key="FileListHardKeySet"
             android:title="Managing filelist hardware keys"
             android:summary="Setting hardware key assignments" >

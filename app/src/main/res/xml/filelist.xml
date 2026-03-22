@@ -294,6 +294,16 @@
             android:key="ExpandTextEnable"
             android:summary="If you select a text page in the image viewer, an error will occur, so check it at your own risk."
             android:title="Enable text in file extraction" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarkerFilterOn"
+            android:summary="Enable the filter check in marker settings by default."
+            android:title="Check the filter in the marker settings." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarkerDirOn"
+            android:summary="Enable checking the directory in marker settings by default."
+            android:title="Check the directory for marker settings." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

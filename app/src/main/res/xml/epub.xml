@@ -6,15 +6,201 @@
             android:key="epubViewer"
             android:summary="Opens EPUB files in Image Viewer instead of Text Viewer."
             android:title="Open in Image Viewer" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="epubOrder"
+            android:summary="Follow the display order specified in the Epub file when opening the Epub file in the Imaeg Viewer."
+            android:title="Image Viewer Display Order" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="epubThumb"
+            android:summary="Use the cover image specified in the EPUB file as the thumbnail on the File List."
+            android:title="Use cover image as thumbnail" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epubWebView"
+            android:summary="Display the EPUB xhtml file in WebView (it will take some time to load as it will be displayed in a web browser)"
+            android:title="Use a WebView-based EPUB viewer" />
     </PreferenceCategory>
-    <CheckBoxPreference
-        android:defaultValue="true"
-        android:key="epubOrder"
-        android:summary="Follow the display order specified in the Epub file when opening the Epub file in the Imaeg Viewer."
-        android:title="Image Viewer Display Order" />
-    <CheckBoxPreference
-        android:defaultValue="true"
-        android:key="epubThumb"
-        android:summary="Use the cover image specified in the EPUB file as the thumbnail on the File List."
-        android:title="Use cover image as thumbnail" />
+    <PreferenceCategory android:title="WebView-based EPUB viewer settings (* indicates settings common to text viewer settings)" >
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Double-page spread mode"
+            android:entries="@array/epubinitview_name_list"
+            android:entryValues="@array/epubinitview_value_list"
+            android:key="epubInitView"
+            android:summary="dummy"
+            android:title="Double-page spread mode" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="epNotice"
+            android:summary="This feature becomes effective after closing the EPUB viewer display screen."
+            android:title="Hide the notification area." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epNoSleep"
+            android:summary="This feature becomes effective after closing the EPUB viewer display screen."
+            android:title="Do not put to sleep" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Display direction"
+            android:entries="@array/rotate_name_list"
+            android:entryValues="@array/rotate_value_list"
+            android:key="epViewRota"
+            android:summary="dummy"
+            android:title="Display direction" />
+        <src.comitton.config.TimeAndBatteryPreference
+            android:dialogTitle="Time and charge indicator"
+            android:key="TimeAndBattery"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Time and charge indicator *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReturnListView"
+            android:summary="Check this box if the viewer freezes when closing the screen or resuming from standby mode using the home button."
+            android:title="Return to list view if screen goes behind other screens *" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="ConfirmBack"
+            android:summary="Display a confirmation message when closing the screen using the back button."
+            android:title="Click the back button to confirm. *" />
+        <ListPreference
+            android:defaultValue="1"
+            android:dialogTitle="Operation on the last/first page"
+            android:entries="@array/lastpage_name_list"
+            android:entryValues="@array/lastpage_value_list"
+            android:key="LastPage"
+            android:summary="dummy"
+            android:title="Operation on the last/first page *" />
+        <src.comitton.config.OperationPreference
+            android:dialogMessage="Please select the tap position for turning the page. (&lt;: Next page, &gt;: Previous page)）"
+            android:dialogTitle="Tap position pattern"
+            android:key="TapPattern"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Tap position pattern *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ChgPage"
+            android:summary="Checking this box will move you to the next page on the left and the previous page on the right."
+            android:title="Reversing tap operations *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="VibFlag"
+            android:summary="Vibration is controlled by manipulating and selecting images."
+            android:title="Enable vibration *" />
+        <ListPreference
+            android:defaultValue="1"
+            android:dialogTitle="Page turning using the volume buttons"
+            android:entries="@array/volkey_name_list"
+            android:entryValues="@array/volkey_value_list"
+            android:key="VolKey"
+            android:summary="dummy"
+            android:title="Page turning using the volume buttons *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="TapScrl"
+            android:summary="Tap to scroll."
+            android:title="Scrolling by tapping *" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="FlickPage"
+            android:summary="Turn pages by flicking."
+            android:title="Turn pages with a flick *" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="FlickEdge"
+            android:summary="Page turning only occurs when the flick is initiated from the edge of the page."
+            android:title="Flick from the edge of the page *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ChgPageKey"
+            android:summary="Checking this box will make the right arrow key move to the previous page."
+            android:title="Swap left and right key operations *" />
+        <PreferenceScreen
+            android:key="CornerEndSet"
+            android:title="Assign actions to the four corners and edges, which are designated as tap areas."
+            android:summary="Set the tap operation assignments." >
+            <intent
+                android:targetClass="src.comitton.config.SetCornerEndEpubWebViewActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SoftChgPage"
+            android:summary="Check this box to navigate to the previous or next file in the list when you reach the end of the page while turning pages."
+            android:title="Sort filenames that open at the edge of the page *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="DisablePageButton"
+            android:summary="Check this box to disable the first/last buttons."
+            android:title="Disable the start/end buttons at the bottom of the screen. *" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epDisableTextInfo"
+            android:summary="Check this box if you do not want to display the top and bottom headers/footers."
+            android:title="Do not display header/footer" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextColorFix"
+            android:summary="Check this box to override the text color."
+            android:title="Force the text color to be set." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextBakColorFix"
+            android:summary="Check this box to override the text background color."
+            android:title="Force the text background color to be set." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextSizeVariable"
+            android:summary="テキストの表示領域を変更する場合にチェックを入れる(レイアウトが崩れる可能性があります)"
+            android:title="テキストの拡大率を可変させる" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epTextFrame"
+            android:summary="Check this box to display a border around the main text area."
+            android:title="Display an outline in the main text." />
+        <ListPreference
+            android:defaultValue=""
+            android:dialogTitle="Font selection (Choose from [sdcard]/comittona/font/)"
+            android:key="epFontName"
+            android:summary="dummy"
+            android:title="Font selection (Choose from [sdcard]/comittona/font/)" />
+        <src.comitton.config.seekbar.EpubFontBodySeekbar
+            android:dialogMessage="Select the font size for the main text."
+            android:dialogTitle="Font scaling for the main text"
+            android:key="epFontBodySp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Font scaling for the main text" />
+        <src.comitton.config.seekbar.EpubFontTextSeekbar
+            android:dialogMessage="Select the text zoom level."
+            android:dialogTitle="Text zoom level"
+            android:key="epFontTextSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Text zoom level" />
+        <src.comitton.config.seekbar.EpubFontInfoSeekbar
+            android:dialogMessage="Select the font size for the header/footer."
+            android:dialogTitle="Header/footer font size"
+            android:key="epFontInfoSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Header/footer font size" />
+        <src.comitton.config.seekbar.EpubMarginWSeekbar
+            android:dialogMessage="Select the left and right margin sizes."
+            android:dialogTitle="Left and right margin size"
+            android:key="epMarginW"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Left and right margin size" />
+        <src.comitton.config.seekbar.EpubMarginHSeekbar
+            android:dialogMessage="Select the top and bottom margin size."
+            android:dialogTitle="Top and bottom margin size"
+            android:key="epMarginH"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Top and bottom margin size" />
+    </PreferenceCategory>
 </PreferenceScreen>
