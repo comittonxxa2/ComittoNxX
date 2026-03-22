@@ -724,6 +724,7 @@
 
     <string name="imageviwerhardwarekeytitle">Image Viewer hardware key assignment"</string>
     <string name="textviewerhardwarekeytitle">Text Viewer hardware key assignment</string>
+    <string name="epubviewerhardwarekeytitle">WebベースのEPUBビューアのハードウェアキーの割り当て</string>
     <string name="filelisthardwarekeytitle">File list ardware key assignment</string>
 
     <string name="hardwarekeytitle00">Back key assignment</string>
@@ -967,6 +968,34 @@
     <string name="kelvin04">Daylight/Flash</string>
     <string name="kelvin05">cloudy sky</string>
     <string name="kelvin06">Shade/Blue Sky</string>
+
+    <string name="searchwordsetting">Search string settings</string>
+    <string name="searchwordinput">Enter your search string here.</string>
+    <string name="searchwordok">decision</string>
+    <string name="searchwordcansel">cansel</string>
+    <string name="searchwordclear">search clear</string>
+    <string name="searchwordprev2">previous chapter</string>
+    <string name="searchwordnext2">next chapter</string>
+    <string name="searchwordprev1">previous search</string>
+    <string name="searchwordnext1">next search</string>
+    <string name="searchwordchapter">chapter</string>
+    <string-array name="searchdialogpositionlist">
+        <item>center</item>
+        <item>top</item>
+        <item>bottom</item>
+        <item>left</item>
+        <item>right</item>
+        <item>upper left</item>
+        <item>upper right</item>
+        <item>lower left</item>
+        <item>lower right</item>
+    </string-array>
+    <string name="selepubview01">Single page display</string>
+    <string name="selepubview02">Spread display (left and right)</string>
+    <string name="selepubview03">Spread display (top and bottom)</string>
+    <string name="selepubview04">Spread display (top, bottom, left and right)</string>
+    <string name="fontEpubBody">本文フォントの拡大率(%)</string>
+    <string name="fontEpubText">テキストの拡大率(%)</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

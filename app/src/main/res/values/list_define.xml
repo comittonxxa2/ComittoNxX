@@ -876,5 +876,17 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+    <string-array name="epubinitview_name_list">
+        <item>Single page display</item>
+        <item>Spread display (left and right)</item>
+        <item>Spread display (top and bottom)</item>
+        <item>Spread display (top, bottom, left and right)</item>
+    </string-array>
+    <string-array name="epubinitview_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
 
 </resources>
