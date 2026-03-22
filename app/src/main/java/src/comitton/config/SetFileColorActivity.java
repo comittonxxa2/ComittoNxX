@@ -19,6 +19,8 @@ import src.comitton.config.color.ColorTxtSetting;
 import src.comitton.config.color.ColorBsfSetting;
 import src.comitton.config.color.ColorFifSetting;
 import src.comitton.config.color.ColorFibSetting;
+import src.comitton.config.color.ColorEvtSetting;
+import src.comitton.config.color.ColorEvbSetting;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -61,6 +63,8 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 	private ColorBseSetting mBseColor;
 	private ColorFifSetting mFifColor;
 	private ColorFibSetting mFibColor;
+	private ColorEvtSetting mEvtColor;
+	private ColorEvbSetting mEvbColor;
 
 	private ColorTitSetting mTitColor;
 	private ColorTibSetting mTibColor;
@@ -102,18 +106,20 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 	static final int PRESET_BSE = 16;
 	static final int PRESET_FIF = 17;
 	static final int PRESET_FIB = 18;
+	static final int PRESET_EVT = 19;
+	static final int PRESET_EVB = 20;
 
 	static final int[][] mPresetColor =
-	//   ----TXT----, ---DIR----, ---BEF----, ---NOW----, ---AFT----, ---IMG----, ---INF----, ---MRK----, ---BAK----, ---Cur----, ---TIT----, ---TIB----, ---TLD----, ---TLB----, ---RRB----, ---BSF---, ---BSE---, ---FIF---, ---FIB---
+	//   ----TXT----, ---DIR----, ---BEF----, ---NOW----, ---AFT----, ---IMG----, ---INF----, ---MRK----, ---BAK----, ---Cur----, ---TIT----, ---TIB----, ---TLD----, ---TLB----, ---RRB----, ---BSF---, ---BSE---, ---FIF---, ---FIB---, ---EVT---, ---EVB---
 	{
-/*標*/	{ 0xFFFFFFFF, 0xFF00FF00, 0xFFFFFFFF, 0xFF00FFFF, 0xFF808080, 0xFFFFFF00, 0xFF9F9F9F, 0xFFFFFF00, 0xFF000000, 0xFF0080FF, 0xFFFFFFFF, 0xFF202020, 0xFF000000, 0xFF808080, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 },
-/*黒*/ 	{ 0xFFFFFFFF, 0xFF00FF00, 0xFFFFFFFF, 0xFF00FFFF, 0xFF808080, 0xFFFFFF00, 0xFF9F9F9F, 0xFFC00000, 0xFF000000, 0xFF0040C0, 0xFFFFFFFF, 0xFF202020, 0xFF404040, 0xFFA0A0A0, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 },
-/*白*/	{ 0xFF000000, 0xFF008039, 0xFF000000, 0xFF1C5593, 0xFF808080, 0xFFB17A25, 0xFF3B373A, 0xFFFFFF40, 0xFFF0F0F0, 0xFF00C0FF, 0xFF232323, 0xFF8A8A8A, 0xFFD0D0D0, 0xFF606060, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 },
-/*桜*/	{ 0xFFDF1E6B, 0xFF5C9A00, 0xFFDF1E6B, 0xFFE99697, 0xFF968E8F, 0xFF8A67A7, 0xFFA3B0C1, 0xFFFFFF7E, 0xFFFFE5E9, 0xFF89CFFF, 0xFFFFEDF1, 0xFFC77E90, 0xFF64263A, 0xFFE7AABC, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 },
-/*藍*/	{ 0xFF00217A, 0xFF2D5155, 0xFF00237B, 0xFFD93D4A, 0xFF968E8F, 0xFF4B418C, 0xFF393FD3, 0xFFF1FF82, 0xFFE9EFFF, 0xFFF5B5CE, 0xFFFAF2FF, 0xFF000B4B, 0xFF111656, 0xFF889EB0, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 },
-/*葉*/	{ 0xFF10832A, 0xFF354E83, 0xFF10832A, 0xFF16A686, 0xFF82A18A, 0xFF92B410, 0xFF228034, 0xFFFDFB9A, 0xFFF2FFF5, 0xFFA2DAFF, 0xFFFAFFF2, 0xFF165826, 0xFF153A10, 0xFFA2B99F, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 }, // O
-/*橙*/	{ 0xFF8E6216, 0xFFA98A34, 0xFF8E6216, 0xFFCC9E43, 0xFFA7966D, 0xFFB07028, 0xFF88661B, 0xFFFFCEE3, 0xFFFFFAF2, 0xFF8DFFBB, 0xFFFFFEF3, 0xFFC36214, 0xFF663B10, 0xFFDDA268, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 }, // O
-/*墨*/	{ 0xFFDEDEE1, 0xFF2DA6C8, 0xFFDEDED1, 0xFF76AFC3, 0xFF4A4A4B, 0xFFC5C123, 0xFF9F9F9F, 0xFF004D24, 0xFF282828, 0xFF1F4594, 0xFFFFFFFF, 0xFF202020, 0xFF3A3A3F, 0xFF6F767C, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000 }
+/*標*/	{ 0xFFFFFFFF, 0xFF00FF00, 0xFFFFFFFF, 0xFF00FFFF, 0xFF808080, 0xFFFFFF00, 0xFF9F9F9F, 0xFFFFFF00, 0xFF000000, 0xFF0080FF, 0xFFFFFFFF, 0xFF202020, 0xFF000000, 0xFF808080, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 },
+/*黒*/ 	{ 0xFFFFFFFF, 0xFF00FF00, 0xFFFFFFFF, 0xFF00FFFF, 0xFF808080, 0xFFFFFF00, 0xFF9F9F9F, 0xFFC00000, 0xFF000000, 0xFF0040C0, 0xFFFFFFFF, 0xFF202020, 0xFF404040, 0xFFA0A0A0, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 },
+/*白*/	{ 0xFF000000, 0xFF008039, 0xFF000000, 0xFF1C5593, 0xFF808080, 0xFFB17A25, 0xFF3B373A, 0xFFFFFF40, 0xFFF0F0F0, 0xFF00C0FF, 0xFF232323, 0xFF8A8A8A, 0xFFD0D0D0, 0xFF606060, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 },
+/*桜*/	{ 0xFFDF1E6B, 0xFF5C9A00, 0xFFDF1E6B, 0xFFE99697, 0xFF968E8F, 0xFF8A67A7, 0xFFA3B0C1, 0xFFFFFF7E, 0xFFFFE5E9, 0xFF89CFFF, 0xFFFFEDF1, 0xFFC77E90, 0xFF64263A, 0xFFE7AABC, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 },
+/*藍*/	{ 0xFF00217A, 0xFF2D5155, 0xFF00237B, 0xFFD93D4A, 0xFF968E8F, 0xFF4B418C, 0xFF393FD3, 0xFFF1FF82, 0xFFE9EFFF, 0xFFF5B5CE, 0xFFFAF2FF, 0xFF000B4B, 0xFF111656, 0xFF889EB0, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 },
+/*葉*/	{ 0xFF10832A, 0xFF354E83, 0xFF10832A, 0xFF16A686, 0xFF82A18A, 0xFF92B410, 0xFF228034, 0xFFFDFB9A, 0xFFF2FFF5, 0xFFA2DAFF, 0xFFFAFFF2, 0xFF165826, 0xFF153A10, 0xFFA2B99F, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 }, // O
+/*橙*/	{ 0xFF8E6216, 0xFFA98A34, 0xFF8E6216, 0xFFCC9E43, 0xFFA7966D, 0xFFB07028, 0xFF88661B, 0xFFFFCEE3, 0xFFFFFAF2, 0xFF8DFFBB, 0xFFFFFEF3, 0xFFC36214, 0xFF663B10, 0xFFDDA268, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 }, // O
+/*墨*/	{ 0xFFDEDEE1, 0xFF2DA6C8, 0xFFDEDED1, 0xFF76AFC3, 0xFF4A4A4B, 0xFFC5C123, 0xFF9F9F9F, 0xFF004D24, 0xFF282828, 0xFF1F4594, 0xFFFFFFFF, 0xFF202020, 0xFF3A3A3F, 0xFF6F767C, 0xFF888888, 0xFFFFFFFF, 0xFF000000, 0xFFFFFFFF, 0xFF000000, 0xFF000000, 0xFFE0E0E0 }
 	};
 
 	@Override
@@ -162,6 +168,8 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		mTibColor = (ColorTibSetting) getPreferenceScreen().findPreference(DEF.KEY_TIBRGB);
 		mTldColor = (ColorTldSetting) getPreferenceScreen().findPreference(DEF.KEY_TLDRGB);
 		mTlbColor = (ColorTlbSetting) getPreferenceScreen().findPreference(DEF.KEY_TLBRGB);
+		mEvtColor = (ColorEvtSetting) getPreferenceScreen().findPreference(DEF.KEY_EVTRGB);
+		mEvbColor = (ColorEvbSetting) getPreferenceScreen().findPreference(DEF.KEY_EVBRGB);
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FCLRHELP);
@@ -187,7 +195,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 				// プリセットを反映
 				int index = getPreset(mSharedPreferences);
 				if (index > 0 || index < mPresetColor.length) {
-					String[] newKeys = { DEF.KEY_TXTRGB, DEF.KEY_DIRRGB, DEF.KEY_BEFRGB, DEF.KEY_NOWRGB, DEF.KEY_AFTRGB, DEF.KEY_IMGRGB, DEF.KEY_INFRGB, DEF.KEY_MRKRGB, DEF.KEY_BAKRGB, DEF.KEY_CURRGB, DEF.KEY_TITRGB, DEF.KEY_TIBRGB, DEF.KEY_TLDRGB, DEF.KEY_TLBRGB, DEF.KEY_RRBRGB, DEF.KEY_BSFRGB, DEF.KEY_BSERGB, DEF.KEY_FIFRGB ,DEF.KEY_FIBRGB };
+					String[] newKeys = { DEF.KEY_TXTRGB, DEF.KEY_DIRRGB, DEF.KEY_BEFRGB, DEF.KEY_NOWRGB, DEF.KEY_AFTRGB, DEF.KEY_IMGRGB, DEF.KEY_INFRGB, DEF.KEY_MRKRGB, DEF.KEY_BAKRGB, DEF.KEY_CURRGB, DEF.KEY_TITRGB, DEF.KEY_TIBRGB, DEF.KEY_TLDRGB, DEF.KEY_TLBRGB, DEF.KEY_RRBRGB, DEF.KEY_BSFRGB, DEF.KEY_BSERGB, DEF.KEY_FIFRGB ,DEF.KEY_FIBRGB ,DEF.KEY_EVTRGB ,DEF.KEY_EVBRGB };
 
 					Editor ed = mSharedPreferences.edit();
 					for (int i = 0 ; i < newKeys.length ; i ++) {
@@ -319,6 +327,14 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 			//
 			mFibColor.setSummary(getColorSummary(getFibColor(sharedPreferences, true)));
 		}
+		else if (key.equals(DEF.KEY_EVTRGB)) {
+			//
+			mEvtColor.setSummary(getColorSummary(getEvtColor(sharedPreferences, true)));
+		}
+		else if (key.equals(DEF.KEY_EVBRGB)) {
+			//
+			mEvbColor.setSummary(getColorSummary(getEvbColor(sharedPreferences, true)));
+		}
 	}
 
 	private void setEnableViews(boolean enable) {
@@ -342,6 +358,8 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		mBseColor.setEnabled(enable);
 		mFifColor.setEnabled(enable);
 		mFibColor.setEnabled(enable);
+		mEvtColor.setEnabled(enable);
+		mEvbColor.setEnabled(enable);
 	}
 
 	private void updateSummarys() {
@@ -365,6 +383,8 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		mTibColor.setSummary(getColorSummary(getTibColor(mSharedPreferences, true))); // タイトル背景
 		mTldColor.setSummary(getColorSummary(getTldColor(mSharedPreferences, true))); // ツールバー描画
 		mTlbColor.setSummary(getColorSummary(getTlbColor(mSharedPreferences, true))); // ツールバー背景
+		mEvtColor.setSummary(getColorSummary(getEvtColor(mSharedPreferences, true))); // EPUBの文字色
+		mEvbColor.setSummary(getColorSummary(getEvbColor(mSharedPreferences, true))); // EPUBの背景
 	}
 
 	// 設定の読込（リストビュー）
@@ -461,6 +481,14 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		return getFibColor(sp, false);
 	}
 
+	public static int getEvtColor(SharedPreferences sp) {
+		return getEvtColor(sp, false);
+	}
+
+	public static int getEvbColor(SharedPreferences sp) {
+		return getEvbColor(sp, false);
+	}
+
 	// 設定の読込（スライダー）
 	public static int getTxtColor(SharedPreferences sp, boolean summary) {
 		return getColor(sp, DEF.KEY_TXTCOLOR, DEF.KEY_TXTRGB, PRESET_TXT, 1, summary);
@@ -552,6 +580,16 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 
 	public static int getFibColor(SharedPreferences sp, boolean summary) {
 		int val = getColor(sp, DEF.KEY_FIBCOLOR, DEF.KEY_FIBRGB, PRESET_FIB, 0, summary);
+		return val;
+	}
+
+	public static int getEvtColor(SharedPreferences sp, boolean summary) {
+		int val = getColor(sp, DEF.KEY_EVTCOLOR, DEF.KEY_EVTRGB, PRESET_EVT, 0, summary);
+		return val;
+	}
+
+	public static int getEvbColor(SharedPreferences sp, boolean summary) {
+		int val = getColor(sp, DEF.KEY_EVBCOLOR, DEF.KEY_EVBRGB, PRESET_EVB, 24, summary);
 		return val;
 	}
 
