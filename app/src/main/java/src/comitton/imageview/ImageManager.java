@@ -778,10 +778,15 @@ public class ImageManager extends InputStream implements Runnable {
 	// RandomAccessFileが遅いので作成した(7-Zip-JBinding-4Android専用)
 	public class FastInStream implements IInStream {
 		private RandomAccessFile raf;
+		private final byte[] buffer;
 		// バッファを利用することで、RandomAccessFileの生のreadより数十倍速くなる
 		private static final int BUFFER_SIZE = 16 * 1024;
 		public FastInStream(RandomAccessFile raf) {
+			this(raf, BUFFER_SIZE);
+		}
+		public FastInStream(RandomAccessFile raf, int bufferSize) {
 			this.raf = raf;
+			this.buffer = new byte[bufferSize];
 		}
 		@Override
 		public long seek(long offset, int seekOrigin) throws SevenZipException {
@@ -1163,7 +1168,7 @@ public class ImageManager extends InputStream implements Runnable {
 					mFileType = FILETYPE_LZH;
 				}
 				else {
-					DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
+//					DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
 					mFileList = new FileListItem[0];
 					return;
 				}
@@ -1172,7 +1177,7 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 			catch (Exception e) {
 				Logcat.d(logLevel, "アーカイブとして認識できないか、未対応の形式です。");
-				DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
+//				DEF.sendMessage(mActivity.getString(R.string.UnknownArchiveFormat) + "\n" + mFileName, Toast.LENGTH_LONG, mHandler);
 				mFileList = new FileListItem[0];
 				return;
 			}

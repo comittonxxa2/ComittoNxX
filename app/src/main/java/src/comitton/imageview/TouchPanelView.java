@@ -6,8 +6,10 @@ import static androidx.core.content.ContextCompat.getSystemService;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetCornerEndEpubWebViewActivity;
 import src.comitton.config.SetCornerEndImageViewerActivity;
 import src.comitton.config.SetCornerEndTextViewerActivity;
+import src.comitton.textview.EpubWebViewActivity;
 import src.comitton.textview.TextActivity;
 
 import android.graphics.Bitmap;
@@ -39,6 +41,7 @@ import android.content.res.Resources;
 
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -97,9 +100,13 @@ public class TouchPanelView extends View {
 	private static int clickmode = 0;
 	private static int customkeynumber = 0;
 	private static Thread mCustomkeyThread = null;
+	private static Thread mSearchWordThread = null;
 	private static Handler mainHandler;
+	private static Handler ViewHandler;
 	private static boolean breakthread = false;
+	private static boolean breakthread2 = false;
 	private static AlertDialog.Builder custom_builder = null;
+	private static AlertDialog.Builder searchkey_builder = null;
 	private static AlertDialog dialog = null;
 	private static int dialog_keycode = 0;
 	private static int input_dialog_keycode = 0;
@@ -109,6 +116,12 @@ public class TouchPanelView extends View {
 	private static boolean keyboardoff = false;
 	private static InputMethodManager mInputMethodManager;
 	private static String[] mProfileWord;
+	private static String SearchWord = null;
+	private static int spinnerlistpos = 0;
+	private static int mChapter;
+	private static int mFindCount;
+	private static int mSearchCount;
+	private static TextView searchindex;
 
 	// キーボード表示を制御するためのオブジェクト
 	InputMethodManager inputMethodManager;
@@ -364,6 +377,128 @@ public class TouchPanelView extends View {
 		false,
 	};
 
+	// タッチパネル設定に有効な項目をtrueにする(EPUBビューア)
+	public static final boolean[] EpubEnable =
+	{
+		true,	//	0
+		true,
+		true,
+		true,
+		true,
+		true,
+		true,
+		true,
+		true,
+		true,
+		true,	//	10
+		true,
+		true,
+		false,
+		false,
+		true,
+		true,
+		true,
+		true,
+		false,
+		false,	//	20
+		true,
+		true,
+		false,
+		false,
+		false,
+		false,
+		false,
+		true,
+		true,
+		true,	//	30
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,	//	40
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,	//	50
+		false,
+		false,
+		false,
+		false,
+		true,
+		true,
+		false,
+		false,
+		false,
+		false,	//	60
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,	//	70
+		false,
+		false,
+		true,
+		true,
+		false,
+		true,
+		false,
+		true,
+		true,
+		false,	//	80
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,	//	90
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,	//	100
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+		true,
+		false,
+		false,
+		false,	//	110
+		false,
+		false,
+		false,
+		false,
+		false,
+		false,
+	};
+
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル
 	public static final int[] HardwareKeyName =
 	{
@@ -495,9 +630,10 @@ public class TouchPanelView extends View {
 		R.string.tapClick02,
 	};
 
-	public TouchPanelView(Context context, int index) {
+	public TouchPanelView(Context context, int index, Handler handler) {
 		super(context);
 		mContext = context;
+		ViewHandler = handler;
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
 		// 値を読み出す
 		if (index == 1) {
@@ -510,7 +646,16 @@ public class TouchPanelView extends View {
 			// テキストビューア
 			LoadTapPatternTxtData();
 		}
+		else if (index == 3) {
+			mMode = 3;
+			// EPUBビューア
+			LoadTapPatternEpubData();
+		}
 		customkeynumber = 0;
+		SearchWord = null;
+		mChapter = 0;
+		mFindCount = 0;
+		mSearchCount = 0;
 	}
 
 	// 編集可能かどうかを調べる
@@ -624,6 +769,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					ed.putInt(DEF.KEY_TAP_T_PATTERN_NUMBER, tappattern);
 				}
+				else if (mMode == 3) {
+					ed.putInt(DEF.KEY_TAP_E_PATTERN_NUMBER, tappattern);
+				}
 				ed.apply();
 				// 値を読み出す
 				if (mMode == 1) {
@@ -633,6 +781,10 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					// テキストビューア
 					LoadTapPatternTxtData();
+				}
+				else if (mMode == 3) {
+					// EPUBビューア
+					LoadTapPatternEpubData();
 				}
 			})
 			.setNegativeButton(R.string.btnCancel, null);
@@ -665,6 +817,249 @@ public class TouchPanelView extends View {
 		// 文字列を組み立てる
 		String ViewCodeData = res.getString(R.string.ViewCodeData) + " : " + StrNum;
 		return ViewCodeData;
+	}
+
+	// 検索キーのアラートダイアログを表示
+	public static void SetAlertDialogSearchKey(Activity activity) {
+		searchkey_builder = new AlertDialog.Builder(activity, R.style.MyAlertDialogStyle);
+		LayoutInflater inflater = LayoutInflater.from(activity);
+		View dialogView = inflater.inflate(R.layout.dialog_searchkey, null);
+		searchindex = (TextView) dialogView.findViewById(R.id.searchindex);
+		searchindex.setText(" - -/-");
+		spinnerlistpos = DEF.getInt(mSharedPreferences, DEF.KEY_EP_SEARCHDIALOGPOS, 0);
+		Spinner spinner = (Spinner) dialogView.findViewById(R.id.spinner);
+		spinner.setSelection(spinnerlistpos);
+		// タイトル入力
+		EditText editText = (EditText) dialogView.findViewById(R.id.editTextDialogInput);
+		editText.setHint(R.string.searchwordinput);
+		editText.setText(SearchWord);
+
+		editText.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+				// 入力前
+				// コードの取得を無効にする
+				keyboardoff = true;
+			}
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				// 入力中
+			}
+			@Override
+			public void afterTextChanged(Editable s) {
+				// 入力後
+			}
+		});
+		// フォーカスリスナーのセット.
+		editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+			@Override
+			public void onFocusChange(View v, boolean hasFocus) {
+				// TODO Auto-generated method stub
+				// コードの取得の有効/無効を切り替える
+				keyboardoff = hasFocus;
+			}
+		});
+		// アラートダイアログのレイアウトを取得
+		mMainLayout = (LinearLayout)dialogView.findViewById(R.id.main_layout);
+		// キーボードマネージャーを取得
+		InputMethodManager mInputMethodManager = (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+		// タイトル入力決定ボタン
+		Button button1 = dialogView.findViewById(R.id.positiveButton);
+		button1.setText(R.string.searchwordok);
+		button1.setOnClickListener(v -> {
+			// キーボードの表示を消す
+			mInputMethodManager.hideSoftInputFromWindow(mMainLayout.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+			// 他のフォーカスを取得(あらかじめxmlでfocusableInTouchModeを有効にしておくこと)
+			spinner.requestFocus();
+			spinner.setFocusable(true);
+			spinner.setFocusableInTouchMode(true);
+			SearchWord = editText.getText().toString();
+			// メイン画面にメッセージを送る
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_SEARCHWORD;
+			message.obj = SearchWord;
+			ViewHandler.sendMessage(message);
+			keyboardoff = false;
+			// メインからの検索の情報を受信するためのスレッドを開始
+			if (mSearchWordThread == null) {
+				mSearchWordThread = new SearchWordThread();
+				mSearchWordThread.start();
+			}
+
+		});
+		// タイトル入力キャンセルボタン
+		Button button2 = dialogView.findViewById(R.id.negaitiveButton);
+		button2.setText(R.string.searchwordcansel);
+		button2.setOnClickListener(v -> {
+			// キーボードの表示を消す
+			mInputMethodManager.hideSoftInputFromWindow(mMainLayout.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+			// 他のフォーカスを取得(あらかじめxmlでfocusableInTouchModeを有効にしておくこと)
+			spinner.requestFocus();
+			spinner.setFocusable(true);
+			spinner.setFocusableInTouchMode(true);
+			editText.setText(SearchWord);
+			// コードの取得を有効にする
+			keyboardoff = false;
+		});
+		Button buttonclear = dialogView.findViewById(R.id.clearButton);
+		buttonclear.setText(R.string.searchwordclear);
+		buttonclear.setOnClickListener(v -> {
+			// 検索文字列のクリアのメッセージを送る
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_SEARCHCLEAR;
+			message.arg1 = 0;
+			ViewHandler.sendMessage(message);
+			SearchWord = null;
+			editText.setText(SearchWord);
+			// メインからの検索の情報を受信するためのスレッドを破棄
+			breakthread2 = true;
+		});
+
+		Button buttonnext1 = dialogView.findViewById(R.id.searchnext1Button);
+		Button buttonnext2 = dialogView.findViewById(R.id.searchnext2Button);
+		Button buttonprev1 = dialogView.findViewById(R.id.searchprev1Button);
+		Button buttonprev2 = dialogView.findViewById(R.id.searchprev2Button);
+		buttonnext1.setText(R.string.searchwordnext1);
+		buttonnext2.setText(R.string.searchwordnext2);
+		buttonprev1.setText(R.string.searchwordprev1);
+		buttonprev2.setText(R.string.searchwordprev2);
+		// ボタンが押されたらメッセージを送る
+		buttonnext1.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_SEARCHNEXT;
+			message.arg1 = 1;
+			ViewHandler.sendMessage(message);
+		});
+		buttonprev1.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_SEARCHNEXT;
+			message.arg1 = 2;
+			ViewHandler.sendMessage(message);
+		});
+		buttonnext2.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_SEARCHNEXT;
+			message.arg1 = 3;
+			ViewHandler.sendMessage(message);
+		});
+		buttonprev2.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_SEARCHNEXT;
+			message.arg1 = 4;
+			ViewHandler.sendMessage(message);
+		});
+
+		// タイトル
+		searchkey_builder.setView(dialogView);
+		searchkey_builder.setTitle(R.string.searchwordsetting);
+		// アラートダイアログを作成
+		dialog = searchkey_builder.create();
+		// アラートダイアログを表示
+		dialog.show();
+
+		spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+				Window window = dialog.getWindow();
+				if (window == null) return;
+
+				WindowManager.LayoutParams lp = window.getAttributes();
+				// 選択された位置に応じてGravityを変更
+				switch (position) {
+					case 0: // 中央
+						lp.gravity = Gravity.CENTER;
+						break;
+					case 1: // 上
+						lp.gravity = Gravity.TOP;
+						break;
+					case 2: // 下
+						lp.gravity = Gravity.BOTTOM;
+						break;
+					case 3: // 右
+						lp.gravity = Gravity.LEFT;
+						break;
+					case 4: // 左
+						lp.gravity = Gravity.RIGHT;
+						break;
+					case 5: // 左上
+						lp.gravity = Gravity.TOP | Gravity.LEFT;
+						break;
+					case 6: // 右上
+						lp.gravity = Gravity.TOP | Gravity.RIGHT;
+						break;
+					case 7: // 左下
+						lp.gravity = Gravity.BOTTOM | Gravity.LEFT;
+						break;
+					case 8: // 右下
+						lp.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+						break;
+				}
+				spinnerlistpos = position;
+				// 反映させる
+				window.setAttributes(lp);
+				// 値を保存
+				Editor ed = mSharedPreferences.edit();
+				ed.putInt(DEF.KEY_EP_SEARCHDIALOGPOS, spinnerlistpos);
+				ed.apply();
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {}
+		});
+	}
+
+	// メインからの検索の情報を受信するためのスレッド
+	public static class SearchWordThread extends Thread  {
+		public void run() {
+			boolean stop = false;
+			while (!stop) {
+				if (dialog != null) {
+					try {
+						if (breakthread2) {
+							// 終了
+							breakthread2 = false;
+							stop = true;
+						}
+						// 100ミリ秒単位で検出させる
+						mSearchWordThread.sleep(100);
+						Resources res = mContext.getResources();
+		                String result;
+		                if (mSearchCount == 0) {
+							result = " - -/-";
+						}
+		                else {
+    		                result = mChapter + res.getString(R.string.searchwordchapter) + " - " + mFindCount + " / " + mSearchCount;
+            		    }
+						// メイン画面で表示させるためハンドラを得る
+						mainHandler = new Handler(Looper.getMainLooper());
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							searchindex.setText(result);
+						});
+					} catch  (Exception e) {
+					}
+				}
+			}
+			// スレッドを終了
+            String result = " - -/-";
+			mainHandler = new Handler(Looper.getMainLooper());
+			// メイン画面で表示
+			mainHandler.post(() -> {
+				searchindex.setText(result);
+			});
+			mResult2();
+		}
+	}
+	private static void mResult2() {
+		// スレッドを終了させて最初から始める
+		mSearchWordThread = null;
+	}
+
+	// メインからの検索の情報が設定される
+	public static void SetSearchWordIndex(int chapter, int findcount, int searchcount) {
+		mChapter = chapter;
+		mFindCount = findcount;
+		mSearchCount = searchcount;
 	}
 
 	// カスタムキーのアラートダイアログを表示
@@ -703,7 +1098,7 @@ public class TouchPanelView extends View {
 			@Override
 			public void onFocusChange(View v, boolean hasFocus) {
 				// TODO Auto-generated method stub
-				// コードの取得の要綱/無効を切り替える
+				// コードの取得の有効/無効を切り替える
 				keyboardoff = hasFocus;
 			}
 		});
@@ -1039,6 +1434,18 @@ public class TouchPanelView extends View {
 					loop[0]++;
 				}
 			}
+			else if (mMode == 3) {
+				// EPUBビューア
+				if (EpubEnable[i]) {
+					// 有効な項目のみ格納する
+					items_temp[loop[0]] = activity.getResources().getString(HardwareKeyName[i]);
+					if (checkedItem_temp == i) {
+						// 初期選択したいラジオボタンのインデックスが有効な項目と一致した場合は有効な通し番号に置き換える
+						checkedItem = loop[0];
+					}
+					loop[0]++;
+				}
+			}
 		}
 		// 最大数を合わせなおして格納する
 		items = new String[loop[0]];
@@ -1106,6 +1513,26 @@ public class TouchPanelView extends View {
 							loop[0]++;
 						}
 					}
+					else if (mMode == 3) {
+						// EPUBビューア
+						if (EpubEnable[i]) {
+							if (loop[0] == listView.getCheckedItemPosition()) {
+								// 一致したら元の値で格納する
+								if (clickmode == 2) {
+									tapdata[tapindex] = (tapdata[tapindex] & 0xff00ffff) | (i << 16);
+								}
+								else if (clickmode == 1) {
+									tapdata[tapindex] = (tapdata[tapindex] & 0xffff00ff) | (i << 8);
+								}
+								else {
+									tapdata[tapindex] = (tapdata[tapindex] & 0xffffff00) | i;
+								}
+								// 格納したら終了
+								break;
+							}
+							loop[0]++;
+						}
+					}
 				}
 				// 値を書き込む
 				if (mMode == 1) {
@@ -1119,6 +1546,12 @@ public class TouchPanelView extends View {
 					SaveTapPatternTxtData();
 					// 表示更新
 					TextActivity.UpdateTouchPanelData();
+				}
+				else if (mMode == 3) {
+					// テキストビューア
+					SaveTapPatternEpubData();
+					// 表示更新
+					EpubWebViewActivity.UpdateTouchPanelData();
 				}
 			}
 		});
@@ -1217,7 +1650,7 @@ public class TouchPanelView extends View {
 	private static final int BottomRight = 15;
 	private static final int SingleTap = 16;
 
-	// 四隅と端のタップ操作のパラメータ読み出しでイメージビューアとテキストビューアで振り分ける
+	// 四隅と端のタップ操作のパラメータ読み出しでイメージビューアとテキストビューアとEPUBビューアで振り分ける
 	private static int GetCornetEndParameter(int index) {
 		int data = 0;
 		switch (index) {
@@ -1228,6 +1661,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = (SetCornerEndTextViewerActivity.getCornerEndEnable(mSharedPreferences)) ? 1 : 0;
 				}
+				else if (mMode == 3) {
+					data = (SetCornerEndEpubWebViewActivity.getCornerEndEnable(mSharedPreferences)) ? 1 : 0;
+				}
 				break;
 			case Width:
 				if (mMode == 1) {
@@ -1235,6 +1671,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getCornerEndWidthLevel(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getCornerEndWidthLevel(mSharedPreferences);
 				}
 				break;
 			case Height:
@@ -1244,6 +1683,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getCornerEndHeightLevel(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getCornerEndHeightLevel(mSharedPreferences);
+				}
 				break;
 			case TopLeftCorner:
 				if (mMode == 1) {
@@ -1251,6 +1693,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getTopLeftCornerTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getTopLeftCornerTap(mSharedPreferences);
 				}
 				break;
 			case TopRightCorner:
@@ -1260,6 +1705,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getTopRightCornerTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getTopRightCornerTap(mSharedPreferences);
+				}
 				break;
 			case BottomLeftCorner:
 				if (mMode == 1) {
@@ -1267,6 +1715,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getBottomLeftCornerTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getBottomLeftCornerTap(mSharedPreferences);
 				}
 				break;
 			case BottomRightCorner:
@@ -1276,6 +1727,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getBottomRightCornerTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getBottomRightCornerTap(mSharedPreferences);
+				}
 				break;
 			case LeftEnd:
 				if (mMode == 1) {
@@ -1283,6 +1737,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getLeftEndTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getLeftEndTap(mSharedPreferences);
 				}
 				break;
 			case RightEnd:
@@ -1292,6 +1749,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getRightEndTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getRightEndTap(mSharedPreferences);
+				}
 				break;
 			case TopEnd:
 				if (mMode == 1) {
@@ -1299,6 +1759,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getTopEndTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getTopEndTap(mSharedPreferences);
 				}
 				break;
 			case BottomEnd:
@@ -1308,6 +1771,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getBottomEndTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getBottomEndTap(mSharedPreferences);
+				}
 				break;
 			case DoubleTap:
 				if (mMode == 1) {
@@ -1315,6 +1781,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getDoubleTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getDoubleTap(mSharedPreferences);
 				}
 				break;
 			case TopLeft:
@@ -1324,6 +1793,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getTopLeftTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getTopLeftTap(mSharedPreferences);
+				}
 				break;
 			case TopRight:
 				if (mMode == 1) {
@@ -1331,6 +1803,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getTopRightTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getTopRightTap(mSharedPreferences);
 				}
 				break;
 			case BottomLeft:
@@ -1340,6 +1815,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getBottomLeftTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getBottomLeftTap(mSharedPreferences);
+				}
 				break;
 			case BottomRight:
 				if (mMode == 1) {
@@ -1348,6 +1826,9 @@ public class TouchPanelView extends View {
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getBottomRightTap(mSharedPreferences);
 				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getBottomRightTap(mSharedPreferences);
+				}
 				break;
 			case SingleTap:
 				if (mMode == 1) {
@@ -1355,6 +1836,9 @@ public class TouchPanelView extends View {
 				}
 				else if (mMode == 2) {
 					data = SetCornerEndTextViewerActivity.getSingleTap(mSharedPreferences);
+				}
+				else if (mMode == 3) {
+					data = SetCornerEndEpubWebViewActivity.getSingleTap(mSharedPreferences);
 				}
 				break;
 		}
@@ -2262,6 +2746,102 @@ public class TouchPanelView extends View {
 		}
 	}
 
+	// タップ操作のパターンの内容を読み出す(EPUBビューア)
+	public static void LoadTapPatternEpubData() {
+		tappattern = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_E_PATTERN_NUMBER, 0);
+		switch (tappattern) {
+			case 0:
+				break;
+			case 1:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_01_01, DEF.TAP_PATTERN_E01_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_01_02, DEF.TAP_PATTERN_E01_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_01_03, DEF.TAP_PATTERN_E01_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_01_04, DEF.TAP_PATTERN_E01_DEFAULT_04);
+				
+				break;
+			case 2:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_02_01, DEF.TAP_PATTERN_E02_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_02_02, DEF.TAP_PATTERN_E02_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_02_03, DEF.TAP_PATTERN_E02_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_02_04, DEF.TAP_PATTERN_E02_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_02_05, DEF.TAP_PATTERN_E02_DEFAULT_05);
+				tapdata[5] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_02_06, DEF.TAP_PATTERN_E02_DEFAULT_06);
+				
+				break;
+			case 3:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_03_01, DEF.TAP_PATTERN_E03_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_03_02, DEF.TAP_PATTERN_E03_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_03_03, DEF.TAP_PATTERN_E03_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_03_04, DEF.TAP_PATTERN_E03_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_03_05, DEF.TAP_PATTERN_E03_DEFAULT_05);
+				tapdata[5] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_03_06, DEF.TAP_PATTERN_E03_DEFAULT_06);
+				
+				break;
+			case 4:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_01, DEF.TAP_PATTERN_E04_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_02, DEF.TAP_PATTERN_E04_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_03, DEF.TAP_PATTERN_E04_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_04, DEF.TAP_PATTERN_E04_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_05, DEF.TAP_PATTERN_E04_DEFAULT_05);
+				tapdata[5] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_06, DEF.TAP_PATTERN_E04_DEFAULT_06);
+				tapdata[6] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_07, DEF.TAP_PATTERN_E04_DEFAULT_07);
+				tapdata[7] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_08, DEF.TAP_PATTERN_E04_DEFAULT_08);
+				tapdata[8] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_04_09, DEF.TAP_PATTERN_E04_DEFAULT_09);
+				
+				break;
+			case 5:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_01, DEF.TAP_PATTERN_E05_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_02, DEF.TAP_PATTERN_E05_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_03, DEF.TAP_PATTERN_E05_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_04, DEF.TAP_PATTERN_E05_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_05, DEF.TAP_PATTERN_E05_DEFAULT_05);
+				tapdata[5] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_06, DEF.TAP_PATTERN_E05_DEFAULT_06);
+				tapdata[6] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_07, DEF.TAP_PATTERN_E05_DEFAULT_07);
+				tapdata[7] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_08, DEF.TAP_PATTERN_E05_DEFAULT_08);
+				tapdata[8] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_09, DEF.TAP_PATTERN_E05_DEFAULT_09);
+				tapdata[9] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_10, DEF.TAP_PATTERN_E05_DEFAULT_10);
+				tapdata[10] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_05_11, DEF.TAP_PATTERN_E05_DEFAULT_11);
+				
+				break;
+			case 6:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_06_01, DEF.TAP_PATTERN_E06_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_06_02, DEF.TAP_PATTERN_E06_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_06_03, DEF.TAP_PATTERN_E06_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_06_04, DEF.TAP_PATTERN_E06_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_06_05, DEF.TAP_PATTERN_E06_DEFAULT_05);
+				
+				break;
+			case 7:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_01, DEF.TAP_PATTERN_E07_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_02, DEF.TAP_PATTERN_E07_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_03, DEF.TAP_PATTERN_E07_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_04, DEF.TAP_PATTERN_E07_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_05, DEF.TAP_PATTERN_E07_DEFAULT_05);
+				tapdata[5] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_06, DEF.TAP_PATTERN_E07_DEFAULT_06);
+				tapdata[6] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_07_07, DEF.TAP_PATTERN_E07_DEFAULT_07);
+				
+				break;
+			case 8:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_08_01, DEF.TAP_PATTERN_E08_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_08_02, DEF.TAP_PATTERN_E08_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_08_03, DEF.TAP_PATTERN_E08_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_08_04, DEF.TAP_PATTERN_E08_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_08_05, DEF.TAP_PATTERN_E08_DEFAULT_05);
+				
+				break;
+			case 9:
+				tapdata[0] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_01, DEF.TAP_PATTERN_E09_DEFAULT_01);
+				tapdata[1] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_02, DEF.TAP_PATTERN_E09_DEFAULT_02);
+				tapdata[2] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_03, DEF.TAP_PATTERN_E09_DEFAULT_03);
+				tapdata[3] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_04, DEF.TAP_PATTERN_E09_DEFAULT_04);
+				tapdata[4] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_05, DEF.TAP_PATTERN_E09_DEFAULT_05);
+				tapdata[5] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_06, DEF.TAP_PATTERN_E09_DEFAULT_06);
+				tapdata[6] = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_PATTERN_E_09_07, DEF.TAP_PATTERN_E09_DEFAULT_07);
+				
+				break;
+		}
+	}
+
 	// タップ操作のパターンの内容を書きこむ(イメージビューア)
 	private static void SaveTapPatternData() {
 		tappattern = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_I_PATTERN_NUMBER, 0);
@@ -2453,6 +3033,104 @@ public class TouchPanelView extends View {
 				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_05, tapdata[4]);
 				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_06, tapdata[5]);
 				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_07, tapdata[6]);
+				ed.apply();
+				break;
+		}
+	}
+
+	// タップ操作のパターンの内容を書きこむ(EPUBビューア)
+	private static void SaveTapPatternEpubData() {
+		tappattern = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_E_PATTERN_NUMBER, 0);
+		Editor ed = mSharedPreferences.edit();
+
+		switch (tappattern) {
+			case 0:
+				break;
+			case 1:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_04, tapdata[3]);
+				ed.apply();
+				break;
+			case 2:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_05, tapdata[4]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_06, tapdata[5]);
+				ed.apply();
+				break;
+			case 3:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_05, tapdata[4]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_06, tapdata[5]);
+				ed.apply();
+				break;
+			case 4:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_05, tapdata[4]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_06, tapdata[5]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_07, tapdata[6]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_08, tapdata[7]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_09, tapdata[8]);
+				ed.apply();
+				break;
+			case 5:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_05, tapdata[4]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_06, tapdata[5]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_07, tapdata[6]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_08, tapdata[7]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_09, tapdata[8]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_10, tapdata[9]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_11, tapdata[10]);
+				ed.apply();
+				break;
+			case 6:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_05, tapdata[4]);
+				ed.apply();
+				break;
+			case 7:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_05, tapdata[4]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_06, tapdata[5]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_07, tapdata[6]);
+				ed.apply();
+				break;
+			case 8:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_05, tapdata[4]);
+				ed.apply();
+				break;
+			case 9:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_01, tapdata[0]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_02, tapdata[1]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_03, tapdata[2]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_04, tapdata[3]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_05, tapdata[4]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_06, tapdata[5]);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_07, tapdata[6]);
 				ed.apply();
 				break;
 		}

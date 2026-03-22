@@ -199,7 +199,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mDrawRect = new Rect();
 		mWorkRect = new Rect();
 		mHandler = new Handler(this);
-		new TouchPanelView(activity, 1);
+		new TouchPanelView(activity, 1, mHandler);
 		mInitalizeHeight = false;
 		mInitalizeWidth = false;
 
