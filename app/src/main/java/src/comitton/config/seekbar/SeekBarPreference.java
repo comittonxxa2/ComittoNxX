@@ -162,15 +162,19 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = "";
 			mSummary2 = "";
 		}
-		else if (mKey.equals(DEF.KEY_TX_FONTTOP) || mKey.equals(DEF.KEY_TX_FONTBODY) || mKey.equals(DEF.KEY_TX_FONTRUBI) || mKey.equals(DEF.KEY_TX_FONTINFO)) {
+		else if (mKey.equals(DEF.KEY_TX_FONTTOP) || mKey.equals(DEF.KEY_TX_FONTBODY) || mKey.equals(DEF.KEY_TX_FONTRUBI) || mKey.equals(DEF.KEY_TX_FONTINFO) || mKey.equals(DEF.KEY_EP_FONTINFO)) {
 			mSummary1 = mContext.getString(R.string.unitSumm1);
+			mSummary2 = "";
+		}
+		else if (mKey.equals(DEF.KEY_EP_FONTTEXT) || mKey.equals(DEF.KEY_EP_FONTBODY)) {
+			mSummary1 = mContext.getString(R.string.srngSumm2);
 			mSummary2 = "";
 		}
 		else if (mKey.equals(DEF.KEY_TX_SPACEW) || mKey.equals(DEF.KEY_TX_SPACEH)) {
 			mSummary1 = mContext.getString(R.string.rangeSumm1);
 			mSummary2 = "";
 		}
-		else if (mKey.equals(DEF.KEY_TX_MARGINW) || mKey.equals(DEF.KEY_TX_MARGINH)) {
+		else if (mKey.equals(DEF.KEY_TX_MARGINW) || mKey.equals(DEF.KEY_TX_MARGINH) || mKey.equals(DEF.KEY_EP_MARGINW) || mKey.equals(DEF.KEY_EP_MARGINH)) {
 			mSummary1 = mContext.getString(R.string.rangeSumm1);
 			mSummary2 = "";
 		}
@@ -277,8 +281,11 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		else if (mKey.equals(DEF.KEY_LISTTHUMBSEEK)) {
 			strSummary = DEF.getListThumbSeekStr(num, mSummary1);
 		}
-		else if (mKey.equals(DEF.KEY_TX_FONTTOP) || mKey.equals(DEF.KEY_TX_FONTBODY) || mKey.equals(DEF.KEY_TX_FONTRUBI) || mKey.equals(DEF.KEY_TX_FONTINFO)) {
+		else if (mKey.equals(DEF.KEY_TX_FONTTOP) || mKey.equals(DEF.KEY_TX_FONTBODY) || mKey.equals(DEF.KEY_TX_FONTRUBI) || mKey.equals(DEF.KEY_TX_FONTINFO) || mKey.equals(DEF.KEY_EP_FONTINFO)) {
 			strSummary = DEF.getFontSpStr(num, mSummary1);
+		}
+		else if (mKey.equals(DEF.KEY_EP_FONTTEXT) || mKey.equals(DEF.KEY_EP_FONTBODY)) {
+			strSummary = DEF.getDispMarginStr(num, mSummary1);
 		}
 		else if (mKey.equals(DEF.KEY_MEMSIZE)) {
 			strSummary = DEF.getMemSizeStr(num, mSummary1, mSummary2);
@@ -295,7 +302,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		else if (mKey.equals(DEF.KEY_TX_SPACEW) || mKey.equals(DEF.KEY_TX_SPACEH)) {
 			strSummary = DEF.getTextSpaceStr(num, mSummary1);
 		}
-		else if (mKey.equals(DEF.KEY_TX_MARGINW) || mKey.equals(DEF.KEY_TX_MARGINH)) {
+		else if (mKey.equals(DEF.KEY_TX_MARGINW) || mKey.equals(DEF.KEY_TX_MARGINH) || mKey.equals(DEF.KEY_EP_MARGINW) || mKey.equals(DEF.KEY_EP_MARGINH)) {
 			strSummary = DEF.getDispMarginStr(num, mSummary1);
 		}
 		else if (mKey.equals(DEF.KEY_SCRLRNGW) || mKey.equals(DEF.KEY_SCRLRNGH) || mKey.equals(DEF.KEY_TX_SCRLRNGW) || mKey.equals(DEF.KEY_TX_SCRLRNGH)) {
