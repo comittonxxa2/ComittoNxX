@@ -210,7 +210,8 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		super(activity);
 
 		mActivity = activity;
-		new TouchPanelView(activity, 2);
+		mHandler = new Handler(this);
+		new TouchPanelView(activity, 2, mHandler);
 		mHolder = getHolder();
 		// デフォルト設定が有効になってしまう(RGB565になる)可能性があるためRGBA_8888を設定する
 		mHolder.setFormat(PixelFormat.RGBA_8888);
@@ -259,7 +260,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		mInitialize = true;
 
 //		mViewTimerHanlder = new ViewTimerHanlder();
-		mHandler = new Handler(this);
+//		mHandler = new Handler(this);
 
 		//mTextStream = new TextInputStream();
 		mPicMap1 = new SparseArray<BitmapDrawable>();
