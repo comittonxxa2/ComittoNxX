@@ -136,6 +136,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static int random_data1[];
 	private static int random_data2[];
 	private static int mRandowCount = 0;
+	private boolean mEpubWebView;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
@@ -304,13 +305,14 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	}
 
 	// リストモード
-	public void setParams(boolean hidden, String marker, boolean filter, boolean applydir, boolean parentmove, boolean epubViewer) {
+	public void setParams(boolean hidden, String marker, boolean filter, boolean applydir, boolean parentmove, boolean epubViewer, boolean epubWebViewer) {
 		mHidden = hidden;
 		mMarker = marker;
 		mFilter = filter;
 		mApplyDir = applydir;
 		mParentMove = parentmove;
 		mEpubViewer = epubViewer;
+		mEpubWebView = epubWebViewer;
 	}
 
 	public ArrayList<FileData> getFileList() {
@@ -706,7 +708,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					else {
 						uri = DEF.relativePath(mActivity, currentPath, name);
 					}
-					if (DEF.TEXT_VIEWER == mEpubViewer) {
+					if (DEF.TEXT_VIEWER == mEpubViewer && !mEpubWebView) {
 						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "META-INF/container.xml" + "#maxpage", DEF.PAGENUMBER_NONE);
 						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "META-INF/container.xml", DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
@@ -753,6 +755,32 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								}
 							}
 							fileList.get(i).setMaxpage(size);
+						}
+					}
+					else if (DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
+						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#newepub", "0,0,0,0,0.0,0.0");
+						state = DEF.PAGENUMBER_UNREAD;
+						size = DEF.PAGENUMBER_NONE;
+						if (rawValue != null) {
+							String[] parts = rawValue.split(",");
+							if (parts.length >= 6) {
+								try {
+									state = Integer.parseInt(parts[0]);
+									maxpage = Integer.parseInt(parts[1]);
+									if (state == 0 && maxpage == 0) {
+										state = -1;
+									}
+									else if (state == maxpage) {
+										state = -2;
+									}
+									else {
+										state--;
+									}
+									fileList.get(i).setMaxpage(maxpage);
+								}
+		    				    catch (Exception e) {
+								}
+							}
 						}
 					}
 					else {
