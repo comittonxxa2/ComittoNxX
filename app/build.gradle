@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "BE"
+def revision = "BF"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -222,4 +222,15 @@ dependencies {
     implementation 'org.tukaani:xz:1.9' // これがないと7zのLZMA解凍でエラーになる
 
     implementation 'com.github.omicronapps:7-Zip-JBinding-4Android:Release-16.02-2.03'
+    implementation 'androidx.webkit:webkit:1.9.0'
+
+    implementation('io.documentnode:epub4j-core:4.2.3') {
+        // 以下の2つがAndroid標準と衝突するため除外する
+        exclude group: 'xmlpull', module: 'xmlpull'
+        exclude group: 'net.sf.kxml', module: 'kxml2'
+    }
+
+    implementation 'org.jsoup:jsoup:1.15.4'
+
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
 }
