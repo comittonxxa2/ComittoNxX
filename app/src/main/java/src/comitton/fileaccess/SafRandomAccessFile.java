@@ -69,7 +69,7 @@ public class SafRandomAccessFile {
             Logcat.d(logLevel, "FileInputStreamを作成しなおします.");
             try {
                 Open();
-                position((int)mPos);
+                position(mPos);
             } catch (Exception e) {
                 Logcat.e(logLevel, "エラーが発生しました.", e);
                 throw new IOException(TAG + ": read: " + e.getLocalizedMessage());
@@ -107,7 +107,7 @@ public class SafRandomAccessFile {
         Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, mPos={1}, length={2}", new Object[]{pos, mPos, length()}));
         try {
             Logcat.d(logLevel, MessageFormat.format("セットします. mPos={0}, length={1}", new Object[]{mPos, length()}));
-            mPos = position((int)pos);
+            mPos = position(pos);
             mPos = position();
         } catch (Exception e) {
             throw new IOException(e);
@@ -116,7 +116,7 @@ public class SafRandomAccessFile {
     }
 
     /** PFD のシーク位置を変更します。 */
-    long position(final int pos) throws Exception {
+    long position(final long pos) throws Exception {
         int logLevel = Logcat.LOG_LEVEL_WARN;
         Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, mPos={1}, length={2}", new Object[]{pos, mPos, length()}));
         long result = 0;
