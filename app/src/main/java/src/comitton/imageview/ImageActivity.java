@@ -702,6 +702,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private long mBuffSize;
 	private boolean mEnableContentsFile;
 	private boolean mProgressbarMode;
+	private boolean mSkipZiplib;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -1957,6 +1958,20 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				.show();
 				return true;
 
+			case DEF.HMSG_PROGRESS_FILE_ERROR:
+				Resources abortres2 = mActivity.getResources();
+				// 警告のダイアログを出してビューアを終了させる
+				new AlertDialog.Builder(this, R.style.MyDialog)
+					.setTitle(abortres2.getString(R.string.readerror))
+					.setMessage(abortres2.getString(R.string.fileerrormessage))
+					.setPositiveButton(abortres2.getString(R.string.aboutOK), (dialog, which) -> {
+					dialog.dismiss();
+					finish();
+				})
+				.setIcon(android.R.drawable.ic_dialog_alert)
+				.show();
+				return true;
+
 			case DEF.HMSG_CACHE:
 				// アクセス状態表示フラグ
 				if (mAccessLamp) {
@@ -2280,8 +2295,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				if (!DEF.checkPortrait(bm[0].Width, bm[0].Height, mRotate)) {
 					// 横長画像であれば分割
 					mSourceImage[0] = bm[0];
-					// ズーム時に転送サイズが0になるので設定しない
-					/*
+					// ズーム時に転送サイズが0になるが一先ず有効にする
 					if ((mHalfPos == HALFPOS_2ND && mPageWay == DEF.PAGEWAY_RIGHT) || (mHalfPos != HALFPOS_2ND && mPageWay == DEF.PAGEWAY_LEFT)) {
 						// 左側用にする
 						mSourceImage[0].HalfMode = ImageData.HALF_LEFT;
@@ -2290,11 +2304,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// 右側用にする
 						mSourceImage[0].HalfMode = ImageData.HALF_RIGHT;
 					}
-					*/
-					// スクロール移動でページめくりに失敗するのでコメントアウトにした
-					/*
+					// スクロール移動でページめくりに失敗する場合があるが一先ず有効にする
 					mCurrentPageHalf = true;
-					*/
 				}
 				else {
 					mHalfPos = HALFPOS_1ST;
@@ -6410,6 +6421,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mBuffSize = SetImageDetailActivity.getBuffSize(sharedPreferences);
 			mEnableContentsFile = SetImageActivity.getEnableContentsFile(sharedPreferences);
 			mProgressbarMode = SetFileListActivity.getProgressBarMode(sharedPreferences);
+			mSkipZiplib = SetFileListActivity.getSkipZiplib(sharedPreferences);
+
+			ImageManager.setSkipZiplib(mSkipZiplib);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();

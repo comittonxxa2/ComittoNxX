@@ -121,7 +121,14 @@ public class TouchPanelView extends View {
 	private static int mChapter;
 	private static int mFindCount;
 	private static int mSearchCount;
+	private static int mSearchMax;
+	private static int mFindMax;
 	private static TextView searchindex;
+	private	static Button buttonnext1;
+	private static Button buttonnext2;
+	private static Button buttonprev1;
+	private static Button buttonprev2;
+	private static Button buttonclear;
 
 	// キーボード表示を制御するためのオブジェクト
 	InputMethodManager inputMethodManager;
@@ -656,6 +663,7 @@ public class TouchPanelView extends View {
 		mChapter = 0;
 		mFindCount = 0;
 		mSearchCount = 0;
+		mSearchMax = 0;
 	}
 
 	// 編集可能かどうかを調べる
@@ -901,8 +909,10 @@ public class TouchPanelView extends View {
 			// コードの取得を有効にする
 			keyboardoff = false;
 		});
-		Button buttonclear = dialogView.findViewById(R.id.clearButton);
+		buttonclear = dialogView.findViewById(R.id.clearButton);
 		buttonclear.setText(R.string.searchwordclear);
+		buttonclear.setEnabled(false);
+		buttonclear.setAlpha(0.5f);
 		buttonclear.setOnClickListener(v -> {
 			// 検索文字列のクリアのメッセージを送る
 			Message message = new Message();
@@ -915,14 +925,22 @@ public class TouchPanelView extends View {
 			breakthread2 = true;
 		});
 
-		Button buttonnext1 = dialogView.findViewById(R.id.searchnext1Button);
-		Button buttonnext2 = dialogView.findViewById(R.id.searchnext2Button);
-		Button buttonprev1 = dialogView.findViewById(R.id.searchprev1Button);
-		Button buttonprev2 = dialogView.findViewById(R.id.searchprev2Button);
+		buttonnext1 = dialogView.findViewById(R.id.searchnext1Button);
+		buttonnext2 = dialogView.findViewById(R.id.searchnext2Button);
+		buttonprev1 = dialogView.findViewById(R.id.searchprev1Button);
+		buttonprev2 = dialogView.findViewById(R.id.searchprev2Button);
 		buttonnext1.setText(R.string.searchwordnext1);
 		buttonnext2.setText(R.string.searchwordnext2);
 		buttonprev1.setText(R.string.searchwordprev1);
 		buttonprev2.setText(R.string.searchwordprev2);
+		buttonnext1.setEnabled(false);
+		buttonprev1.setEnabled(false);
+		buttonnext2.setEnabled(false);
+		buttonprev2.setEnabled(false);
+		buttonnext1.setAlpha(0.5f);
+		buttonprev1.setAlpha(0.5f);
+		buttonnext2.setAlpha(0.5f);
+		buttonprev2.setAlpha(0.5f);
 		// ボタンが押されたらメッセージを送る
 		buttonnext1.setOnClickListener(v -> {
 			Message message = new Message();
@@ -1035,6 +1053,24 @@ public class TouchPanelView extends View {
 						// メイン画面で表示
 						mainHandler.post(() -> {
 							searchindex.setText(result);
+							// 検索のボタンの表示を変更する
+							boolean buttonenable = (mSearchMax <= 1 && mFindMax <= 1) ? false : true;
+							buttonnext1.setEnabled(buttonenable);
+							buttonprev1.setEnabled(buttonenable);
+							float buttonalpha = (mSearchMax <= 1 && mFindMax <= 1) ? 0.5f : 1.0f;
+							buttonnext1.setAlpha(buttonalpha);
+							buttonprev1.setAlpha(buttonalpha);
+							boolean button2enable = (mSearchMax <= 1) ? false : true;
+							buttonnext2.setEnabled(button2enable);
+							buttonprev2.setEnabled(button2enable);
+							float button2alpha = (mSearchMax <= 1) ? 0.5f : 1.0f;
+							buttonnext2.setAlpha(button2alpha);
+							buttonprev2.setAlpha(button2alpha);
+
+							boolean buttonclearenable = (mSearchMax == 0) ? false : true;
+							float buttonclearalpha = (mSearchMax == 0) ? 0.5f : 1.0f;
+							buttonclear.setEnabled(buttonclearenable);
+							buttonclear.setAlpha(buttonclearalpha);
 						});
 					} catch  (Exception e) {
 					}
@@ -1046,6 +1082,16 @@ public class TouchPanelView extends View {
 			// メイン画面で表示
 			mainHandler.post(() -> {
 				searchindex.setText(result);
+				buttonnext1.setEnabled(false);
+				buttonprev1.setEnabled(false);
+				buttonnext2.setEnabled(false);
+				buttonprev2.setEnabled(false);
+				buttonclear.setEnabled(false);
+				buttonnext1.setAlpha(0.5f);
+				buttonprev1.setAlpha(0.5f);
+				buttonnext2.setAlpha(0.5f);
+				buttonprev2.setAlpha(0.5f);
+				buttonclear.setAlpha(0.5f);
 			});
 			mResult2();
 		}
@@ -1056,10 +1102,12 @@ public class TouchPanelView extends View {
 	}
 
 	// メインからの検索の情報が設定される
-	public static void SetSearchWordIndex(int chapter, int findcount, int searchcount) {
+	public static void SetSearchWordIndex(int chapter, int findcount, int searchcount, int searchmax, int findmax) {
 		mChapter = chapter;
 		mFindCount = findcount;
 		mSearchCount = searchcount;
+		mSearchMax = searchmax;
+		mFindMax = findmax;
 	}
 
 	// カスタムキーのアラートダイアログを表示
