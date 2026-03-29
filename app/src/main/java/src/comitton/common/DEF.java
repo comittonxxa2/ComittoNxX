@@ -114,6 +114,7 @@ public class DEF {
 	public static final int HMSG_PROGRESS_CANCEL = 29;
 	public static final int HMSG_PROGRESS_IMAGE_START = 30;
 	public static final int HMSG_PROGRESS_IMAGE_END = 31;
+	public static final int HMSG_PROGRESS_FILE_ERROR = 32;
 
 	public static final int HMSG_EVENT_READTIMER = 200;
 	public static final int HMSG_EVENT_EFFECT = 201;
@@ -563,6 +564,7 @@ public class DEF {
 
 	public static final String KEY_VIEWROTA = "ViewRota";
 	public static final String KEY_FILESORT = "FileSort";
+	public static final String KEY_IMAGESORT = "ImageSort";
 	public static final String KEY_VIEWPT = "ViewPt";
 	public static final String KEY_INISCALE = "IniScale";
 
@@ -885,6 +887,9 @@ public class DEF {
 	public static final String KEY_SMB_MODE = "ComittoNMode";
 	public static final String KEY_MARKERFILTERON = "MarkerFilterOn";
 	public static final String KEY_MARKERDIRON = "MarkerDirOn";
+	public static final String KEY_ARCHIVECHECKMANUALMODE = "ArchiveCheckManualMode";
+	public static final String KEY_SKIPGETTHUMBNAIL = "SkipGetThumbnail";
+	public static final String KEY_SKIPZIPLIB = "SkipZipLib";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -1485,6 +1490,7 @@ public class DEF {
 	public static final String KEY_EP_FONTNAME = "epFontName";
 	public static final String KEY_EP_SEARCHDIALOGPOS = "epSearchdialogPos";
 	public static final String KEY_EP_VIEWROTA = "epViewRota";
+	public static final String KEY_EP_NOCACHE ="epNoCache";
 
 	public static final String KEY_EP_TVTRGB = "epTvtRGB";
 	public static final String KEY_EP_TVBRGB = "epTvbRGB";
