@@ -9,11 +9,13 @@ import src.comitton.fileaccess.FileAccess;
 import src.comitton.common.ImageAccess;
 import src.comitton.common.WaitFor;
 import src.comitton.fileview.data.FileData;
+import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.imageview.ImageManager;
 import src.comitton.jni.CallImgLibrary;
 import src.comitton.common.ThumbnailLoader;
 
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -25,16 +27,21 @@ import android.os.Message;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
 
 public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 	private static final String TAG = "FileThumbnailLoader";
 
+	private AppCompatActivity mActivity;
+	private static SharedPreferences mSharedPreferences;
+	private ServerSelect mServer;
 	private String mUser;
 	private String mPass;
 	private int mFileSort;
 	private boolean mHidden;
 	private boolean mThumbSort;
 	private boolean mEpubThumb;
+	private boolean mSkipGetThumbnail;
 
 	private ImageManager mImageMgr;
 	private Object mImageMgrLock;
@@ -43,17 +50,21 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 
 	private boolean mOut_of_memory = false;
 
-	public FileThumbnailLoader(AppCompatActivity activity, String uri, String path, String user, String pass, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum, int filesort, boolean hidden, boolean thumbsort, int crop, int margin, boolean epubThumb) {
+	public FileThumbnailLoader(AppCompatActivity activity, ServerSelect server, String uri, String path, String user, String pass, Handler handler, long id, ArrayList<FileData> files, int sizeW, int sizeH, int cachenum, int filesort, boolean hidden, boolean thumbsort, int crop, int margin, boolean epubThumb, boolean skipgetthumbnail) {
 		super(activity, uri, path, handler, id, files, sizeW, sizeH, cachenum, crop, margin, 0);
 		boolean debug = false;
 		if (debug) {Log.d(TAG, "FileThumbnailLoader: 開始します. epubThumb=" + epubThumb);}
 
+		mActivity = activity;
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+		mServer = server;
 		mUser = user;
 		mPass = pass;
 		mFileSort = filesort;
 		mHidden = hidden;
 		mThumbSort = thumbsort;
 		mEpubThumb = epubThumb;
+		mSkipGetThumbnail = skipgetthumbnail;
 
 		mImageMgrLock = new Object();
 
@@ -278,12 +289,17 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 		FileData file = mFiles.get(index);
 		String filename = file.getName();
 		String uri = DEF.relativePath(mActivity,mURI, mPath, filename);
+		String path = DEF.createUrl(uri, mServer.getUser(), mServer.getPass());
 		int fileType = FileData.getType(mActivity, filename);
 		String pathcode = DEF.makeCode(uri, thum_cx, thum_cy);
 		if (debug) {Log.d(TAG,"index=" + index + " " + (firstloop ? 1 : 2) + "周目 loadBitmap filename=" + filename);}
 		int filetype = file.getType();
-
-		if (fileType == FileData.FILETYPE_PARENT) {
+		// イメージ取得をスキップさせるためのマーキング情報を参照
+		if (mSharedPreferences.getInt(path + "#noimage", -1) == 1 && mSkipGetThumbnail) {
+			// イメージ取得をスキップ
+			ret = true;
+		}
+		else if (fileType == FileData.FILETYPE_PARENT) {
 			// 対象外のファイル
 			CallImgLibrary.ThumbnailSetNone(mID, index);
 			ret = true;

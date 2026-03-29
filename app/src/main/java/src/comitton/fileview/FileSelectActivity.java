@@ -274,6 +274,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private String mMarker;
 	private boolean mFilter;
 	private boolean mApplyDir;
+	private boolean mSkipGetThumbnail;
 
 	private static short mSortType;
 	private int mHistCount;
@@ -1548,6 +1549,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mProgressbarMode = SetFileListActivity.getProgressBarMode(mSharedPreferences);
 		mFilter = SetFileListActivity.getMarkerFilterOn(mSharedPreferences);
 		mApplyDir = SetFileListActivity.getMarkerDirOn(mSharedPreferences);
+		mSkipGetThumbnail = SetFileListActivity.getSkipGetThumbnail(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3978,6 +3980,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 					case OPERATE_DELCACHE: // サムネイルキャッシュ削除
 						ThumbnailLoader.deleteThumbnailCache(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mThumbSizeW, mThumbSizeH);
+						// イメージ取得をスキップさせるためのマーキング情報を解除
+						String path = DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mServer.getUser(), mServer.getPass());
+						Editor ed = mSharedPreferences.edit();
+						ed.remove(path + "#noimage");
+						ed.apply();
 						// サムネイル解放
 						releaseThumbnail();
 						// サムネイルを読み直す
@@ -5129,6 +5136,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// Bitmapの通知
 				String name = (String) msg.obj;
 				int bmIndex = msg.arg1;
+				if (bmIndex < 0 && mSkipGetThumbnail) {
+					// サムネイルの読み込みに失敗
+					// イメージ取得をスキップさせるためにマーキングする
+					String path = DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, name), mServer.getUser(), mServer.getPass());
+					Editor ed = mSharedPreferences.edit();
+					ed.putInt(path + "#noimage", 1);
+					ed.apply();
+				}
 				//Logcat.i(logLevel, "HMSG_THUMBNAIL: bmIndex=" + bmIndex + ", name=" + name);
 				if (name != null) {
 					ArrayList<FileData> files = mFileList.getFileList();
@@ -5185,7 +5200,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String user = mServer.getUser();
 		String pass = mServer.getPass();
 		int filesort = SetImageActivity.getFileSort(mSharedPreferences);
-		mThumbnailLoader = new FileThumbnailLoader(this, mURI, mPath, user, pass, mHandler, mThumbID, mFileList.getFileList(), mThumbSizeW, mThumbSizeH, mThumbNum, filesort, mHidden, mThumbSort, mThumbCrop, mThumbMargin, mEpubThumb);
+		mThumbnailLoader = new FileThumbnailLoader(this, mServer, mURI, mPath, user, pass, mHandler, mThumbID, mFileList.getFileList(), mThumbSizeW, mThumbSizeH, mThumbNum, filesort, mHidden, mThumbSort, mThumbCrop, mThumbMargin, mEpubThumb, mSkipGetThumbnail);
 		mThumbnailLoader.setDispRange(mFileFirstIndex, mFileLastIndex);
 
 		// 現在時をIDに設定
