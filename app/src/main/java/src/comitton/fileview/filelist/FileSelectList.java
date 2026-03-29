@@ -48,7 +48,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	//標準のストレージパスを保存
 	private static final String mStaticRootDir = Environment.getExternalStorageDirectory().getAbsolutePath() +"/";
 
-	private ArrayList<FileData> mFileList = null;
+	private static ArrayList<FileData> mFileList = null;
 	private ArrayList<FileData> m2FileList = null;
 	private ArrayList<FileData> m3FileList = null;
 
@@ -315,7 +315,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mEpubWebView = epubWebViewer;
 	}
 
-	public ArrayList<FileData> getFileList() {
+	public static ArrayList<FileData> getFileList() {
 		return mFileList;
 	}
 
