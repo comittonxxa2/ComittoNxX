@@ -562,6 +562,7 @@
     <string name="abortimageviewer">イメージビューアを強制終了しました.</string>
     <string name="readerror">読み込みエラー</string>
     <string name="readerrormessage">画像の解析中に問題が発生しました.\nファイルリストのキャッシュ削除、またはファイルリストを再生成して開くと直る可能性があります.</string>
+    <string name="fileerrormessage">ファイルの読み込み中にエラーが発生しました.\nファイルが破損しているか、または未対応の圧縮ファイルの可能性があります.</string>
     <string name="expandcompTitle">ファイルの展開</string>
     <string name="expandingcompTitle">展開中...</string>
     <string name="cancelexpandcompTitle">ファイルの展開がキャンセルされました.</string>
@@ -995,6 +996,6 @@
     <string name="selepubview03">見開き表示(上下)</string>
     <string name="selepubview04">見開き表示(上下左右)</string>
     <string name="fontEpubBody">本文フォントの拡大率(%)</string>
-    <string name="fontEpubText">テキストの拡大率(%)</string>
+    <string name="fontEpubText">テキストのドットピッチ拡大率(%)</string>
 
 </resources>
