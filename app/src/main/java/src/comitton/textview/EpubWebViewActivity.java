@@ -126,6 +126,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -345,6 +346,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private int mSelectMode;
 	private int mFileType;
 	private int mDispMode;
+	private int mDispModeBackup;
 	private boolean mBottomFile;
 	private int mPageSelect;
 	private boolean mDisablePageButton;
@@ -432,6 +434,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private int mTxtColor;
 	private int mBakColor;
 
+	private int mFontBodyBackup;
+	private int mFontTextBackup;
+	private int mFontInfoBackup;
+	private int mMarginWBackup;
+	private int mMarginHBackup;
+
 	private int mTextSize = 100;
 	private int mInfoSize;
 	private int mScale = 100;
@@ -442,6 +450,13 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mTextColorFix;
 	private boolean mTextBakColorFix;
 	private int mDispOffset = 0;
+	private boolean mNoCache;
+	private boolean mDispChange = false;
+	private boolean mInitSet = false;
+	private int mBackupCurrentScrolllX;
+	private int mBackupCurrentScrolllY;
+	private int mTextLength;
+	private boolean mSearchInitSet = false;
 
 	public class PageMetadata {
 		// 判定項目
@@ -565,6 +580,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					ratiox = Float.parseFloat(parts[4]);
 					ratioy = Float.parseFloat(parts[5]);
 					mCompleted = (ratiox == 1.0 && ratioy == 1.0) ? true : false;
+					Logcat.v(logLevel, "mFirstRead=" + mFirstRead + ", mPageOffset=" + mPageOffset + ", ratiox=" + ratiox + ", ratioy=" + ratioy + ", mCompleted=" + mCompleted);
 				}
 				catch (Exception e) {
 				}
@@ -616,6 +632,28 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// EPUBファイルを読み込む
 		if (mFilePath != null) loadEpub(mFilePath);
 	}
+	// 設定を呼び出す前に現在のページに関する内容を保存する
+	private void backupSetting() {
+		mDispModeBackup = mDispMode;
+		if (mScaleValiable) {
+			mFontTextBackup = mFontText;
+		}
+		mFontBodyBackup = mFontBody;
+		mFontInfoBackup = mFontInfo;
+		mMarginWBackup = mMarginW;
+		mMarginHBackup = mMarginH;
+	}
+	// 設定を呼び出した後に直前に設定したページに関する内容を復元する
+	private void restoreSetting() {
+		if (mScaleValiable) {
+			mFontText = mFontTextBackup;
+		}
+		mDispMode = mDispModeBackup;
+		mFontBody = mFontBodyBackup;
+		mFontInfo = mFontInfoBackup;
+		mMarginW = mMarginWBackup;
+		mMarginH = mMarginHBackup;
+	}
 
 	// 他アクティビティからの復帰通知
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -625,7 +663,10 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			// 設定の読込
 			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 			ReadSetting(sharedPreferences);
+			// 直前に設定したページに関する内容を復元する
+			restoreSetting();
 			// 本文のフォントの拡大率を変更
+			mTextSize = mFontBody * 2;
 			WebSettings settings = leftWebView.getSettings();
 			settings.setTextZoom(mTextSize);
 			leftWebView.setInitialScale(mScaleFix);
@@ -648,6 +689,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			});
 			initWrappers();
 			SetFrameLayout(false);
+			setAsyncScrollSet();
+			// 先にレイアウトを更新
 			updateLayout();
 			renderSpine(currentSpineIndex, leftWebView);
 		}
@@ -1253,7 +1296,9 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		super.onConfigurationChanged(newConfig);
 		// 画面が回転した瞬間にレイアウトを更新
 		// 表示開始
+		// レンダリング処理の後にレイアウトを更新
 		renderSpine(currentSpineIndex, leftWebView);
+		setAsyncScrollSet();
 		updateLayout();
 	}
 
@@ -2362,7 +2407,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				else {
 					mDispMode = 0;
 				}
-				mDispMode = index;
 				mGuideView.setGuideMode(mDispMode != DEF.DISPMODE_EPUB_NORMAL, mBottomFile, true, mPageSelect, false, mDisablePageButton);
 				if (mDispMode != 0) {
 					mDoubleMode = true;
@@ -2371,7 +2415,9 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					mDoubleMode = false;
 				}
 				// 表示開始
+				// レンダリング処理の後にレイアウトを更新
 				renderSpine(currentSpineIndex, leftWebView);
+				setAsyncScrollSet();
 				updateLayout();
 				break;
 			case DEF.TAP_EXIT_VIEWER:
@@ -2597,6 +2643,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				break;
 			case DEF.HMSG_EVENT_SEARCHCLEAR:
 				// 全文検索のクリアを受信
+				Log.v(TAG, "全文検索のクリアを受信");
 				clearSearchWord();
 				break;
 
@@ -2648,6 +2695,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			}
 			case DEF.MENU_SETTING: {
 				// 設定画面に遷移
+				// 設定を呼び出す前に現在のページに関する内容を保存する
+				backupSetting();
 				Intent intent = new Intent(EpubWebViewActivity.this, SetConfigActivity.class);
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 				startActivityForResult(intent, DEF.REQUEST_SETTING);
@@ -2742,7 +2791,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 							Logcat.v(logLevel, "ratiox=" + ratiox + ", ratioy=" + ratioy);
 							mPageOffset = data.getChapter();
 							mScrollOffset = 0;
+							// 検索をクリア
+							clearSearchWord();
+							// レンダリング処理の後にレイアウトを更新
 							renderSpine(0, leftWebView);
+							setAsyncScrollSet();
 							updateLayout();
 						}
 					}
@@ -2816,7 +2869,9 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 								mDoubleMode = false;
 							}
 							// 表示開始
+							// レンダリング処理の後にレイアウトを更新
 							renderSpine(currentSpineIndex, leftWebView);
+							setAsyncScrollSet();
 							updateLayout();
 						}
 						break;
@@ -3064,6 +3119,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					});
 					initWrappers();
 					SetFrameLayout(false);
+					// 先にレイアウトを更新
+					setAsyncScrollSet();
 					updateLayout();
 					renderSpine(currentSpineIndex, leftWebView);
 				}
@@ -3181,7 +3238,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			}
 			mAnchorl = true;
 
-			searchKeyword = "";
+			// 検索をクリア
+			clearSearchWord();
 
 			if (mLoadingSpinner != null) {
 				mLoadingSpinner.setVisibility(View.VISIBLE);
@@ -3352,6 +3410,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mViewRota = SetEpubActivity.getViewRota(sharedPreferences);
 		mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
 		mRotateBtn = DEF.RotateBtnList[SetCommonActivity.getRotateBtn(sharedPreferences)];
+		mNoCache = SetEpubActivity.getNoCache(sharedPreferences);
 	}
 
 	// サーフェスビューの設定
@@ -3477,6 +3536,34 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			return new FileInputStream(path);
 		}
 	}
+
+	private void setAsyncScrollSet() {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		// 非同期処理を開始
+		CompletableFuture.runAsync(() -> {
+			Log.v(TAG, "mInitSet = true");
+			mInitSet = true;
+			// レイアウトが変更されると検索位置が先頭に戻るため初期化を行わせる
+			mSearchInitSet = true;
+			Logcat.v(logLevel, "バックグラウンドで重い処理を実行中...");
+			Logcat.v(logLevel, "mTextLength=" + mTextLength);
+			try {
+				Thread.sleep(500 + mTextLength / 50);
+			}
+			catch (InterruptedException e) {
+			}
+			Logcat.v(logLevel, "処理完了！");
+			Logcat.v(logLevel, "currentScrolllX=" + currentScrolllX + ", currentScrolllY=" + currentScrolllY);
+			Logcat.v(logLevel, "mInitSet = false");
+			if (mTextLength != 0) {
+				mInitSet = false;
+				currentScrolllX = mBackupCurrentScrolllX;
+				currentScrolllY = mBackupCurrentScrolllY;
+				syncWebViewScroll();
+			}
+        });
+    }
+
 	// EPUBファイルを読み出す
 	private void loadEpub(String path) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -3514,7 +3601,9 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 						mPageOffset = 0;
 					}
 					// 表示開始
+					// レンダリング処理の後にレイアウトを更新
 					renderSpine(0, leftWebView);
+					setAsyncScrollSet();
 					updateLayout();
 				});
 			}
@@ -3641,10 +3730,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 
 				Logcat.v(logLevel, "スクロールサイズ解析開始");
-				view.postDelayed(() -> {
-					calculateScrollRange(view);
+				if (view != null) {
+					view.post(() -> {
+						// UIスレッドの空きを待ってから描画の直前を狙う
+						view.postOnAnimation(new Runnable() {
+							@Override
+							public void run() {
+								// ここでスクロールサイズ解析を実行
+								calculateScrollRange(view);
+							}
+						});
+					});
 				}
-				, 200);
 			}, 200); // レンダリング安定のための待機
 		}
 
@@ -3746,12 +3843,17 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		if (isDoneCounting) {
 			// 検索全体が完了した時の処理
 			mNowFindTotal = numberOfMatches;
+			if (mSearchInitSet) {
+				mSearchInitSet = false;
+				// レイアウトが変更されると検索位置が先頭に戻るためクリアする
+				mNowFindCount = 0;
+			}
 			if (mNowPrevSet) {
 				mNowPrevSet = false;
 				mNowFindCount = mNowFindTotal - 1;
 				Logcat.v(logLevel, "末尾に移動させる");
 			}
-			TouchPanelView.SetSearchWordIndex(mSearchIndex + 1, mNowFindCount + 1, mNowFindTotal);
+			TouchPanelView.SetSearchWordIndex(mSearchIndex + 1, mNowFindCount + 1, mNowFindTotal, SearchList.size(), mNowFindTotal);
 			if (numberOfMatches > 0) {
 				Logcat.v(logLevel, "numberOfMatches=" + numberOfMatches);
 				// ヒットした場所へのスクロール同期を開始
@@ -3792,10 +3894,17 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		webView.setBackgroundColor(colorInt);
 		// ハードウェア描画にする(これを入れないと遅くなる)
 		webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-		// キャッシュモードを「有効(基本はキャッシュ優先)」にする
-		settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-		// データベースキャッシュを有効化
-		settings.setDomStorageEnabled(true);
+		if (mNoCache) {
+			// キャッシュを使用しない
+			settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+			settings.setDomStorageEnabled(false);
+		}
+		else {
+			// キャッシュモードを「有効(基本はキャッシュ優先)」にする
+			settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+			// データベースキャッシュを有効化
+			settings.setDomStorageEnabled(true);
+		}
 		initScrollListener(webView);
 		return webView;
 	}
@@ -3803,7 +3912,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	// WebViewの動作が停止したら呼び出される
 	private void onAnyWebViewStopped(WebView view) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		if (!mBusyRotate && !mFindWord) {
+		if (!mBusyRotate && !mInitSet) {
 			Logcat.v(logLevel, "calcRatio()");
 			// スクロール移動が停止したら現在座標の比率を計算
 			calcRatio();
@@ -3934,55 +4043,74 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			" const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.5; "+
 			"  return Math.max(b.scrollWidth, e.scrollWidth) + ',' + Math.max(b.scrollHeight, e.scrollHeight) + ',' + lineHeight; " +
 			"})()";
-		int delay = (set) ? 2000 : 200;
-		view.postDelayed(() -> {
-			view.evaluateJavascript(js, value -> {
-				try {
-					if (value == null || value.equals("null")) return;
-					String[] parts = value.replace("\"", "").split(",");
-					float d = mScaleDensity;
-					float contentWidth = Float.parseFloat(parts[0]) * d;
-					float contentHeight = Float.parseFloat(parts[1]) * d;
-					float lineHeight = Float.parseFloat(parts[2]);
-					double safeLineCountX = Math.floor(view.getWidth() / lineHeight) -1;
-					double safeLineCountY = Math.floor(view.getHeight() / lineHeight) -1;
-					scrollXStep = (int)((int)(safeLineCountX) * lineHeight);
+		// ページめくり時は200ミリ秒にする
+		int delay = (set) ? 500 : 200;
+		// スマホの処理能力に応じて描画を完了させるため二段階でチェックする
+		if (view != null) {
+			view.postDelayed(() -> {
+				// UIスレッドの空きを待ってから描画の直前を狙う
+				view.postOnAnimation(new Runnable() {
+					@Override
+					public void run() {
+						view.postDelayed(() -> {
+							// UIスレッドの空きを待ってから描画の直前を狙う
+							view.postOnAnimation(new Runnable() {
+								public void run() {
+									view.evaluateJavascript(js, value -> {
+										try {
+											if (value == null || value.equals("null")) return;
+											String[] parts = value.replace("\"", "").split(",");
+											float d = mScaleDensity;
+											float contentWidth = Float.parseFloat(parts[0]) * d;
+											float contentHeight = Float.parseFloat(parts[1]) * d;
+											float lineHeight = Float.parseFloat(parts[2]);
+											double safeLineCountX = Math.floor(view.getWidth() / lineHeight) -1;
+											double safeLineCountY = Math.floor(view.getHeight() / lineHeight) -1;
+											scrollXStep = (int)((int)(safeLineCountX) * lineHeight);
 
-					scrollYStep = (int)((int)(safeLineCountY) * lineHeight);
-					if (set) {
-						if (!mScalingOn && !mScrollxEnable) {
-							maxScrollX = Math.max(0, (int)contentWidth - view.getWidth());
-							maxScrollY = Math.max(0, (int)contentHeight - view.getHeight());
-							// 回転したら再計算してスクロール移動
-							currentScrolllX = (int)((float)maxScrollX * ratiox);
-							currentScrolllY = (int)((float)maxScrollY * ratioy);
-						}
-						if (!mDoubleMode) {
-							leftWebView.scrollTo(currentScrolllX, currentScrolllY);
-						}
-						else if (mUpDownMode) {
-							leftWebView.scrollTo(currentScrolllX - scrollXStep, currentScrolllY);
-							if (mDoubleMode) rightWebView.scrollTo(currentScrolllX, currentScrolllY + scrollYStep);
-						}
-						else {
-							leftWebView.scrollTo(currentScrolllX, currentScrolllY);
-							if (mDoubleMode) rightWebView.scrollTo(currentScrolllX - scrollXStep, currentScrolllY + scrollYStep);
-						}
-						
-						Logcat.v(logLevel, "currentScrolllX=" + currentScrolllX + ", currentScrolllY=" + currentScrolllY + ", maxScrollX=" + maxScrollX + ", maxScrollY=" + maxScrollY);
-						if (mLoadingSpinner != null) {
-							mLoadingSpinner.setVisibility(view.GONE);
-						}
-						mBusyRotate = false;
-
+											scrollYStep = (int)((int)(safeLineCountY) * lineHeight);
+											if (set) {
+												maxScrollX = Math.max(0, (int)contentWidth - view.getWidth());
+												maxScrollY = Math.max(0, (int)contentHeight - view.getHeight());
+												// 回転したら再計算してスクロール移動
+												currentScrolllX = (int)((float)maxScrollX * ratiox);
+												currentScrolllY = (int)((float)maxScrollY * ratioy);
+												if (mInitSet) {
+													// 初期化中にスクロール位置を取得する
+													mBackupCurrentScrolllX = currentScrolllX;
+													mBackupCurrentScrolllY = currentScrolllY;
+												}
+												if (!mDoubleMode) {
+													leftWebView.scrollTo(currentScrolllX, currentScrolllY);
+												}
+												else if (mUpDownMode) {
+													leftWebView.scrollTo(currentScrolllX - scrollXStep, currentScrolllY);
+													if (mDoubleMode) rightWebView.scrollTo(currentScrolllX, currentScrolllY + scrollYStep);
+												}
+												else {
+													leftWebView.scrollTo(currentScrolllX, currentScrolllY);
+													if (mDoubleMode) rightWebView.scrollTo(currentScrolllX - scrollXStep, currentScrolllY + scrollYStep);
+												}
+												Logcat.v(logLevel, "currentScrolllX=" + currentScrolllX + ", currentScrolllY=" + currentScrolllY + ", maxScrollX=" + maxScrollX + ", maxScrollY=" + maxScrollY);
+												mBusyRotate = false;
+											}
+											Logcat.v(logLevel, "scrollXStep=" + scrollXStep + ", scrollYStep=" + scrollYStep + ", contentWidth=" + contentWidth + ", contentHeight=" + contentHeight);
+											// ここで表示を消す
+											if (mLoadingSpinner != null) {
+												mLoadingSpinner.setVisibility(view.GONE);
+											}
+										}
+										catch (Exception e) { 
+											Log.e(TAG, "JS Error", e);
+										}
+									});
+								}
+							});
+						}, delay);
 					}
-					Logcat.v(logLevel, "scrollXStep=" + scrollXStep + ", scrollYStep=" + scrollYStep + ", contentWidth=" + contentWidth + ", contentHeight=" + contentHeight);
-				}
-				catch (Exception e) { 
-					Log.e(TAG, "JS Error", e);
-				}
-			});
-		}, delay); // レンダリング安定のための待機
+				});
+			}, delay);
+		}
 	}
 	// スクロールのレンジを計算
 	private void calculateScrollRange(WebView view) {
@@ -4640,12 +4768,14 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				if ("image/svg+xml".equals(mediaType)) {
 					mMeta.isImageOnly = true;
 					mMeta.isFixed = true;
+					mTextLength = 1;
 				}
 				else if (mediaType.contains("xhtml") || mediaType.contains("html")) {
 					String content = new String(res.getData(), "UTF-8");
 					// タグを除去して純粋なテキストの長さを測る
 					String textOnly = content.replaceAll("<[^>]*>", "").replaceAll("\\s+", "").trim();
 					int textLength = textOnly.length();
+					mTextLength = textLength + 1;
 
 					Logcat.v(logLevel, "Index [" + index + "] textLength: " + textLength);
 
@@ -4660,6 +4790,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					mMeta.isImageOnly = true;
 					mMeta.isFixed = true;
 					mMeta.isScrollOff = true;
+					mTextLength = 1;
 				}
 				String lang = currentBook.getMetadata().getLanguage();
 				// OPF解析
@@ -5250,7 +5381,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					}
 					else {
 						pages = calcCurrentPageMax((int)scrollHeight, scrollY, false);
-//					Logcat.v(logLevel, "横書きの場合: 高さ " + scrollHeight + " を基準に計算 表示範囲=" + scrollY);
+					Logcat.v(logLevel, "横書きの場合: 高さ " + scrollHeight + " を基準に計算 表示範囲=" + scrollY);
 					}
 				}
 			}
@@ -5887,6 +6018,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		if (SearchList == null) return;
 		if (mode) {
+			if (SearchList.size() == 1) return;
 			mNowFindCount = 0;
 			mSearchCount++;
 			if (mSearchCount == SearchList.size()) {
@@ -5931,12 +6063,17 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		if (mDoubleMode) rightWebView.clearMatches();
 		SearchList = null;
 		searchKeyword = null;
+		mNowFindTotal = 0;
+		mNowFindCount = 0;
+		mSearchCount = 0;
+		TouchPanelView.SetSearchWordIndex(0, 0, 0, 0, 0);
 	}
 
 	private void SearchPrev(boolean mode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		if (SearchList == null) return;
 		if (mode) {
+			if (SearchList.size() == 1) return;
 			mNowFindCount = mNowFindTotal - 1;
 			mSearchCount--;
 			if (mSearchCount < 0) {
