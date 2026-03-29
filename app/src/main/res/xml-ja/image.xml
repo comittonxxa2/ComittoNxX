@@ -91,6 +91,11 @@
             android:key="FileSort"
             android:summary="dummy"
             android:title="書庫内ファイルのソート" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ImageSort"
+            android:summary="画像ファイルのソートをファイルリストのソートに合わせる場合はチェックを入れる(チェックなしの場合は書庫内ファイルのソートに従う)"
+            android:title="画像ファイルのソート" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="ページをめくる方向"

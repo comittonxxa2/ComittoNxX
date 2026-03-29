@@ -306,6 +306,21 @@
             android:key="MarkerDirOn"
             android:summary="マーカー設定のディレクトリのチェックをデフォルトでオンにする"
             android:title="マーカー設定のディレクトリのチェック" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ArchiveCheckManualMode"
+            android:summary="圧縮ファイルの識別を自動判定からマジックナンバーで固定にして識別の時間を短縮する"
+            android:title="圧縮ファイルの識別でマジックナンバーを参照する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipGetThumbnail"
+            android:summary="サムネイル取得時にエラーで時間が掛かる場合にチェックを入れると取得時間が短縮される(サムネイルの再取得はファイルの右クリックでサムネイルキャッシュ削除を選択する)"
+            android:title="サムネイル取得の失敗時に次からスキップさせる" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipZipLib"
+            android:summary="ZIP圧縮ファイルの展開ライブラリ使用しない(ファイルの先頭の画像が読み込めない/サムネイル画像が取得できない場合はチェックを入れると直る可能性があります)(※64bit/LZMA/Bzip2形式のZIPファイルが開けなくなります)"
+            android:title="ZIPファイルの読み込みを旧方式で行う" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

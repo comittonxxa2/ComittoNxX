@@ -41,6 +41,11 @@
             android:key="epNoSleep"
             android:summary="EPUBビューア表示画面を一旦閉じたあと有効"
             android:title="スリープさせない" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epNoCache"
+            android:summary="EPUBビューア表示画面を一旦閉じたあと有効"
+            android:title="キャッシュを使用しない" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="表示方向"
@@ -155,7 +160,7 @@
             android:defaultValue="false"
             android:key="epTextSizeVariable"
             android:summary="テキストの表示領域を変更する場合にチェックを入れる(レイアウトが崩れる可能性があります)"
-            android:title="テキストの拡大率を可変させる" />
+            android:title="テキストのドットピッチ拡大率を可変させる" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="epTextFrame"
@@ -175,12 +180,12 @@
             android:summary="dummy"
             android:title="本文フォントの拡大率" />
         <src.comitton.config.seekbar.EpubFontTextSeekbar
-            android:dialogMessage="テキストの拡大率を選択"
-            android:dialogTitle="テキストの拡大率"
+            android:dialogMessage="テキストのドットピッチ拡大率を選択"
+            android:dialogTitle="テキストのドットピッチ拡大率"
             android:key="epFontTextSp"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="テキストの拡大率" />
+            android:title="テキストのドットピッチ拡大率" />
         <src.comitton.config.seekbar.EpubFontInfoSeekbar
             android:dialogMessage="ヘッダー/フッターのフォントサイズを選択"
             android:dialogTitle="ヘッダー/フッターのフォントサイズ"
