@@ -304,6 +304,21 @@
             android:key="MarkerDirOn"
             android:summary="Enable checking the directory in marker settings by default."
             android:title="Check the directory for marker settings." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ArchiveCheckManualMode"
+            android:summary="The identification time for compressed files will be shortened by fixing the identification process using a magic number instead of automatic detection."
+            android:title="Referencing a magic number for identifying compressed files" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipGetThumbnail"
+            android:summary="If retrieving thumbnails takes a long time due to errors, checking this box will shorten the retrieval time (to re-retrieve thumbnails, right-click the file and select &quot;Delete Thumbnail Cache&quot;)."
+            android:title="Skip the process if thumbnail retrieval fails." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipZipLib"
+            android:summary="Do not use the ZIP compressed file extraction library (Checking this box may fix issues if the first image in the file cannot be read or thumbnail images cannot be retrieved) (Note: ZIP files in 64-bit/LZMA/Bzip2 format will not be able to be opened)"
+            android:title="Load ZIP files using the old method." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

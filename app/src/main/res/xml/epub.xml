@@ -41,6 +41,11 @@
             android:key="epNoSleep"
             android:summary="This feature becomes effective after closing the EPUB viewer display screen."
             android:title="Do not put to sleep" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epNoCache"
+            android:summary="This feature becomes effective after closing the EPUB viewer display screen."
+            android:title="Do not use cache" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Display direction"
@@ -154,8 +159,8 @@
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="epTextSizeVariable"
-            android:summary="テキストの表示領域を変更する場合にチェックを入れる(レイアウトが崩れる可能性があります)"
-            android:title="テキストの拡大率を可変させる" />
+            android:summary="Check this box if you want to change the text display area (this may cause layout issues)."
+            android:title="Vary the dot pitch scaling factor of the text." />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="epTextFrame"
@@ -175,12 +180,12 @@
             android:summary="dummy"
             android:title="Font scaling for the main text" />
         <src.comitton.config.seekbar.EpubFontTextSeekbar
-            android:dialogMessage="Select the text zoom level."
-            android:dialogTitle="Text zoom level"
+            android:dialogMessage="Select the text dot pitch scaling factor."
+            android:dialogTitle="Text dot pitch scaling"
             android:key="epFontTextSp"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="Text zoom level" />
+            android:title="Text dot pitch scaling" />
         <src.comitton.config.seekbar.EpubFontInfoSeekbar
             android:dialogMessage="Select the font size for the header/footer."
             android:dialogTitle="Header/footer font size"

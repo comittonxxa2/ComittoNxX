@@ -91,6 +91,11 @@
             android:key="FileSort"
             android:summary="dummy"
             android:title="Show Image Order" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ImageSort"
+            android:summary="Check this box to match the sorting of image files to the sorting of the file list (if unchecked, it will follow the sorting of files within the archive)."
+            android:title="Sorting image files" />
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Turning the Page Direction"
