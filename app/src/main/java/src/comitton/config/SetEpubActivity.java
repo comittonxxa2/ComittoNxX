@@ -414,6 +414,12 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		return val;
 	}
 
+	public static boolean getNoCache(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_EP_NOCACHE, false);
+		return flag;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getInitViewSummary(SharedPreferences sharedPreferences){
 		int val = getInitView(sharedPreferences);
