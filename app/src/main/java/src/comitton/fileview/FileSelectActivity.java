@@ -2,15 +2,25 @@ package src.comitton.fileview;
 
 import static android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Map;
 import java.text.MessageFormat;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
@@ -323,6 +333,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
+	private boolean mAozoraZipFile;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -1550,6 +1562,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mFilter = SetFileListActivity.getMarkerFilterOn(mSharedPreferences);
 		mApplyDir = SetFileListActivity.getMarkerDirOn(mSharedPreferences);
 		mSkipGetThumbnail = SetFileListActivity.getSkipGetThumbnail(mSharedPreferences);
+		mAozoraZipFile = SetFileListActivity.getAozoraZipFile(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -2291,6 +2304,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									ed.remove(file + "META-INF/container.xml" + "#maxpage");
 									ed.remove(file + "META-INF/container.xml");
 									ed.remove(file + "#newepub");
+									ed.remove(file + "#aozora");
 									ed.apply();
 									ThumbnailLoader.deleteThumbnailCache(uri, mThumbSizeW, mThumbSizeH);
 								}
@@ -2539,12 +2553,17 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									if (result != null) {
 										ed.putString(to + "#newepub", result);
 									}
+									result = mSharedPreferences.getString(from + "#aozora", null);
+									if (result != null) {
+										ed.putString(to + "#aozora", result);
+									}
 									ed.remove(from + "#date");
 									ed.remove(from + "#maxpage");
 									ed.remove(from);
 									ed.remove(from + "META-INF/container.xml" + "#maxpage");
 									ed.remove(from + "META-INF/container.xml");
 									ed.remove(from + "#newepub");
+									ed.remove(from + "#aozora");
 									ed.apply();
 									ThumbnailLoader.renameThumbnailCache(fromUri, toUri, mThumbSizeW, mThumbSizeH);
 								}
@@ -3032,7 +3051,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// ファイルリスト取得条件セット
 		mFileList.setPath(mURI, mPath, user, pass);
-		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer, mEpubWebView);
+		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer, mEpubWebView, mAozoraZipFile);
 
 		mListScreenView.mFileListArea.setThumbnailId(0);
 
@@ -3259,7 +3278,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									data.setMaxpage(maxpage - 1);
 									data.setState(state - 1);
 								}
-		    				    catch (Exception e) {
+								catch (Exception e) {
 								}
 							}
 						}
@@ -3711,16 +3730,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				i++;
 			}
 			if (delmenu) {
-    			// ファイル削除
-    			items[i] = ope3;
-    			mOperate[i] = OPERATE_DEL;
-    			i++;
+				// ファイル削除
+				items[i] = ope3;
+				mOperate[i] = OPERATE_DEL;
+				i++;
 			}
 			if (renmenu) {
-    			// リネーム
-    			items[i] = ope8;
-    			mOperate[i] = OPERATE_RENAME;
-    			i++;
+				// リネーム
+				items[i] = ope8;
+				mOperate[i] = OPERATE_RENAME;
+				i++;
 			}
 			// キャッシュ削除
 			items[i] = ope9;
@@ -3867,16 +3886,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 			}
 			if (renmenu) {
-    			// ファイル名変更
-    			items[i] = ope8;
-    			mOperate[i] = OPERATE_RENAME;
-    			i++;
+				// ファイル名変更
+				items[i] = ope8;
+				mOperate[i] = OPERATE_RENAME;
+				i++;
 			}
 			if (delmenu) {
-    			// ディレクトリ削除あり
-    			items[i] = ope3;
-    			mOperate[i] = OPERATE_DEL;
-    			i++;
+				// ディレクトリ削除あり
+				items[i] = ope3;
+				mOperate[i] = OPERATE_DEL;
+				i++;
 			}
 			if (mFileData.getType() != FileData.FILETYPE_DIR && mFileData.getType() != FileData.FILETYPE_TXT && mFileData.getType() != FileData.FILETYPE_WEB) {
 				// 先頭ページを範囲選択してサムネイルに設定
@@ -4197,7 +4216,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						Map<String, ?> keys = mSharedPreferences.getAll();
 						if (keys != null) {
 							for (String key : keys.keySet()) {
-							    //Logcat.i(logLevel,key);
 								if (mNowItem == 4) {
 									String user = mServer.getUser();
 									String pass = mServer.getPass();
@@ -4667,7 +4685,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * パスの移動
 	 */
 	private boolean moveFileSelectFromServer(int svrindex, String path) {
-		int logLevel = Logcat.LOG_LEVEL_VERBOSE;
+		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "svrindex=" + svrindex  + ", path=" + path);
 		ServerSelect server = new ServerSelect(mSharedPreferences, this);
 		if (svrindex != DEF.INDEX_LOCAL) {
@@ -5029,7 +5047,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	/**
 	 * 圧縮ファイルオープン
 	 */
-	private void openCompFile(String name) {
+	private void openCompFile(final String name) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. name=" + name);
 
@@ -5043,8 +5061,37 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 描画停止
 		setDrawEnable();
 
-		Intent intent;
-		intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
+		final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
+		final File path = new File(mFilePath);
+		// 重い処理をバックグラウンドへ逃がす
+		executor.execute(() -> {
+			// ここでZip解析を実行
+			final boolean checkAozora = (mAozoraZipFile) ? analyzeZip(path) : false;
+			// 結果をメインスレッドに戻してActivityを起動
+			mainHandler.post(() -> {
+				Intent intent;
+				if (checkAozora) {
+					// WebベースのEPUBビューアの場合
+					intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
+					intent.putExtra("Text", "");
+					// ... 他の共通Extra ...
+					setupCommonExtras(intent, name);
+					startActivityForResult(intent, DEF.REQUEST_EPUB);
+				} else {
+					// 画像ビューアの場合
+					intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+					intent.putExtra("Image", ""); 					// 中身の画像ファイル名
+					// ... 他の共通Extra ...
+					setupCommonExtras(intent, name);
+					startActivityForResult(intent, DEF.REQUEST_IMAGE);
+				}
+			});
+		});
+	}
+
+	// コード重複を避けるためのヘルパーメソッド
+	private void setupCommonExtras(Intent intent, String name) {
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
 		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
@@ -5052,8 +5099,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("User", mServer.getUser());		// SMB認証用
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 		intent.putExtra("File", name);					// ZIPファイル名
-		intent.putExtra("Image", ""); 					// 中身の画像ファイル名
-		startActivityForResult(intent, DEF.REQUEST_IMAGE);
 	}
 
 	/**
@@ -5081,6 +5126,66 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Type", type); // ファイルの種類
 		startActivityForResult(intent, DEF.REQUEST_EXPAND);
 		return;
+	}
+
+	private static boolean analyzeZip(File zipFile) {
+		// 青空文庫かどうかを判定
+		Charset ms932 = Charset.forName("MS932");
+
+		try (ZipFile zf = new ZipFile(zipFile, ZipFile.OPEN_READ, ms932)) {
+			Enumeration<? extends ZipEntry> entries = zf.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				if (entry.isDirectory() || !entry.getName().toLowerCase().endsWith(".txt")) continue;
+				// まずは冒頭部分をチェック
+				if (checkHeader(zf, entry, ms932)) return true;
+				// 冒頭でわからなければ、末尾をチェック
+				if (checkFooter(zf, entry, ms932)) return true;
+			}
+		}
+		catch (IOException e) {
+	    	Logcat.e(Logcat.LOG_LEVEL_ERROR, "Zip分析エラー: " + e.getMessage());
+		}
+		return false;
+	}
+
+	// 冒頭をチェックするメソッド
+	private static boolean checkHeader(ZipFile zf, ZipEntry entry, Charset cs) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(zf.getInputStream(entry), cs))) {
+			String line;
+			int count = 0;
+			while ((line = reader.readLine()) != null && count < 100) {
+				if (line.contains("［＃") || line.startsWith("底本：")) return true;
+				if (line.matches(".*[\\p{IsHan}]《[^》]+》.*")) return true;
+				count++;
+			}
+		}
+		return false;
+	}
+
+	// 末尾(フッター)をチェックするメソッド
+	private static boolean checkFooter(ZipFile zf, ZipEntry entry, Charset cs) throws IOException {
+		long size = entry.getSize();
+		if (size <= 0) return false;
+		// 末尾から何バイト戻るか(2000バイトもあれば十分クレジットが入る)
+		long seekPosition = Math.max(0, size - 2000);
+		try (InputStream is = zf.getInputStream(entry)) {
+			// 先頭からseekPosition分だけ読み飛ばす
+			long skipped = 0;
+			while (skipped < seekPosition) {
+				long s = is.skip(seekPosition - skipped);
+				if (s <= 0) break;
+				skipped += s;
+			}
+			// 残りの部分(末尾2000バイト分)を読み取って判定
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, cs))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					if (line.contains("www.aozora.gr.jp")) return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private void setDrawEnable() {
@@ -5404,7 +5509,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			if (size <= 0) {
 				return null;
 			}
-            return mHistory.get(size - 1);
+			return mHistory.get(size - 1);
 		}
 	}
 
@@ -5415,15 +5520,15 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// スクロール位置変更
 		if (listtype == RecordList.TYPE_FILELIST) {
-    		// ファイルリスト
+			// ファイルリスト
 			if (mFileFirstIndex != firstindex || mFileLastIndex != lastindex) {
 				mFileFirstIndex = firstindex;
 				mFileLastIndex = lastindex;
 				if (mThumbnailLoader != null) {
-    				// リストボックスの位置が変わったときに通知
-    				mThumbnailLoader.setDispRange(mFileFirstIndex, mFileLastIndex);
-    			}
-    		}
+					// リストボックスの位置が変わったときに通知
+					mThumbnailLoader.setDispRange(mFileFirstIndex, mFileLastIndex);
+				}
+			}
 		}
 	}
 
@@ -5650,6 +5755,29 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 					releaseManager();
 				}
+				if (mAozoraZipFile) {
+					if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+						mUriFilePath = mURI + mFileData.getName();
+					}
+					else {
+						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+					}
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "0,0,0,0,0.0,0.0");
+					if (mRestoreValue != null) {
+						String[] parts = mRestoreValue.split(",");
+						if (parts.length >= 6) {
+							try {
+								// 末尾の2つを1.0にして既読にしてしまう
+								String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0";
+								ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+								ed.apply();
+							}
+							catch (Exception e) {
+							}
+						}
+					}
+				}
 			}
 			if (mFileData.getType() == FileData.FILETYPE_DIR) { // 処理を追加した
 				int	maxpage;
@@ -5736,6 +5864,29 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "#maxpage", user, pass));
 				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass));
 				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#date");
+
+				if (mAozoraZipFile) {
+					if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+						mUriFilePath = mURI + mFileData.getName();
+					}
+					else {
+						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+					}
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-1,-1,0,0,0.0,0.0");
+					if (mRestoreValue != null) {
+						String[] parts = mRestoreValue.split(",");
+						if (parts.length >= 6) {
+							try {
+								// 先頭の値を-1にして未読にしてしまう
+								String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0";
+								ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+							}
+							catch (Exception e) {
+							}
+						}
+					}
+				}
 			}
 			ed.apply();
 
@@ -6091,10 +6242,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// 古いものを削除
 					mSortType = 4;
 					Collections.sort(recordList, new BookmarkComparator(mSortType));
-                    // 日付昇順にして先頭を削除
-                    if (listsize - mHistCount > 0) {
-                        recordList.subList(0, listsize - mHistCount).clear();
-                    }
+					// 日付昇順にして先頭を削除
+					if (listsize - mHistCount > 0) {
+						recordList.subList(0, listsize - mHistCount).clear();
+					}
 				}
 				if (!mLocalSave || !mSambaSave) {
 					// 履歴の場合
