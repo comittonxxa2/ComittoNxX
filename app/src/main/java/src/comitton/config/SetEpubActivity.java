@@ -82,6 +82,9 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		, R.string.timeformat03		// 24:00
 		, R.string.timeformat04		// 24:00 [100%]
 		, R.string.timeformat05 };	// 24:00 [100%] [AC]
+	public static final int[] DirectionName =
+		{ R.string.direction00	// 縦方向
+		, R.string.direction01 };	// 横方向
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -132,7 +135,6 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 	    mChkTextSize.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
 	        @Override
 	        public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
-//				Log.v(TAG, "newValue=" + newValue);
 	            // newValue には新しいチェック状態(Boolean)が入ってくる
 	            boolean isChecked = (Boolean) newValue;
 	            mFontText.setEnabled(isChecked); 
