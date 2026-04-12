@@ -121,10 +121,17 @@ import java.io.RandomAccessFile;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -158,6 +165,8 @@ import net.sf.sevenzipjbinding.IInStream;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.jsoup.Jsoup;
 
@@ -187,8 +196,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private static final int TIME_VIB_TERM = 20;
 	private static final int TIME_VIB_RANGE = 30;
 
-	private final int TOUCH_NONE      = 0;
-	private final int TOUCH_COMMAND   = 1;
+	private final int TOUCH_NONE = 0;
+	private final int TOUCH_COMMAND = 1;
 	private final int TOUCH_OPERATION = 2;
 
 	private final int INFOCOLOR = 0xff000000;
@@ -457,6 +466,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private int mBackupCurrentScrolllY;
 	private int mTextLength;
 	private boolean mSearchInitSet = false;
+	private boolean isAozora = false;
+	private File mAozoraFile;
+	private String fileUrl;
+	private String mAozoraHtml;
+	private int mAozoratextLength;
+	private int mAozoraDirText;
 
 	public class PageMetadata {
 		// 判定項目
@@ -560,14 +575,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			mFilePath = mUriPath;
 		}
+		if (mFilePath.toLowerCase().endsWith(".zip")) {
+			isAozora = true;
+		}
 		mLocalFileName = DEF.relativePath(mActivity, mPath, mFileName);
 		mTimestamp = (int) FileAccess.date(mActivity, mFilePath, mUser, mPass);
 		// 続きから開く設定を記録
 		saveLastFile();
 		// 読書の情報を読みこむ
-		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName);
-		String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", "-1,-1,0,0,0.0,0.0");
+		String id = (isAozora) ? "#aozora" : "#newepub";
+		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName + ", id=" + id);
+		String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mUser, mPass) + id, "-1,-1,0,0,0.0,0.0");
 		mFirstRead = false;
+		mAozoraDirText = 0;
 		if (mRestoreValue != null) {
 			String[] parts = mRestoreValue.split(",");
 			if (parts.length >= 6) {
@@ -577,10 +597,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					mFirstRead = (Integer.parseInt(parts[0]) == -1 && Integer.parseInt(parts[1]) == -1) ? true : false;
 					mScrollOffset = 0;
 					mPageOffset = Integer.parseInt(parts[3]);
+					if (isAozora) mAozoraDirText = Integer.parseInt(parts[3]);
 					ratiox = Float.parseFloat(parts[4]);
 					ratioy = Float.parseFloat(parts[5]);
 					mCompleted = (ratiox == 1.0 && ratioy == 1.0) ? true : false;
-					Logcat.v(logLevel, "mFirstRead=" + mFirstRead + ", mPageOffset=" + mPageOffset + ", ratiox=" + ratiox + ", ratioy=" + ratioy + ", mCompleted=" + mCompleted);
+					Logcat.v(logLevel, "mFirstRead=" + mFirstRead + ", mPageOffset=" + mPageOffset + ", ratiox=" + ratiox + ", ratioy=" + ratioy + ", mCompleted=" + mCompleted + ", mAozoraDirText=" + mAozoraDirText);
 				}
 				catch (Exception e) {
 				}
@@ -698,7 +719,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 	private void SetFrameLayout(boolean mode) {
 		// 縦書きと横書きのWebViewを作成
-		// 一番外側の土台を FrameLayout に変更（重なりを許容するため）
+		// 一番外側の土台を FrameLayout に変更(重なりを許容するため)
 		FrameLayout screenRoot = new FrameLayout(this);
 		screenRoot.setLayoutParams(new ViewGroup.LayoutParams(
 			ViewGroup.LayoutParams.MATCH_PARENT, 
@@ -884,18 +905,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		leftWrapper.setBackground(border);
 		leftWrapper.setPadding(borderWidth, borderWidth, borderWidth, borderWidth);
 		// leftWebViewを親から切り離す
-        if (leftWebView != null && leftWebView.getParent() != null) {
-            ((ViewGroup) leftWebView.getParent()).removeView(leftWebView);
-        }
+		if (leftWebView != null && leftWebView.getParent() != null) {
+			((ViewGroup) leftWebView.getParent()).removeView(leftWebView);
+		}
 		leftWrapper.addView(leftWebView, webParams);
 		rightWrapper = new FrameLayout(this);
 		rightWrapper.setBackground(border);
 		rightWrapper.setPadding(borderWidth, borderWidth, borderWidth, borderWidth);
 		if (rightWebView != null) {
-			// 修正箇所：rightWebViewを親から切り離す
-            if (rightWebView.getParent() != null) {
-                ((ViewGroup) rightWebView.getParent()).removeView(rightWebView);
-            }
+			// rightWebViewを親から切り離す
+			if (rightWebView.getParent() != null) {
+				((ViewGroup) rightWebView.getParent()).removeView(rightWebView);
+			}
 			rightWrapper.addView(rightWebView, webParams);
 		}
 	}
@@ -1138,7 +1159,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 						if (mChgPageKey) {
 							// 前ページへ
 							prevPage(false);
-						} else {
+						}
+						else {
 							// 次ページへ
 							nextPage(false);
 						}
@@ -1149,7 +1171,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 						if (mChgPageKey) {
 							// 次ページへ
 							nextPage(false);
-						} else {
+						}
+						else {
 							// 前ページへ
 							prevPage(false);
 						}
@@ -1490,22 +1513,48 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 		// 現在ページ情報を保存
+		if (isAozora) {
+		}
+		else {
+			if (currentBook == null) return;
+		}
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor ed = sp.edit();
 		int nowpage = GetNowPage();
 		int maxpage = getTotalPagesNow();
-		if (isJapaneseMode) {
-			if (ratiox == 0 && ratioy == 0 && currentSpineIndex >= currentBook.getSpine().size() - 1) {
-				nowpage = maxpage;
+		if (isAozora) {
+			if (isJapaneseMode) {
+				if (ratiox == 0 && ratioy == 0) {
+					nowpage = maxpage;
+				}
+			}
+			else {
+				if (ratiox == 0 && ratioy == 1) {
+					nowpage = maxpage;
+				}
 			}
 		}
 		else {
-			if (ratiox == 0 && ratioy == 1 && currentSpineIndex >= currentBook.getSpine().size() - 1) {
-				nowpage = maxpage;
+			if (isJapaneseMode) {
+				if (ratiox == 0 && ratioy == 0 && currentSpineIndex >= currentBook.getSpine().size() - 1) {
+					nowpage = maxpage;
+				}
+			}
+			else {
+				if (ratiox == 0 && ratioy == 1 && currentSpineIndex >= currentBook.getSpine().size() - 1) {
+					nowpage = maxpage;
+				}
 			}
 		}
-		String value = nowpage + "," + maxpage + "," + mTimestamp + "," + currentSpineIndex + "," + ratiox + "," + ratioy;
-		ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", value);
+		String value;
+		if (isAozora) {
+			value = nowpage + "," + maxpage + "," + mTimestamp + "," + mAozoraDirText + "," + ratiox + "," + ratioy;
+			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#aozora", value);
+		}
+		else {
+			value = nowpage + "," + maxpage + "," + mTimestamp + "," + currentSpineIndex + "," + ratiox + "," + ratioy;
+			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", value);
+		}
 		ed.apply();
 		Logcat.v(logLevel, "value=" + value);
 	}
@@ -1515,7 +1564,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor ed = sp.edit();
-		ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", mRestoreValue);
+		if (isAozora) {
+			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#aozora", mRestoreValue);
+		}
+		else {
+			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", mRestoreValue);
+		}
 		ed.apply();
 	}
 
@@ -1592,7 +1646,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		Resources res = getResources();
 		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, false, false, true, this);
 
-		if (mFileType == FileData.FILETYPE_EPUB) {
+		if (!isAozora && mFileType == FileData.FILETYPE_EPUB) {
 			// 見出しの追加
 			mMenuDialog.addSection(res.getString(R.string.ChapMenuTOC));
 
@@ -1611,7 +1665,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 		// 見出しの追加
 		mMenuDialog.addSection(res.getString(R.string.ChapMenuChapter));
-		List<TocItem> htmltagList = getHtmlTagItems(currentBook);
+		List<TocItem> htmltagList = (isAozora)? getHtmlTagItems(mAozoraHtml) : getHtmlTagItems(currentBook);
 
 		if (htmltagList.isEmpty()) {
 			Toast.makeText(this, "見出しが見つかりません", Toast.LENGTH_SHORT).show();
@@ -1650,6 +1704,10 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mMenuDialog.addItem(DEF.MENU_TXTCONF, res.getString(R.string.txtConfMenu));
 		// 見開き設定
 		mMenuDialog.addItem(DEF.MENU_IMGVIEW, res.getString(R.string.tguide02));
+		// 画面方向切り替え
+		if (isAozora) {
+			mMenuDialog.addItem(DEF.MENU_ROTATE, res.getString(R.string.rotateMenu));
+		}
 		mMenuDialog.addSection(res.getString(R.string.otherSec));
 		// ヘルプ
 		mMenuDialog.addItem(DEF.MENU_ONLINE, res.getString(R.string.onlineMenu));
@@ -2244,7 +2302,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				if (mTapScrl) {
 					// タップでスクロール
 					nextPage(true);
-				} else {
+				}
+				else {
 					// タップでスクロールしない
 					// 普通のタッチでページ遷移
 					// 次ページへ
@@ -2256,7 +2315,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				if (mTapScrl) {
 					// タップでスクロール
 					prevPage(true);
-				} else {
+				}
+				else {
 					// タップでスクロールしない
 					// 普通のタッチでページ遷移
 					// 前ページへ
@@ -2643,7 +2703,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				break;
 			case DEF.HMSG_EVENT_SEARCHCLEAR:
 				// 全文検索のクリアを受信
-				Log.v(TAG, "全文検索のクリアを受信");
+				Logcat.v(logLevel, "全文検索のクリアを受信");
 				clearSearchWord();
 				break;
 
@@ -2670,6 +2730,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			case DEF.MENU_TXTCONF: {
 				// テキスト設定
 				showTextConfigDialog();
+				break;
+			}
+			case DEF.MENU_ROTATE: {
+				// 画面方向切替
+				showSelectList(2);
 				break;
 			}
 			case DEF.MENU_IMGVIEW: {
@@ -2850,6 +2915,16 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					items[i] = res.getString(SetEpubActivity.ViewName[i]);
 				}
 				break;
+			case 2:
+				// 画面方向切り替え
+				title = res.getString(R.string.rotateMenu);
+				selIndex = mAozoraDirText;
+				nItem = SetEpubActivity.DirectionName.length;
+				items = new String[nItem];
+				for (int i = 0; i < nItem; i++) {
+					items[i] = res.getString(SetEpubActivity.DirectionName[i]);
+				}
+				break;
 			default:
 				return;
 		}
@@ -2870,9 +2945,42 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 							}
 							// 表示開始
 							// レンダリング処理の後にレイアウトを更新
-							renderSpine(currentSpineIndex, leftWebView);
-							setAsyncScrollSet();
-							updateLayout();
+							if (isAozora) {
+								leftWebView.loadUrl(fileUrl);
+								setAsyncScrollSet();
+								updateLayout();
+								GetLeftWidthSpecial(leftWebView, 500 + mAozoratextLength / 200);
+							}
+							else {
+								renderSpine(currentSpineIndex, leftWebView);
+								setAsyncScrollSet();
+								updateLayout();
+							}
+						}
+						break;
+					case 2:
+						// 画面方向切り替え
+						if (mAozoraDirText != index) {
+							mAozoraDirText = index;
+							float old_ratiox = ratiox;
+							float old_ratioy = ratioy;
+							if (mAozoraDirText == 0) {
+								// 横長から縦長へ変更
+								isJapaneseMode = true;
+								// 横を縦へ変換
+								ratiox = 1.0f - old_ratioy;
+								ratioy = 0.0f;
+							}
+							else {
+								// 縦長から横長へ変更
+								isJapaneseMode = false;
+								// 縦を横へ変換
+								ratioy = 1.0f - old_ratiox;
+								ratiox = 0.0f;
+							}
+							// ファイルを読み直す
+							File file = new File(mFilePath);
+							loadZip(file);
 						}
 						break;
 				}
@@ -3180,9 +3288,82 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mMenuDialog.show(getSupportFragmentManager(), TabDialogFragment.class.getSimpleName());
 	}
 
+	// 見出しのテキストを頼りに、JavaScriptでその場所を探してスクロールさせる
+	public void jumpToHeadingByText(WebView webView, String headingText) {
+		// JavaScriptを組み立てる
+		// ページ内の全 h1, h2 から、テキストが一致するものを探すスクリプト
+		String js = "javascript:(function() {" +
+			"  var targets = document.querySelectorAll('h1, h2');" +
+			"  for (var i = 0; i < targets.length; i++) {" +
+			"    if (targets[i].innerText.trim() === '" + headingText + "') {" +
+			"      targets[i].scrollIntoView(true);" +
+			"      break;" +
+			"    }" +
+			"  }" +
+			"})()";
+		webView.loadUrl(js);
+	}
+
+	public void getHeadingLocation(WebView webView, String headingText) {
+		// JavaScriptを組み立て
+		String js = "(function() {" +
+			"  var targets = document.querySelectorAll('h1, h2');" +
+			"  for (var i = 0; i < targets.length; i++) {" +
+			"    if (targets[i].innerText.trim() === '" + headingText.replace("'", "\\'") + "') {" +
+			"      var rect = targets[i].getBoundingClientRect();" +
+			"      var isVertical = window.getComputedStyle(targets[i]).writingMode.includes('vertical');" +
+			" var y = window.pageYOffset || "+
+			"     document.documentElement.scrollTop || "+
+			"     document.body.scrollTop || 0;"+
+			" var x = window.pageXOffset || "+
+			"     document.documentElement.scrollLeft || "+
+			"     document.body.scrollLeft || 0;"+
+
+		   	"     return x + ',' + y + ',' + isVertical;"+
+			"    }" +
+			"  }" +
+			"  return null;" +
+			"})()";
+
+		webView.evaluateJavascript(js, new ValueCallback<String>() {
+			@Override
+			public void onReceiveValue(String value) {
+				if (value != null && !value.equals("null")) {
+					// ここで値をパースしてスクロール処理などを行う
+					// 前後の引用符を削除
+					String cleanValue = value.replace("\"", "");
+					String[] parts = cleanValue.split(",");
+					if (parts.length >= 3) {
+						float d = mScaleDensity;
+						currentScrolllX = maxScrollX + (int)(Float.parseFloat(parts[0]) * d);
+						currentScrolllY = (int)(Float.parseFloat(parts[1]) * d);
+						PutFooterView();
+					}
+				}
+			}
+		});
+	}
+
 	// 見出しのジャンプ処理
 	private void JumpAnchor(int offset, boolean mode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+
+		if (isAozora) {
+			mAnchorl = true;
+
+			List<TocItem> tocList;
+			tocList = getHtmlTagItems(mAozoraHtml);
+			TocItem item = tocList.get(offset);
+
+			// 検索をクリア
+			clearSearchWord();
+
+			jumpToHeadingByText(leftWebView, item.title);
+			getHeadingLocation(leftWebView, item.title);
+			GetLeftWidthSpecial(leftWebView, 500 + mAozoratextLength / 200);
+			return;
+		}
+
 		List<TocItem> tocList;
 		tocList = (mode) ? getTocItems(currentBook) : getHtmlTagItems(currentBook);
 		TocItem item = tocList.get(offset);
@@ -3261,22 +3442,26 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		int nowpage = page;
 		int getindex = 0;
 		// 章の頭出し
-		for (int i = 0; i < currentBook.getSpine().size(); i++) {
-			getindex = i;
-			total = getSavedPageCount(i);
-			Logcat.v(logLevel, "index=" + i + ", total=" + total + ", page=" + page);
-			// 章のページに収まったらループ終了
-			Logcat.v(logLevel, "章のページに収まったらループ終了");
-			if (page < total) break;
-			// 次の章を頭出し
-			Logcat.v(logLevel, "次の章を頭出し");
-			page -= total;
+		if (isAozora) {
+		}
+		else {
+			for (int i = 0; i < currentBook.getSpine().size(); i++) {
+				getindex = i;
+				total = getSavedPageCount(i);
+				Logcat.v(logLevel, "index=" + i + ", total=" + total + ", page=" + page);
+				// 章のページに収まったらループ終了
+				Logcat.v(logLevel, "章のページに収まったらループ終了");
+				if (page < total) break;
+				// 次の章を頭出し
+				Logcat.v(logLevel, "次の章を頭出し");
+				page -= total;
+			}
 		}
 		int totalpage = getTotalPagesNow();
 		Logcat.v(logLevel, "total=" + totalpage + ", page=" + nowpage);
 		Logcat.v(logLevel, "mPageOffset=" + getindex + ", mScrollOffset=" + page);
 		// 表示開始
-		if (getindex != currentSpineIndex) {
+		if (!isAozora && getindex != currentSpineIndex) {
 			Logcat.v(logLevel, "renderSpine()を実行 onSelectPage()");
 			int dup = (mDoubleMode) ? 2 : 1;
 			mPageOffset = getindex;
@@ -3302,6 +3487,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	// 現在のページを得る
 	private int GetNowPage() {
 		int total = 1;
+		if (isAozora) {
+			if (isJapaneseMode) {
+				if (scrollXStep > 0) {
+					total += calcCurrentPageNow((maxScrollX - currentScrolllX) ,scrollXStep, mUpDownMode, true);
+				}
+			}
+			else {
+				if (scrollYStep > 0) {
+					total += calcCurrentPageNow(currentScrolllY ,scrollYStep, mUpDownMode, false);
+				}
+			}
+			return total;
+		}
 		if (currentBook == null) return 0;
 		for (int i = 0; i < currentSpineIndex; i++) {
 			total += getSavedPageCount(i);
@@ -3541,7 +3739,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		// 非同期処理を開始
 		CompletableFuture.runAsync(() -> {
-			Log.v(TAG, "mInitSet = true");
+			Logcat.v(logLevel, "mInitSet = true");
 			mInitSet = true;
 			// レイアウトが変更されると検索位置が先頭に戻るため初期化を行わせる
 			mSearchInitSet = true;
@@ -3557,12 +3755,22 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			Logcat.v(logLevel, "mInitSet = false");
 			if (mTextLength != 0) {
 				mInitSet = false;
-				currentScrolllX = mBackupCurrentScrolllX;
-				currentScrolllY = mBackupCurrentScrolllY;
-				syncWebViewScroll();
+				if (isAozora) {
+					// 青空文庫のテキストの場合は別実行されるため除外
+				}
+				else {
+					currentScrolllX = mBackupCurrentScrolllX;
+					currentScrolllY = mBackupCurrentScrolllY;
+					Logcat.v(logLevel, "currentScrolllX=" + currentScrolllX + ", currentScrolllY=" + currentScrolllY + ", maxScrollX=" + maxScrollX + ", maxScrollY=" + maxScrollY + ", scrollXStep=" + scrollXStep + ", scrollYStep=" + scrollYStep);
+					// WebViewの操作(syncWebViewScroll)だけをメインスレッドに戻す
+					runOnUiThread(() -> {
+						Logcat.v(logLevel, "UIスレッドでスクロール同期を実行");
+						syncWebViewScroll(); 
+					});
+				}
 			}
-        });
-    }
+		});
+	}
 
 	// EPUBファイルを読み出す
 	private void loadEpub(String path) {
@@ -3573,6 +3781,53 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			mLoadingSpinner.bringToFront();
 			// レイアウトを更新
 			rootContainer.requestLayout();
+		}
+		if (isAozora) {
+			// 青空文庫の場合は特別に処理
+			mTotalPage = new int[1];
+			meta = null;
+			try {
+				meta = new PageMetadata();
+				meta.isFixed = false;
+				meta.isReflowable = false;
+				if (mAozoraDirText == 0) {
+					isJapaneseMode = true;
+				}
+				else {
+					isJapaneseMode = false;
+				}
+			}
+			catch (Exception e) {
+				Log.e(TAG, "Error during fetchMetadata", e);
+			}
+			if (mCompleted) {
+				mCompleted = false;
+				Logcat.v(logLevel, "Completed");
+				if (isJapaneseMode) {
+					ratiox = 0.0f;
+					ratioy = 0.0f;
+				}
+				else {
+					ratiox = 0.0f;
+					ratioy = 1.0f;
+				}
+			}
+			else if (mFirstRead) {
+				mFirstRead = false;
+				Logcat.v(logLevel, "FirstRead");
+				mPageOffset = 0;
+				if (isJapaneseMode) {
+					ratiox = 1.0f;
+					ratioy = 0.0f;
+				}
+				else {
+					ratiox = 0.0f;
+					ratioy = 0.0f;
+				}
+			}
+			File file = new File(path);
+			loadZip(file);
+			return;
 		}
 
 		new Thread(() -> {
@@ -3636,7 +3891,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private final View.OnTouchListener commonTouchListener = (v, event) -> {
 		// タッチ処理の共通ロジック
 		boolean intercepted = mDetector.onTouchEvent(event);
-		// ページめくり(タップやスワイプ）を検知したら true を返して
+		// ページめくり(タップやスワイプ)を検知したら true を返して
 		// WebViewには「このイベントは処理済み」と伝える
 		return intercepted;
 	};
@@ -3749,6 +4004,21 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 				String path = request.getUrl().getPath();
 				if (path != null && path.startsWith("/")) path = path.substring(1);
+				if (isAozora && (path.endsWith(".ttf") || path.endsWith(".otf"))) {
+					File cacheFont = new File(getCacheDir(), "current_font.ttf");
+					if (cacheFont.exists()) {
+						try {
+							// FileInputStreamを直接渡す
+							// WebView側で読み込みが終わると自動的にcloseされる
+							FileInputStream fis = new FileInputStream(cacheFont);
+							return new WebResourceResponse("font/ttf", "UTF-8", fis);
+						}
+						catch (FileNotFoundException e) {
+							Log.e(TAG, "Font file not found during intercept", e);
+						}
+					}
+					return null;
+				}
 				if (currentBook == null || path == null) return null;
 
 				boolean isFontRequest = (path.endsWith(".otf") || path.endsWith(".ttf") || path.endsWith(".woff"));
@@ -3853,12 +4123,24 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				mNowFindCount = mNowFindTotal - 1;
 				Logcat.v(logLevel, "末尾に移動させる");
 			}
-			TouchPanelView.SetSearchWordIndex(mSearchIndex + 1, mNowFindCount + 1, mNowFindTotal, SearchList.size(), mNowFindTotal);
+			int searchmax = (isAozora) ? (mNowFindTotal > 0) ? 1 : 0 : SearchList.size();
+			TouchPanelView.SetSearchWordIndex(mSearchIndex + 1, mNowFindCount + 1, mNowFindTotal, searchmax, mNowFindTotal);
 			if (numberOfMatches > 0) {
 				Logcat.v(logLevel, "numberOfMatches=" + numberOfMatches);
 				// ヒットした場所へのスクロール同期を開始
 				Logcat.v(logLevel, "ヒットした場所へのスクロール同期を開始");
 				startScrollStopMonitoring();
+			}
+			else {
+				// ヒットしなかった
+				mFindWord = false;
+				if (mLoadingSpinner != null) {
+					mLoadingSpinner.setVisibility(leftWebView.GONE);
+				}
+				runOnUiThread(() -> {
+					Logcat.v(logLevel, "UIスレッドでスクロール同期を実行");
+					syncWebViewScroll(); 
+				});
 			}
 		}
 	};
@@ -4032,6 +4314,66 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 		view.evaluateJavascript(script, null);
 
+	}
+
+	private void GetLeftWidthSpecial(WebView view, int delay) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		String js = "(function(){ " +
+			"  var b=document.body, e=document.documentElement; " +
+			" const style = window.getComputedStyle(document.body);"+
+			" const fontSize = parseFloat(style.fontSize);"+
+			" const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.5; "+
+			"  return Math.max(b.scrollWidth, e.scrollWidth) + ',' + Math.max(b.scrollHeight, e.scrollHeight) + ',' + lineHeight; " +
+			"})()";
+		view.postDelayed(() -> {
+			// UIスレッドの空きを待ってから描画の直前を狙う
+			view.postOnAnimation(new Runnable() {
+				@Override
+				public void run() {
+					view.postDelayed(() -> {
+						// UIスレッドの空きを待ってから描画の直前を狙う
+						view.postOnAnimation(new Runnable() {
+							public void run() {
+								view.evaluateJavascript(js, value -> {
+									try {
+										if (value == null || value.equals("null")) return;
+										String[] parts = value.replace("\"", "").split(",");
+										float d = mScaleDensity;
+										float contentWidth = Float.parseFloat(parts[0]) * d;
+										float contentHeight = Float.parseFloat(parts[1]) * d;
+										float lineHeight = Float.parseFloat(parts[2]);
+										double safeLineCountX = Math.floor(view.getWidth() / lineHeight) -1;
+										double safeLineCountY = Math.floor(view.getHeight() / lineHeight) -1;
+										scrollXStep = (int)((int)(safeLineCountX) * lineHeight);
+
+										scrollYStep = (int)((int)(safeLineCountY) * lineHeight);
+										maxScrollX = Math.max(0, (int)contentWidth - view.getWidth());
+										maxScrollY = Math.max(0, (int)contentHeight - view.getHeight());
+										currentScrolllX = (int)((float)maxScrollX * ratiox);
+										currentScrolllY = (int)((float)maxScrollY * ratioy);
+										if (!mDoubleMode) {
+											leftWebView.scrollTo(currentScrolllX, currentScrolllY);
+										}
+										else if (mUpDownMode) {
+											leftWebView.scrollTo(currentScrolllX - scrollXStep, currentScrolllY);
+											if (mDoubleMode) rightWebView.scrollTo(currentScrolllX, currentScrolllY + scrollYStep);
+										}
+										else {
+											leftWebView.scrollTo(currentScrolllX, currentScrolllY);
+											if (mDoubleMode) rightWebView.scrollTo(currentScrolllX - scrollXStep, currentScrolllY + scrollYStep);
+										}
+										Logcat.v(logLevel, "currentScrolllX=" + currentScrolllX + ", currentScrolllY=" + currentScrolllY + ", maxScrollX=" + maxScrollX + ", maxScrollY=" + maxScrollY);
+									}
+									catch (Exception e) { 
+										Log.e(TAG, "JS Error", e);
+									}
+								});
+							}
+						});
+					}, delay);
+				}
+			});
+		}, delay);
 	}
 
 	private void GetLeftWidth(WebView view, boolean isVirtual, boolean set) {
@@ -4229,7 +4571,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					
 					if (view == leftWebView) {
 						if (pendingPos == 0) {
-							// 次の章へ(通常）：右端から開始
+							// 次の章へ(通常)：右端から開始
 							currentScrolllX = maxScrollX - scrollXStep * mScrollOffset;
 							if (currentScrolllX < 0) {
 								currentScrolllX = 0;
@@ -4269,7 +4611,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 						else if (mDoubleMode && view == leftWebView) {
 							Logcat.v(logLevel, "renderSpine rightWebView");
 							view.postDelayed(() -> {
-								renderSpine(currentSpineIndex, rightWebView);
+								if (isAozora) {
+									rightWebView.loadUrl(fileUrl);
+								}
+								else {
+									renderSpine(currentSpineIndex, rightWebView);
+								}
 							}, 200); // レンダリング安定のための待機
 						}
 						if (mAnchorr && view == rightWebView) {
@@ -4449,7 +4796,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 							}
 							else if (mDoubleMode && view == leftWebView) {
 								view.postDelayed(() -> {
-									renderSpine(currentSpineIndex, rightWebView);
+									if (isAozora) {
+										rightWebView.loadUrl(fileUrl);
+									}
+									else {
+										renderSpine(currentSpineIndex, rightWebView);
+									}
 								}, 200); // レンダリング安定のための待機
 							}
 							if (mAnchorr && view == rightWebView) {
@@ -4860,13 +5212,13 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 	private void renderSpine(int index, WebView view) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		if (currentBook == null) return;
 		mRenderBusy = true;
 		index += mPageOffset;
 		// オフセット加算した後はクリア
 		mPageOffset = 0;
 		if (index > currentBook.getSpine().size() - 1) index = currentBook.getSpine().size() - 1;
 		Logcat.v(logLevel, "renderSpine() ページ解析開始 index=" + index + ", size=" + currentBook.getSpine().size());
-		if (currentBook == null) return;
 		currentSpineIndex = index;
 		meta = fetchMetadata(currentBook, index , true);
 		Logcat.v(logLevel, "isVertical=" + meta.isVertical + ", isFixed=" + meta.isFixed + ", isImageOnly=" + meta.isImageOnly + ", shouldDisableScroll=" + meta.shouldDisableScroll());
@@ -5073,7 +5425,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			}
 			else {
 				// 次の章へ(インデックス増加チェック)
-				if (currentSpineIndex + 1 < currentBook.getSpine().size()) {
+				if (isAozora) {
+					// 青空文庫は次の章が無い
+					lastpage = true;
+				}
+				else if (currentSpineIndex + 1 < currentBook.getSpine().size()) {
 					Logcat.v(logLevel, "moveToNextSpine(1)");
 					moveToNextSpine(1);
 				}
@@ -5101,7 +5457,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				Logcat.v(logLevel, "currentOffset=" + currentOffset);
 			}
 			else {
-				if (currentSpineIndex + 1 < currentBook.getSpine().size()) {
+				if (isAozora) {
+					// 青空文庫は次の章が無い
+					lastpage = true;
+				}
+				else if (currentSpineIndex + 1 < currentBook.getSpine().size()) {
 					Logcat.v(logLevel, "moveToNextSpine(1)");
 					moveToNextSpine(1);
 				}
@@ -5473,6 +5833,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	}
 
 	private void SaveTotalPage() {
+		if (currentBook == null) return;
 		File file = getPageCacheFile();
 		Properties prop = new Properties();
 		// 新しい値をセット
@@ -5584,6 +5945,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	// 全体の合計ページ数を計算
 	private int getTotalPagesNow() {
 		int total = 0;
+		if (isAozora) {
+			try {
+				if (isJapaneseMode) {
+					total = maxScrollX / scrollXStep + 1;
+				}
+				else {
+					total = maxScrollY / scrollYStep + 1;
+				}
+			}
+			catch (Exception e) {
+			}
+			return total;
+		}
 		if (currentBook == null) return 0;
 		for (int i = 0; i < currentBook.getSpine().size(); i++) {
 			total += getSavedPageCount(i);
@@ -5782,6 +6156,37 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			}
 		}
 		return items;
+	}
+
+	// 単一のHTML文字列から見出し(h1, h2)を抽出する
+	private List<TocItem> getHtmlTagItems(String htmlString) {
+		List<TocItem> headingList = new ArrayList<>();
+	
+		try {
+			// 型をフルパス (org.jsoup.nodes.Document) で指定
+			org.jsoup.nodes.Document doc = org.jsoup.Jsoup.parse(htmlString);
+			// 選択結果もフルパス (org.jsoup.select.Elements) で指定
+			org.jsoup.select.Elements headings = doc.select("h1, h2");
+			int count = 0;
+
+			for (org.jsoup.nodes.Element heading : headings) {
+				String text = heading.text().trim();
+
+				if (!text.isEmpty() && text.length() < 50 && !text.contains("。")) {
+					String id = heading.id();
+					if (id == null || id.isEmpty()) {
+						id = "gen_id_" + (count++);
+						heading.attr("id", id);
+					}
+					// href は "#id" 形式
+					headingList.add(new TocItem(text, "#" + id));
+				}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		return headingList;
 	}
 
 	// 全リソースをループして見出しを抽出する例
@@ -6016,41 +6421,60 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 	private void SearchNext(boolean mode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		if (SearchList == null) return;
-		if (mode) {
-			if (SearchList.size() == 1) return;
-			mNowFindCount = 0;
-			mSearchCount++;
-			if (mSearchCount == SearchList.size()) {
-				mSearchCount = 0;
+		if (isAozora) {
+			mNowFindCount++;
+			if (mNowFindCount == mNowFindTotal) {
+				mNowFindCount = 0;
 			}
 		}
 		else {
-			mNowFindCount++;
-			if (mNowFindCount == mNowFindTotal) {
+			if (SearchList == null) return;
+			if (mode) {
+				if (SearchList.size() == 1) return;
 				mNowFindCount = 0;
 				mSearchCount++;
 				if (mSearchCount == SearchList.size()) {
 					mSearchCount = 0;
 				}
 			}
+			else {
+				mNowFindCount++;
+				if (mNowFindCount == mNowFindTotal) {
+					mNowFindCount = 0;
+					mSearchCount++;
+					if (mSearchCount == SearchList.size()) {
+						mSearchCount = 0;
+					}
+				}
+			}
 		}
 		try {
-			SearchItem item = SearchList.get(mSearchCount);
-			mSearchIndex = item.index;
-			Logcat.v(logLevel, "mSearchIndex=" + mSearchIndex + ", mSearchCount=" + mSearchCount);
-			Logcat.v(logLevel, "mNowFindCount=" + mNowFindCount + ", mNowFindTotal=" + mNowFindTotal);
-			if (mLoadingSpinner != null) {
-				mLoadingSpinner.setVisibility(leftWebView.VISIBLE);
-				mLoadingSpinner.bringToFront();
-			}
-			if (mSearchIndex != currentSpineIndex) {
-	   			renderSpine(mSearchIndex, leftWebView);
-			}
-			else {
+			if (isAozora) {
+				if (mLoadingSpinner != null) {
+					mLoadingSpinner.setVisibility(leftWebView.VISIBLE);
+					mLoadingSpinner.bringToFront();
+				}
 				Logcat.v(logLevel, "順方向に検索");
 				leftWebView.findNext(true); 
 				if (mDoubleMode) rightWebView.findNext(true);
+			}
+			else {
+				SearchItem item = SearchList.get(mSearchCount);
+				mSearchIndex = item.index;
+				Logcat.v(logLevel, "mSearchIndex=" + mSearchIndex + ", mSearchCount=" + mSearchCount);
+				Logcat.v(logLevel, "mNowFindCount=" + mNowFindCount + ", mNowFindTotal=" + mNowFindTotal);
+				if (mLoadingSpinner != null) {
+					mLoadingSpinner.setVisibility(leftWebView.VISIBLE);
+					mLoadingSpinner.bringToFront();
+				}
+				if (mSearchIndex != currentSpineIndex) {
+		   			renderSpine(mSearchIndex, leftWebView);
+				}
+				else {
+					Logcat.v(logLevel, "順方向に検索");
+					leftWebView.findNext(true); 
+					if (mDoubleMode) rightWebView.findNext(true);
+				}
 			}
 		}
 		catch (Exception e) {
@@ -6071,44 +6495,63 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 	private void SearchPrev(boolean mode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		if (SearchList == null) return;
-		if (mode) {
-			if (SearchList.size() == 1) return;
-			mNowFindCount = mNowFindTotal - 1;
-			mSearchCount--;
-			if (mSearchCount < 0) {
-				mSearchCount = SearchList.size() - 1;
+		if (isAozora) {
+			mNowFindCount--;
+			if (mNowFindCount < 0) {
+				mNowFindCount = mNowFindTotal - 1;
 			}
 		}
 		else {
-			mNowFindCount--;
-			if (mNowFindCount < 0) {
+			if (SearchList == null) return;
+			if (mode) {
+				if (SearchList.size() == 1) return;
 				mNowFindCount = mNowFindTotal - 1;
 				mSearchCount--;
 				if (mSearchCount < 0) {
 					mSearchCount = SearchList.size() - 1;
 				}
 			}
+			else {
+				mNowFindCount--;
+				if (mNowFindCount < 0) {
+					mNowFindCount = mNowFindTotal - 1;
+					mSearchCount--;
+					if (mSearchCount < 0) {
+						mSearchCount = SearchList.size() - 1;
+					}
+				}
+			}
 		}
 		try {
-			SearchItem item = SearchList.get(mSearchCount);
-			mSearchIndex = item.index;
-			Logcat.v(logLevel, "mSearchIndex=" + mSearchIndex + ", mSearchCount=" + mSearchCount);
-			Logcat.v(logLevel, "mNowFindCount=" + mNowFindCount + ", mNowFindTotal=" + mNowFindTotal);
-			if (mLoadingSpinner != null) {
-				mLoadingSpinner.setVisibility(leftWebView.VISIBLE);
-				mLoadingSpinner.bringToFront();
-			}
-			if (mSearchIndex != currentSpineIndex) {
-				mNowPrevSet = true;
-				mNowPrevSetl = true;
-				mNowPrevSetr = true;
-	   			renderSpine(mSearchIndex, leftWebView);
-			}
-			else {
+			if (isAozora) {
+				if (mLoadingSpinner != null) {
+					mLoadingSpinner.setVisibility(leftWebView.VISIBLE);
+					mLoadingSpinner.bringToFront();
+				}
 				Logcat.v(logLevel, "逆方向に検索");
 				leftWebView.findNext(false); 
 				if (mDoubleMode) rightWebView.findNext(false);
+			}
+			else {
+				SearchItem item = SearchList.get(mSearchCount);
+				mSearchIndex = item.index;
+				Logcat.v(logLevel, "mSearchIndex=" + mSearchIndex + ", mSearchCount=" + mSearchCount);
+				Logcat.v(logLevel, "mNowFindCount=" + mNowFindCount + ", mNowFindTotal=" + mNowFindTotal);
+				if (mLoadingSpinner != null) {
+					mLoadingSpinner.setVisibility(leftWebView.VISIBLE);
+					mLoadingSpinner.bringToFront();
+				}
+				if (mSearchIndex != currentSpineIndex) {
+					mNowPrevSet = true;
+					mNowPrevSetl = true;
+					mNowPrevSetr = true;
+		   			renderSpine(mSearchIndex, leftWebView);
+				}
+				else {
+					Logcat.v(logLevel, "逆方向に検索");
+					leftWebView.findNext(false); 
+					if (mDoubleMode) rightWebView.findNext(false);
+				}
 			}
 		}
 		catch (Exception e) {
@@ -6124,32 +6567,54 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		searchKeyword = Keyword;
 		AtomicInteger firstindex = new AtomicInteger(-1);
 		executor.execute(() -> {
-			EpubSearcher searcher = new EpubSearcher();
-			searcher.search(currentBook, searchKeyword, (spineIndex, title, snippet) -> {
+			if (isAozora) {
 				// UIスレッドに反映
 				handler.post(() -> {
-					Logcat.v(logLevel, "spineIndex=" + spineIndex + ", 見つかった章: " + title + " 内容: " + snippet);
-					SearchList.add(new SearchItem(spineIndex));
 					if (firstindex.get() == -1) {
 						// 表示の開始
-						currentIndex = spineIndex;
-						currentSpineIndex = spineIndex;
-						mSearchIndex = currentIndex;
+						mSearchIndex = 0;
 						mSearchCount = 0;
 						mNowFindCount = 0;
-						firstindex.set(currentIndex);
+						firstindex.set(0);
 						Logcat.v(logLevel, "index=" + firstindex.get());
-						if (mLoadingSpinner != null) {
-							mLoadingSpinner.setVisibility(View.VISIBLE);
-							mLoadingSpinner.bringToFront();
-						}
-						leftWebView.setAlpha(0f);
-						if (mDoubleMode) rightWebView.setAlpha(0f);
+						// あからじめ検索内容をクリアしておく
+						leftWebView.clearMatches(); 
+						if (mDoubleMode) rightWebView.clearMatches();
 						mFindWord = true;
-						renderSpine(currentIndex, leftWebView);
+						// 検索を実行(WebView上で保持しているので即実行)
+						leftWebView.findAllAsync(searchKeyword);
+						if (mDoubleMode) rightWebView.findAllAsync(searchKeyword);
 					}
 				});
-			});
+			}
+			else {
+				EpubSearcher searcher = new EpubSearcher();
+				searcher.search(currentBook, searchKeyword, (spineIndex, title, snippet) -> {
+					// UIスレッドに反映
+					handler.post(() -> {
+						Logcat.v(logLevel, "spineIndex=" + spineIndex + ", 見つかった章: " + title + " 内容: " + snippet);
+						SearchList.add(new SearchItem(spineIndex));
+						if (firstindex.get() == -1) {
+							// 表示の開始
+							currentIndex = spineIndex;
+							currentSpineIndex = spineIndex;
+							mSearchIndex = currentIndex;
+							mSearchCount = 0;
+							mNowFindCount = 0;
+							firstindex.set(currentIndex);
+							Logcat.v(logLevel, "index=" + firstindex.get());
+							if (mLoadingSpinner != null) {
+								mLoadingSpinner.setVisibility(View.VISIBLE);
+								mLoadingSpinner.bringToFront();
+							}
+							leftWebView.setAlpha(0f);
+							if (mDoubleMode) rightWebView.setAlpha(0f);
+							mFindWord = true;
+							renderSpine(currentIndex, leftWebView);
+						}
+					});
+				});
+			}
 		});
 	}
 
@@ -6225,5 +6690,1542 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			}
 		}
 	};
+
+	// 青空文庫のZIPファイルを開く
+	private void loadZip(File zipFile) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+
+		if (mLoadingSpinner != null) {
+			mLoadingSpinner.setVisibility(View.VISIBLE);
+			mLoadingSpinner.bringToFront();
+		}
+
+		executor.execute(() -> {
+			try {
+				Map<String, String> imagesBase64 = new HashMap<>();
+				String rawText = null;
+				// Zipのスキャン (Shift_JIS = MS932)
+				try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile), Charset.forName("MS932"))) {
+					ZipEntry entry;
+					while ((entry = zis.getNextEntry()) != null) {
+						String fullName = entry.getName();
+						if (entry.isDirectory()) continue;
+						File outFile = new File(getCacheDir(), new File(fullName).getName());
+						if (fullName.toLowerCase().endsWith(".txt")) {
+							ByteArrayOutputStream bos = new ByteArrayOutputStream();
+							byte[] buffer = new byte[8192];
+							int len;
+							while ((len = zis.read(buffer)) != -1) {
+								bos.write(buffer, 0, len);
+							}
+							rawText = new String(bos.toByteArray(), "MS932");
+						}
+						else if (isImage(fullName)) {
+							// そのままファイルとして保存
+							try (FileOutputStream fos = new FileOutputStream(outFile)) {
+								byte[] buffer = new byte[8192];
+								int len;
+								while ((len = zis.read(buffer)) != -1) {
+									fos.write(buffer, 0, len);
+								}
+							}
+						}
+					}
+				}
+				if (rawText != null) {
+					Logcat.v(logLevel,  "タグを除去して純粋なテキストの長さを測る");
+					// タグを除去して純粋なテキストの長さを測る
+					String textOnly = rawText.replaceAll("<[^>]*>", "").replaceAll("\\s+", "").trim();
+					mAozoratextLength = textOnly.length();
+					mTextLength = mAozoratextLength + 1;
+					Logcat.v(logLevel, "変換開始");
+					// 青空文庫のテキストをHTMLへ変更
+					mAozoraHtml = buildFinalHtml(rawText, imagesBase64, isJapaneseMode);
+					// 一時ファイルに保存する場合
+					Logcat.v(logLevel, "一時ファイルに保存");
+					mAozoraFile = new File(getCacheDir(), "temp.html");
+					try (FileOutputStream fos = new FileOutputStream(mAozoraFile)) {
+						fos.write(mAozoraHtml.getBytes(StandardCharsets.UTF_8));
+					}
+					catch (IOException e) {
+						e.printStackTrace();
+					}
+					Logcat.v(logLevel,  "変換完了");
+					// WebViewの操作だけをメインスレッドで実行
+					runOnUiThread(() -> {
+						fileUrl = "file://" + mAozoraFile.getAbsolutePath();
+
+						if (mLoadingSpinner != null) {
+							mLoadingSpinner.setVisibility(View.VISIBLE);
+							mLoadingSpinner.bringToFront();
+						}
+						WebSettings settings = leftWebView.getSettings();
+						// コンテンツを画面幅にフィットさせる機能を「オフ」にする
+						settings.setLoadWithOverviewMode(false);
+						settings.setUseWideViewPort(false);
+						settings.setAllowFileAccess(true);
+						leftWebView.loadUrl(fileUrl);
+						setAsyncScrollSet();
+						updateLayout();
+						GetLeftWidthSpecial(leftWebView, 500 + mAozoratextLength / 200);
+					});
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+	}
+
+	private boolean isImage(String name) {
+		String n = name.toLowerCase();
+		return n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg");
+	}
+
+	// 青空文庫のテキストをHTMLへ変更
+	private String buildFinalHtml(String rawText, Map<String, String> images, boolean isVertical) {
+		// 青空文庫のテキストをHTMLのタグをつけて変更
+		String body = parseAozora(rawText, images);
+		// 方向に応じた変数の設定
+		String writingMode = isVertical ? "vertical-rl" : "horizontal-tb";
+		String bodyPadding = isVertical ? "40px 5%" : "5% 40px";
+		String fontFamily = isVertical ? "serif" : "sans-serif";
+		// インデント方向の切り替え(縦書きはmargin-top、横書きはmargin-left)
+		String indentDir = isVertical ? "top" : "left";
+		String doublelineDir = isVertical ? "right" : "bottom";
+		// 二重傍線の方向切り替え
+		String overlineBorder = isVertical ? "border-right: 3px double #000;" : "border-top: 3px double #000;";
+		String overlinePadding = isVertical ? "padding-right: 2px;" : "padding-top: 2px;";
+
+		return "<html><head>" +
+			"<meta charset='UTF-8'>" + 
+			"<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+			"<style>" +
+			"  body {" +
+			"   writing-mode: " + writingMode + ";" +
+			"   -webkit-writing-mode: " + writingMode + ";" +
+			"   padding: " + bodyPadding + ";" +
+			"   line-height: 1.8;" +
+			"   font-family: " + fontFamily + ";" +
+			"   line-break: strict;" +
+			"   word-break: break-all;" +
+			"   hanging-punctuation: allow-end;" +
+			"  }" + 
+			"  p {" +
+			"   margin: 0;" +
+			"   padding: 0;" +
+			"   text-indent: 1em;" +
+			"  }" +
+			"  .indent-1 { margin-" + indentDir + ": 1em; }" +
+			"  .indent-2 { margin-" + indentDir + ": 2em; }" +
+			"  .indent-3 { margin-" + indentDir + ": 3em; }" +
+			"  .dot { text-emphasis: filled sesame; -webkit-text-emphasis: filled sesame; }" +
+			"  .warichu { font-size: 0.7em; line-height: 1.2; display: inline-block; vertical-align: middle; }" +
+			"  img { " +
+			"   max-width: 100%; " +
+			"   max-height: 80vh; " +
+			"   width: auto; " +
+			"   height: auto; " +
+			"   display: block; " +
+			"   margin: 20px auto; " +
+			"   object-fit: contain; " +
+			"  }"+
+			".inline-h2 {"+
+			"  font-weight: bold;"+
+			"  display: inline-block;"+
+			"  vertical-align: top;"+
+			"  padding: " + (isVertical ? "0 0.2em" : "0.2em 0") + ";"+
+			"}"+
+			".right-small {"+
+			"  font-size: 0.6em;"+
+			"  display: inline-block;"+
+			"  vertical-align: " + (isVertical ? "super" : "top") + ";"+ 
+			"  line-height: 1;"+
+			"}"+
+			".left-small {" +
+			"  font-size: 0.6em;" +
+			"  display: inline-block;" +
+			"  vertical-align: " + (isVertical ? "sub" : "bottom") + ";" + 
+			"  line-height: 1;" +
+			"  margin-left: " + (isVertical ? "0" : "2px") + ";" +
+			"}" +
+			".double-overline {"+
+			"  " + overlineBorder +
+			"  " + overlinePadding +
+			"  display: inline;"+
+			"  line-height: 1;"+
+			"  -webkit-box-decoration-break: clone;"+
+			"  box-decoration-break: clone;"+
+			"}"+
+			".tcy {"+
+			"  -webkit-text-combine: horizontal;"+
+			"  text-combine-upright: all;"+
+			"  margin: 0 0.1em; "+
+			"}"+
+			".madowaki {"+
+			"	border: 1px solid;"+
+			"	float: right; width: 1em; ..."+
+			"}"+
+
+			"[class^='jisume-'] {"+
+			"  display: block;"+
+			"  margin: 1em 0;"+
+			"}"+
+			".jisume-30 { max-width: 30em; }"+
+			".jisume-20 { max-width: 20em; }"+
+			".bousen {"+
+			"    text-decoration: underline;"+
+			"}"+
+			".bousen-left {" +
+			"    text-decoration: underline;" +
+			"    text-underline-position: left;" +
+			"}" +
+			".shiromaru-boten {"+
+			"    -webkit-text-emphasis: open circle;"+
+			"    text-emphasis: open circle;"+
+			"    -webkit-text-emphasis-color: currentColor;"+
+			"    text-emphasis-color: currentColor;"+
+			"    text-emphasis-position: over right;"+
+			"}"+
+			".small-kana {"+
+			"    display: inline-block;"+
+			"    transform: scale(0.8);"+
+			"    vertical-align: middle;"+
+			"    line-height: 1;"+
+			"}"+
+			".gaiji {"+
+			"    font-size: 0.9em;"+
+			"}"+
+			"</style>" +
+			"</head><body>" + body + "</body></html>";
+	}
+
+	//［＃「対象文字列」にタグ名］という形式をHTMLに変換する
+	private static String convertAozoraTag(String text, String tagName, String className) {
+		// 正規表現は「タグそのもの」だけをターゲットにする
+		Pattern p = Pattern.compile("［＃「(.*?)」に" + tagName + "］");
+		Matcher m = p.matcher(text);
+		StringBuffer sb = new StringBuffer();
+		int lastEnd = 0;
+
+		while (m.find()) {
+			// タグの中身
+			String target = m.group(1);
+			// 現在のタグの開始位置
+			int tagStart = m.start();
+			// タグの直前までの文章を一旦キープ
+			String beforeTag = text.substring(lastEnd, tagStart);
+			// 直前の文章が「対象文字列」で終わっているか確認
+			if (beforeTag.endsWith(target)) {
+				// 対象文字列の直前までをappend
+				sb.append(beforeTag.substring(0, beforeTag.length() - target.length()));
+				// 対象文字列をHTMLタグで囲んでappend
+				sb.append("<span class='").append(className).append("'>").append(target).append("</span>");
+			}
+			else {
+				// 万が一、直前にその文字がない場合はそのまま(安全策)
+				sb.append(beforeTag);
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	private static String convertKanbun(String text) {
+		if (text == null) return "";
+		// 送り仮名の変換
+		// 括弧内の文字を抽出して、送り仮名用のクラスを付与
+		text = text.replaceAll("［＃（(.*?)）］", "<span class='okurigana'>$1</span>");
+		// 返り点の変換: ［＃レ］, ［＃一］, ［＃二］, ［＃上］ など
+		// 文字の左下(または右下)に小さく表示するためのクラス
+		text = text.replaceAll("［＃([一二三四五上下中レ]+)］", "<sub class='kaeriten'>$1</sub>");
+		return text;
+	}
+
+	private static final Map<String, String> RANGE_TAG_MAP = Map.ofEntries(
+		Map.entry("太字", "span class='bold'"),
+		Map.entry("わり注", "span class='warichu'"),
+		Map.entry("大見出し", "h1"),
+		Map.entry("中見出し", "h2"),
+		Map.entry("小見出し", "h3"),
+		Map.entry("大きめの文字", "span style='font-size:1.2em'"),
+		Map.entry("小さめの文字", "span style='font-size:0.8em'"),
+		Map.entry("地付き", "div style='text-align: end;'"),
+		Map.entry("キャプション", "figcaption style='font-style: italic; text-align: center'"),
+		Map.entry("縦中横", "span class='tcy'"),
+		Map.entry("窓書き", "div class='madowaki'")
+	);
+
+	private static String convertMidashiFast(String text) {
+		if (text == null || !text.contains("［＃")) return text;
+
+		for (Map.Entry<String, String> entry : RANGE_TAG_MAP.entrySet()) {
+			String key = entry.getKey();
+			String tagValue = entry.getValue();
+			// 属性部分を除去して純粋なタグ名を取得 (例: "span class='...'" -> "span")
+			String tagName = tagValue.contains(" ") ? tagValue.substring(0, tagValue.indexOf(" ")) : tagValue;
+			// (?:...) 非キャプチャグループを使い、中身のテキストを $1 で取れるように固定
+			String pattern = "(?s)［＃(?:ここから)?" + key + "］(.*?)［＃(?:ここで)?" + key + "終わ?り］";
+			// 置換実行
+			// $1 が中身のテキスト。開始タグには属性を含め、終了タグは純粋なタグ名のみ
+			text = text.replaceAll(pattern, "<" + tagValue + ">$1</" + tagName + ">");
+		}
+		return text;
+	}
+
+	private static String applyRangeNotes(String text) {
+		for (Map.Entry<String, String> entry : RANGE_TAG_MAP.entrySet()) {
+			String key = entry.getKey();
+			String tag = entry.getValue();
+			// 開始タグと終了タグ(終わり/終りの両方に対応)を組み立て
+			// ［＃太字］(.*?)［＃太字終わ?り］
+			String pattern = "［＃" + key + "］(.*?)［＃" + key + "終わ?り］";
+			// HTMLタグの形式に合わせて置換(spanなどは開始タグに属性が入るため分割)
+			String startTag = "<" + tag + ">";
+			// "span class=..." から "span" だけ抽出
+			String endTag = "</" + tag.split(" ")[0] + ">";
+			text = text.replaceAll(pattern, startTag + "$1" + endTag);
+		}
+		return text;
+	}
+
+	private static final Map<String, String> TAG_MAP = Map.ofEntries(
+		Map.entry("太字", "b"),
+		Map.entry("中見出し", "h2"),
+		Map.entry("大見出し", "h1"),
+		Map.entry("小見出し", "h3"),
+		Map.entry("斜体", "i"),
+		Map.entry("上付き小文字", "sup"),
+		Map.entry("下付き小文字", "sub"),
+		Map.entry("縦中横", "span class='tcy'"),
+		Map.entry("窓書き", "div class='madowaki'"),
+		Map.entry("行右小書き", "sup style='font-size: 0.7em'"),
+		Map.entry("行左小書き", "sub style='font-size: 0.7em'")
+	);
+
+	private static String applyAozoraNotes(String text) {
+		if (text == null || !text.contains("［＃")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		int cursor = 0;
+
+		while (true) {
+			int startBracket = text.indexOf("［＃", cursor);
+			if (startBracket == -1) break;
+			// 注記の手前までの本文を「必ず」追加する
+			sb.append(text, cursor, startBracket);
+			int endBracket = text.indexOf("］", startBracket);
+			if (endBracket == -1) {
+				// 閉じ括弧がない場合は、残りを全部足して終了
+				break;
+			}
+			// 注記の中身を解析
+			String noteContent = text.substring(startBracket, endBracket + 1);
+			// 「」を含む見出し系の処理
+			if (noteContent.contains("「") && noteContent.contains("」は")) {
+				int titleStart = noteContent.indexOf("「") + 1;
+				int titleEnd = noteContent.indexOf("」は");
+				int cmdStart = titleEnd + 2;
+				int cmdEnd = noteContent.length() - 1;
+
+				if (titleStart > 0 && titleEnd > titleStart) {
+					String target = noteContent.substring(titleStart, titleEnd);
+					String command = noteContent.substring(cmdStart, cmdEnd);
+					String tagName = TAG_MAP.get(command);
+					if (tagName != null) {
+						// sb の「直前に追加した本文」から target を探して置換
+						int lastContentStart = sb.length() - (startBracket - cursor);
+						String lastContent = sb.substring(lastContentStart);
+						int pos = lastContent.lastIndexOf(target);
+						if (pos != -1) {
+							// targetの手前まで切り詰める
+							sb.setLength(lastContentStart + pos);
+							sb.append("<").append(tagName).append(">")
+							  .append(target)
+							  .append("</").append(tagName.split(" ")[0]).append(">");
+							sb.append(lastContent.substring(pos + target.length()));
+						}
+					}
+					else {
+						// 未定義なら注記をそのまま出す
+						sb.append(noteContent);
+					}
+				}
+				else {
+					sb.append(noteContent);
+				}
+			}
+			else {
+				// 見出し系以外の注記(［＃改ページ］など)も、そのまま保持して本文消失を防ぐ
+				sb.append(noteContent);
+			}
+			cursor = endBracket + 1;
+		}
+		// 最後の注記から文末までを必ず追加
+		if (cursor < text.length()) {
+			sb.append(text.substring(cursor));
+		}
+		return sb.toString();
+	}
+
+	private String applyAozoraLayout(String text) {
+		if (text == null) return "";
+
+		// (ここから～終わり)の置換 
+		java.util.regex.Pattern pBig = java.util.regex.Pattern.compile("［＃ここから(?:([０-９0-9]+)段階)?大きな文字］(.*?)［＃ここで?(?:[０-９0-9]+段階)?大きな文字終わ?り］", java.util.regex.Pattern.DOTALL);
+		java.util.regex.Matcher mBig = pBig.matcher(text);
+		StringBuffer sbBig = new StringBuffer();
+		while (mBig.find()) {
+			int level = (mBig.group(1) == null) ? 1 : parseSafeInt(mBig.group(1));
+			double fontSize = 1.0 + (level * 0.2);
+			// $2 の代わりに Matcher.quoteReplacement(mBig.group(2)) を使い、安全に中身を保持
+			String replacement = String.format("<span style=\"font-size: %.1fem; display: inline-block; line-height: 1.4; vertical-align: middle;\">%s</span>", fontSize, mBig.group(2));
+			mBig.appendReplacement(sbBig, java.util.regex.Matcher.quoteReplacement(replacement));
+		}
+		mBig.appendTail(sbBig);
+		text = sbBig.toString();
+
+		java.util.regex.Pattern pSmall = java.util.regex.Pattern.compile("［＃ここから(?:([０-９0-9]+)段階)?小さな文字］(.*?)［＃ここで?(?:[０-９0-9]+段階)?小さな文字終わ?り］", java.util.regex.Pattern.DOTALL);
+		java.util.regex.Matcher mSmall = pSmall.matcher(text);
+		StringBuffer sbSmall = new StringBuffer();
+		while (mSmall.find()) {
+			int level = (mSmall.group(1) == null) ? 1 : parseSafeInt(mSmall.group(1));
+			double fontSize = Math.max(0.5, 1.0 - (level * 0.1));
+			String replacement = String.format("<small style=\"font-size: %.1fem; display: inline-block; line-height: 1.4; vertical-align: middle;\">%s</small>", fontSize, mSmall.group(2));
+			mSmall.appendReplacement(sbSmall, java.util.regex.Matcher.quoteReplacement(replacement));
+		}
+		mSmall.appendTail(sbSmall);
+		text = sbSmall.toString();
+		// 傍点の置換
+		text = text.replaceAll("(?s)［＃丸傍点］(.*?)(［＃丸傍点終わり］)", "<span style=\"-webkit-text-emphasis-style: filled circle; text-emphasis-style: filled circle;\">$1</span>");
+		text = text.replaceAll("(?s)［＃白丸傍点］(.*?)(［＃白丸傍点終わり］)", "<span style=\"-webkit-text-emphasis-style: open circle; text-emphasis-style: open circle;\">$1</span>");
+		// 行単位の処理
+		String[] lines = text.split("\n", -1);
+		StringBuffer sb = new StringBuffer();
+		java.util.Stack<Integer> indentStack = new java.util.Stack<>();
+		indentStack.push(0);
+
+		java.util.regex.Pattern pIndent = java.util.regex.Pattern.compile("［＃.*?([0-9０-９]+).*?字下げ.*?］");
+		java.util.regex.Pattern pLift = java.util.regex.Pattern.compile("［＃地から.*?([0-9０-９]+).*?字上げ.*?］");
+
+		for (String line : lines) {
+			// タグ掃除の前に単発の「小さな文字」があるか判定
+			boolean isSmallLine = (line.contains("小さな文字］") && !line.contains("ここから"));
+			boolean isBigLine = (line.contains("大きな文字］") && !line.contains("ここから"));
+			boolean isBottomAligned = line.contains("［＃地付き］");
+			boolean isLifted = false;
+			int liftValue = 0;
+
+			if (line.contains("字下げ終わり")) {
+				if (indentStack.size() > 1) indentStack.pop();
+			}
+			else if (line.contains("改丁") || line.contains("改ページ")) {
+				indentStack.clear();
+				indentStack.push(0);
+			}
+			else {
+				java.util.regex.Matcher mIndent = pIndent.matcher(line);
+				if (mIndent.find()) indentStack.push(parseSafeInt(mIndent.group(1)));
+				java.util.regex.Matcher mLift = pLift.matcher(line);
+				if (mLift.find()) {
+					isLifted = true;
+					liftValue = parseSafeInt(mLift.group(1));
+				}
+			}
+			// 本文の掃除(［＃...］を取り除く)
+			String cleanLine = line.replaceAll("［＃[^］]+］", "").trim();
+
+			int currentIndent = indentStack.peek();
+			String style = String.format("margin-block: 0; line-height: inherit; display: block; %s%s%s", isBottomAligned ? "text-align: end; " : "", isLifted ? "text-align: end; margin-inline-end: " + liftValue + "em; " : "", (!isBottomAligned && !isLifted && currentIndent > 0) ? "margin-inline-start: " + currentIndent + "em; " : "");
+
+			if (cleanLine.isEmpty() && !isBottomAligned && !isLifted) {
+				sb.append("<br>");
+			}
+			else {
+				sb.append("<div style=\"").append(style).append("\">");
+				if (isSmallLine) {
+					sb.append("<small style=\"display: inline-block; line-height: 1.8;\">").append(cleanLine).append("</small>");
+				}
+				else if (isBigLine) {
+					sb.append("<span style=\"font-size: 1.2em; display: inline-block; line-height: 1.8; margin-inline: 0.1em;\">").append(cleanLine).append("</span>");
+				}
+				else {
+					sb.append(cleanLine.isEmpty() ? "&nbsp;" : cleanLine);
+				}
+				sb.append("</div>");
+			}
+		}
+		return sb.toString();
+	}
+
+	private int parseSafeInt(String s) {
+		try {
+			String n = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFKC);
+			return Integer.parseInt(n.replaceAll("[^0-9]", "").trim());
+		}
+		catch (Exception e) {
+			return 1;
+		}
+	}
+
+	private static final Pattern PATTERN_SIZE_CHUKI = 
+		Pattern.compile("［＃「([^「」]+)」は([０-９0-9]+)段階(大きく?|小さく?)な文字］");
+
+	private String convertSpecificSizeChuki(String text) {
+		if (text == null || !text.contains("段階")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = PATTERN_SIZE_CHUKI.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			String targetWord = m.group(1);
+			int level = parseSafeInt(m.group(2));
+			String type = m.group(3);
+			int matchStart = m.start();
+			int targetLen = targetWord.length();
+			// 注記の直前にその言葉があるか確認
+			if (matchStart >= targetLen && 
+				text.substring(matchStart - targetLen, matchStart).equals(targetWord)) {
+				// 直前までのテキストを保持
+				sb.append(text, lastEnd, matchStart - targetLen);
+				// サイズ計算（1段階 0.2em 刻み）
+				double fontSize;
+				if (type.startsWith("大")) {
+					fontSize = 1.0 + (level * 0.2);
+				}
+				else {
+					fontSize = 1.0 - (level * 0.1);
+					if (fontSize < 0.5) fontSize = 0.5;
+				}
+				// 置換
+				sb.append(String.format("<span style=\"font-size: %.1fem; line-height: 1.2; display: inline-block; vertical-align: middle;\">", fontSize))
+				  .append(targetWord)
+				  .append("</span>");
+			}
+			else {
+				// 一致しない場合はそのまま
+				sb.append(text, lastEnd, m.end());
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	private static String applyRuby(String text) {
+		if (text == null || !text.contains("《")) return text == null ? "" : text;
+		try {
+			// ｜(縦棒) による明示的指定
+			text = text.replaceAll("[｜|]([^《｜|<>]+?)《([^》]+)》", "<ruby>$1<rt>$2</rt></ruby>");
+			// 実体参照や外字(カッコ含む)
+			// [^<>]+? とすることで、すでにHTML化された部分を親文字にしないようにガード
+			text = text.replaceAll("(&#x[0-9a-fA-F]+;)《([^》]+)》", "<ruby>$1<rt>$2</rt></ruby>");
+			text = text.replaceAll("(（[^）<>]+）)《([^》]+)》", "<ruby>$1<rt>$2</rt></ruby>");
+			// [^<>《》|｜\\s] = タグ文字、ルビ記号、区切り棒、空白 以外にマッチさせる
+			// これによりすでに <ruby> になった場所の英字などは無視される
+			text = text.replaceAll("([\\p{IsHan}々ヶ〆]+)《([^》]+)》", "<ruby>$1<rt>$2</rt></ruby>");
+			text = text.replaceAll("([ァ-ヶー]+)《([^》]+)》", "<ruby>$1<rt>$2</rt></ruby>");
+			// 英数字ルビは特にHTMLタグ(ruby, rt, span）と干渉しやすいため「直前が > ではない(タグの終わりではない)」という否定戻り読みを活用するか親文字の条件を厳しくする
+			text = text.replaceAll("(?<![a-zA-Z>])([Ａ-Ｚa-zA-Z0-9０-９]+)《([^》]+)》", "<ruby>$1<rt>$2</rt></ruby>");
+		}
+		catch (Exception e) {
+			android.util.Log.e("RubyError", "Rendering Crash Prevention", e);
+		}
+		return text;
+	}
+
+	private String safeAozoraConvert(String text) {
+		// まず「範囲型」を処理(中身に他の注記が含まれている可能性があるため)［＃割り注］などは先に処理して中身を守る
+		text = text.replaceAll("(?s)（?［＃割り注］〔?(.*?)〕?［＃割り注終わ?り］）?", "<small class='warichu'>（$1）</small>");
+		return text;
+	}
+
+	private static final Pattern PATTERN_KOUTEI = Pattern.compile("［＃「([^「」]+)」に「([^「」]+)」の注記］");
+
+	private String convertKouteiChuki(String text) {
+		if (text == null || !text.contains("の注記］")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = PATTERN_KOUTEI.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			String targetWord = m.group(1);
+			String note = m.group(2);
+			int matchStart = m.start();
+			int targetLen = targetWord.length();
+			// 注記の直前にある文字列がtargetWordと一致するか確認
+			if (matchStart >= targetLen && 
+				text.substring(matchStart - targetLen, matchStart).equals(targetWord)) {
+				// 一致した場合：直前の単語を含めて置換
+				sb.append(text, lastEnd, matchStart - targetLen);
+				sb.append("<ruby class='koutei-chuki'>")
+				  .append(targetWord)
+				  .append("<rt>")
+				  .append(note)
+				  .append("</rt></ruby>");
+			}
+			else {
+				// 一致しない場合：注記部分だけそのまま残す(または消去する)
+				sb.append(text, lastEnd, m.end());
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	// 正規表現を「注記付き終わり」の形式に変更
+	private static final Pattern PATTERN_CHUKI_OWARI = 
+		Pattern.compile("［＃注記付き］(.*?)［＃「([^「」]+)」の注記付き終わり］", Pattern.DOTALL);
+
+	private String convertChukiOwari(String text) {
+		if (text == null || !text.contains("注記付き終わり］")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = PATTERN_CHUKI_OWARI.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			// 先にマッチ箇所の前までを append
+			sb.append(text, lastEnd, m.start());
+			String parentText = m.group(1);
+			String note = m.group(2);
+			// 親文字の中にある「外字」を先に解決する必要があるため、
+			// ここで以前作った外字変換メソッドを呼び出すのがコツです
+			String processedParent = convertSingleGaiji(parentText); 
+			// HTML化
+			sb.append("<ruby class='chuki-chuki'>")
+			  .append(processedParent)
+			  .append("<rt>")
+			  .append(note)
+			  .append("</rt></ruby>");
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	private static final Pattern PATTERN_BOUSEN_LEFT = Pattern.compile("［＃「([^「」]+)」の左に傍線］");
+
+	private String convertBousenLeft(String text) {
+		if (text == null || !text.contains("の左に傍線］")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = PATTERN_BOUSEN_LEFT.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			String targetWord = m.group(1);
+			int matchStart = m.start();
+			int targetLen = targetWord.length();
+			// 注記の直前にある文字列が一致するか確認
+			if (matchStart >= targetLen && 
+				text.substring(matchStart - targetLen, matchStart).equals(targetWord)) {
+				// 一致した場合は直前の単語を<span>で囲む
+				sb.append(text, lastEnd, matchStart - targetLen);
+				sb.append("<span class='bousen-left'>")
+				  .append(targetWord)
+				  .append("</span>");
+			}
+			else {
+				// 一致しない場合はそのまま残す
+				sb.append(text, lastEnd, m.end());
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	// ヘルパー：親文字の中に含まれる ※［＃...］ を文字に置換する
+	private String convertSingleGaiji(String target) {
+		// ここで以前の formatGaiji 的な処理、
+		// 例えば 「二の字点」を「々」に置換するなどの処理を行う
+		if (target.contains("二の字点")) return target.replaceAll("※［＃二の字点.*?］", "々");
+		return target;
+	}
+
+	// 注記の文字列を、本文中の「ルビ」や「縦棒」を含んだ状態でもマッチできるように正規表現を動的に組み立てるメソッド
+	private String createFlexibleRegex(String targetText) {
+		StringBuffer rb = new StringBuffer();
+		for (char c : targetText.toCharArray()) {
+			// 各文字の前に「｜」がある可能性を考慮
+			rb.append("｜?"); 
+			// 文字自体をエスケープして追加(記号などに対応)
+			rb.append(Pattern.quote(String.valueOf(c)));
+			// 各文字の後に「《...》」がある可能性を考慮
+			rb.append("(?:《[^》]+》)?");
+		}
+		return rb.toString();
+	}
+
+	// クラスのフィールドとして定数化
+	private static final Pattern PATTERN_MIDASHI_MARKER = Pattern.compile("［＃「([^」]+)」は([中小大])見出し］");
+
+	private String convertMidashiFinal(String text) {
+		if (text == null || !text.contains("見出し］")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = PATTERN_MIDASHI_MARKER.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			// 注記の直前までのテキストを一旦確定させてappend
+			sb.append(text, lastEnd, m.start());
+			// 見出しにしたい文字列
+			String targetText = m.group(1);
+			String type = m.group(2);
+			String tag = type.equals("大") ? "h1" : (type.equals("中") ? "h2" : "h3");
+			// sb(これまでに処理した全テキスト)の末尾からtargetText を探す
+			// 直前30〜50文字程度を調べればルビや注記があっても十分カバー可能
+			int sbLen = sb.length();
+			int searchRange = Math.max(0, sbLen - 50);
+			String lookBack = sb.substring(searchRange);
+			// ルビや注記を無視して比較するためにlookBack側を一時的にクリーニング
+			// 判定用なので、sb 自体は書き換えない
+			String cleanedLookBack = lookBack.replaceAll("《[^》]+》|［＃[^］]+］|[｜|]", "");
+			if (cleanedLookBack.endsWith(targetText)) {
+				// 一致した場合：実際の本文(ルビ等を含む生テキスト)の開始位置を特定する
+				// 非常に単純かつ高速な後ろ向きのスキャン
+				int actualMatchStart = findActualStart(lookBack, targetText);
+				if (actualMatchStart != -1) {
+					int absoluteStart = searchRange + actualMatchStart;
+					String matchedBody = sb.substring(absoluteStart);
+					// 置換：sb を切り詰めてからタグで囲んだものを append
+					sb.setLength(absoluteStart);
+					sb.append("<").append(tag).append(">")
+					  .append(matchedBody)
+					  .append("</").append(tag).append(">");
+				}
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	// ルビや注記を含む生テキストの中からtargetTextに相当する開始位置を後ろから探す
+	private int findActualStart(String lookBack, String targetText) {
+		int targetIdx = targetText.length() - 1;
+		int lookIdx = lookBack.length() - 1;
+		// ターゲットの文字を後ろから一文字ずつ照合していく
+		while (targetIdx >= 0 && lookIdx >= 0) {
+			char l = lookBack.charAt(lookIdx);
+			// 無視すべき文字なら lookIdx だけ進める
+			if (l == '》') {
+				lookIdx = lookBack.lastIndexOf('《', lookIdx);
+				if (lookIdx == -1) break;
+				lookIdx--;
+				continue;
+			}
+			if (l == '］') {
+				lookIdx = lookBack.lastIndexOf('［', lookIdx);
+				if (lookIdx == -1) break;
+				lookIdx--;
+				continue;
+			}
+			if (l == '｜' || l == '|') {
+				lookIdx--;
+				continue;
+			}
+			// 文字比較
+			if (l == targetText.charAt(targetIdx)) {
+				targetIdx--;
+				lookIdx--;
+			} else {
+				// 不一致なら即座に終了
+				return -1;
+			}
+		}
+		return (targetIdx < 0) ? lookIdx + 1 : -1;
+	}
+
+	// クラスのフィールドとして定数化
+	private static final Pattern PATTERN_MIDASHI_NOTE = Pattern.compile("［＃「([^」]+)」は同行中見出し］");
+	// 行右小書きも後方参照(\\1)を使わずJava側で判定する
+	private static final Pattern PATTERN_SMALL_RIGHT = Pattern.compile("［＃「([^」]+)」は行右小書き］");
+	private static final Pattern PATTERN_SMALL_LEFT = Pattern.compile("［＃「([^」]+)」は行左小書き］");
+
+	private String convertSpecialNotes(String text) {
+		if (text == null || !text.contains("［＃")) return text;
+		// 同行中見出しの処理(StringBuffer 1回パス)
+		text = processBackwardsNote(text, PATTERN_MIDASHI_NOTE, "inline-h2");
+		// 行右小書きの処理 (StringBuffer 1回パス)
+		text = processBackwardsNote(text, PATTERN_SMALL_RIGHT, "right-small");
+		// 行左小書きの処理 (StringBuffer 1回パス)
+		text = processBackwardsNote(text, PATTERN_SMALL_LEFT, "left-small");
+		return text;
+	}
+
+	// 注記の直前にある単語を判定してタグで囲む共通処理
+	private String processBackwardsNote(String text, Pattern pattern, String className) {
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = pattern.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			String target = m.group(1);
+			int noteStart = m.start();
+			// 注記の直前にあるはずの「本文」を探す(createFlexibleRegexを使わず直接比較)
+			// ルビ等が含まれる可能性を考慮し直前15文字程度をスキャン
+			int searchRange = Math.max(0, noteStart - 25); 
+			String lookBackArea = text.substring(searchRange, noteStart);
+			// targetがルビ等を含んでいる可能性を考慮した簡易的な後方一致確認
+			int foundIdx = lookBackArea.lastIndexOf(target);
+			if (foundIdx != -1) {
+				// 見つかった位置を text 全体のインデックスに変換
+				int actualStart = searchRange + foundIdx;
+				// 注記までの未処理分を追加
+				sb.append(text, lastEnd, actualStart);
+				// タグ付け
+				sb.append("<span class='").append(className).append("'>")
+				  .append(text, actualStart, noteStart)
+				  .append("</span>");
+				lastEnd = m.end();
+			}
+			else {
+				// 見つからない場合は注記をスルー(他の処理に任せる)
+			}
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	private String convertDoubleOverline(String text) {
+		// 検索パターン：［＃「...」に二重傍線］
+		Pattern p = Pattern.compile("［＃「([^」]+)」に二重傍線］");
+		Matcher m = p.matcher(text);
+		StringBuffer sb = new StringBuffer();
+		int lastEnd = 0;
+
+		while (m.find()) {
+			// 注記の直前までの文章を一旦追加
+			sb.append(text, lastEnd, m.start());
+			String targetText = m.group(1);
+			// ルビ・縦棒スルーロジック
+			String regex = createFlexibleRegex(targetText);
+			// 直前の本文から、注記に最も近いマッチを探す
+			Pattern pBody = Pattern.compile(regex);
+			String currentContent = sb.toString();
+			Matcher mBody = pBody.matcher(currentContent);
+			int matchStart = -1;
+			int matchEnd = -1;
+			while (mBody.find()) {
+				matchStart = mBody.start();
+				matchEnd = mBody.end();
+			}
+			// マッチが見つかった場合(注記の直前5文字以内にあるか確認)
+			if (matchStart != -1 && matchEnd >= sb.length() - 5) {
+				String matched = currentContent.substring(matchStart, matchEnd);				// 本文側をタグで書き換える
+				sb.setLength(matchStart);
+				sb.append("<span class='double-overline'>").append(matched).append("</span>");
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	private String convertGaiji(String text) {
+		if (text == null || !text.contains("［＃")) return text;
+		// ※ があってもなくても、［＃...］ の中身を group(1) に取る
+		Pattern p = Pattern.compile("※?［＃(.+?)］"); 
+		Matcher m = p.matcher(text);
+		StringBuffer sb = new StringBuffer();
+		int lastEnd = 0;
+
+		while (m.find()) {
+			sb.append(text, lastEnd, m.start());
+			String content = m.group(1); 
+			// Unicode直接指定(最優先)
+			Matcher mUni = Pattern.compile("[Uu]\\+([0-9A-Fa-f]{4,5})").matcher(content);
+			// 面区点番号の抽出
+			Matcher mMen = Pattern.compile("(\\d-\\d{1,2}-\\d{1,2})").matcher(content);
+			boolean hasMenkuten = mMen.find();
+
+			if (mUni.find()) {
+				sb.append("&#x").append(mUni.group(1)).append(";");
+			}
+			// ここで山括弧を確実に拾う
+			else if (content.contains("始め二重山括弧")) {
+				sb.append("《");
+			} 
+			else if (content.contains("終わり二重山括弧")) {
+				sb.append("》");
+			}
+			else if (content.contains("始め角括弧")) {
+				sb.append("［");
+			} 
+			else if (content.contains("終わり角括弧")) {
+				sb.append("］");
+			}
+			else if (content.contains("始めきっこう（亀甲）括弧")) {
+				sb.append("〔");
+			} 
+			else if (content.contains("終わりきっこう（亀甲）括弧")) {
+				sb.append("〕");
+			}
+			else if (content.contains("始め二重括弧")) {
+				sb.append("『");
+			}
+			else if (content.contains("終わり二重括弧")) {
+				sb.append("』");
+			}
+			else if (content.contains("縦線")) {
+				sb.append("｜");
+			}
+			else if (content.contains("井げた")) {
+				sb.append("＃");
+			}
+			else if (content.contains("米印")) {
+				sb.append("※");
+			}
+			else if (content.contains("歌記号")) {
+				// 歌記号なら音符に変換
+				sb.append("♪");
+			}
+			else if (content.contains("ローマ数字") || content.contains("丸")) {
+				String result = resolveMenkuten(hasMenkuten ? mMen.group(1) : null, content);
+				if (result != null) {
+					sb.append(result);
+				}
+				else {
+					// resolveMenkutenで変換できなかった「丸」を含む説明文などは、括弧書きへ
+					sb.append("<span class=\"gaiji\">（").append(extractGaijiText(content)).append("）</span>");
+				}
+			}
+			else if (hasMenkuten || isGaijiDescription(content)) {
+				// 面区点がある、または文字説明である場合は「（説明）」にする
+				sb.append("<span class=\"gaiji\">（").append(extractGaijiText(content)).append("）</span>");
+			}
+			else {
+				// それ以外(改ページ、見出し、ルビ等)はそのまま返すか、別メソッドで処理
+				sb.append(m.group(0)); 
+			}
+			lastEnd = m.end();
+		}
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	// 外字説明文かどうかの判定を強化
+	private boolean isGaijiDescription(String content) {
+		// まず、外字ではない「編集指示」系のキーワードが含まれていたら即座に false を返す
+		if (content.length() > 50) return false;
+		// 明らかなレイアウト指示キーワードが含まれていれば除外
+		String[] layoutKeywords = {"傍点", "ルビ", "見出し", "字詰め", "罫囲み", "窓書き", "地上げ", "地下げ", "ページの左右中央", "縦中横", "行右小書き", "行左小書き", "太字", "斜体", "ママ", "下付き小文字", "上付き小文字", "分数", "キャプション"};
+		for (String kw : layoutKeywords) {
+			if (content.contains(kw)) return false;
+		}
+		return content.contains("水準") || content.contains("に代えて") || content.contains("＋") || content.contains("の右") || content.contains("の左") || content.contains("の形") || content.startsWith("「");
+	}
+
+	//「」の中身、あるいはカンマより前のテキストを抽出
+	private String extractGaijiText(String content) {
+		// 「 」で囲まれた部分があれば、それを繋げて説明とする
+		String[] parts = content.split("[、，]");
+		if (parts.length > 0) {
+			String desc = parts[0];
+			// あまりに長い場合は「」の中身だけに絞る
+			if (desc.length() > 30 && desc.contains("「")) {
+				int s = desc.indexOf("「");
+				int e = desc.lastIndexOf("」");
+				if (s != -1 && e > s) return desc.substring(s + 1, e);
+			}
+			return desc;
+		}
+		return content;
+	}
+
+	// 注記のテキスト内容から対応する丸付き文字(Unicode)を返す
+	private String getCircleCharByText(String content) {
+		// 「丸」という言葉が含まれていない場合は、丸付き数字ではないと判断
+		if (!content.contains("丸") && !content.contains("まる")) return null;
+		// 1文字の判定(「丸公」など)や、特定の単語(「丸付き印」など)に対応
+		if (content.contains("\u5370")) return "\u329E"; // 印 -> ㊞
+		if (content.contains("\u516c")) return "\u32AB"; // 公 -> ㊫
+		if (content.contains("\u6b63")) return "\u329B"; // 正 -> ㊛ (丸正)
+		if (content.contains("\u6ce8")) return "\u329F"; // 注 -> ㊟
+		if (content.contains("\u512a")) return "\u329D"; // 優 -> ㊝
+		if (content.contains("\u79d8")) return "\u3299"; // 秘 -> ㊙
+		if (content.contains("\u7279")) return "\u3314"; // 特 -> ㊔
+		// 曜日シリーズ
+		if (content.contains("\u65e5")) return "\u3290"; // 日
+		if (content.contains("\u6708")) return "\u3291"; // 月
+		if (content.contains("\u706b")) return "\u3292"; // 火
+		if (content.contains("\u6c34")) return "\u3293"; // 水
+		if (content.contains("\u6728")) return "\u3294"; // 木
+		if (content.contains("\u91d1")) return "\u3295"; // 金
+		if (content.contains("\u571f")) return "\u3296"; // 土
+		// 左右・男女
+		if (content.contains("\u53f3")) return "\u32A8"; // 右
+		if (content.contains("\u5de6")) return "\u32A7"; // 左
+		if (content.contains("\u7537")) return "\u329A"; // 男
+		if (content.contains("\u5973")) return "\u329B"; // 女
+		// 該当がない場合は、汎用的な( )囲みで返す(フォントがない環境への配慮)
+		// 「丸い」→「(い)」など
+		java.util.regex.Matcher m = java.util.regex.Pattern.compile("丸(?:付き)?(?:「(.+?)」|(.))").matcher(content);
+		if (m.find()) {
+			String target = (m.group(1) != null) ? m.group(1) : m.group(2);
+			return "(" + target + ")";
+		}
+		return null;
+	}
+
+	// 漢数字の丸付き文字を判定して返す
+	private String getKanjiCircleChar(String content) {
+		// 「丸」という言葉が含まれていない場合は、丸付き数字ではないと判断
+		if (!content.contains("丸") && !content.contains("まる")) return null;
+		// Unicodeが直接指定されている場合(U+3280 ～ U+3289)
+		java.util.regex.Matcher mUni = java.util.regex.Pattern.compile("[Uu]\\+(328[0-9A-Fa-f])").matcher(content);
+		if (mUni.find()) {
+			// 例: 3280 を 16進数として数値化し、charにキャスト
+			return String.valueOf((char) Integer.parseInt(mUni.group(1), 16));
+		}
+		// テキスト名称で指定されている場合(フォント不足対策のため判定文字もエスケープ)
+		if (content.contains("\u4e00")) return "\u3280"; // 一
+		if (content.contains("\u4e8c")) return "\u3281"; // 二
+		if (content.contains("\u4e09")) return "\u3282"; // 三
+		if (content.contains("\u56db")) return "\u3283"; // 四
+		if (content.contains("\u4e94")) return "\u3284"; // 五
+		if (content.contains("\u516d")) return "\u3285"; // 六
+		if (content.contains("\u4e03")) return "\u3286"; // 七
+		if (content.contains("\u516b")) return "\u3287"; // 八
+		if (content.contains("\u4e5d")) return "\u3288"; // 九
+		if (content.contains("\u5341")) return "\u3289"; // 十
+		return null;
+	}
+
+	private String resolveMenkuten(String code, String fullContent) {
+		// 漢数字シリーズのチェック(ガード条件付き)
+		String kanjiCircle = getKanjiCircleChar(fullContent);
+		if (kanjiCircle != null) return kanjiCircle;
+		// 一般的な丸付き文字(ガード条件付き)
+		String commonCircle = getCircleCharByText(fullContent);
+		if (commonCircle != null) return commonCircle;
+		// 「ローマ数字」または「丸」という明示的なキーワードがある場合のみ数字を抽出
+		boolean isRomanRequested = fullContent.contains("ローマ数字");
+		boolean isCircleRequested = fullContent.contains("丸") || fullContent.contains("まる");
+
+		if (isRomanRequested || isCircleRequested) {
+			int num = extractFirstNumber(fullContent);
+			if (num > 0) {
+				// アラビア数字の丸数字 (①〜⑳)
+				if (isCircleRequested && num <= 20) {
+					String[] circles = {"\u2460","\u2461","\u2462","\u2463","\u2464","\u2465","\u2466","\u2467","\u2468","\u2469","\u246A","\u246B","\u246C","\u246D","\u246E","\u246F","\u2470","\u2471","\u2472","\u2473"};
+					return circles[num-1];
+				}
+				// ローマ数字
+				if (isRomanRequested) {
+					if (num <= 12) {
+						return getRomanNumericMap().get(num);
+					}
+					else {
+						return convertToRoman(num);
+					}
+				}
+			}
+		}
+		// どの特定の記号変換にも当てはまらない場合は null を返す
+		// これにより呼び出し側のconvertGaijiで「（説明文）」への処理に流れるようになる
+		return null;
+	}
+
+	// 1-12までの特殊記号マップ
+	private Map<Integer, String> getRomanNumericMap() {
+		Map<Integer, String> map = new HashMap<>();
+		String[] romans = {"Ⅰ","Ⅱ","Ⅲ","Ⅳ","Ⅴ","Ⅵ","Ⅶ","Ⅷ","Ⅸ","Ⅹ","Ⅺ","Ⅻ"};
+		for (int i = 0; i < romans.length; i++) {
+			map.put(i + 1, romans[i]);
+		}
+		return map;
+	}
+
+	private String convertToRoman(int num) {
+		if (num <= 0) return String.valueOf(num);
+		// 基本的なローマ数字の単位(大きい順)
+		int[] values = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+		String[] symbols = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < values.length; i++) {
+			while (num >= values[i]) {
+				num -= values[i];
+				sb.append(symbols[i]);
+			}
+		}
+		return sb.toString();
+	}
+
+	// 文字列から最初の数字(1文字以上)を抽出してintで返す
+	// 例：「丸18、1-13-18」 -> 18
+	// 例：「丸付き公」 -> -1
+	private int extractFirstNumber(String content) {
+		if (content == null || content.isEmpty()) return -1;
+		// \\d+ は「1回以上繰り返される数字」にマッチします
+		java.util.regex.Pattern p = java.util.regex.Pattern.compile("\\d+");
+		java.util.regex.Matcher m = p.matcher(content);
+		if (m.find()) {
+			try {
+				return Integer.parseInt(m.group());
+			}
+			catch (NumberFormatException e) {
+				return -1;
+			}
+		}
+		return -1;
+	}
+
+	private static String simplifyGaiji(String text) {
+		if (text == null) return "";
+		// 先頭の「※」をオプションにしつつ、最短一致で注記を特定
+		// 内部に「入る」や「キャプション」が含まれる場合は画像タグとみなして除外(否定先読み)
+		// 外字特有のキーワード(水準、U+、JIS、漢字構成表現など)が含まれる場合のみマッチ
+		String regex = "※?［＃((?![^］]*?(?:入る|キャプション|見出し))[^［］]+?(?:「[^」]+」|第[1-4]水準|U\\+[0-9A-F]+|\\d-\\d-\\d|[^］]+?＋[^］]+?)[^［］]*?)］";
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(text);
+		StringBuffer sb = new StringBuffer();
+
+		while (m.find()) {
+			String content = m.group(1);
+			// 抽出ロジック
+			String g_text = "";
+			if (content.contains("「")) {
+				int s = content.indexOf("「");
+				int e = content.lastIndexOf("」");
+				if (s != -1 && e > s) {
+					g_text = content.substring(s + 1, e);
+				}
+			}
+			// 「」がない場合は、カンマ区切りの先頭
+			if (g_text.isEmpty()) {
+				g_text = content.split("[、，]")[0];
+			}
+			// 安全策：抽出したテキストが長すぎる、または不自然な場合は置換しない
+			if (g_text.length() > 20 || g_text.contains("入る")) {
+				m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0)));
+				continue;
+			}
+			m.appendReplacement(sb, Matcher.quoteReplacement("（" + g_text + "）"));
+		}
+		m.appendTail(sb);
+		return sb.toString();
+	}
+
+		// クラスのフィールドとして定数化
+		private static final Pattern PATTERN_CAPTION_NOTE = 
+			Pattern.compile("［＃「([^」]+)」(?:はキャプション|のキャプション付きの[^］]+?入る)］");
+
+	private String convertCaptions(String text) {
+		if (text == null || !text.contains("キャプション")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		Matcher m = PATTERN_CAPTION_NOTE.matcher(text);
+		int lastEnd = 0;
+
+		while (m.find()) {
+			// 注記の直前までのテキストを確定させる
+			sb.append(text, lastEnd, m.start());
+			// 「」の中身
+			String captionText = m.group(1); 
+			int noteStart = m.start();
+			int captionLen = captionText.length();
+			// 直前のテキスト(sb の末尾)が captionText と一致するかチェック
+			int sbLen = sb.length();
+			if (sbLen >= captionLen) {
+				// 直前の文字列を切り出して比較
+				String tail = sb.substring(sbLen - captionLen);
+				if (tail.equals(captionText)) {
+					// 重複がある場合：末尾の重複分を削ってからタグを追加
+					sb.setLength(sbLen - captionLen);
+				}
+			}
+			// タグの追加
+			sb.append("<figcaption class=\"aozora-caption\">")
+			  .append(captionText)
+			  .append("</figcaption>");
+			lastEnd = m.end();
+		}
+		// 残りのテキストを追加
+		sb.append(text.substring(lastEnd));
+		return sb.toString();
+	}
+
+	// 青空文庫の画像指示構文をパースする
+	private String preProcessAozoraImages(String text) {
+		if (text == null || !text.contains("［＃")) return text;
+
+		StringBuffer sb = new StringBuffer(text.length());
+		int cursor = 0;
+		while (true) {
+			int start = text.indexOf("［＃", cursor);
+			if (start == -1) break;
+			// 注記の開始から「本当の閉じ括弧」までをスタックで特定
+			int end = findClosingBracket(text, start);
+			if (end == -1) break;
+			String fullNote = text.substring(start, end + 1);
+			// 構造チェック：「(」があり、かつ末尾が「)入る］」であるか
+			// ※特定のキーワード(fig)ではなく、構文の終端「）入る］」で判断
+			if (fullNote.contains("（") && fullNote.endsWith("）入る］")) {
+				sb.append(text, cursor, start);
+				sb.append(buildImageTagFromNote(fullNote));
+				cursor = end + 1;
+			}
+			else {
+			// 画像でなければ、そのまま次の注記へ
+				sb.append(text, cursor, start + 2);
+				cursor = start + 2;
+			}
+		}
+		sb.append(text.substring(cursor));
+		return sb.toString();
+	}
+
+	private String buildImageTagFromNote(String fullNote) {
+		// 殻［＃ と ］ を除去
+		String inner = fullNote.substring(2, fullNote.length() - 1);
+		// ラベル内の括弧を考慮し最後から探す
+		int openParen = inner.lastIndexOf("（");
+		int closeParen = inner.lastIndexOf("）入る");
+		if (openParen != -1 && closeParen > openParen) {
+			// ラベル部分(外字注記が含まれていても、ここで文字に還元する)
+			String labelRaw = inner.substring(0, openParen);
+			String label = labelRaw.replaceAll("［＃「(.+?)」、.+?］", "$1").replace("※", "").trim();
+			// ファイル名部分(カンマがあれば最初の要素を取る)
+			String info = inner.substring(openParen + 1, closeParen).trim();
+			String fileName = info.split("、")[0].trim();
+			return String.format("<img src=\"%s\" alt=\"%s\">", fileName, label);
+		}
+		return fullNote;
+	}
+
+	// 入れ子に対応した閉じ括弧探し
+	private static int findClosingBracket(String text, int start) {
+		int depth = 0;
+		for (int i = start; i < text.length(); i++) {
+			if (text.startsWith("［＃", i)) {
+				depth++;
+				i++; 
+			}
+			else if (text.charAt(i) == '］') {
+				depth--;
+				if (depth == 0) return i;
+			}
+		}
+		return -1;
+	}
+
+	private String convertDakuten(String input) {
+		if (input == null) return null;
+
+		final Pattern DAKUTEN_PATTERN = Pattern.compile("※［＃濁点付き片仮名(.)、[^］]+］");
+		Matcher matcher = DAKUTEN_PATTERN.matcher(input);
+		StringBuffer sb = new StringBuffer();
+
+		while (matcher.find()) {
+			// キャプチャした1文字を取得
+			String targetChar = matcher.group(1);
+			// 結合用濁点 (U+3099) を付与して置換
+			// HTMLとして出力する場合は <span> を付けておくとCSSで制御しやすい
+			String replacement = "<span class=\"gaiji\">" + targetChar + "&#x3099;</span>";
+			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
+
+	private String convertSpecialKana(String input) {
+		if (input == null) return null;
+		// 「小書き」または「半濁点付き」の片仮名1文字をキャプチャする正規表現
+		final Pattern KANA_PATTERN = Pattern.compile("※［＃(小書き|半濁点付き)片仮名(.)、[^］]+］");
+		Matcher matcher = KANA_PATTERN.matcher(input);
+		StringBuffer sb = new StringBuffer();
+
+		while (matcher.find()) {
+			String type = matcher.group(1);
+			String targetChar = matcher.group(2);
+
+			String replacement;
+			if ("半濁点付き".equals(type)) {
+				// 半濁点付きの場合、Unicodeの結合用半濁点（U+309A）を付与
+				replacement = "<span class='handakuten-kana'>" + targetChar + "\u309A</span>";
+			}
+			else {
+				// 小書きの場合は既存のロジック通り
+				replacement = "<span class='small-kana'>" + targetChar + "</span>";
+			}
+			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
+
+	private String convertGaijiRuby(String input) {
+		if (input == null) return null;
+
+		final Pattern GAIJI_RUBY_PATTERN = Pattern.compile("(※?\\s*［＃([^］]+)］)《([^》]+)》");
+		Matcher matcher = GAIJI_RUBY_PATTERN.matcher(input);
+		StringBuffer sb = new StringBuffer();
+
+		while (matcher.find()) {
+			String fullGaijiTag = matcher.group(1);
+			String gaijiContent = matcher.group(2);
+			String rubyText = matcher.group(3);
+			Log.v(TAG, "rubyText=" + rubyText);
+			// 外字部分を先にHTML化(またはプレースホルダ化)
+			String processedGaiji = formatGaiji(fullGaijiTag, gaijiContent);
+			// 外字全体を親文字としてrubyタグを構成
+			String replacement = "<ruby>" + processedGaiji + "<rt>" + rubyText + "</rt></ruby>";
+			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
+
+	private String formatGaiji(String full, String content) {
+		// ここで外字を画像や結合文字に変換する
+		return "<span class=\"gaiji\">" + full + "</span>";
+	}
+
+	// 感嘆符疑問符の注記をキャプチャ
+	private String convertSymbols(String input) {
+		if (input == null) return null;
+
+		final Pattern BANCHI_PATTERN = Pattern.compile("※［＃感嘆符疑問符、[^］]+］");
+		Matcher matcher = BANCHI_PATTERN.matcher(input);
+		StringBuffer sb = new StringBuffer();
+
+		while (matcher.find()) {
+			// Unicodeの ⁉ (U+2049) に置換
+			// もしくはHTMLエンティティ "&#x2049;"
+			String replacement = "\u2049"; 
+			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
+
+	private String applyAozoraTags(String text) {
+		if (text == null || !text.contains("［＃")) return text;
+		// 対応表：注記名 -> 開始タグ
+		Map<String, String> tags = new LinkedHashMap<>();
+		tags.put("斜体", "i");
+		tags.put("太字", "b");
+		tags.put("横組み", "span style='writing-mode:horizontal-tb; display:inline-block;'");
+		tags.put("傍点", "span class='em-dot'");
+
+		for (Map.Entry<String, String> entry : tags.entrySet()) {
+			String name = entry.getKey();
+			String tag = entry.getValue();
+			// 開始タグと終了タグの生成
+			String openHtml = "<" + tag + ">";
+			String closeHtml = "</" + tag.split(" ")[0] + ">";
+			// 入れ子や「終わり」が混在していても順番に置換
+			// ※［＃斜体］ -> <i> / ※［＃斜体終わり］ -> </i>
+			text = text.replaceAll("※?［＃" + name + "］", openHtml);
+			text = text.replaceAll("※?［＃" + name + "終わり］", closeHtml);
+		}
+		return text;
+	}
+
+	// 外字注記の置換後、ルビの直前に残ってしまった「※」を掃除する。
+	private String cleanupGaijiMarkersBeforeRuby(String text) {
+		// ※
+		if (text == null || !text.contains("\u203B")) return text;
+		// 実体参照 (&#x...;) の直前の ※ を消す
+		text = text.replaceAll("\u203B(&#x[0-9A-Fa-f]{4,5};)", "$1");
+		// ローマ数字の直前の ※ を消す
+		text = text.replaceAll("\u203B([\u2160-\u216B])", "$1");
+		// アラビア数字の丸数字の直前の ※ を消す
+		text = text.replaceAll("\u203B([\u2460-\u2473])", "$1");
+		// 漢数字の丸文字 (U+3280-3289) の直前の ※ を消す
+		text = text.replaceAll("\u203B([\u3280-\u3289])", "$1");
+		// 特殊な丸付き文字などが含まれる U+3200ブロックの直前の ※ を消す
+		text = text.replaceAll("\u203B([\u3290-\u32AF])", "$1");
+		// (公) や (い) のように括弧で置換されたものの直前の ※ を消す
+		text = text.replaceAll("\u203B(\\()", "$1");
+		// ルビ直前の掃除「※文字《ルビ》」となっている場合の ※ を消す
+		return text.replaceAll("\u203B([^\u203B\u300A]+?\u300A)", "$1");
+	}
+
+	private String removeTeihonNotes(String text) {
+		if (text == null || !text.contains("は底本では")) return text;
+		// 一時的な退避用マーカー
+		final String PROTECT_MARKER = "___GAIJI_PROTECTED___";
+		StringBuffer sb = new StringBuffer(text);
+		int index;
+		// 「後ろから検索」は維持（削除によるズレを防ぐため）
+		while ((index = sb.lastIndexOf("は底本では")) != -1) {
+			int start = sb.lastIndexOf("［＃", index);
+			if (start == -1) {
+				// ［＃ が見つからない「は底本では」は、注記外の本文の可能性があるので壊さないように一時的にマーカーへ置換して検索対象から外す
+				sb.replace(index, index + 5, PROTECT_MARKER);
+				continue;
+			}
+			int end = findProperClosingBracket(sb, start);
+			if (end != -1) {
+				// 判定：直後にルビ《 があるか？
+				boolean isGaijiRuby = (end + 1 < sb.length() && sb.charAt(end + 1) == '《');
+				if (isGaijiRuby) {
+					// 外字ルビなので、一時的にマーカーに置換してループを回避
+					sb.replace(index, index + 5, PROTECT_MARKER);
+				}
+				else {
+					// 純粋な底本注記なので、根こそぎ消す
+					int deleteStart = start;
+					if (deleteStart > 0 && sb.charAt(deleteStart - 1) == '※') {
+						deleteStart--;
+					}
+					sb.delete(deleteStart, end + 1);
+				}
+			}
+			else {
+				// 括弧が閉じられていない異常系：検索対象から外す
+				sb.replace(index, index + 5, PROTECT_MARKER);
+			}
+		}
+		// 最後に、退避させていたマーカーを元の文字列に戻す
+		String result = sb.toString().replace(PROTECT_MARKER, "は底本では");
+		return result;
+	}
+
+	// 開始位置 start から、入れ子を考慮して対応する ］の位置を返す
+	private int findProperClosingBracket(StringBuffer sb, int start) {
+		int depth = 0;
+		for (int i = start; i < sb.length(); i++) {
+			// ［＃ を見つけたら深さを増やす
+			if (i + 1 < sb.length() && sb.charAt(i) == '［' && sb.charAt(i + 1) == '＃') {
+				depth++;
+				i++; 
+			}
+			else if (sb.charAt(i) == '］') {
+				depth--;
+				if (depth == 0) return i;
+			}
+		}
+		return -1;
+	}
+
+	private String convertYokogumi(String text) {
+		String regex = "［＃ここから横組み］([\\s\\S]*?)［＃ここで横組み終わり］";
+		String style = "display: inline-block !important; " +
+			"transform: rotate(-90deg) !important; " + 
+			"transform-origin: top left !important; " +
+			"white-space: nowrap !important; " +
+			"margin-left: 1.5em !important; " +
+			"font-family: sans-serif !important;";
+		String replacement = "<span style=\"" + style + "\">$1</span>";
+		return text.replaceAll(regex, replacement);
+	}
+
+	private String convertJisume(String text) {
+		if (text == null || !text.contains("字詰め")) return text;
+		// 「ここから○字詰め」を <div class="jisume-n"> に変換
+		// ［＃ここから(\d+)字詰め］
+		Pattern pStart = Pattern.compile("［＃ここから(\\d+)字詰め］");
+		Matcher mStart = pStart.matcher(text);
+		StringBuffer sb = new StringBuffer();
+		while (mStart.find()) {
+			String num = mStart.group(1);
+			// class名はCSS側で .jisume-30 { width: 30em; } のように定義することを想定
+			mStart.appendReplacement(sb, "<div class=\"jisume-" + num + "\">");
+		}
+		mStart.appendTail(sb);
+		String midText = sb.toString();
+		// 「ここで字詰め終わり」を </div> に変換
+		// ［＃ここで字詰め終わり］
+		return midText.replace("［＃ここで字詰め終わり］", "</div>");
+	}
+
+	// 青空文庫のテキストをHTMLのタグをつけて変更
+	private String parseAozora(String text, Map<String, String> images) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		// 不要なヘッダー・フッターのカット
+		String[] parts = text.split("-{5,}");
+		if (parts.length >= 3) {
+			// 最初の部分(タイトル)と、3番目の部分(本文)を結合
+			// 4番目以降(フッター)がある場合は無視する構成
+			text = parts[0] + parts[2];
+		}
+		Logcat.v(logLevel, "開始時: " + text.length());
+		text = preProcessAozoraImages(text);
+		Logcat.v(logLevel, "preProcessAozoraImages: " + text.length());
+		text= removeTeihonNotes(text);
+		Logcat.v(logLevel, "removeTeihonNotes: " + text.length());
+		text = convertYokogumi(text);
+		text = convertJisume(text);
+		text = safeAozoraConvert(text);
+		Logcat.v(logLevel, "safeAozoraConvert: " + text.length());
+		text = convertMidashiFinal(text);
+		Logcat.v(logLevel, "convertMidashiFinal: " + text.length());
+		text = convertSpecialNotes(text);
+		Logcat.v(logLevel, "convertSpecialNotes: " + text.length());
+		text = convertDoubleOverline(text);
+		Logcat.v(logLevel, "convertDoubleOverline: " + text.length());
+		text = convertCaptions(text);
+		Logcat.v(logLevel, "convertCaptions: " + text.length());
+		text = convertGaijiRuby(text);
+		text = text.replaceAll("※?［＃二の字点、1-2-22］", "〻");
+		text = text.replaceAll("※［＃感嘆符二つ、[^］]+］", "\u203C");
+		text = convertDakuten(text);
+		text = convertSpecialKana(text);
+		text = convertSymbols(text);
+		text = convertAozoraTag(text, "傍線", "bousen");
+		text = convertAozoraTag(text, "白丸傍点", "shiromaru-boten");
+		text = convertKouteiChuki(text);
+		text = convertChukiOwari(text);
+		text = convertBousenLeft(text);
+		text = convertSpecificSizeChuki(text);
+		text = convertGaiji(text);
+		Logcat.v(logLevel, "convertGaiji: " + text.length());
+		text = simplifyGaiji(text);
+		Logcat.v(logLevel, "simplifyGaiji: " + text.length());
+		Logcat.v(logLevel, "漢文処理");
+		text = convertKanbun(text);
+		Logcat.v(logLevel, "convertKanbun: " + text.length());
+		text = applyRangeNotes(text);
+		Logcat.v(logLevel, "applyRangeNotes: " + text.length());
+		// ルビ直前の邪魔な「※」だけを掃除する
+		text = cleanupGaijiMarkersBeforeRuby(text);
+		// ルビ処理(｜あり・なし両対応)
+		Logcat.v(logLevel, "ルビ処理");
+		text = applyRuby(text);
+		Logcat.v(logLevel, "applyRuby: " + text.length());
+		text = applyAozoraNotes(text);
+		Logcat.v(logLevel, "applyAozoraNotes: " + text.length());
+		text = applyAozoraTags(text);
+		Logcat.v(logLevel, "傍点処理");
+		text = convertAozoraTag(text, "傍点", "dot");
+		text = convertAozoraTag(text, "太字", "bold");
+		text = convertAozoraTag(text, "キャプション", "caption");
+		text = convertAozoraTag(text, "二重傍線", "span style='text-decoration: double underline;'");
+		Logcat.v(logLevel, "convertAozoraTag: " + text.length());
+		// 後置型見出しの処理
+		Logcat.v(logLevel, "後置型見出しの処理");
+		text = convertMidashiFast(text);
+		Logcat.v(logLevel, "convertMidashiFast: " + text.length());
+		text = applyAozoraLayout(text);
+		Logcat.v(logLevel, "applyAozoraLayout: " + text.length());
+		// 残ってしまった未対応の注記タグ［＃...］をすべて削除
+		Logcat.v(logLevel, "text.replace: " + text.length());
+		Logcat.v(logLevel, "未対応の注記タグ［＃...］をすべて削除");
+		text = text.replaceAll("［＃[^］]+］", "");
+		Logcat.v(logLevel, "最後に改行を<br>に変換");
+		// 最後に改行を<br>に変換
+		// ただし、divやh1タグの直後の改行で隙間が空きすぎるのを防ぐため調整
+		text = text.replace("\n", "<br>\n");
+		text = text.replace("</div><br>", "</div>");
+		text = text.replace("</h1><br>", "</h1>");
+		text = text.replace("</h2><br>", "</h2>");
+		Logcat.v(logLevel, "キー(ファイル名)が含まれるsrcを置換");
+		for (Map.Entry<String, String> entry : images.entrySet()) {
+			// キー(ファイル名)が含まれるsrcを置換
+			text = text.replace("src=\"" + entry.getKey() + "\"", "src=\"file://" + mAozoraFile.getAbsolutePath() + "\"");
+
+		}
+		return text;
+	}
 }
 
