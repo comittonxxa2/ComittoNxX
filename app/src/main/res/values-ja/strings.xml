@@ -126,7 +126,12 @@
     <string name="tapClick02">長押しタップ</string>
     <string name="tapSettingMenu">タップ操作の設定</string>
     <string name="CustonkeySettingMenu">カスタムキーの設定</string>
-    <string name="FloatingIconSettingMenu">フローティングアイコンの設定</string>
+    <string name="FloatingIconSettingMenu">フローティングアイコンの設定</string>    <string name="ZoomLevelSettingMenu">ズームレベルの設定</string>
+    <string name="ZoomLevelUpdate">表示更新</string>
+    <string name="ZoomLevelDecision">設定保存</string>
+    <string name="ZoomLevelReset">リセット</string>
+    <string name="ZoomLevelUndo">元に戻す</string>
+
     <string name="downloadCountMenu">ダウンロード数</string>
     <string name="licenseMenu">ライセンス情報</string>
     <string name="noiseMenu">音での操作</string>
@@ -407,6 +412,8 @@
     <string name="rota06">回転あり(縦横上下反転)</string>
     <string name="rota07">縦固定(上下反転)</string>
     <string name="rota08">横固定(上下反転)</string>
+    <string name="direction00">縦書きテキスト</string>
+    <string name="direction01">横書きテキスト</string>
     <string name="rotaall00">回転あり</string>
     <string name="rotaall01">縦固定</string>
     <string name="rotaall02">横固定</string>
