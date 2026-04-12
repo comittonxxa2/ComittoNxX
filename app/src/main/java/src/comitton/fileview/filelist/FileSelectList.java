@@ -137,6 +137,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static int random_data2[];
 	private static int mRandowCount = 0;
 	private boolean mEpubWebView;
+	private boolean mAozoraZipFile;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
@@ -305,7 +306,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	}
 
 	// リストモード
-	public void setParams(boolean hidden, String marker, boolean filter, boolean applydir, boolean parentmove, boolean epubViewer, boolean epubWebViewer) {
+	public void setParams(boolean hidden, String marker, boolean filter, boolean applydir, boolean parentmove, boolean epubViewer, boolean epubWebViewer, boolean aozorazipfile) {
 		mHidden = hidden;
 		mMarker = marker;
 		mFilter = filter;
@@ -313,6 +314,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mParentMove = parentmove;
 		mEpubViewer = epubViewer;
 		mEpubWebView = epubWebViewer;
+		mAozoraZipFile = aozorazipfile;
 	}
 
 	public static ArrayList<FileData> getFileList() {
@@ -653,50 +655,87 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 				if (fileList.get(i).getType() == FileData.FILETYPE_ARC
 						|| fileList.get(i).getType() == FileData.FILETYPE_PDF) {
-					maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-					state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
-					fileList.get(i).setMaxpage(maxpage);
-					if	(state >= 0)	{ // 先頭ページでも動作するようにした
-						nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
-						date = fileList.get(i).getDate();
-						if (nowdate != ((date / 1000)))	{
-							int openmode = 0;
-							// ファイルリストの読み込み
-							openmode = ImageManager.OPENMODE_VIEW;
-							// 設定の読み込み
-							mImageMgr = new ImageManager(this.mActivity, currentPath, name, mUser, mPass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
-							maxpage = mImageMgr.length();
-							SharedPreferences.Editor ed = mSp.edit();
-							ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", maxpage);
-							ed.putInt(DEF.createUrl(uri, mUser, mPass), state);
-							ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#date", (int)((date / 1000)));
-							ed.apply();
-							releaseManager();
-							if (maxpage == DEF.PAGENUMBER_NONE) {
-								state = DEF.PAGENUMBER_UNREAD;
-								size = DEF.PAGENUMBER_NONE;
-							} else if (state >= maxpage - mMargin) {
-								// 0から始まるので+1、見開きの分で-1
-								state = DEF.PAGENUMBER_READ;
-								size = maxpage;
-							} else {
-								size = maxpage;
+					boolean chkAozora = false;
+					state = -1;
+					if (mAozoraZipFile) {
+						// 青空文庫のZIPが有効の場合
+						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#aozora", "-1,-1,0,0,0.0,0.0");
+						state = DEF.PAGENUMBER_UNREAD;
+						size = DEF.PAGENUMBER_NONE;
+						if (rawValue != null) {
+							String[] parts = rawValue.split(",");
+							if (parts.length >= 6) {
+								try {
+									state = Integer.parseInt(parts[0]);
+									maxpage = Integer.parseInt(parts[1]);
+									if (state == -1 && maxpage == -1) {
+										// 読書情報が無かった場合は何もしない
+									}
+									else {
+										if (state == 0 && maxpage == 0) {
+											state = -1;
+										}
+										else if (state == maxpage) {
+											state = -2;
+										}
+										else {
+											state--;
+										}
+										fileList.get(i).setMaxpage(maxpage);
+										chkAozora = true;
+									}
+								}
+		    				    catch (Exception e) {
+								}
 							}
 						}
-						else {
-							if (maxpage == DEF.PAGENUMBER_NONE) {
-								state = DEF.PAGENUMBER_UNREAD;
-								size = DEF.PAGENUMBER_NONE;
-							} else if (state >= maxpage - mMargin) {
-								// 0から始まるので+1、見開きの分で-1
-								state = DEF.PAGENUMBER_READ;
-								size = maxpage;
-							} else {
-								size = maxpage;
+					}
+					if (!chkAozora) {
+						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+						fileList.get(i).setMaxpage(maxpage);
+						if	(state >= 0)	{ // 先頭ページでも動作するようにした
+							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
+							date = fileList.get(i).getDate();
+							if (nowdate != ((date / 1000)))	{
+								int openmode = 0;
+								// ファイルリストの読み込み
+								openmode = ImageManager.OPENMODE_VIEW;
+								// 設定の読み込み
+								mImageMgr = new ImageManager(this.mActivity, currentPath, name, mUser, mPass, 0, mHandler, mHidden, openmode, 1);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+								maxpage = mImageMgr.length();
+								SharedPreferences.Editor ed = mSp.edit();
+								ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", maxpage);
+								ed.putInt(DEF.createUrl(uri, mUser, mPass), state);
+								ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#date", (int)((date / 1000)));
+								ed.apply();
+								releaseManager();
+								if (maxpage == DEF.PAGENUMBER_NONE) {
+									state = DEF.PAGENUMBER_UNREAD;
+									size = DEF.PAGENUMBER_NONE;
+								} else if (state >= maxpage - mMargin) {
+									// 0から始まるので+1、見開きの分で-1
+									state = DEF.PAGENUMBER_READ;
+									size = maxpage;
+								} else {
+									size = maxpage;
+								}
 							}
+							else {
+								if (maxpage == DEF.PAGENUMBER_NONE) {
+									state = DEF.PAGENUMBER_UNREAD;
+									size = DEF.PAGENUMBER_NONE;
+								} else if (state >= maxpage - mMargin) {
+									// 0から始まるので+1、見開きの分で-1
+									state = DEF.PAGENUMBER_READ;
+									size = maxpage;
+								} else {
+									size = maxpage;
+								}
+							}
+							fileList.get(i).setMaxpage(size);
 						}
-						fileList.get(i).setMaxpage(size);
 					}
 					fileList.get(i).setState(state);
 				}
