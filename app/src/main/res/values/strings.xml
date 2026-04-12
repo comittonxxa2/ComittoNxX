@@ -127,6 +127,11 @@
     <string name="tapSettingMenu">Setup of tap operation</string>
     <string name="CustonkeySettingMenu">Setup of custon key</string>
     <string name="FloatingIconSettingMenu">Setup of floating icon</string>
+    <string name="ZoomLevelSettingMenu">Setting the zoom level</string>
+    <string name="ZoomLevelUpdate">Display update</string>
+    <string name="ZoomLevelDecision">Save settings</string>
+    <string name="ZoomLevelReset">reset</string>
+    <string name="ZoomLevelUndo">undo</string>
     <string name="downloadCountMenu">Number of Downloads</string>
     <string name="licenseMenu">License</string>
     <string name="noiseMenu">Operation by noise</string>
@@ -407,6 +412,8 @@
     <string name="rota06">Auto Rotate(Vertical,horizontal,upside down)</string>
     <string name="rota07">Portrait(Upside down)</string>
     <string name="rota08">Landscape(Upside down)</string>
+    <string name="direction00">Vertical Text</string>
+    <string name="direction01">Lateral Text</string>
     <string name="rotaall00">Auto Rotate</string>
     <string name="rotaall01">Portrait</string>
     <string name="rotaall02">Landscape</string>
