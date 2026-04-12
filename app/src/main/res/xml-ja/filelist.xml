@@ -321,6 +321,16 @@
             android:key="SkipZipLib"
             android:summary="ZIP圧縮ファイルの展開ライブラリ使用しない(ファイルの先頭の画像が読み込めない/サムネイル画像が取得できない場合はチェックを入れると直る可能性があります)(※64bit/LZMA/Bzip2形式のZIPファイルが開けなくなります)"
             android:title="ZIPファイルの読み込みを旧方式で行う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SetUnRarLib"
+            android:summary="RAR圧縮ファイルの展開ライブラリを使用する(ファイルの先頭の画像が読み込めない/サムネイル画像が取得できない場合はチェックを入れると直る可能性があります)"
+            android:title="RARファイルの読み込みを旧方式で行う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AozoraZipFile"
+            android:summary="青空文庫のテキストを含んだZIPファイルの識別を行う場合はチェックを入れる(WebベースのEPUBビューアを用いて表示を行う)"
+            android:title="青空文庫のZIPファイルの読み込みを行う" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
