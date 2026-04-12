@@ -547,6 +547,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							if (bmMark != null) {
 								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
+							// サムネイルありかつ画像なしでも読書率を表示できるようにした
+							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, mIconWidth, y + mIconHeight);
 						}
 					}
 					else if (type == FileData.FILETYPE_PARENT || type == FileData.FILETYPE_TXT || type == FileData.FILETYPE_WEB) {
@@ -1036,6 +1038,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						if (bmMark != null) {
                             canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 						}
+						// サムネイルありかつ画像なしでも読書率を表示できるようにした
+						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, mIconWidth, y + mIconHeight);
 					}
 				}
 				else if (type == FileData.FILETYPE_PARENT || type == FileData.FILETYPE_TXT || type == FileData.FILETYPE_WEB) {
@@ -1082,67 +1086,6 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						// 読書率を描画
 						// 読書率
 						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? iconWidth : dstWidth, y + iconHeight);
-						// 記述が同じなのでコメントアウトにした
-						/*
-						float rate = (float)(fd.getState() + 1) / (float)fd.getMaxpage();
-						if (fd.getState() == -2 || (fd.getState() >= fd.getMaxpage() - ImageActivity.isDualMode()) && (fd.getState() > 0) && (fd.getMaxpage() > 0)) {
-							rate = 1;
-						}
-						// 文字サイズ
-						float fontsize = Math.min(mTitleSize, mInfoSize);
-						Paint paint = new Paint();
-						paint.setTextSize(fontsize);
-						paint.setTypeface(Typeface.MONOSPACE);
-						paint.setTextAlign(Paint.Align.CENTER);
-						// テキスト幅
-						float textWidth = paint.measureText("99%");
-						// アイコンサイズの短辺の長さ
-						float shortsidelength = Math.min(iconWidth, iconHeight);
-						// 円の半径
-						float radiud1 = textWidth * 1.5F / 2F;
-						float radiud2 = textWidth * 1.2F / 2F;
-						float radiud3 = textWidth * 1F / 2F;
-						// 円の中心座標
-						float centerX = x + (iconWidth / 2F);
-						float centerY = y + iconHeight - (radiud1 * 2);
-
-						// 読書率のドーナツチャートを描画
-						paint.setColor(Color.DKGRAY);
-						canvas.drawArc(centerX - radiud1 - 2, centerY - radiud1 - 2, centerX + radiud1 + 2,centerY + radiud1 + 2, -90F, rate * 360, true, paint);
-						paint.setColor(color);
-						canvas.drawArc(centerX - radiud1, centerY - radiud1, centerX + radiud1,centerY + radiud1, -90F, rate * 360, true, paint);
-
-						//グラデーション円(中サイズ)を描画
-						paint.setColor(getDrawArcBackColor());
-						Shader s = new LinearGradient(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2, getDrawArcBackColor(), mRrbColor, Shader.TileMode.CLAMP);
-						paint.setShader(s);
-						canvas.drawOval(new RectF(centerX - radiud2, centerY - radiud2, centerX + radiud2,centerY + radiud2), paint);
-
-						//グラデーション円(小サイズ)を描画
-						s = new LinearGradient(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3, mRrbColor, getDrawArcBackColor(), Shader.TileMode.CLAMP);
-						paint.setShader(s);
-						canvas.drawOval(new RectF(centerX - radiud3, centerY - radiud3, centerX + radiud3,centerY + radiud3), paint);
-
-						// 読書率の文字列を描画
-						String str;
-						if (rate == 1) {
-							Resources res = mContext.getResources();
-							str = res.getString(R.string.kidoku);
-						}
-						else {
-							str = (int)(rate * 100) + "%";
-						}
-						paint.setShader(null);
-						paint.setStyle(Paint.Style.STROKE);
-						paint.setStrokeWidth(2.0f);
-						paint.setColor(Color.DKGRAY);
-						float text_x = centerX;
-						float text_y = centerY - ((paint.descent() + paint.ascent()) / 2);
-						canvas.drawText(str, text_x, text_y, paint);
-						paint.setStyle(Paint.Style.FILL);
-						paint.setColor(color);
-						canvas.drawText(str, text_x, text_y, paint);
-						*/
 					}
 				}
 				// タイトルはアイコンの右側に表示
