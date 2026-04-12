@@ -319,6 +319,16 @@
             android:key="SkipZipLib"
             android:summary="Do not use the ZIP compressed file extraction library (Checking this box may fix issues if the first image in the file cannot be read or thumbnail images cannot be retrieved) (Note: ZIP files in 64-bit/LZMA/Bzip2 format will not be able to be opened)"
             android:title="Load ZIP files using the old method." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SetUnRarLib"
+            android:summary="Use the RAR compressed file decompression library (checking this box may fix issues if the first image in the file cannot be read or thumbnail images cannot be retrieved)"
+            android:title="Reading RAR files using the old method" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AozoraZipFile"
+            android:summary="Check this box to identify ZIP files containing Aozora Bunko texts (displayed using a web-based EPUB viewer)."
+            android:title="Load ZIP files from Aozora Bunko." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
