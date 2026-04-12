@@ -141,6 +141,9 @@ public class DEF {
 	public static final int HMSG_EVENT_SEARCHWORD = 222;
 	public static final int HMSG_EVENT_SEARCHNEXT = 223;
 	public static final int HMSG_EVENT_SEARCHCLEAR = 224;
+	public static final int HMSG_EVENT_ZOOMLEVELUPDATE = 225;
+	public static final int HMSG_EVENT_ZOOMLEVELDECISION = 226;
+	public static final int HMSG_EVENT_ZOOMLEVELUNDO = 227;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -236,6 +239,7 @@ public class DEF {
 	public static final int MENU_WEBIMGCONF = Menu.FIRST + 78;
 	public static final int MENU_KELVIN = Menu.FIRST + 79;
 	public static final int MENU_SEARCHJUMPTEST = Menu.FIRST + 80;
+	public static final int MENU_ZOOMLEVEL_SETTING = Menu.FIRST + 81;
 	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
 	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
@@ -890,6 +894,8 @@ public class DEF {
 	public static final String KEY_ARCHIVECHECKMANUALMODE = "ArchiveCheckManualMode";
 	public static final String KEY_SKIPGETTHUMBNAIL = "SkipGetThumbnail";
 	public static final String KEY_SKIPZIPLIB = "SkipZipLib";
+	public static final String KEY_SETUNRARLIB = "SetUnRarLib";
+	public static final String KEY_AOZORAZIPFILE = "AozoraZipFile";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
