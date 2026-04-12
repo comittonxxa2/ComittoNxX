@@ -703,6 +703,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mEnableContentsFile;
 	private boolean mProgressbarMode;
 	private boolean mSkipZiplib;
+	private boolean mSetUnRarlib;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -2131,6 +2132,46 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_BACKGROUND_CACHE:
 				mImageMgr.setCacheSleep(false);
 				break;
+			case DEF.HMSG_EVENT_ZOOMLEVELUPDATE:
+				// ズームレベルの表示更新
+				// 描画スレッド停止
+				mImageView.lockDraw();
+				synchronized (mImageView) {
+					// スケーリング変更
+					mPinchScale = msg.arg1;
+					mImageMgr.setImageScale(mPinchScale);
+					// イメージ拡大縮小
+					ImageScaling();
+				}
+				// ビットマップを調整
+				this.updateOverSize(true);
+				// 描画スレッド開始
+				mImageView.update(true);
+				break;
+			case DEF.HMSG_EVENT_ZOOMLEVELDECISION:
+				// ズームレベルの設定保存
+				// 値を保存
+				mPinchScaleSel = mPinchScale;
+				Editor ed = mSharedPreferences.edit();
+				ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
+				ed.apply();
+				break;
+			case DEF.HMSG_EVENT_ZOOMLEVELUNDO:
+				// ズームレベルを元に戻す
+				// 描画スレッド停止
+				mImageView.lockDraw();
+				synchronized (mImageView) {
+					// スケーリング変更
+					mPinchScale = mPinchScaleSel;
+					mImageMgr.setImageScale(mPinchScaleSel);
+					// イメージ拡大縮小
+					ImageScaling();
+				}
+				// ビットマップを調整
+				this.updateOverSize(true);
+				// 描画スレッド開始
+				mImageView.update(true);
+				break;
 		}
 		return false;
 	}
@@ -2292,7 +2333,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			boolean isSingle = false; // 現在ページが単ページか
 			if (isHalfView() && bm[0] != null) {
-				if (!DEF.checkPortrait(bm[0].Width, bm[0].Height, mRotate)) {
+				if (mImageMgr.mAnimeList != null && mAnimationEnable && mImageMgr.checkAnimeEnable(mCurrentPage) && mImageMgr.mAnimeList[mCurrentPage].getAnimeFile()) {
+					// アニメーションを表示する場合は横長画面でも単ページ扱いにする
+					mHalfPos = HALFPOS_1ST;
+					mSourceImage[0] = bm[0];
+				}
+				else if (!DEF.checkPortrait(bm[0].Width, bm[0].Height, mRotate)) {
 					// 横長画像であれば分割
 					mSourceImage[0] = bm[0];
 					// ズーム時に転送サイズが0になるが一先ず有効にする
@@ -5076,6 +5122,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// アニメーション再生の一時停止
 			mMenuDialog.addItem(DEF.MENU_DISPLAY_ANIMEPAUSE, res.getString(R.string.AnimationPause));
 		}
+		mMenuDialog.addItem(DEF.MENU_ZOOMLEVEL_SETTING, res.getString(R.string.ZoomLevelSettingMenu));
+
 		// 一時設定
 		mMenuDialog.addSection(res.getString(R.string.settingSec));
 		// イメージ表示設定
@@ -5794,6 +5842,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 目次の選択ダイアログ表示
 				openContentsMenu();
 				break;
+			case DEF.MENU_ZOOMLEVEL_SETTING:
+				TouchPanelView.setHandler(mHandler, mPinchScaleSel);
+				TouchPanelView.SetAlertDialogZookLevel(mActivity);
+				break;
 
 			default: {
 				if (id >= DEF.MENU_DIR_TREE) {
@@ -6424,6 +6476,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mSkipZiplib = SetFileListActivity.getSkipZiplib(sharedPreferences);
 
 			ImageManager.setSkipZiplib(mSkipZiplib);
+			mSetUnRarlib = SetFileListActivity.getSetUnRarlib(sharedPreferences);
+			ImageManager.setSetUnRarlib(mSetUnRarlib);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();

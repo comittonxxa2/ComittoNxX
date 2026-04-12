@@ -300,6 +300,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mTimestamp = 0;
 
 	private PdfRenderer mPdfRenderer = null;
+	private RarInputStream mRarStream = null;
 	private boolean mFileListCacheOff = false;
 	private boolean mArchiveCheck = false;
 
@@ -331,6 +332,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mAccessMode = false;
 	private boolean mExpandTextEnable;
 	private static boolean mSkipZiplib;
+	private static boolean mSetUnRarlib;
 	private boolean mSkipSevenZip;
 
 	@SuppressLint("SuspiciousIndentation")
@@ -377,6 +379,10 @@ public class ImageManager extends InputStream implements Runnable {
 
 	public static void setSkipZiplib(boolean skipziplib) {
  		mSkipZiplib = skipziplib;
+	}
+
+	public static void setSetUnRarlib(boolean setunrarlib) {
+ 		mSetUnRarlib = setunrarlib;
 	}
 
 	public void LoadImageList(int memsize, int memnext, int memprev, int memcache, int messagemode) {
@@ -1098,8 +1104,36 @@ public class ImageManager extends InputStream implements Runnable {
 				}
 			}
 		}
-		else {
-			mSkipSevenZip = false;
+		if (mSetUnRarlib) {
+			Logcat.d(logLevel, "読み込みます.");
+			cmpDirectRead(buf, 0, SIZE_BUFFER);
+			if (buf[0] == 'R' && buf[1] == 'a' && buf[2] == 'r') {
+				mFileType = FILETYPE_RAR;
+				if (mOpenMode == OPENMODE_THUMBSORT) {
+					// RARファイルかつソートありのサムネイル取得であればソート条件を取得
+					SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+					thumbSortType = SetFileListActivity.getThumbSortType(sp);
+					Logcat.d(logLevel, "thumbSortType=" + thumbSortType);
+				}
+				Logcat.d(logLevel, "RARファイルです.");
+				// 圧縮ファイルの展開ライブラリを使用しない
+				mSkipSevenZip = true;
+			}
+			cmpDirectSeek(0);
+			// 簡易的なRAR5判定
+			if (mFileType == FILETYPE_RAR) {
+				byte[] sigbuff = new byte[8];
+				cmpDirectRead( sigbuff, 0, 8 );
+				if( sigbuff[0] == 0x52 && sigbuff[1] == 0x61 && sigbuff[2] == 0x72 && sigbuff[3] == 0x21 &&
+					sigbuff[4] == 0x1a && sigbuff[5] == 0x07 && sigbuff[6] == 0x01 && sigbuff[7] == 0x00 ){
+					rar5 = true;
+					Logcat.d(logLevel, "RAR5です.");
+				}
+				else {
+					Logcat.d(logLevel, "RAR5ではありません.");
+				}
+			}
+			cmpDirectSeek(0);
 		}
 
 		if (!mSkipSevenZip) {
@@ -1411,15 +1445,29 @@ public class ImageManager extends InputStream implements Runnable {
 							break;
 						}
 
-						// 通常バージョンで読み込み
-						if (headpos == 0) {
-							fl = zipFileListItem(buf, cmppos, orgpos, readSize, true);
-							fl.sizefixed = true;
-						} else {
-							fl = zipFileListOldItemLite(buf, orgpos, readSize);
-							if (fl != null) {
-								fl.sizefixed = false;
+						if (mFileType == FILETYPE_ZIP) {
+							// 通常バージョンで読み込み
+							if (headpos == 0) {
+								fl = zipFileListItem(buf, cmppos, orgpos, readSize, true);
+								fl.sizefixed = true;
+							} else {
+								fl = zipFileListOldItemLite(buf, orgpos, readSize);
+								if (fl != null) {
+									fl.sizefixed = false;
+								}
 							}
+						} else if (mFileType == FILETYPE_RAR) {
+							// RAR読み込み
+							if (rar5) {
+								// RAR5
+								fl = rar5FileListItem(buf, cmppos, orgpos, readSize);
+							} else {
+								// RAR4.x以前
+								fl = rarFileListItem(buf, cmppos, orgpos, readSize);
+							}
+						} else {
+							// 読み込み不可
+							return;
 						}
 
 						if (fl != null) {
@@ -1516,7 +1564,12 @@ public class ImageManager extends InputStream implements Runnable {
 							}
 
 							count++;
-							totalSize += fl.orglen;
+							if (mFileType == FILETYPE_RAR) {
+								totalSize += fl.cmplen;
+							}
+							else {
+								totalSize += fl.orglen;
+							}
 							oldPercent = nowPercent;
 							// 割合を計算する
 							nowPercent = (int)(((float)totalSize / (float)fileLength + 0.005) * 100);
@@ -1824,6 +1877,13 @@ public class ImageManager extends InputStream implements Runnable {
 				}
 			}
 		}
+		// RARであればメモリ確保
+		if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
+			int ret = CallJniLibrary.rarAlloc(maxcmplen, maxorglen);
+			if (ret != 0) {
+				throw new IOException("Memory Alloc Error.");
+			}
+		}
 		mMaxCmpLength = maxcmplen;
 		mMaxOrgLength = maxorglen;
 
@@ -2096,6 +2156,304 @@ public class ImageManager extends InputStream implements Runnable {
 		return file;
 	}
 
+	public FileListItem rar5FileListItem(byte[] buf, long cmppos, long orgpos, int readsize) throws IOException {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
+
+		// ヘッダを読み込み、ファイルヘッダだけをFileListItemとして返す
+		// シグネチャ(マーカーブロック)やアーカイブヘッダーなどは読み飛ばす
+		// VINTは2byteまでと決め打ちして簡略化 > vint取得関数を実装
+		int pos = 0;
+		VintData vint;
+		int headpos = 0;
+
+		// シグネチャ判定
+		if( cmppos == 0 ){
+			if( buf[0] == 0x52 && buf[1] == 0x61 && buf[2] == 0x72 && buf[3] == 0x21 &&
+				buf[4] == 0x1a && buf[5] == 0x07 && buf[6] == 0x01 && buf[7] == 0x00 ){
+
+//				Logcat.d( logLevel, "RAR5 Signature." );
+
+				// ファイル情報ではない
+				FileListItem file = new FileListItem();
+				file.name = null;
+				file.cmppos = 0;
+				file.orgpos = 0;
+				file.cmplen = 8;
+				file.orglen = 0;
+//				imgfile.bmpsize = 0;
+				file.width = 0;
+				file.height = 0;
+				return file;
+			}
+		}
+
+		// Header CRC32
+		long hcrc = getInt( buf, 0 );
+		pos += 4;
+
+		// Header size
+		vint = readVint( buf, pos );
+		int hsize = vint.vint;
+		pos += vint.count;
+		// Header size以前のサイズ
+		headpos = pos;
+
+		// Header type
+		vint = readVint( buf, pos );
+		int htype = vint.vint;
+		pos += vint.count;
+
+		// Header flags
+		vint = readVint( buf, pos );
+		int hflags = vint.vint;
+		pos += vint.count;
+
+		// Extra area size(flags is set 0x0001)
+		int hextra = 0;
+		if( (hflags & 0x0001) != 0 ){
+			vint = readVint( buf, pos );
+			hextra = vint.vint;
+			pos += vint.count;
+		}
+
+		// Data size(flags is set 0x0002)
+		int hdata = 0;
+		if( (hflags & 0x0002) != 0 ){
+			vint = readVint( buf, pos );
+			hdata = vint.vint;
+			pos += vint.count;
+		}
+
+		// ファイルヘッダー以外はスキップ
+		if( htype != 2 ){
+//			Logcat.d( logLevel, "RAR5 not FileHeader." );
+
+			// ファイル情報ではない
+			FileListItem file = new FileListItem();
+			file.name = null;
+			file.cmppos = 0;
+			file.orgpos = 0;
+			file.cmplen = hdata + hsize + headpos;
+			file.orglen = 0;
+//			file.bmpsize = 0;
+			file.width = 0;
+			file.height = 0;
+			return file;
+		}
+
+
+		// File flags
+		vint = readVint( buf, pos );
+		int fflag = vint.vint;
+		pos += vint.count;
+
+		// Unpacked size
+		vint = readVint( buf, pos );
+		int lenOrg = vint.vint;
+		pos += vint.count;
+
+		// Attributes
+		vint = readVint( buf, pos );
+		pos += vint.count;
+
+		// mtime
+		int ftime = 0;
+		if( (fflag & 0x0002) != 0 ){
+			ftime = getInt( buf, pos );
+			pos += 4;
+		}
+		Date d = new Date( ftime );
+
+		// Data CRC32
+		int dcrc = getInt( buf, pos );
+		pos += 4;
+
+		// Compression information
+		vint = readVint( buf, pos );
+		int cinfo = vint.vint;
+		pos += vint.count;
+
+		// Host OS
+		vint = readVint( buf, pos );
+		pos += vint.count;
+
+		// Name length
+		vint = readVint( buf, pos );
+		int fnlen = vint.vint;
+		pos += vint.count;
+
+		// Name
+		String name = "";
+		if( readsize >= pos + fnlen ){
+			// ファイル名までのデータがあり
+			try {
+				for( int i = 0; i < fnlen; ++i ){
+					if( buf[ pos + i ] == 0 ){
+						fnlen = i;
+						break;
+					}
+				}
+				name = new String( buf, pos, fnlen, mRarCharset );
+				//name = DEF.toUTF8( buf, pos, fnlen);
+			}
+			catch( Exception e ){
+				name = "Unknown";
+			}
+		}
+
+		FileListItem file = new FileListItem();
+		file.name = name;
+		file.cmppos = cmppos;
+		file.orgpos = orgpos;
+		file.cmplen = hdata + hsize + headpos;//lenCmp + hsize;
+		file.orglen = lenOrg;
+		file.header = hsize + headpos;
+		file.version = 50;
+		file.nocomp = (cinfo & 0x0380) == 0;	// 無圧縮か
+//		file.bmpsize = 0;
+		file.dtime = d.getTime();
+		return file;
+	}
+
+	private class VintData {
+		public int vint;
+		public int count;
+
+		public VintData() {
+			init();
+		}
+
+		public void init() {
+			vint = 0;
+			count = 0;
+		}
+	};
+
+	private VintData readVint(byte[] buf, int pos ) {
+		int dat;
+		VintData data = new VintData();
+
+		while( true ){
+			dat = buf[ pos + data.count ];
+			dat &= 0x0FF;
+			data.vint += ((dat & ~0x80) << (data.count * 7));
+			data.count++;
+			if( (dat & 0x80) == 0 ){
+				break;
+			}
+		}
+
+		return data;
+	}
+
+	public FileListItem rarFileListItem(byte[] buf, long cmppos, long orgpos, int readsize) throws IOException {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.d(logLevel, "開始します.");
+		int hcrc = getShort(buf, OFFSET_RAR_HCRC);
+		int htype = buf[OFFSET_RAR_HTYPE];
+		int hflags = getShort(buf, OFFSET_RAR_HFLAGS);
+		int hsize = getShort(buf, OFFSET_RAR_HSIZE);
+		int asize = (hflags & 0x8000) == 0 ? 0 : getInt(buf, OFFSET_RAR_ASIZE);
+
+		boolean skip = false;
+//		boolean oldFormat = false;
+
+		if (htype != RAR_HTYPE_FILE) {
+			if (htype == RAR_HTYPE_MARK) {
+				if (hcrc != 0x6152 || hflags != 0x1a21 || hsize != 0x0007) {
+					// ヘッダがおかしい
+					throw new IOException("This RAR File Format is not supported.");
+				}
+			}
+			else if (htype == RAR_HTYPE_OLD) {
+				if (hcrc == 0x4552 && (hflags & 0x00FF) == 0x005e) {
+//					oldFormat = true;
+				}
+			}
+			else {
+				// RAR_HTYPE_MAIN
+				// 特にチェックなし
+
+			}
+			skip = true;
+		}
+		else {
+			if ((hflags & 0x0100) != 0) {
+				// 巨大ファイルの時は見ない
+				skip = true;
+			}
+		}
+
+		if (skip) {
+			if (hsize + asize <= 5) {
+				throw new IOException("File is broken.");
+			}
+			// ファイル情報ではない
+			FileListItem imgfile = new FileListItem();
+			imgfile.name = null;
+			imgfile.cmppos = 0;
+			imgfile.orgpos = 0;
+			imgfile.cmplen = hsize + asize;
+			imgfile.orglen = 0;
+//			imgfile.bmpsize = 0;
+			imgfile.width = 0;
+			imgfile.height = 0;
+			return imgfile;
+		}
+
+		// ファイル情報取得
+		int lenFName = getShort(buf, OFFSET_RAR_FNSIZE);
+		int posFName = OFFSET_RAR_FNAME;
+		String name = "";
+
+		if (readsize >= lenFName + posFName) {
+			// ファイル名までのデータがあり
+			try {
+				for (int i = 0; i < lenFName; i++) {
+					if (buf[posFName + i] == 0) {
+						lenFName = i;
+						break;
+					}
+				}
+				name = DEF.toUTF8(buf, posFName, lenFName);
+			}
+			catch (Exception e) {
+				name = "Unknown";
+			}
+		}
+
+		int lenCmp = getInt(buf, OFFSET_RAR_PKSIZE);
+		int lenOrg = getInt(buf, OFFSET_RAR_UNSIZE);
+		byte rarVer = buf[OFFSET_RAR_UNPVER];
+		byte method = buf[OFFSET_RAR_METHOD];
+
+		int ftime = getShort(buf, OFFSET_RAR_FTIME);
+		int fdate = getShort(buf, OFFSET_RAR_FDATE);
+
+		int yy = ((fdate >> 9) & 0x7F) + 80;
+		int mm = ((fdate >> 5) & 0x0F) - 1;
+		int dd = fdate & 0x1F;
+		int hh = (ftime >> 11) & 0x1F;
+		int nn = (ftime >> 5) & 0x3F;
+		int ss = (ftime & 0x1F) * 2;
+		Date d = new Date(yy, mm, dd, hh, nn, ss);
+
+		// Image Fileのみ採用
+		FileListItem imgfile = new FileListItem();
+		imgfile.name = name;
+		imgfile.cmppos = cmppos;
+		imgfile.orgpos = orgpos;
+		imgfile.cmplen = lenCmp + hsize;
+		imgfile.orglen = lenOrg;
+		imgfile.header = hsize;
+		imgfile.version = rarVer;
+		imgfile.nocomp = method == RAR_METHOD_STORING;
+//		imgfile.bmpsize = 0;
+		imgfile.dtime = d.getTime();
+		return imgfile;
+	}
+
 	public class AnimeList{
 		boolean animeon;
 		boolean animefile;
@@ -2166,15 +2524,21 @@ public class ImageManager extends InputStream implements Runnable {
 
 		sort(list);
 		if (mImageSort) {
-			// 画像ファイルのソートをファイルリストから参照して行う
-			mFileList2 = FileSelectList.getFileList();
-			Map<String, Integer> priorityMap = new HashMap<>();
-			for (int i = 0; i < mFileList2.size(); i++) {
-				priorityMap.put(mFileList2.get(i).getName(), i);
+			// 例外が発生する可能性があるためtry～catchで囲む
+			try {
+				// 画像ファイルのソートをファイルリストから参照して行う
+				mFileList2 = FileSelectList.getFileList();
+				Map<String, Integer> priorityMap = new HashMap<>();
+				for (int i = 0; i < mFileList2.size(); i++) {
+					priorityMap.put(mFileList2.get(i).getName(), i);
+				}
+				list.sort(Comparator.comparingInt(item -> 
+					priorityMap.getOrDefault(item.name, 99999)
+				));
 			}
-			list.sort(Comparator.comparingInt(item -> 
-				priorityMap.getOrDefault(item.name, 99999)
-			));
+			catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
 		}
 		mFileList = (FileListItem[]) list.toArray(new FileListItem[0]);
 		mMaxOrgLength = maxorglen;
@@ -3391,6 +3755,10 @@ public class ImageManager extends InputStream implements Runnable {
 						// なにもしない
 					}
 
+					if (mRarStream != null) {
+						mRarStream.close();
+						mRarStream = null;
+					}
 					if (mPdfRenderer != null) {
 						mPdfRenderer.close();
 						mPdfRenderer = null;
@@ -4186,6 +4554,12 @@ public class ImageManager extends InputStream implements Runnable {
 					mLoadingPage = page;
 					inputStream = new BufferedInputStream(zipStream);
 				}
+				else if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
+					Logcat.v(logLevel, "RARファイルです.");
+					// メモリキャッシュ読込時のみRAR展開する
+					// ファイルキャッシュを作成するときはRAR展開不要
+					inputStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+				}
 				else if (IsArchive(mFileType)) {
 					Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
 					int targetIndex = -1;
@@ -4531,6 +4905,17 @@ public class ImageManager extends InputStream implements Runnable {
 				// ファイル破損時に無限ループするのでコメント化
 				// zipStream.closeEntry();
 			}
+			else if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
+				// メモリキャッシュ読込時のみRAR展開する
+				// ファイルキャッシュを作成するときはRAR展開不要
+				if (mRarStream == null || mRarStream.getLoadPage() != page) {
+					mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+				}
+				else {
+					mRarStream.initSeek();
+				}
+				id = LoadImageData(page, mRarStream, mFileList[page].orglen);
+			}
 			else if (IsArchive(mFileType)) {
 				Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
 				int targetIndex = -1;
@@ -4641,6 +5026,13 @@ public class ImageManager extends InputStream implements Runnable {
 				CacheInputStream cis = new CacheInputStream(zipStream);
 				cis.read(result, 0, result.length);
 //				zipStream.closeEntry();
+			}
+			else if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
+				// メモリキャッシュ読込時のみRAR展開する
+				// ファイルキャッシュを作成するときはRAR展開不要
+				Logcat.d(logLevel, "mFileType == FILETYPE_RAR");
+				mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+				mRarStream.read(result, 0, result.length);
 			}
 			if (IsArchive(mFileType)) {
 				Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
@@ -4771,6 +5163,17 @@ public class ImageManager extends InputStream implements Runnable {
 				inputStream = new CacheInputStream(zipStream);
 				// ファイル破損時に無限ループするのでコメント化
 				// zipStream.closeEntry();
+			}
+			else if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
+				// メモリキャッシュ読込時のみRAR展開する
+				// ファイルキャッシュを作成するときはRAR展開不要
+				if (mRarStream == null || mRarStream.getLoadPage() != page) {
+					mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+				}
+				else {
+					mRarStream.initSeek();
+				}
+				inputStream = mRarStream;
 			}
 			if (IsArchive(mFileType)) {
 				Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
@@ -4924,6 +5327,17 @@ public class ImageManager extends InputStream implements Runnable {
 				inputStream = new BufferedInputStream(zipStream);
 				// ファイル破損時に無限ループするのでコメント化
 				// zipStream.closeEntry();
+			}
+			else if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
+				// メモリキャッシュ読込時のみRAR展開する
+				// ファイルキャッシュを作成するときはRAR展開不要
+				if (mRarStream == null || mRarStream.getLoadPage() != page) {
+					mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page]);
+				}
+				else {
+					mRarStream.initSeek();
+				}
+				inputStream = new BufferedInputStream(mRarStream);
 			}
 			else if (IsArchive(mFileType)) {
 					Logcat.v(logLevel, "圧縮ファイルです. " + mFilePath + " " + mFileList[page].name);
@@ -6204,6 +6618,20 @@ public class ImageManager extends InputStream implements Runnable {
 								int rate = (int) ((long) readsum * 10 / (nowTime - mStartTime));
 								sendHandler(DEF.HMSG_LOADING, prog << 24, rate, null);
 							}
+						}
+					} else if (mFileType == FILETYPE_RAR) {
+						// メモリキャッシュ読込時のみRAR展開する
+						// ファイルキャッシュを作成するときはRAR展開不要
+						mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page], mHandler);
+						while (mRunningFlag) {
+							if (mCloseFlag) {
+								break;
+							}
+							int readsize = mRarStream.read(buff, 0, buff.length);
+							if (readsize <= 0) {
+								break;
+							}
+							os.write(buff, 0, readsize);
 						}
 					}
 					else if (IsArchive(mFileType)) {

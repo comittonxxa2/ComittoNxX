@@ -50,6 +50,7 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -103,10 +104,12 @@ public class TouchPanelView extends View {
 	private static Thread mSearchWordThread = null;
 	private static Handler mainHandler;
 	private static Handler ViewHandler;
+	private static Handler ImageHandler;
 	private static boolean breakthread = false;
 	private static boolean breakthread2 = false;
 	private static AlertDialog.Builder custom_builder = null;
 	private static AlertDialog.Builder searchkey_builder = null;
+	private static AlertDialog.Builder zoomlevel_builder = null;
 	private static AlertDialog dialog = null;
 	private static int dialog_keycode = 0;
 	private static int input_dialog_keycode = 0;
@@ -129,6 +132,8 @@ public class TouchPanelView extends View {
 	private static Button buttonprev1;
 	private static Button buttonprev2;
 	private static Button buttonclear;
+	private static int mZoomLevelValue;
+	private static int mZoomLevelInitValue;
 
 	// キーボード表示を制御するためのオブジェクト
 	InputMethodManager inputMethodManager;
@@ -666,6 +671,13 @@ public class TouchPanelView extends View {
 		mSearchMax = 0;
 	}
 
+	public static void setHandler(Handler handler, int level) {
+		ImageHandler = handler;
+		// 初期表示の設定
+		mZoomLevelValue = level;
+		mZoomLevelInitValue = level;
+	}
+
 	// 編集可能かどうかを調べる
 	public static boolean GetEditMode() {
 		boolean edit = false;
@@ -825,6 +837,81 @@ public class TouchPanelView extends View {
 		// 文字列を組み立てる
 		String ViewCodeData = res.getString(R.string.ViewCodeData) + " : " + StrNum;
 		return ViewCodeData;
+	}
+
+	public static void SetAlertDialogZookLevel(Activity activity) {
+		zoomlevel_builder = new AlertDialog.Builder(activity, R.style.MyAlertDialogStyle);
+		LayoutInflater inflater = LayoutInflater.from(activity);
+		View dialogView = inflater.inflate(R.layout.dialog_zoomlevel, null);
+		// 最小値の定義
+		final int MIN_VALUE = 10;
+
+		SeekBar seekBar = dialogView.findViewById(R.id.dialog_seekbar);
+		TextView textView = dialogView.findViewById(R.id.slider_value_text);
+		// タイトル入力決定ボタン
+		Button button1 = dialogView.findViewById(R.id.positiveButton);
+		button1.setText(R.string.searchwordok);
+		button1.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_ZOOMLEVELDECISION;
+			message.arg1 = mZoomLevelValue;
+			ImageHandler.sendMessage(message);
+			mZoomLevelInitValue = mZoomLevelValue;
+		});
+		Button button2 = dialogView.findViewById(R.id.negaitiveButton);
+		button2.setText(R.string.ZoomLevelUndo);
+		button2.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_ZOOMLEVELUNDO;
+			message.arg1 = 0;
+			ImageHandler.sendMessage(message);
+			seekBar.setProgress(mZoomLevelInitValue - MIN_VALUE);
+			textView.setText("レベル: " + mZoomLevelInitValue + "%");
+		});
+		Button button3 = dialogView.findViewById(R.id.clearButton);
+		button3.setText(R.string.ZoomLevelReset);
+		button3.setOnClickListener(v -> {
+			seekBar.setProgress(90);
+		});
+		Button button4 = dialogView.findViewById(R.id.updateButton);
+		button4.setText(R.string.ZoomLevelUpdate);
+		button4.setOnClickListener(v -> {
+			Message message = new Message();
+			message.what = DEF.HMSG_EVENT_ZOOMLEVELUPDATE;
+			message.arg1 = mZoomLevelValue;
+			ImageHandler.sendMessage(message);
+		});
+		// ズームレベルのシークバー
+		seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				mZoomLevelValue = progress + MIN_VALUE;
+				// テキスト表示を更新
+				textView.setText("レベル: " + mZoomLevelValue + "%");
+			}
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {}
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {}
+		});
+		seekBar.setProgress(mZoomLevelValue - MIN_VALUE);
+		textView.setText("レベル: " + mZoomLevelValue + "%");
+		// タイトル
+		zoomlevel_builder.setView(dialogView);
+		zoomlevel_builder.setTitle(R.string.ZoomLevelSettingMenu);
+		// アラートダイアログを作成
+		dialog = zoomlevel_builder.create();
+		// アラートダイアログを表示
+		dialog.show();
+		// ディスプレイの横幅を取得
+		int displayWidth = activity.getResources().getDisplayMetrics().widthPixels;
+		// マージン分を計算
+		int marginPx = (int) (20 * activity.getResources().getDisplayMetrics().density * 2);
+		// ダイアログの幅を(全幅-マージン)に設定
+		Window window = dialog.getWindow();
+		if (window != null) {
+			window.setLayout(displayWidth - marginPx, WindowManager.LayoutParams.WRAP_CONTENT);
+		}
 	}
 
 	// 検索キーのアラートダイアログを表示
