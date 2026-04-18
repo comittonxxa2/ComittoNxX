@@ -40,6 +40,11 @@
             android:key="ReverseRotate"
             android:summary="Check if you want to turn the display upside down when switching the display orientation with the hardware keys (will be reflected upon restart)."
             android:title="Reverse orientation when switching display orientation" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="FalseDisplayViewRotate"
+            android:summary="Check this box to fix the display direction to the screen from which the viewer was called when calling settings from the viewer (the changes will take effect after restarting)."
+            android:title="The settings can be recalled from the viewer to fix the screen to its original state." />
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="Display direction(all except viewer)"
