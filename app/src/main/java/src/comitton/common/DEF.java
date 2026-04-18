@@ -629,6 +629,7 @@ public class DEF {
 	public static final String KEY_IGNOREREADINFO = "IgnoreReadInfo";
 	public static final String KEY_FORCETRADDISPLAYOLDVIEWROTATE = "ForceTradOldViewRotate";
 	public static final String KEY_DISPLAYVIEWROTATE = "DisplayViewRotate";
+	public static final String KEY_FALSEDISPLAYVIEWROTATE = "FalseDisplayViewRotate";
 	public static final String KEY_READTEXTSETTING = "ReadTextSetting";
 	public static final String KEY_REVERSEROTARE = "ReverseRotate";
 	public static final String KEY_READSTYLESETTING = "ReadStyleSetting";
