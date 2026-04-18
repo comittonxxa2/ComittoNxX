@@ -214,6 +214,9 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	public static void SetOrientationEventListener(Activity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		int viewrota = getViewRotaAll(sharedPreferences);
+		if (getFalseDisplayViewRotate(sharedPreferences)) {
+			return;
+		}
 		if (!SetCommonActivity.getForceTradOldViewRotate(sharedPreferences)) {
 			// 従来の設定で回転させる
 			DEF.setRotationAll(activity, viewrota);
@@ -459,6 +462,12 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	public static boolean getForceTradOldViewRotate(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_DISPLAYVIEWROTATE, false);
+		return flag;
+	}
+
+	public static boolean getFalseDisplayViewRotate(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_FALSEDISPLAYVIEWROTATE, false);
 		return flag;
 	}
 
