@@ -2239,6 +2239,46 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			mScrollPoint = null;
 		}
 
+		// 現在の論理位置
+		int curX = (int)mDrawLeft;
+		int curY = (int)mDrawTop;
+		int nextIndex = -1;
+		// 現在の位置に最も近い基準インデックスを特定する
+		int currentIndex = -1;
+		long minDistanceSq = Long.MAX_VALUE;
+		for (int i = 0; i < mScrollPos.length; i++) {
+			long dx = mScrollPos[i].x - curX;
+			long dy = mScrollPos[i].y - curY;
+			long distSq = dx * dx + dy * dy;
+			if (distSq < minDistanceSq) {
+				minDistanceSq = distSq;
+				currentIndex = i;
+			}
+		}
+		// moveの方向に基づいて次のインデックスを決定する
+		if (currentIndex != -1) {
+			nextIndex = currentIndex + (move >= 0 ? 1 : -1);
+		}
+		// 境界チェック
+		if (nextIndex < 0 || nextIndex >= mScrollPos.length) {
+			// 現在地がすでに端の座標とほぼ一致している場合のみページめくり
+			// 少しでもズレている(スクロール中)なら端の座標へ吸着させる
+			if (minDistanceSq < 100) {
+				// 距離が近い場合
+				mScrollWaitReset = true;
+				return false;
+			}
+			else {
+				// 端へ吸着
+				nextIndex = (nextIndex < 0) ? 0 : mScrollPos.length - 1;
+			}
+		}
+		// 移動先をセット
+		mScrollPoint = new Point(mScrollPos[nextIndex].x, mScrollPos[nextIndex].y);
+		mScrollWaitOld = mScrollWait;
+		mScrollWait = mScrollMove[nextIndex];
+
+/*
 		// 現在位置に一番近いもの
 		int min_x;
 		int min_y;
@@ -2274,6 +2314,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mScrollPoint = new Point(mScrollPos[index].x, mScrollPos[index].y);
 		mScrollWaitOld = mScrollWait;
 		mScrollWait = mScrollMove[index];
+*/
 /*
 		// オーバースクロールの量が画面幅を超えている場合、枠外のページでスクロールを停止する
 		if (mOverScrollX > mDispWidth) {
