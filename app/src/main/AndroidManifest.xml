@@ -106,6 +106,7 @@
             android:name="src.comitton.helpview.HelpActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.webview.WebViewActivity"
@@ -130,141 +131,169 @@
             android:name="src.comitton.config.SetConfigActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetFileListActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetRecorderActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetFileColorActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageDetailActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetTextActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetEpubActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageTextDetailActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetImageTextColorActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetNoiseActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCacheActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCommonActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCustomUrlSchemeActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetServerMessageBlockActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetHardwareSelectKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetHardwareImageViewerKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetHardwareTextViewerKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetHardwareEpubWebViewKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetHardwareFileListKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetMarginCutActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetBookShelfActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.BookShelfFileSelectActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCornerEndImageViewerActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCornerEndTextViewerActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetCornerEndEpubWebViewActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetSortActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetWebViewActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
 
         <provider
