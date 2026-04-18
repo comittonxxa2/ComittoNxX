@@ -40,7 +40,9 @@ public class HelpActivity extends AppCompatActivity {
 				getWindow().getDecorView().setSystemUiVisibility(uiOptions);
 		}
 
-		CropImageActivity.SetOrientationEventListener(this, sharedPreferences);
+		if (!SetCommonActivity.getFalseDisplayViewRotate(sharedPreferences)) {
+			CropImageActivity.SetOrientationEventListener(this, sharedPreferences);
+		}
 
         // Intentを取得する
         Intent intent = getIntent();
