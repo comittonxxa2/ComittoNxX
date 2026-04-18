@@ -5064,30 +5064,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
 		final File path = new File(mFilePath);
-		// 重い処理をバックグラウンドへ逃がす
-		executor.execute(() -> {
-			// ここでZip解析を実行
-			final boolean checkAozora = (mAozoraZipFile) ? analyzeZip(path) : false;
-			// 結果をメインスレッドに戻してActivityを起動
-			mainHandler.post(() -> {
-				Intent intent;
-				if (checkAozora) {
-					// WebベースのEPUBビューアの場合
-					intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
-					intent.putExtra("Text", "");
-					// ... 他の共通Extra ...
-					setupCommonExtras(intent, name);
-					startActivityForResult(intent, DEF.REQUEST_EPUB);
-				} else {
-					// 画像ビューアの場合
-					intent = new Intent(FileSelectActivity.this, ImageActivity.class);
-					intent.putExtra("Image", ""); 					// 中身の画像ファイル名
-					// ... 他の共通Extra ...
-					setupCommonExtras(intent, name);
-					startActivityForResult(intent, DEF.REQUEST_IMAGE);
-				}
-			});
-		});
+
+		// ここでZip解析を実行
+		final boolean checkAozora = (mAozoraZipFile) ? analyzeZip(path) : false;
+
+		Intent intent;
+		if (checkAozora) {
+			// WebベースのEPUBビューアの場合
+			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
+			intent.putExtra("Text", "");
+			// ... 他の共通Extra ...
+			setupCommonExtras(intent, name);
+			startActivityForResult(intent, DEF.REQUEST_EPUB);
+		} else {
+			// 画像ビューアの場合
+			intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+			intent.putExtra("Image", ""); 					// 中身の画像ファイル名
+			// ... 他の共通Extra ...
+			setupCommonExtras(intent, name);
+			startActivityForResult(intent, DEF.REQUEST_IMAGE);
+		}
 	}
 
 	// コード重複を避けるためのヘルパーメソッド
