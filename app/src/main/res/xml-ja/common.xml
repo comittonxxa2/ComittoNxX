@@ -40,6 +40,11 @@
             android:key="ReverseRotate"
             android:summary="ハードウェアキーで表示方向を切り替える時に上下を逆さにする場合にチェックを入れる(再起動で反映)"
             android:title="表示方向の切り替え時に向きを逆にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="FalseDisplayViewRotate"
+            android:summary="ビューアからの設定呼び出しで表示方向を呼び出し元の画面に固定する場合にチェックを入れる(再起動で反映)"
+            android:title="ビューアからの設定呼び出しで元の画面に固定" />
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="表示方向(ビューア以外全て)"
