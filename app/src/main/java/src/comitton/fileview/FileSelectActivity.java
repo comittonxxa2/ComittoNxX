@@ -1163,6 +1163,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// クロップ完了
 				if (resultCode == RESULT_OK) {
 					Uri uri = data.getData();
+					if (uri != null) {
+						String uriStr = uri.toString();
+						// 予約語が含まれている不完全なURIのみ修正
+						if (uriStr.contains("#") || uriStr.contains("%") || uriStr.contains("?")) {
+						// 特定文字の強制置換
+						uri = Uri.parse(uriStr.replace("%", "%25").replace("#", "%23").replace("?", "%3F"));
+						}
+					}
 					setThumb(uri);
 				}
 				loadThumbnail(true);
@@ -5759,15 +5767,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 					}
-					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "0,0,0,0,0.0,0.0");
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
 					if (mRestoreValue != null) {
 						String[] parts = mRestoreValue.split(",");
 						if (parts.length >= 6) {
 							try {
-								// 末尾の2つを1.0にして既読にしてしまう
-								String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0";
-								ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
-								ed.apply();
+								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
+									// 読書情報が無かった場合は何もしない
+								}
+								else {
+
+									// 末尾の2つを1.0にして既読にしてしまう
+									String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0";
+									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+									ed.apply();
+								}
 							}
 							catch (Exception e) {
 							}
@@ -5869,14 +5883,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 					}
-					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-1,-1,0,0,0.0,0.0");
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
 					if (mRestoreValue != null) {
 						String[] parts = mRestoreValue.split(",");
 						if (parts.length >= 6) {
 							try {
-								// 先頭の値を-1にして未読にしてしまう
-								String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0";
-								ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
+									// 読書情報が無かった場合は何もしない
+								}
+								else {
+									// 先頭の値を-1にして未読にしてしまう
+									String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0";
+									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+								}
 							}
 							catch (Exception e) {
 							}
@@ -6317,6 +6336,23 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			new File(file).delete();
 		} catch (Exception e) {
 			Logcat.e(logLevel, "Delete error.", e);
+		}
+		// 青空文庫のテキストの情報を削除(画像圧縮ファイルの場合に誤動作するのを防ぐため入れた)
+		String user = mServer.getUser();
+		String pass = mServer.getPass();
+		String mUriFilePath;
+		if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+			// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+			mUriFilePath = mURI + mFileData.getName();
+		}
+		else {
+			mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+		}
+		if (mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE) > 0)	{
+			//	未読で無かった場合は青空文庫のテキストの情報を削除
+			Editor ed = mSharedPreferences.edit();
+			ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#aozora");
+			ed.apply();
 		}
 	}
 
