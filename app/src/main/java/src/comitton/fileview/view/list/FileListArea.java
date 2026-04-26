@@ -1672,7 +1672,16 @@ public class FileListArea extends ListArea implements Handler.Callback {
 				}
 
 				FileData fd = mFileList.get(index);
-				mTitleSep[index] = getMultiLine(fd.getName(), tcx, MAXLINE_TITLE, mNamePaint);
+				String mGetName = fd.getName();
+				// 拡張子の位置を取得
+				int dot = mGetName.lastIndexOf('.');
+				if (fd.getType() != FileData.FILETYPE_DIR && fd.getType() != FileData.FILETYPE_PARENT && SetFileListActivity.getListExtension(sharedPreferences)) {
+					if (dot >= 1 && dot < mGetName.length() - 1) {
+						// 拡張子を削除
+						mGetName = mGetName.substring(0, dot);
+					}
+				}
+				mTitleSep[index] = getMultiLine(mGetName, tcx, MAXLINE_TITLE, mNamePaint);
 
 				String info = fd.getFileInfo();
 

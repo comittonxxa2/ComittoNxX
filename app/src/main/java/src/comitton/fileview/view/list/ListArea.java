@@ -824,6 +824,8 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
 		int x = mCursorPosX;
 		int y = mCursorPosY;
 		int top = mTopRow;
+		boolean dowm = false;
+		boolean up = false;
 		if (mTopRow < mRowNum - 1 && mTopPos < 0) {
 			// 少しでも隠れていたら次の項目
 			top  ++;
@@ -842,9 +844,11 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
     		switch (keycode) {
     			case KeyEvent.KEYCODE_DPAD_DOWN:
     				y ++;
+    				dowm = true;
     				break;
     			case KeyEvent.KEYCODE_DPAD_UP:
     				y --;
+    				up = true;
     				break;
     			case KeyEvent.KEYCODE_DPAD_RIGHT:
     				x ++;
@@ -854,9 +858,11 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
     				break;
 				case KeyEvent.KEYCODE_MOVE_HOME:
 					y = 0;
+    				up = true;
 					break;
 				case KeyEvent.KEYCODE_MOVE_END:
 					y = mRowNum - 1;
+    				dowm = true;
 					break;
     		}
 
@@ -871,6 +877,7 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
     			if (y < mRowNum - 1) {
     				y ++;
     				x = 0;
+    				dowm = true;
     			}
     			else {
     				x = mColumnNum - 1;
@@ -880,6 +887,7 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
     			if (y > 0) {
     				y --;
     				x = mColumnNum - 1;
+    				up = true;
     			}
     			else {
     				x = 0;
@@ -893,10 +901,10 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
 			}
 		}
 		
-		if (y < top) {
+		if (y < top && up) {
 			setTopRowPos(y, (int)(20 * mDensity));
 		}
-		if (y > mBottomRow) {
+		if (y > mBottomRow - 1 && y * getRowHeight(y) > mAreaHeight - getRowHeight(y) && dowm) {
 			int h = getRowHeight(y); 
 			setTopRowPos(y, mAreaHeight - h - 20);
 		}
