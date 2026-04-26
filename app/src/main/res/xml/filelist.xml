@@ -329,6 +329,11 @@
             android:key="AozoraZipFile"
             android:summary="Check this box to identify ZIP files containing Aozora Bunko texts (displayed using a web-based EPUB viewer)."
             android:title="Load ZIP files from Aozora Bunko." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ListExtension"
+            android:summary="Check the box to hide file extensions in the list view."
+            android:title="Do not display file extensions in the list view." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
