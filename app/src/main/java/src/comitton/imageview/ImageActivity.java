@@ -6246,6 +6246,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		else if (requestCode == DEF.REQUEST_CROP) {
 			if (resultCode == RESULT_OK) {
 				Uri uri = data.getData();
+				if (uri != null) {
+					String uriStr = uri.toString();
+					// 予約語が含まれている不完全なURIのみ修正
+					if (uriStr.contains("#") || uriStr.contains("%") || uriStr.contains("?")) {
+					// 特定文字の強制置換
+					uri = Uri.parse(uriStr.replace("%", "%25").replace("#", "%23").replace("?", "%3F"));
+					}
+				}
 				setThumb(uri);
 			}
 		}
@@ -6484,6 +6492,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			if (mGuideView != null) {
 				// 上部メニューの文字列情報をガイドに設定
 				mGuideView.setTopCommandStr(mCommandStr);
+			}
+			if (mScrlNext && mViewNext && mEffect == 3) {
+				// スクロール関係の設定が揃ったらそのままの表示に変更する
+				mDispMode = 0;
 			}
 
 			mEpubOrder = SetEpubActivity.getEpubOrder(sharedPreferences);
