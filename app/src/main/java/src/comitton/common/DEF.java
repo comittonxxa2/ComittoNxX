@@ -897,6 +897,7 @@ public class DEF {
 	public static final String KEY_SKIPZIPLIB = "SkipZipLib";
 	public static final String KEY_SETUNRARLIB = "SetUnRarLib";
 	public static final String KEY_AOZORAZIPFILE = "AozoraZipFile";
+	public static final String KEY_LISTEXTENSION = "ListExtension";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
