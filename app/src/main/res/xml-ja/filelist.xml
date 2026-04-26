@@ -331,6 +331,11 @@
             android:key="AozoraZipFile"
             android:summary="青空文庫のテキストを含んだZIPファイルの識別を行う場合はチェックを入れる(WebベースのEPUBビューアを用いて表示を行う)"
             android:title="青空文庫のZIPファイルの読み込みを行う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ListExtension"
+            android:summary="リスト表示のファイル名の拡張子を表示しないにチェックを入れる"
+            android:title="リスト表示の拡張子を表示しない" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
