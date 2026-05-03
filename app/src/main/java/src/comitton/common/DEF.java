@@ -898,6 +898,7 @@ public class DEF {
 	public static final String KEY_SETUNRARLIB = "SetUnRarLib";
 	public static final String KEY_AOZORAZIPFILE = "AozoraZipFile";
 	public static final String KEY_LISTEXTENSION = "ListExtension";
+	public static final String KEY_PDFEXPAND = "PdfExpand";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -3589,6 +3590,21 @@ public class DEF {
 		boolean flag1 = false, flag2 = false;
 		boolean file1 = false, file2 = false;
 
+		int pathSep1 = name1.lastIndexOf('/');
+		// 最初のドットを探す
+		int dot1 = name1.indexOf('.', pathSep1 + 1);
+		if (dot1 >= 0) {
+			// 拡張子を分離(比較の最後に使うため保持)
+			ext1 = name1.substring(dot1 + 1);
+		}
+		int pathSep2 = name2.lastIndexOf('/');
+		// 最初のドットを探す
+		int dot2 = name2.indexOf('.', pathSep2 + 1);
+		if (dot2 >= 0) {
+			// 拡張子を分離(比較の最後に使うため保持)
+			ext2 = name2.substring(dot2 + 1);
+		}
+/*
 		// 拡張子とそれ以外に分ける
 		index1 = name1.lastIndexOf('.');
 		if (index1 > name1.lastIndexOf('/')) {
@@ -3610,6 +3626,7 @@ public class DEF {
 				ext2 = "";
 			}
 		}
+*/
 		Logcat.d(logLevel,"ext1=" + ext1 + ", ext2=" + ext2 + ", sortByFileType=" + sortByFileType);
 		Logcat.d(logLevel,"name1=" + name1 + ", name2=" + name2 + ", sortByFileType=" + sortByFileType);
 
@@ -3663,7 +3680,7 @@ public class DEF {
 				}
 			}
 		}
-
+/*
 		// ディレクトリ部分を削除したファイル名部分を比較
 		int returnCode = compareText(name1, name2);
 		if (returnCode != 0) {
@@ -3679,7 +3696,14 @@ public class DEF {
 			// 完全一致なら拡張子を比較
 			return compareText(ext1, ext2);
 		}
-
+*/
+		// 最終的なファイル名同士の比較
+		int returnCode = compareText(dir1, dir2);
+		if (returnCode != 0) {
+			return returnCode;
+		}
+		// もし名前が同じ(001 vs 001)なら拡張子で比較
+		return compareText(ext1, ext2);
 	}
 
 	static public int compareText(final String str1, final String str2) {
