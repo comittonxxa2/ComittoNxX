@@ -186,7 +186,14 @@ public final class StorageManagerCompat {
 
                 @Override
                 public long onGetSize() throws ErrnoException {
-                    return ProxyFileDescriptorCallbackCompat.this.onGetSize();
+                    // PDFファイルの場合に例外が出るのでtry～catchで囲む
+                    long size = 0;
+                    try {
+                        size = ProxyFileDescriptorCallbackCompat.this.onGetSize();
+                    }
+                    catch (Exception e) {
+                    }
+                    return size;
                 }
                 @Override
                 public void onFsync() throws ErrnoException {
