@@ -3,7 +3,7 @@
 <img src="app/src/main/res/drawable-hdpi/comittonxx.png" width="100" align="right" alt="logo">
 
 ComittoNxX はオープンソースの画像ビュワーです.  
-対応バージョンは Android5.0 以上 15 までです.
+対応バージョンは Android5.0 以上 16 までです.
 
 - 対応する電子書籍ファイルの形式：  
   PDF、EPUB、TEXT、青空文庫
