@@ -334,6 +334,11 @@
             android:key="ListExtension"
             android:summary="Check the box to hide file extensions in the list view."
             android:title="Do not display file extensions in the list view." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="PdfExpand"
+            android:summary="Check this option to speed up page turning by extracting PDF files other than local files to a temporary file before opening them."
+            android:title="Extract to a temporary file before opening the pdf file" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
