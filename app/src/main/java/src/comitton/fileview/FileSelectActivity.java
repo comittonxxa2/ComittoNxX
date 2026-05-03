@@ -3967,7 +3967,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					case OPERATE_EPUB: // ビュワーで開く
 						if (DEF.TEXT_VIEWER == mEpubViewer) {
 							// zip/rar/pdfファイルを開く
-							openCompFile(mFileData.getName());
+							openCompFile(mFileData.getName(), false);
 						} else {
 							// Epubビュワーで開く
 							openEpubFile(mFileData.getName());
@@ -4826,7 +4826,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 					else {
 						// zipのイメージ表示
-						openCompFile(fd.getName());
+						openCompFile(fd.getName(), true);
 					}
 					break;
 				case FileData.FILETYPE_TXT:
@@ -4835,7 +4835,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					break;
 				case FileData.FILETYPE_PDF:
 					Logcat.d(logLevel, "FILETYPE_PDF: mPath=" + mPath + ", name=" + fd.getName());
-					openCompFile(fd.getName());
+					openCompFile(fd.getName(), false);
 					break;
 				case FileData.FILETYPE_EPUB:
 					Logcat.d(logLevel, "FILETYPE_EPUB: mPath=" + mPath + ", name=" + fd.getName());
@@ -4847,7 +4847,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						expandCompFile(fd.getName(), infile, fd.getType());
 					}
 					else if (FileData.isImage(mActivity, infile)) {
-						openCompFile(fd.getName());
+						openCompFile(fd.getName(), false);
 					}
 					else {
 						if (DEF.TEXT_VIEWER == mEpubViewer) {
@@ -4857,7 +4857,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						} else {
 							Logcat.d(logLevel, "DEF.IMAGE_VIEWER");
 							// zipのイメージ表示
-							openCompFile(fd.getName());
+							openCompFile(fd.getName(), false);
 						}
 					}
 					break;
@@ -5055,7 +5055,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	/**
 	 * 圧縮ファイルオープン
 	 */
-	private void openCompFile(final String name) {
+	private void openCompFile(final String name, boolean mode) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. name=" + name);
 
@@ -5074,7 +5074,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		final File path = new File(mFilePath);
 
 		// ここでZip解析を実行
-		final boolean checkAozora = (mAozoraZipFile) ? analyzeZip(path) : false;
+		final boolean checkAozora = (mAozoraZipFile && mode) ? analyzeZip(path) : false;
 
 		Intent intent;
 		if (checkAozora) {
@@ -6020,7 +6020,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// サムネイル解放
 						releaseThumbnail();
 						// zip/rar/pdfファイルを開く
-						openCompFile(name);
+						openCompFile(name, false);
 					} else if (type == FileData.FILETYPE_EPUB) {
 						// サムネイル解放
 						releaseThumbnail();
@@ -6032,7 +6032,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						else {
 							Log.d(TAG, "onItemClick: DEF.IMAGE_VIEWER");
 							// zip/rar/pdfファイルを開く
-							openCompFile(name);
+							openCompFile(name, false);
 						}
 					}
 					else if (type == FileData.FILETYPE_ARC) {
@@ -6043,7 +6043,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							expandCompFile(name);
 						} else {
 							// zip/rar/pdfファイルを開く
-							openCompFile(name);
+							openCompFile(name, true);
 						}
 					}
 					else {
