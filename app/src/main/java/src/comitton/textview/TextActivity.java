@@ -70,6 +70,7 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import androidx.preference.PreferenceManager;
+import androidx.activity.OnBackPressedCallback;
 import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
@@ -614,6 +615,17 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					mHideNavigationBar = true;
 				}
 				return insets;
+			});
+		}
+		// Android16の勝手に終了を防ぐための"おまじない"
+		if (Build.VERSION.SDK_INT >= 33) {
+			// Android 13以降
+			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+				@Override
+				public void handleOnBackPressed() {
+					// 既存の operationBack() を呼び出す
+					operationBack();
+				}
 			});
 		}
 

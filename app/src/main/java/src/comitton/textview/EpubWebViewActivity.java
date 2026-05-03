@@ -90,6 +90,7 @@ import src.comitton.config.SetHardwareTextViewerKeyActivity;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GestureDetectorCompat;
 import androidx.preference.PreferenceManager;
+import androidx.activity.OnBackPressedCallback;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -638,6 +639,17 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					mHideNavigationBar = true;
 				}
 				return insets;
+			});
+		}
+		// Android16の勝手に終了を防ぐための"おまじない"
+		if (Build.VERSION.SDK_INT >= 33) {
+			// Android 13以降
+			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+				@Override
+				public void handleOnBackPressed() {
+					// 既存の operationBack() を呼び出す
+					operationBack();
+				}
 			});
 		}
 		// ジェスチャー検出を有効にする
