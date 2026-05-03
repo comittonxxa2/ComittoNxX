@@ -92,6 +92,7 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import androidx.preference.PreferenceManager;
+import androidx.activity.OnBackPressedCallback;
 
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -1016,6 +1017,17 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mHideNavigationBar = true;
 				}
 				return insets;
+			});
+		}
+		// Android16の勝手に終了を防ぐための"おまじない"
+		if (Build.VERSION.SDK_INT >= 33) {
+			// Android 13以降
+			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+				@Override
+				public void handleOnBackPressed() {
+					// 既存の operationBack() を呼び出す
+					operationBack();
+				}
 			});
 		}
 		// 画像のバッファサイズを設定

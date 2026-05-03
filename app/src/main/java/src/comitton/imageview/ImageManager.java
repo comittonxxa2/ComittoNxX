@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
@@ -106,6 +107,7 @@ import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
 import src.comitton.fileaccess.WorkStream;
 import src.comitton.fileview.filelist.FileSelectList;
+import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.jni.CallImgLibrary;
 import src.comitton.jni.CallJniLibrary;
 import src.comitton.fileview.data.FileListItem;
@@ -328,12 +330,14 @@ public class ImageManager extends InputStream implements Runnable {
 	private File mCacheDir;
 	private String mCacheName;
 	private String mCacheDirName;
+	private String mCachePDFName;
 	private SafInStream safstream;
 	private boolean mAccessMode = false;
 	private boolean mExpandTextEnable;
 	private static boolean mSkipZiplib;
 	private static boolean mSetUnRarlib;
 	private boolean mSkipSevenZip;
+	private boolean mPdfExpand = false;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -364,6 +368,10 @@ public class ImageManager extends InputStream implements Runnable {
 		mExpandTextEnable = SetFileListActivity.getExpandTextEnable(sp);
 		mArchiveCheck= SetFileListActivity.getArchiveCheckManualMode(sp);
 		mImageSort = SetImageActivity.getImageSort(sp);
+
+		if (FileAccess.accessType(mFilePath) != DEF.ACCESS_TYPE_LOCAL && SetFileListActivity.getPdfExpand(sp)) {
+			mPdfExpand = true;
+		}
 
  		// スレッド数
  		mMaxThreadNum = maxthread;
@@ -2620,8 +2628,52 @@ public class ImageManager extends InputStream implements Runnable {
 			Logcat.d(logLevel, "PdfRendererを取得します.");
             ParcelFileDescriptor parcelFileDescriptor = null;
             try {
-				// ParcelFileDescriptorインスタンスを作成する。
-                parcelFileDescriptor = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
+				if (mPdfExpand) {
+					ParcelFileDescriptor sourcePfd = null;
+					// 元のソースを開く(既存のFileAccessを利用)
+					sourcePfd = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
+					if (sourcePfd != null) {
+						sendProgress(0, 0, 0, 0);
+						int nowPercent = 0;
+						long totalSize = sourcePfd.getStatSize();
+						// キャッシュファイルの処理
+						String cachename = mFilePath;
+						// 区切りをアンダーバーへ変換
+						cachename = cachename.replace("\\", "_");
+						cachename = cachename.replace("/", "_");
+						// PDFファイルのヘッダーとタイムスタンプを追加
+						mCachePDFName = DEF.makeCode(cachename + "_pdffile_" + mTimestamp, 0, 0);
+						// キャッシュファイルの格納先を作成
+						File tempFile = new File(mActivity.getCacheDir(), mCachePDFName);
+						if (tempFile.exists()) {
+							// 既にキャッシュファイルが存在する場合はスキップ
+						}
+						else {
+							// PFDからInputStreamを作成してキャッシュへコピー
+							try (InputStream is = new ParcelFileDescriptor.AutoCloseInputStream(sourcePfd);
+								OutputStream os = new FileOutputStream(tempFile)) {
+								byte[] buffer = new byte[8192];
+								int length;
+								long downloaded = 0;
+								while ((length = is.read(buffer)) > 0) {
+									os.write(buffer, 0, length);
+									downloaded += length;
+									// 割合を計算する
+									nowPercent = (int)(((float)downloaded / (float)totalSize + 0.005) * 100);
+									sendProgress(0, nowPercent, downloaded, totalSize);
+								}
+								os.flush();
+							}
+						}
+						// コピーしたキャッシュファイルからPdfRenderer用のPFDを開く
+						parcelFileDescriptor = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY);
+						sendProgress(0, 0, 0, 0);
+					}
+				}
+				else {
+					// ParcelFileDescriptorインスタンスを作成する。
+					parcelFileDescriptor = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
+				}
 				//ParcelFileDescriptorインスタンスを使用しPdfRendererをインスタンス化する。
 				mPdfRenderer = new PdfRenderer(parcelFileDescriptor);
             } catch (Exception e) {
@@ -4532,7 +4584,11 @@ public class ImageManager extends InputStream implements Runnable {
 					} else {
 						// 取得したサイズのままだと画質が悪いため、大きなサイズに変換する
 						int maxsize = Math.min(3000, Math.max(mScrWidth, mScrHeight));
-						if (pdfPage.getWidth() > pdfPage.getHeight()) {
+						if (pdfPage.getWidth() == 0 || pdfPage.getHeight() == 0) {
+							width = 0;
+							height = 0;
+						}
+						else if (pdfPage.getWidth() > pdfPage.getHeight()) {
 							width = maxsize;
 							height = maxsize * pdfPage.getHeight() / pdfPage.getWidth();
 						} else {
