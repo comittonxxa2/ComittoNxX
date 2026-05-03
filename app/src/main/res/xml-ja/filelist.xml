@@ -336,6 +336,11 @@
             android:key="ListExtension"
             android:summary="リスト表示のファイル名の拡張子を表示しないにチェックを入れる"
             android:title="リスト表示の拡張子を表示しない" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="PdfExpand"
+            android:summary="ローカルファイル以外のpdfファイルをを開く前に一時ファイルへ展開してページ送りを速くする場合はチェックを入れる"
+            android:title="pdfファイルを開く前に一時ファイルへ展開" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
