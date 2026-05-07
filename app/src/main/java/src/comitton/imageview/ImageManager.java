@@ -11,7 +11,6 @@ import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
@@ -22,9 +21,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
-import java.nio.channels.ClosedByInterruptException;
-import java.nio.channels.FileChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -40,9 +36,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -56,21 +53,17 @@ import net.sf.sevenzipjbinding.IInArchive;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZip;
-import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.IInStream;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorSpace;
 import android.graphics.ImageDecoder;
 import android.graphics.Point;
 import android.graphics.drawable.AnimatedImageDrawable;
@@ -78,7 +71,6 @@ import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.graphics.ColorMatrix;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -87,27 +79,21 @@ import android.os.SystemClock;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
-import android.util.Log;
 
 import jcifs.CIFSContext;
-import jcifs.config.PropertyConfiguration;
-import jcifs.context.BaseContext;
 import jcifs.context.SingletonContext;
 import jcifs.smb.NtlmPasswordAuthenticator;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbRandomAccessFile;
-import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
-import src.comitton.dialog.CustomProgressDialog;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
 import src.comitton.fileaccess.WorkStream;
 import src.comitton.fileview.filelist.FileSelectList;
-import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.jni.CallImgLibrary;
 import src.comitton.jni.CallJniLibrary;
 import src.comitton.fileview.data.FileListItem;
@@ -115,15 +101,9 @@ import src.comitton.fileaccess.RarInputStream;
 import src.comitton.textview.TextManager;
 
 import android.annotation.SuppressLint;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
-
-import org.apache.commons.compress.utils.IOUtils;
 
 public class ImageManager extends InputStream implements Runnable {
 	private static final String TAG = "ImageManager";
@@ -337,7 +317,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private static boolean mSkipZiplib;
 	private static boolean mSetUnRarlib;
 	private boolean mSkipSevenZip;
-	private boolean mPdfExpand = false;
+	private int mPdfExpand = -1;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -370,7 +350,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mImageSort = SetImageActivity.getImageSort(sp);
 
 		if (FileAccess.accessType(mFilePath) != DEF.ACCESS_TYPE_LOCAL && SetFileListActivity.getPdfExpand(sp)) {
-			mPdfExpand = true;
+			mPdfExpand = FileAccess.accessType(mFilePath);
 		}
 
  		// スレッド数
@@ -2617,6 +2597,53 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "終了します. path=" + path + ", length=" + mMaxOrgLength);
 	}
 
+	// 共通のコピーメソッド(ParcelFileDescriptorを使うと不安定になるので作成した)
+	private void copyToCache(InputStream is, long totalSize, File tempFile) throws IOException {
+		try (InputStream input = is;
+			OutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile))) {
+			// 1MB
+			byte[] buffer = new byte[1024 * 1024];
+			int length;
+			long downloaded = 0;
+			boolean stop = false;
+			while ((length = input.read(buffer)) != -1) {
+				// スレッド中断チェック(ゾンビプロセス防止)
+				if (Thread.currentThread().isInterrupted()) {
+					stop = true;
+					break;
+				}
+				if (!mRunningFlag) {
+					stop = true;
+					break;
+				}
+				os.write(buffer, 0, length);
+				downloaded += length;
+				// 進捗通知
+				if (totalSize > 0) {
+					int nowPercent = (int) (downloaded * 100 / totalSize);
+					final int p = nowPercent;
+					final long d = downloaded;
+					mHandler.post(() -> sendProgress(0, p, d, totalSize));
+				}
+			}
+			os.flush();
+			// 書き込みを確定させる
+			if (os instanceof FileOutputStream) {
+				((FileOutputStream) os).getFD().sync();
+			}
+			if (stop) {
+				// 強制的に終了した場合は削除
+				try {
+					if (tempFile.exists()) {
+						tempFile.delete();
+					}
+				}
+				catch (Exception e) {
+				}
+			}
+		}
+	}
+
 	private void PdfFileList(String path, String user, String pass) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		int maxPage = 0;
@@ -2626,56 +2653,77 @@ public class ImageManager extends InputStream implements Runnable {
 
 		if (mPdfRenderer == null) {
 			Logcat.d(logLevel, "PdfRendererを取得します.");
-            ParcelFileDescriptor parcelFileDescriptor = null;
+            AtomicReference<ParcelFileDescriptor> parcelFileDescriptor = new AtomicReference<>();
             try {
-				if (mPdfExpand) {
+				if (mPdfExpand != -1) {
 					ParcelFileDescriptor sourcePfd = null;
-					// 元のソースを開く(既存のFileAccessを利用)
-					sourcePfd = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
-					if (sourcePfd != null) {
-						sendProgress(0, 0, 0, 0);
-						int nowPercent = 0;
-						long totalSize = sourcePfd.getStatSize();
-						// キャッシュファイルの処理
-						String cachename = mFilePath;
-						// 区切りをアンダーバーへ変換
-						cachename = cachename.replace("\\", "_");
-						cachename = cachename.replace("/", "_");
-						// PDFファイルのヘッダーとタイムスタンプを追加
-						mCachePDFName = DEF.makeCode(cachename + "_pdffile_" + mTimestamp, 0, 0);
-						// キャッシュファイルの格納先を作成
-						File tempFile = new File(mActivity.getCacheDir(), mCachePDFName);
-						if (tempFile.exists()) {
-							// 既にキャッシュファイルが存在する場合はスキップ
-						}
-						else {
-							// PFDからInputStreamを作成してキャッシュへコピー
-							try (InputStream is = new ParcelFileDescriptor.AutoCloseInputStream(sourcePfd);
-								OutputStream os = new FileOutputStream(tempFile)) {
-								byte[] buffer = new byte[8192];
-								int length;
-								long downloaded = 0;
-								while ((length = is.read(buffer)) > 0) {
-									os.write(buffer, 0, length);
-									downloaded += length;
-									// 割合を計算する
-									nowPercent = (int)(((float)downloaded / (float)totalSize + 0.005) * 100);
-									sendProgress(0, nowPercent, downloaded, totalSize);
+					// 実際の処理
+					try {
+						// 元のソースを開く(既存のFileAccessを利用)
+						sourcePfd = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
+						if (sourcePfd != null) {
+							sendProgress(0, 0, 0, 0);
+							AtomicInteger nowPercent = new AtomicInteger();
+							long totalSize = sourcePfd.getStatSize();
+							// キャッシュファイルの処理
+							String cachename = mFilePath;
+							// 区切りをアンダーバーへ変換
+							cachename = cachename.replace("\\", "_");
+							cachename = cachename.replace("/", "_");
+							// PDFファイルのヘッダーとタイムスタンプを追加
+							mCachePDFName = DEF.makeCode(cachename + "_pdffile_" + mTimestamp, 0, 0);
+							// キャッシュファイルの格納先を作成
+							File tempFile = new File(mActivity.getCacheDir(), mCachePDFName);
+							if (tempFile.exists()) {
+								// 既にキャッシュファイルが存在する場合はスキップ
+							}
+							else {
+								// InputStreamを作成してキャッシュへコピー
+								InputStream bis = null;
+								// ParcelFileDescriptorを使うと不安定になるので直接操作する
+								if (mPdfExpand == DEF.ACCESS_TYPE_SMB) {
+									// SMBのストリームアクセス
+									Logcat.v(logLevel, "SMBのストリームアクセス");
+									CIFSContext mSmbContext = SingletonContext.getInstance().withCredentials(new NtlmPasswordAuthenticator(null, user, pass));
+									SmbFile smbFile = new SmbFile(mFilePath, mSmbContext);
+									bis = smbFile.getInputStream();
 								}
-								os.flush();
+								else if (mPdfExpand == DEF.ACCESS_TYPE_SAF) {
+									// ストレージアクセスフレームワークの場合
+									Logcat.v(logLevel, "ストレージアクセスフレームワーク");
+									// URIを得る
+									Uri uri = Uri.parse(mFilePath);
+									bis = mActivity.getContentResolver().openInputStream(uri);
+								}
+								copyToCache(bis, totalSize, tempFile);
+							}
+							// コピーしたキャッシュファイルからPdfRenderer用のPFDを開く
+							try {
+								parcelFileDescriptor.set(ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY));
+								sendProgress(0, 0, 0, 0);
+								mPdfRenderer = new PdfRenderer(parcelFileDescriptor.get());
+							}
+							catch (Exception e) {
+								// ファイルの読出しに失敗した場合はキャッシュの破損とみなして削除
+								try {
+									if (tempFile.exists()) {
+										tempFile.delete();
+									}
+								}
+								catch (Exception ex) {
+								}
 							}
 						}
-						// コピーしたキャッシュファイルからPdfRenderer用のPFDを開く
-						parcelFileDescriptor = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY);
-						sendProgress(0, 0, 0, 0);
+					}
+					catch (Exception e) {
+						Logcat.e(logLevel, "error.",e);
 					}
 				}
 				else {
 					// ParcelFileDescriptorインスタンスを作成する。
-					parcelFileDescriptor = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
+					parcelFileDescriptor.set(FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler));
+					mPdfRenderer = new PdfRenderer(parcelFileDescriptor.get());
 				}
-				//ParcelFileDescriptorインスタンスを使用しPdfRendererをインスタンス化する。
-				mPdfRenderer = new PdfRenderer(parcelFileDescriptor);
             } catch (Exception e) {
 				Logcat.e(logLevel, "PDFの読み込みに失敗しました.", e);
             }

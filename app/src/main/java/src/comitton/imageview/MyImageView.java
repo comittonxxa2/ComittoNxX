@@ -588,7 +588,6 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						ty = Math.max(cy * effectRate * -1 + mLastOverScrollX, 0);
 					}
 				}
-				/*
 				// ページ番号の変化をチェック
 				if (mImage[0] != null && mImage[0].Page != mOldPage) {
 					if (mImage[0].Page > mOldPage) {
@@ -598,7 +597,6 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						mMove = false;
 					}
 				}
-				*/
 //					if (mScrlNext == false || mOverScrollX == 0) {
 				if (effect == 1) {	// ページめくりフリップ
 					canvas.save();
@@ -2186,7 +2184,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. move=" + move);
 
-		mMove = (move > 0) ? true : false;
+		if (mImage[0] != null && mImage[0].Page == mOldPage) {
+			mMove = (move > 0) ? true : false;
+		}
 		mScrollStart = SystemClock.uptimeMillis();
 
 //		Logcat.d(logLevel, "setViewPosScroll(move=" + move + ", mOverScrollX=" + mOverScrollX +

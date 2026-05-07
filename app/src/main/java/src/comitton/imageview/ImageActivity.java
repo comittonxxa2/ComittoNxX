@@ -64,6 +64,7 @@ import androidx.core.content.FileProvider;
 import androidx.core.view.GestureDetectorCompat;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 
@@ -1030,6 +1031,19 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 			});
 		}
+		// 全画面(Edge-to-Edge)を可能な限り抑制する
+		androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+		View root = findViewById(android.R.id.content);
+		androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+			// 直接数値を取り出す
+			int l = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).left;
+			int t = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).top;
+			int r = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).right;
+			int b = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
+			// この箱自体に余白を持たせることで中のView(onTouchEventを持つViewを押し戻す
+			v.setPadding(l, t, r, b);
+			return androidx.core.view.WindowInsetsCompat.CONSUMED;
+		});
 		// 画像のバッファサイズを設定
 		CallImgLibrary.initializeMemoryManagement(mBuffSize);
 		// フローティングアイコンの表示を遅延実行させる
@@ -2062,8 +2076,16 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_READ_END:
 				// 読込中の表示
 				if (!isFinishing() && mProgressDialog != null) {
-					mProgressDialog.dismiss();
-					mProgressDialog = null;
+					try {
+						mProgressDialog.dismiss();
+						mProgressDialog = null;
+					}
+					catch (Exception ex) {
+						// 読み込み中の表示終了時にエラーが発生した場合
+						if (mImageMgr != null) {
+							mImageMgr.setBreakTrigger();
+						}
+					}
 				}
 				mListLoading = false;
 				if (mTerminate) {
