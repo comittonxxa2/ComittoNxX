@@ -3582,544 +3582,185 @@ public class DEF {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel,"開始します. str1=" + str1 + ", str2=" + str2 + ", sortByFileType=" + sortByFileType);
 
-		String name1 = str1;
-		String name2 = str2;
-		int index1, index2;
-		String dir1 = "", dir2 = "";
-		String ext1 = "", ext2 = "";
-		boolean flag1 = false, flag2 = false;
-		boolean file1 = false, file2 = false;
+		if (str1 == null || str2 == null) return (str1 == null) ? (str2 == null ? 0 : 1) : -1;
+		// パス区切り(/)がある場合の階層比較ロジックは維持
+		String remaining1 = str1;
+		String remaining2 = str2;
+		while (!remaining1.isEmpty() || !remaining2.isEmpty()) {
+			String part1, part2;
+			boolean isFile1 = false, isFile2 = false;
 
-		int pathSep1 = name1.lastIndexOf('/');
-		// 最初のドットを探す
-		int dot1 = name1.indexOf('.', pathSep1 + 1);
-		if (dot1 >= 0) {
-			// 拡張子を分離(比較の最後に使うため保持)
-			ext1 = name1.substring(dot1 + 1);
-		}
-		int pathSep2 = name2.lastIndexOf('/');
-		// 最初のドットを探す
-		int dot2 = name2.indexOf('.', pathSep2 + 1);
-		if (dot2 >= 0) {
-			// 拡張子を分離(比較の最後に使うため保持)
-			ext2 = name2.substring(dot2 + 1);
-		}
-/*
-		// 拡張子とそれ以外に分ける
-		index1 = name1.lastIndexOf('.');
-		if (index1 > name1.lastIndexOf('/')) {
-			name1 = name1.substring(0, index1);
-			if (index1 < name1.length() - 1) {
-				ext1 = name1.substring(index1 + 1);
+			int sIdx1 = remaining1.indexOf('/');
+			if (sIdx1 >= 0) {
+				part1 = remaining1.substring(0, sIdx1);
+				remaining1 = remaining1.substring(sIdx1 + 1);
+			} else {
+				part1 = remaining1;
+				remaining1 = "";
+				isFile1 = true;
+			}
+			int sIdx2 = remaining2.indexOf('/');
+			if (sIdx2 >= 0) {
+				part2 = remaining2.substring(0, sIdx2);
+				remaining2 = remaining2.substring(sIdx2 + 1);
 			}
 			else {
-				ext1 = "";
+				part2 = remaining2;
+				remaining2 = "";
+				isFile2 = true;
 			}
-		}
-		index2 = name2.lastIndexOf('.');
-		if (index2 > name2.lastIndexOf('/')) {
-			name2 = name2.substring(0, index2);
-			if (index2 < name2.length() - 1) {
-				ext2 = name2.substring(index2 + 1);
+			if (sortByFileType) {
+				if (isFile1 && !isFile2) return -1;
+				if (!isFile1 && isFile2) return 1;
 			}
-			else {
-				ext2 = "";
-			}
+			// ここで拡張子を含んだままの「part1」「part2」を比較する
+			int res = compareText(part1, part2);
+			if (res != 0) return res;
+			if (remaining1.isEmpty() && remaining2.isEmpty()) break;
 		}
-*/
-		Logcat.d(logLevel,"ext1=" + ext1 + ", ext2=" + ext2 + ", sortByFileType=" + sortByFileType);
-		Logcat.d(logLevel,"name1=" + name1 + ", name2=" + name2 + ", sortByFileType=" + sortByFileType);
-
-		while (!flag1 && !flag2) {
-			// 最上位ディレクトリとそれ以外に分ける
-			index1 = name1.indexOf('/');
-			if (index1 >= 0) {
-				dir1 = name1.substring(0, index1);
-				if (index1 < name1.length() - 1) {
-					name1 = name1.substring(index1 + 1);
-				}
-				else {
-					name1 = "";
-				}
-			} else {
-				dir1 = name1;
-				name1 = "";
-				file1 = true;
-				flag1 = true;
-			}
-			index2 = name2.indexOf('/');
-			if (index2 >= 0) {
-				dir2 = name2.substring(0, index2);
-				if (index2 < name2.length() - 1) {
-					name2 = name2.substring(index2 + 1);
-				}
-				else {
-					name2 = "";
-				}
-			} else {
-				dir2 = name2;
-				name2 = "";
-				file2 = true;
-				flag2 = true;
-			}
-
-			Logcat.d(logLevel,"dir1=" + dir1 + ", dir2=" + dir2 + ", sortByFileType=" + sortByFileType);
-			Logcat.d(logLevel,"name1=" + name1 + ", name2=" + name2 + ", sortByFileType=" + sortByFileType);
-			// ファイル優先ならファイルをディレクトリより優先
-			if (sortByFileType && file1 && !file2) {
-				Logcat.d(logLevel,"dir1 はファイルです.");
-				return -1;
-			} else if (sortByFileType && !file1 && file2) {
-				Logcat.d(logLevel,"dir2 はファイルです.");
-				return 1;
-			} else {
-				// ディレクトリ同士を比較
-				int returnCode = compareText(dir1, dir2);
-				if (returnCode != 0) {
-					return returnCode;
-				}
-			}
-		}
-/*
-		// ディレクトリ部分を削除したファイル名部分を比較
-		int returnCode = compareText(name1, name2);
-		if (returnCode != 0) {
-			return returnCode;
-		}
-
-		// 最後まで結果が決まらなかった
-		if (str1.compareTo(str2) != 0) {
-			// 単純に大小比較してみる
-			return str1.compareTo(str2);
-		}
-		else {
-			// 完全一致なら拡張子を比較
-			return compareText(ext1, ext2);
-		}
-*/
-		// 最終的なファイル名同士の比較
-		int returnCode = compareText(dir1, dir2);
-		if (returnCode != 0) {
-			return returnCode;
-		}
-		// もし名前が同じ(001 vs 001)なら拡張子で比較
-		return compareText(ext1, ext2);
+		return 0;
 	}
 
 	static public int compareText(final String str1, final String str2) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		if (str1.equals(str2)) return 0;
 
-		String name1 = str1;
-		String name2 = str2;
+		String n1 = str1;
+		String n2 = str2;
 
-		if (name1 == null && name2 == null) {
-			return 0;
-		}
-		if (name1 == null) {
-			return 1;
-		}
-		if (name2 == null) {
-			return -1;
-		}
-
-		Logcat.d(logLevel,"開始します. name1=" + name1 + ", name2=" + name2);
-
-		int i1, i2;
-		char ch1, ch2;
-		int ct1, ct2;
+		Logcat.d(logLevel,"開始します. name1=" + n1 + ", name2=" + n2);
 
 		if (SORT_BY_IGNORE_WIDTH) {
 			// 全角を半角に変換
-			name1 = Normalizer.normalize(name1, Normalizer.Form.NFKC);
-			name2 = Normalizer.normalize(name2, Normalizer.Form.NFKC);
+			n1 = Normalizer.normalize(n1, Normalizer.Form.NFKC);
+			n2 = Normalizer.normalize(n2, Normalizer.Form.NFKC);
 		}
 
 		if (SORT_BY_IGNORE_CASE) {
 			// 小文字を大文字に変換
-			name1 = name1.toUpperCase();
-			name2 = name2.toUpperCase();
+			n1 = n1.toUpperCase();
+			n2 = n2.toUpperCase();
 		}
 
-		int len1 = name1.length();
-		int len2 = name2.length();
+		int len1 = n1.length();
+		int len2 = n2.length();
+		int i1 = 0, i2 = 0;
 
-		for (i1 = i2 = 0; i1 < len1 && i2 < len2; i1++, i2++) {
-			Logcat.d(logLevel,"ループを実行します. i1=" + i1 + ", i2=" + i2 + ", name1=" + name1 + ", name2=" + name2);
-			ch1 = name1.charAt(i1);
-			ch2 = name2.charAt(i2);
-			ct1 = getCharType(ch1);
-			ct2 = getCharType(ch2);
+		while (i1 < len1 && i2 < len2) {
+			Logcat.d(logLevel,"ループを実行します. i1=" + i1 + ", i2=" + i2 + ", name1=" + n1 + ", name2=" + n2);
+			char ch1 = n1.charAt(i1);
+			char ch2 = n2.charAt(i2);
+			// 優先単語チェック
 
 			if (PRIORITY_WORDS != null && PRIORITY_WORDS.length > 0) {
 				// 優先単語があれば優先単語を使用している方が先
-				int wlen1 = 0;
-				int wlen2 = 0;
-
-				for (int i = 0; i < PRIORITY_WORDS.length; ++i) {
-					String word;
-					if (PRIORITY_WORDS[i] != null && !PRIORITY_WORDS[i].isEmpty()) {
-						if (SORT_BY_IGNORE_CASE) {
-							word = PRIORITY_WORDS[i].toUpperCase();
-						} else {
-							word = PRIORITY_WORDS[i];
-						}
-
-						if (name1.startsWith(word, i1)) {
-							wlen1 = word.length();
-						}
-						if (name2.startsWith(word, i2)) {
-							wlen2 = word.length();
-						}
-					}
-				}
-				if (wlen1 > 0 && wlen2 <= 0) {
-					return -1;
-				}
-				if (wlen1 <= 0 && wlen2 > 0) {
-					return 1;
-				}
+				int wlen1 = getPriorityWordLength(n1, i1);
+				int wlen2 = getPriorityWordLength(n2, i2);
+				if (wlen1 > 0 && wlen2 <= 0) return -1;
+				if (wlen1 <= 0 && wlen2 > 0) return 1;
 				if (wlen1 > 0 && wlen2 > 0) {
-					i1 += wlen1 - 1;
-					i2 += wlen2 - 1;
+					i1 += wlen1; i2 += wlen2;
+					continue;
 				}
 			}
 
+			int ct1 = getCharType(ch1);
+			int ct2 = getCharType(ch2);
+			// 記号優先(CHTYPE_SYMBOL_BEFORE)
 			if (SORT_BY_SYMBOL) {
-				if (ct1 == CHTYPE_SYMBOL_BEFORE && ct2 != CHTYPE_SYMBOL_BEFORE) {
-					// 1が記号で2が記号以外なら、1が先
-					return -1;
-				} else if (ct1 == CHTYPE_SYMBOL_BEFORE && ct2 == CHTYPE_SYMBOL_BEFORE) {
-					// 1も2も記号なら、記号を比べる
-					int s1 = getSymbolBefore(ch1);
-					int s2 = getSymbolBefore(ch2);
-					if (s1 != s2) {
-						return s1 - s2;
-					}
-					else {
-						continue;
-					}
-				} else if (ct1 != CHTYPE_SYMBOL_BEFORE && ct2 == CHTYPE_SYMBOL_BEFORE) {
-					// 2が記号で1が記号以外なら、2が先
-					return 1;
-				}
-
-				else if (ct1 == CHTYPE_SYMBOL_AFTER && ct2 != CHTYPE_SYMBOL_AFTER) {
-					// 1が記号で2が記号以外なら、2が先
-					return 1;
-				}
-				else if (ct1 == CHTYPE_SYMBOL_AFTER && ct2 == CHTYPE_SYMBOL_AFTER) {
-					// 1も2も記号なら、記号を比べる
-					int s1 = getSymbolAfter(ch1);
-					int s2 = getSymbolAfter(ch2);
-					if (s1 != s2) {
-						return s1 - s2;
-					}
-					else {
-						continue;
-					}
-				}
-				else if (ct1 != CHTYPE_SYMBOL_AFTER && ct2 == CHTYPE_SYMBOL_AFTER) {
-					// 2が記号で1が記号以外なら、1が先
-					return -1;
+				if (ct1 == CHTYPE_SYMBOL_BEFORE || ct2 == CHTYPE_SYMBOL_BEFORE) {
+					if (ct1 != ct2) return (ct1 == CHTYPE_SYMBOL_BEFORE) ? -1 : 1;
+					int sym1 = getSymbolBefore(ch1), sym2 = getSymbolBefore(ch2);
+					if (sym1 != sym2) return sym1 - sym2;
+					i1++; i2++; continue;
 				}
 			}
 
 			if (ct1 != ct2) {
 				Logcat.d(logLevel,"文字種が違います. ch1=" + ch1 + ", ch2=" + ch2);
 				// 文字種が違う場合
-				char tmp1, tmp2;
-				if (ct1 == CHTYPE_KANJI_NUMERALS) {
-					tmp1 = '一';
-				}
-				else if (ct1 == CHTYPE_JAPANESE_VOLUME_NAME) {
-					tmp1 = '上';
-				}
-				else {
-					tmp1 = ch1;
-				}
-
-				if (ct2 == CHTYPE_KANJI_NUMERALS) {
-					tmp2 = '一';
-				}
-				else if (ct2 == CHTYPE_JAPANESE_VOLUME_NAME) {
-					tmp2 = '上';
-				}
-				else {
-					tmp2 = ch2;
-				}
-
-				if (tmp1 != tmp2) {
-					// 元の値を比較
-					return tmp1 - tmp2;
-				}
-				else {
-					continue;
-				}
+				return ct1 - ct2;
 			}
-
-			if (SORT_BY_NATURAL_NUMBERS) {
-				if (ct1 == CHTYPE_NUM) {
-					//Logcat.d(logLevel, "文字1=" + ch1 + ", 文字2=" + ch2);
-					String num1 = getNumbers(name1, i1);
-					String num2 = getNumbers(name2, i2);
-					int nlen1 = num1.length();
-					int nlen2 = num2.length();
-
-					// カンマを取り除く
-					num1 = num1.replace(",", "");
-					num2 = num2.replace(",", "");
-
-					// マイナス判定を残しているが、マイナス記号は数字に含めるのをやめた
-					// ファイル名ハイフン001がマイナス001になるとおかしくなるから
-					boolean minus1 = num1.startsWith("-");
-					boolean minus2 = num2.startsWith("-");
-
-					if (minus1 && !minus2) {
-						// num2が大きい
-						return -1;
-					} else if (!minus1 && minus2) {
-						// num1が大きい
-						return 1;
-					} else {
-						//Logcat.d(logLevel, "数字1=" + num1 + ", 数字2=" + num2);
-						//小数点の位置
-						int index_dot1 = num1.indexOf(".");
-						int index_dot2 = num2.indexOf(".");
-
-						//小数以下の桁数
-						int col_dec1;
-						int col_dec2;
-						if (index_dot1 == -1) {
-							col_dec1 = 0;
-						} else {
-							col_dec1 = nlen1 - index_dot1 - 1;
-						}
-						if (index_dot2 == -1) {
-							col_dec2 = 0;
-						} else {
-							col_dec2 = nlen2 - index_dot2 - 1;
-						}
-
-						// 小数点以下の桁数を合わせる
-						int col_diff = col_dec1 - col_dec2;
-						for (int i = 1; i <= col_diff; i++) {
-							num2 = num2 + "0";
-						}
-						for (int i = -1; i >= col_diff; i--) {
-							num1 = num1 + "0";
-						}
-						//Logcat.d(logLevel, "数字1=" + num1 + ", 数字2=" + num2 + ", 小数点位置1=" + index_dot1 + ", 小数点位置2=" + index_dot2 + ", 小数桁1=" + col_dec1 + ", 小数桁2=" + col_dec2);
-						num1 = num1.replace(".", "");
-						num2 = num2.replace(".", "");
-						//Logcat.d(logLevel, "数字1=" + num1 + ", 数字2=" + num2 + ", 小数点位置1=" + index_dot1 + ", 小数点位置2=" + index_dot2 + ", 小数桁1=" + col_dec1 + ", 小数桁2=" + col_dec2);
-
-						int num_len1 = num1.length();
-						int num_len2 = num2.length();
-
-						if (!minus1 && !minus2) {
-							// どちらも正の数
-
-							if (num_len1 < num_len2) {
-								int difflen = num_len2 - num_len1;
-								for (int i = 0; i < difflen; i++) {
-									int diff = getNumber('0') - getNumber(num2.charAt(i));
-									if (diff != 0) {
-										// num1が大きければプラス
-										return diff;
-									}
-								}
-								// 残り部分で比較
-								num2 = num2.substring(difflen);
-							} else if (num_len1 > num_len2) {
-								int difflen = num_len1 - num_len2;
-								for (int i = 0; i < difflen; i++) {
-									int diff = getNumber(num1.charAt(i)) - getNumber('0');
-									if (diff != 0) {
-										// num1が大きければプラス
-										return diff;
-									}
-								}
-								// 残り部分で比較
-								num1 = num1.substring(difflen);
-							}
-							// 数字が異なる場合は比較
-							if (num1.length() == num2.length()) {
-								for (int i = 0; i < num1.length(); i++) {
-									int diff = getNumber(num1.charAt(i)) - getNumber(num2.charAt(i));
-									if (diff != 0) {
-										// num1が大きければプラス
-										return diff;
-									}
-								}
-							} else {
-								Logcat.d(logLevel, "長さが違います。 num1=" + num1 + ", num2=" + num2);
-							}
-						} else {
-							// どちらも負の数
-
-							// マイナスを取り除く
-							num1 = num1.replace("-", "");
-							num2 = num2.replace("-", "");
-
-							if (num_len1 < num_len2) {
-								int difflen = num_len2 - num_len1;
-								for (int i = 0; i < difflen; i++) {
-									int diff = getNumber('0') - getNumber(num2.charAt(i));
-									if (diff != 0) {
-										// num1が大きければマイナス
-										return -diff;
-									}
-								}
-								// 残り部分で比較
-								num2 = num2.substring(difflen);
-							} else if (num_len1 > num_len2) {
-								int difflen = num_len1 - num_len2;
-								for (int i = 0; i < difflen; i++) {
-									int diff = getNumber(num1.charAt(i)) - getNumber('0');
-									if (diff != 0) {
-										// num1が大きければマイナス
-										return -diff;
-									}
-								}
-								// 残り部分で比較
-								num1 = num1.substring(difflen);
-							}
-							// 数字が異なる場合は比較
-							if (num1.length() == num2.length()) {
-								for (int i = 0; i < num1.length(); i++) {
-									int diff = getNumber(num1.charAt(i)) - getNumber(num2.charAt(i));
-									if (diff != 0) {
-										// num1が大きければマイナス
-										return -diff;
-									}
-								}
-							} else {
-								Logcat.d(logLevel, "長さが違います。 num1=" + num1 + ", num2=" + num2);
-							}
-						}
-						i1 += nlen1 - 1;
-						i2 += nlen2 - 1;
-					}
-					continue;
-				}
+			// 数値比較(自然順)
+			if (SORT_BY_NATURAL_NUMBERS && ct1 == CHTYPE_NUM) {
+				String num1 = getNumbers(n1, i1);
+				String num2 = getNumbers(n2, i2);
+				int res = compareAsNumeric(num1, num2);
+				if (res != 0) return res;
+				i1 += num1.length(); i2 += num2.length();
+				continue;
 			}
-
-			if (SORT_BY_KANJI_NUMERALS) {
-				if (ct1 == CHTYPE_KANJI_NUMERALS) {
-					Logcat.d(logLevel, "漢数字を比較します. ch1=" + ch1 + ", ch2=" + ch2);
-					String num1 = getKanjiNumerals(name1, i1);
-					String num2 = getKanjiNumerals(name2, i2);
-					int nlen1 = num1.length();
-					int nlen2 = num2.length();
-					Logcat.d(logLevel, "漢数字を比較します. num1=" + num1 + ", num2=" + num2);
-					if (nlen1 < nlen2) {
-						int difflen = nlen2 - nlen1;
-						for (int i = 0; i < difflen; i++) {
-							if (getKanjiNumeral(num2.charAt(i)) != 0) {
-								// num2の方が大きい
-								Logcat.d(logLevel, "漢数字を比較します. num1が小さいです.");
-								return -1;
-							}
-						}
-						// 残り部分で比較
-						num2 = num2.substring(difflen);
-					} else if (nlen1 > nlen2) {
-						int difflen = nlen1 - nlen2;
-						for (int i = 0; i < difflen; i++) {
-							if (getKanjiNumeral(num1.charAt(i)) > 0) {
-								// num1の方が大きい
-								Logcat.d(logLevel, "漢数字を比較します. num2が小さいです.");
-								return 1;
-							}
-						}
-						// 残り部分で比較
-						num1 = num1.substring(difflen);
-					}
-					// 数字が異なる場合は比較
-					for (int i = 0; i < num1.length(); i++) {
-						int diff = getKanjiNumeral(num1.charAt(i)) - getKanjiNumeral(num2.charAt(i));
-						if (diff != 0) {
-							// num1の方が大きい
-							if (diff>0) {Logcat.d(logLevel, "漢数字を比較します. num2が小さいです.");}
-							else {Logcat.d(logLevel, "漢数字を比較します. num1が小さいです.");}
-							return diff;
-						}
-					}
-					i1 += nlen1 - 1;
-					i2 += nlen2 - 1;
-					continue;
-				}
+			// 漢数字比較
+			if (SORT_BY_KANJI_NUMERALS && ct1 == CHTYPE_KANJI_NUMERALS) {
+				String knum1 = getKanjiNumerals(n1, i1);
+				String knum2 = getKanjiNumerals(n2, i2);
+				int res = compareAsKanjiNumeric(knum1, knum2);
+				if (res != 0) return res;
+				i1 += knum1.length(); i2 += knum2.length();
+				continue;
 			}
-
-			if (SORT_BY_JAPANESE_VOLUME_NAME) {
-				if (ct1 == CHTYPE_JAPANESE_VOLUME_NAME) {
-					int s1 = getJapaneseVolumeName(ch1);
-					int s2 = getJapaneseVolumeName(ch2);
-					if (s1 != s2) {
-						return s1 - s2;
-					}
-					continue;
-				}
+			// 巻数比較(上中下等)
+			if (SORT_BY_JAPANESE_VOLUME_NAME && ct1 == CHTYPE_JAPANESE_VOLUME_NAME) {
+				int v1 = getJapaneseVolumeName(ch1), v2 = getJapaneseVolumeName(ch2);
+				if (v1 != v2) return v1 - v2;
+				i1++; i2++; continue;
 			}
-
-			if (ch1 != ch2) {
-				// 両方とも特殊な文字ではない
-				// 元の値を比較
-				return ch1 - ch2;
-			}
+			// 通常文字比較
+			if (ch1 != ch2) return ch1 - ch2;
+			i1++; i2++;
 		}
+		// 文字列の長さが異なる場合は短い方を先に、全く同じ(正規化後)なら元の文字列で比較
+		if (len1 != len2) return len1 - len2;
+		return str1.compareTo(str2);
+	}
 
-		// 最後まで結果が決まらなかった
-		if (str1.compareTo(str2) != 0) {
-			// 単純に大小比較してみる
-			return str1.compareTo(str2);
+    // ヘルパーメソッド群
+	private static int getPriorityWordLength(String s, int idx) {
+		for (String word : PRIORITY_WORDS) {
+			if (word == null || word.isEmpty()) continue;
+			String targetWord = SORT_BY_IGNORE_CASE ? word.toUpperCase() : word;
+			if (s.startsWith(targetWord, idx)) return targetWord.length();
 		}
+		return 0;
+	}
 
+	private static int compareAsNumeric(String n1, String n2) {
+		// カンマ除去
+		String raw1 = n1.replace(",", "");
+		String raw2 = n2.replace(",", "");
+		// 小数点を考慮した double 比較か、整数部と小数部を分けた厳密比較が必要
+		// ここでは簡易的に double 変換比較(巨大な数値でなければ有効)
+		try {
+			double d1 = Double.parseDouble(raw1);
+			double d2 = Double.parseDouble(raw2);
+			return Double.compare(d1, d2);
+		}
+		catch (NumberFormatException e) {
+			return raw1.compareTo(raw2);
+		}
+	}
+
+	private static int compareAsKanjiNumeric(String kn1, String kn2) {
+		// 本来は「二十」と「20」を合わせるロジックが必要だが、
+		// 文字列の長さと各文字の重みで暫定比較
+		if (kn1.length() != kn2.length()) return kn1.length() - kn2.length();
+		for (int i = 0; i < kn1.length(); i++) {
+			int v1 = getKanjiNumeral(kn1.charAt(i));
+			int v2 = getKanjiNumeral(kn2.charAt(i));
+			if (v1 != v2) return v1 - v2;
+		}
 		return 0;
 	}
 
 	static private String getNumbers(String str, int idx) {
-		int i;
-		for (i = idx; i < str.length(); i++) {
-			int ch = str.charAt(i);
-//			if ((ch < '0' || '9' < ch) && '-' != ch && '.' != ch && ',' != ch) {
-			if ((ch < '0' || '9' < ch) && '.' != ch && ',' != ch) {
-				break;
-			}
+		int i = idx;
+		while (i < str.length()) {
+			char ch = str.charAt(i);
+			// 数字のみを抽出('.'や','は含めない)
+			if (Character.isDigit(ch)) i++;
+			else break;
 		}
 		return str.substring(idx, i);
-	}
-
-	static private int getNumber(char ch) {
-		switch (ch) {
-//			case '-':
-//				return -1;
-			case '0':
-				return 0;
-			case '1':
-				return 1;
-			case '2':
-				return 2;
-			case '3':
-				return 3;
-			case '4':
-				return 4;
-			case '5':
-				return 5;
-			case '6':
-				return 6;
-			case '7':
-				return 7;
-			case '8':
-				return 8;
-			case '9':
-				return 9;
-			case '.':
-				return 10;
-			case ',':
-				return 11;
-		}
-		return -2;
 	}
 
 	static private int getSymbolBefore(char ch) {
@@ -4325,12 +3966,10 @@ public class DEF {
 	}
 
 	static private String getKanjiNumerals(String str, int idx) {
-		int i;
-		for (i = idx; i < str.length(); i++) {
-			char ch = str.charAt(i);
-			if (getCharType(ch) != CHTYPE_KANJI_NUMERALS) {
-				break;
-			}
+		int i = idx;
+		while (i < str.length()) {
+			if (getKanjiNumeral(str.charAt(i)) >= 0) i++;
+			else break;
 		}
 		return str.substring(idx, i);
 	}
@@ -4446,7 +4085,7 @@ public class DEF {
 			return CHTYPE_SYMBOL_AFTER;
 		}
 
-		if (SORT_BY_NATURAL_NUMBERS && (('0' <= ch && ch <= '9') || '.' == ch || ',' == ch)) {
+		if (SORT_BY_NATURAL_NUMBERS && (Character.isDigit(ch) || ch == '.' || ch == ',')) {
 			Logcat.d(logLevel, "TYPE=CHTYPE_NUM");
 			return CHTYPE_NUM;
 		}
