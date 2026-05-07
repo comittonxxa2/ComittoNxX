@@ -628,6 +628,19 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				}
 			});
 		}
+		// 全画面(Edge-to-Edge)を可能な限り抑制する
+		androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+		View root = findViewById(android.R.id.content);
+		androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+			// 直接数値を取り出す
+			int l = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).left;
+			int t = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).top;
+			int r = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).right;
+			int b = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
+			// この箱自体に余白を持たせることで中のView(onTouchEventを持つViewを押し戻す
+			v.setPadding(l, t, r, b);
+			return androidx.core.view.WindowInsetsCompat.CONSUMED;
+		});
 
 		mReadBreak = false;
 		return;
