@@ -623,8 +623,6 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 				@Override
 				public void handleOnBackPressed() {
-					// 既存の operationBack() を呼び出す
-					operationBack();
 				}
 			});
 		}
@@ -1810,7 +1808,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 									prevPage();
 								}
 							}
-							else if (mMomentMode < DEF.MAX_MOMENTMODE){
+							else if (mMomentMode > 0){
 								int i;
 								long now = SystemClock.uptimeMillis();
 								for (i = 1 ; i < mTouchPointNum && i < MAX_TOUCHPOINT ; i ++) {

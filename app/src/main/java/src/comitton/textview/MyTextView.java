@@ -1845,7 +1845,7 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 		mMomentiumY = sy * DEF.INTERVAL_MOMENTIUM / term;
 		mMomentiumTime = SystemClock.uptimeMillis();
 		mMomentiumNum = 0;
-		if (mode == 0) {
+		if (mode == DEF.MAX_MOMENTMODE) {
 			// 減速しない
 			mMomentDrain = 0; 
 		}

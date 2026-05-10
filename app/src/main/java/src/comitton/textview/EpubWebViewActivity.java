@@ -647,8 +647,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 				@Override
 				public void handleOnBackPressed() {
-					// 既存の operationBack() を呼び出す
-					operationBack();
 				}
 			});
 		}
