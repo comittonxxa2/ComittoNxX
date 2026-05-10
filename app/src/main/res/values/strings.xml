@@ -349,8 +349,8 @@
     <string name="mSizeSumm1">MBytes</string>
     <string name="mSizeSumm2">No Cache</string>
     <string name="mPageSumm1">Pages</string>
-    <string name="mmentSumm1">Not inertial scrolling</string>
-    <string name="mmentSumm2">Not slow down</string>
+    <string name="mmentSumm1">Not slow down</string>
+    <string name="mmentSumm2">Not inertial scrolling</string>
     <string name="preset00">Custom</string>
     <string name="preset01">Standard (Black)</string>
     <string name="preset02">Standard (White)</string>
