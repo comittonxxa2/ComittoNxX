@@ -349,8 +349,8 @@
     <string name="mSizeSumm1">MBytes</string>
     <string name="mSizeSumm2">キャッシュしない</string>
     <string name="mPageSumm1">ページ</string>
-    <string name="mmentSumm1">減速しない</string>
-    <string name="mmentSumm2">慣性なし</string>
+    <string name="mmentSumm1">慣性なし</string>
+    <string name="mmentSumm2">減速しない</string>
     <string name="preset00">カスタム</string>
     <string name="preset01">標準（黒）</string>
     <string name="preset02">標準（白）</string>
