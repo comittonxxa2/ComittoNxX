@@ -113,6 +113,7 @@ import android.os.Message;
 import android.os.Parcelable;
 import android.os.storage.StorageManager;
 import androidx.preference.PreferenceManager;
+import androidx.activity.OnBackPressedCallback;
 
 import android.text.InputType;
 import android.util.Log;
@@ -335,6 +336,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static int deviceOrientation = -1;
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	private boolean mAozoraZipFile;
+	private int currentOrientation;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -518,6 +520,17 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 
 		SetOrientationEventListener(mActivity, mSharedPreferences);
+
+		// Android16の勝手に終了を防ぐための"おまじない"
+		if (Build.VERSION.SDK_INT >= 33) {
+			// Android 13以降
+			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+	
+				@Override
+				public void handleOnBackPressed() {
+				}
+			});
+		}
 
 		// 全画面(Edge-to-Edge)を可能な限り抑制する
 		androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
@@ -1201,6 +1214,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				if (requestCode == DEF.REQUEST_SETTING) {
 					// 設定を更新
 					readConfig();
+					setRequestedOrientation(currentOrientation);
 				}
 				if (requestCode == DEF.REQUEST_IMAGE || requestCode == DEF.REQUEST_TEXT || requestCode == DEF.REQUEST_EPUB || requestCode == DEF.REQUEST_EXPAND) {
 					Logcat.d(logLevel, "REQUEST_IMAGE || REQUEST_TEXT || REQUEST_EPUB || REQUEST_EXPAND");
@@ -2915,6 +2929,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// Intentをつかって画面遷移する
 			Intent intent = new Intent(FileSelectActivity.this, SetConfigActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			currentOrientation = getRequestedOrientation();
 			startActivityForResult(intent, DEF.REQUEST_SETTING);
 		}
 		else if (id == DEF.MENU_SHORTCUT) {
