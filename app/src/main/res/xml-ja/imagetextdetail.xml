@@ -78,11 +78,11 @@
             android:title="スクロール速度" />
         <src.comitton.config.seekbar.MomentModeSeekbar
             android:dialogMessage="小さいほどすぐ止まる"
-            android:dialogTitle="減速スピード"
+            android:dialogTitle="慣性の強さ"
             android:key="MomentMode"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="減速スピード" />
+            android:title="慣性の強さ" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="BottomFile"
