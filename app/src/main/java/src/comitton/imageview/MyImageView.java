@@ -1860,7 +1860,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mMomentiumY = sy * MOMENTIUM_TERM / term;
 		mMomentiumTime = SystemClock.uptimeMillis();
 		mMomentiumNum = 0;
-		if (mode == 0) {
+		if (mode == DEF.MAX_MOMENTMODE) {
 			// 減速しない
 			mMomentDrain = 0;
 		}
