@@ -78,11 +78,11 @@
             android:title="Scroll Speed" />
         <src.comitton.config.seekbar.MomentModeSeekbar
             android:dialogMessage="Immediately stop the smaller."
-            android:dialogTitle="Slowdown Amount"
+            android:dialogTitle="Strength of inertia"
             android:key="MomentMode"
             android:negativeButtonText="@null"
             android:summary="dummy"
-            android:title="Amount of Slowdown" />
+            android:title="Strength of inertia" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="BottomFile"
