@@ -37,6 +37,7 @@
             android:label="@string/app_launch_name"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:screenOrientation="fullUser"
             android:theme="@style/MyAppCompat">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
