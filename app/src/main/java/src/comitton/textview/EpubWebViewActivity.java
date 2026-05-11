@@ -642,11 +642,13 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			});
 		}
 		// Android16の勝手に終了を防ぐための"おまじない"
-		if (Build.VERSION.SDK_INT >= 33) {
-			// Android 13以降
+		if (Build.VERSION.SDK_INT >= 36) {
+			// Android 16以降
 			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 				@Override
 				public void handleOnBackPressed() {
+					// 既存の operationBack() を呼び出す
+					operationBack();
 				}
 			});
 		}
