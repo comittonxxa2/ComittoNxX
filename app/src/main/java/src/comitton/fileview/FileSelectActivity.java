@@ -522,12 +522,75 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		SetOrientationEventListener(mActivity, mSharedPreferences);
 
 		// Android16の勝手に終了を防ぐための"おまじない"
-		if (Build.VERSION.SDK_INT >= 33) {
-			// Android 13以降
+		if (Build.VERSION.SDK_INT >= 36) {
+			// Android 16以降
 			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 	
 				@Override
 				public void handleOnBackPressed() {
+					int listtype = mListScreenView.getListType();
+					if(listtype != RecordList.TYPE_FILELIST){
+						// サムネイルを読み込ませる
+						loadThumbnail(true);
+						switchFileList(); // ファイルリストをアクティブ化
+						return;
+					}
+
+					// ジェスチャーナビゲーションのBack操作中に長押し判定が発生していた場合にキャンセルする
+					if (mTouchArea == ListScreenView.AREATYPE_FILELIST) {
+						mListScreenView.mFileListArea.cancelOperation();
+					} else if (mTouchArea == ListScreenView.AREATYPE_DIRLIST) {
+						mListScreenView.mDirListArea.cancelOperation();
+					} else if (mTouchArea == ListScreenView.AREATYPE_SERVERLIST) {
+						mListScreenView.mServerListArea.cancelOperation();
+					} else if (mTouchArea == ListScreenView.AREATYPE_FAVOLIST) {
+						mListScreenView.mFavoListArea.cancelOperation();
+					} else if (mTouchArea == ListScreenView.AREATYPE_HISTLIST) {
+						mListScreenView.mHistListArea.cancelOperation();
+					}
+
+					if (mBackMode == BACKMODE_EXIT) {
+						checkExitTimer();
+						return;
+					}
+					else if (mBackMode == BACKMODE_PARENT) {
+						// 親ディレクトリに移動
+						if (mPath.equals("/")) {
+							// アプリ終了
+							checkExitTimer();
+							return;
+						}
+						moveParentDir();
+						mExitBackTimer = 0;
+
+						switchFileList(); // ファイルリストをアクティブ化
+						return;
+					}
+					else if (mBackMode == BACKMODE_HISTORY) {
+						HistoryData data = mPathHistory.pop();
+						String uri;
+						if (data == null) {
+							// 最初のディレクトリ
+							checkExitTimer();
+							return;
+						}
+						else if (data.mCode == null || data.mCode.length() <= 0) {
+							mServer.select(DEF.INDEX_LOCAL);
+							uri = "";
+						}
+						else {
+							if (!mServer.select(data.mCode)) {
+								mExitBackTimer = 0;
+								return;
+							}
+							uri = mServer.getURI();
+						}
+						moveFileSelect(uri, data.mPath, data.mTopIndex, false);
+						mExitBackTimer = 0;
+
+						switchFileList(); // ファイルリストをアクティブ化
+						return;
+					}
 				}
 			});
 		}
