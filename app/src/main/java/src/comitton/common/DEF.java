@@ -732,6 +732,7 @@ public class DEF {
 	public static final String KEY_BACKGROUNDPAUSE = "BackgroundPause";
 	public static final String KEY_ANIMATIONENABLE = "AnimationEnable";
 	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
+	public static final String KEY_ARCHIVEANIMATIONENABLE = "ArchiveAnimationEnable";
 	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
 	public static final String KEY_ENABLECONTENTSFILE = "EnableContentsFile";
 	public static final String KEY_WEBVIEWFILTER = "WebviewFilter";
@@ -761,6 +762,11 @@ public class DEF {
 	public static final String KEY_THUMBSEEK = "ThumbSeek";
 	public static final String KEY_THUMBSIZEW = "ThumbSizeW";
 	public static final String KEY_THUMBSIZEH = "ThumbSizeH";
+	public static final String KEY_TILETHUMBRATIO = "TileThumbRatioSeek";
+	public static final String KEY_LISTTHUMBRATIO = "ListThumbRatioSeek";
+	public static final String KEY_THUMBGRID = "ThumbnailGrid";
+	public static final String KEY_THUMBGRIDH = "ThumbnailGridHorizontal";
+	public static final String KEY_THUMBGRIDV = "ThumbnailGridVertical";
 
 	public static final String KEY_PNUMDISP = "PnumDisp";
 	public static final String KEY_PNUMFORMAT = "PnumFormat";
@@ -1320,6 +1326,8 @@ public class DEF {
 	public static final int DEFAULT_THUMBSIZEH = 28; // 320 (28 * 10 + 40)
 	public static final int DEFAULT_LISTTHUMBSIZEH = 20; // 240 (20 * 10 + 40)
 	public static final int DEFAULT_TOOLBAR_SIZE = 2; // 100%
+	public static final int DEFAULT_LISTTHUMBRATIO = 10;
+	public static final int DEFAULT_TILETHUMBRATIO = 19;
 
 	public static final int DEFAULT_MarginLevel_Min = 15; // 色判定時のビットマスク深度(弱設定)
 	public static final int DEFAULT_MarginLevel_Mid = 15; // 色判定時のビットマスク深度(中設定)
@@ -1433,6 +1441,8 @@ public class DEF {
 	public static final int MAX_TOOLBARSEEK = 36; // 60 (36+24)
 	public static final int MAX_THUMBSIZE = 60; // 640 (60 * 10 + 40)
 	public static final int MAX_LISTTHUMBSIZE = 60; // 640 (60 * 10 + 40)
+	public static final int MAX_LISTTHUMBRATIO = 30;
+	public static final int MAX_TILETHUMBRATIO = 19;
 
 	public static final int MAX_PNUMSIZE = 54; // 6 + 24 = 60px
 
@@ -1934,6 +1944,7 @@ public class DEF {
 	public static final int TAP_ANIMEPAUSE = 114;	//アニメーションの一時停止
 	public static final int TAP_SELECTCONTENTSMENU = 115;	// 目次の選択
 	public static final int TAP_KELVINMENU = 116;	// 色温度
+	public static final int TAP_ZOOMRESET = 117;	// 色温度
 
 	// イメージビューア用のタップ操作の初期値
 	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
@@ -3488,6 +3499,14 @@ public class DEF {
 	// 音量レベル
 	static public String getNoiseLevelStr(int val) {
 		return "" + calcNoiseLevel(val);
+	}
+
+	static public String getListThumbRatioStr(int val) {
+		return String.valueOf(val * 5 + 50) + "%";
+	}
+
+	static public String getTileThumbRatioStr(int val) {
+		return String.valueOf(val * 5 + 5) + "%";
 	}
 
 	// 2バイト数値取得
