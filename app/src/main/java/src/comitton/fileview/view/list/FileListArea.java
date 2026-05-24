@@ -28,6 +28,7 @@ import jp.dip.muracoro.comittonx.R;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -1384,10 +1385,16 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		mIconWidth = (short)sizew;
 		mIconHeight = (short)sizeh;
         mListIconHeight = (short)listThumbSizeH;
+		mDrawBitmap = null;
 
 		if (mThumbFlag) {
-			mDrawBitmap = Bitmap.createBitmap(mIconWidth, mIconHeight, Config.RGB_565);
-
+			// 念のためtry～catchで囲む
+			try {
+				// サムネイル画像を生成する際にサイズを拡大する(これを入れないとサムネイルが途切れる)
+				mDrawBitmap = Bitmap.createBitmap(mIconWidth * 8, mIconHeight * 8, Config.RGB_565);
+			}
+			catch (Exception e) {
+			}
 			// ビットマップリソースを読み込み
 			Resources res = mContext.getResources();
 			mIcon = new Bitmap[ICON_ID.length];
@@ -1468,6 +1475,39 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		update(false);
 	}
 
+	// サムネイルグリッドを列数で指定する処理を追加
+	private void changeThumbnailGrid() {
+		int mOrientation = mContext.getResources().getConfiguration().orientation;
+		int divW = 0;
+		// タイル表示のサムネイルの比率
+		int ratioT = SetFileListActivity.getTileThumbRatio(sharedPreferences) * 5 + 5;
+		// リスト表示のサムネイルの比率
+		int ratioL = SetFileListActivity.getListThumbRatio(sharedPreferences) * 5 + 50;
+		// 縦画面/横画面で列数を切り替える
+		if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+			// 横画面
+			divW = SetFileListActivity.getThumbnailGridHorizontal(sharedPreferences);
+		}
+		else {
+			// 縦画面
+			divW = SetFileListActivity.getThumbnailGridVertical(sharedPreferences);
+		}
+		// 表示エリアを列数で割り算してマージンを引き算する
+		int sizeW = mAreaWidth / divW - mItemMargin * 2;
+		// タイル表示のサムネイルの比率を演算(縦サイズを変更することでサムネイル全体の比率が変更される)
+		int mThumbSizeW = sizeW;
+		int mThumbSizeH = (sizeW * ratioT) / 100;
+		// リスト表示のサムネイルの比率を演算(縦サイズを基準)
+		int mListThumbSizeH = (mThumbSizeH * ratioL) / 100;
+		boolean mThumbnail = SetFileListActivity.getThumbnail(sharedPreferences);
+		boolean mThumbGridSet = SetFileListActivity.getThumbnailGrid(sharedPreferences);
+
+		if (mThumbGridSet) {
+			// ここでサムネイルのサイズを再設定する
+			setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
+		}
+	}
+
 	private void requestLayout(boolean isRefresh) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel,"開始します.");
@@ -1497,6 +1537,8 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		mBookShelfAfterCircleOn = SetBookShelfActivity.getBookShelfAfterCircleOn(sharedPreferences);
 		// ファイル名の分割表示で行数を倍にするかどうか
 		mBookShelfTextSplitOn = SetBookShelfActivity.getBookShelfTextSplitOn(sharedPreferences);
+		// サムネイルグリッドを列数で指定する
+		changeThumbnailGrid();
 
 		if (mFileList != null && mAreaWidth != 0 && mAreaHeight != 0) {
 			// 項目数
