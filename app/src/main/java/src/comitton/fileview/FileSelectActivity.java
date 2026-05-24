@@ -337,6 +337,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	private boolean mAozoraZipFile;
 	private int currentOrientation;
+	private boolean mThumbnailGrid;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -1662,6 +1663,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mApplyDir = SetFileListActivity.getMarkerDirOn(mSharedPreferences);
 		mSkipGetThumbnail = SetFileListActivity.getSkipGetThumbnail(mSharedPreferences);
 		mAozoraZipFile = SetFileListActivity.getAozoraZipFile(mSharedPreferences);
+		mThumbnailGrid = SetFileListActivity.getThumbnailGrid(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -4646,6 +4648,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// 表示を反映
 				mListScreenView.setListMode(mListMode);
 				if (isChange) {
+					if (mThumbnailGrid) {
+						// サムネイルグリッドを列数で指定する場合は読み直す
+						loadListView();
+					}
 					mListScreenView.setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
 				}
 				mListScreenView.notifyUpdate(RecordList.TYPE_FILELIST);
