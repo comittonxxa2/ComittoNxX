@@ -198,7 +198,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = mContext.getString(R.string.srngSumm2);
 			mSummary2 = "";
 		}
-		else if (mKey.equals(DEF.KEY_WEBVIEWSHARPEN) || mKey.equals(DEF.KEY_WEBVIEWBRIGHT) || mKey.equals(DEF.KEY_WEBVIEWGAMMA) || mKey.equals(DEF.KEY_WEBVIEWCONTRAST) || mKey.equals(DEF.KEY_WEBVIEWHUE) || mKey.equals(DEF.KEY_WEBVIEWSATURATION) || mKey.equals(DEF.KEY_WEBVIEWKELVIN) || mKey.equals(DEF.KEY_WEBVIEWREDLEVEL) || mKey.equals(DEF.KEY_WEBVIEWGREENLEVEL) || mKey.equals(DEF.KEY_WEBVIEWBLUELEVEL)) {
+		else if (mKey.equals(DEF.KEY_WEBVIEWSHARPEN) || mKey.equals(DEF.KEY_WEBVIEWBRIGHT) || mKey.equals(DEF.KEY_WEBVIEWGAMMA) || mKey.equals(DEF.KEY_WEBVIEWCONTRAST) || mKey.equals(DEF.KEY_WEBVIEWHUE) || mKey.equals(DEF.KEY_WEBVIEWSATURATION) || mKey.equals(DEF.KEY_WEBVIEWKELVIN) || mKey.equals(DEF.KEY_WEBVIEWREDLEVEL) || mKey.equals(DEF.KEY_WEBVIEWGREENLEVEL) || mKey.equals(DEF.KEY_WEBVIEWBLUELEVEL) || mKey.equals(DEF.KEY_LISTTHUMBRATIO) || mKey.equals(DEF.KEY_TILETHUMBRATIO)) {
 			mSummary1 = "";
 			mSummary2 = "";
 		}
@@ -344,6 +344,12 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		}
 		else if (mKey.equals(DEF.KEY_WEBVIEWREDLEVEL) || mKey.equals(DEF.KEY_WEBVIEWGREENLEVEL) || mKey.equals(DEF.KEY_WEBVIEWBLUELEVEL)) {
 			strSummary = ImageConfigDialog.getRgbLevelStr(num);
+		}
+		else if (mKey.equals(DEF.KEY_LISTTHUMBRATIO)) {
+			strSummary = DEF.getListThumbRatioStr(num);
+		}
+		else if (mKey.equals(DEF.KEY_TILETHUMBRATIO)) {
+			strSummary = DEF.getTileThumbRatioStr(num);
 		}
 		else {
 			strSummary = DEF.getSizeStr(num, mSummary1, mSummary2);
