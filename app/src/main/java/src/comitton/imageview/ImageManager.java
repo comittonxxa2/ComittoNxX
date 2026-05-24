@@ -276,6 +276,7 @@ public class ImageManager extends InputStream implements Runnable {
 	public FileListItem[] mFileList = null;
 	private ArrayList<FileData> mFileList2 = null;
 	AnimeList[] mAnimeList = null;
+	boolean mAnimeFile = false;
 	private int mMaxCmpLength;
 	private int mMaxOrgLength;
 	private boolean mLoadImage = false;
@@ -318,6 +319,9 @@ public class ImageManager extends InputStream implements Runnable {
 	private static boolean mSetUnRarlib;
 	private boolean mSkipSevenZip;
 	private int mPdfExpand = -1;
+	private static final int HEADER_LOOKAHEAD_SIZE = 64 * 1024;
+	private boolean mAnimationEnable;
+	private boolean mArchiveAnimationEnable;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -327,6 +331,7 @@ public class ImageManager extends InputStream implements Runnable {
         mActivity = activity;
 		mFileList = null;
 		mAnimeList = null;
+		mAnimeFile = false;
 		mFilePath = DEF.relativePath(mActivity, path, cmpfile);
 		mPath = path;
 		mFileName = cmpfile;
@@ -348,6 +353,9 @@ public class ImageManager extends InputStream implements Runnable {
 		mExpandTextEnable = SetFileListActivity.getExpandTextEnable(sp);
 		mArchiveCheck= SetFileListActivity.getArchiveCheckManualMode(sp);
 		mImageSort = SetImageActivity.getImageSort(sp);
+
+		mAnimationEnable = SetImageActivity.getAnimationEnable(sp);
+		mArchiveAnimationEnable = SetImageActivity.getArchiveAnimationEnable(sp);
 
 		if (FileAccess.accessType(mFilePath) != DEF.ACCESS_TYPE_LOCAL && SetFileListActivity.getPdfExpand(sp)) {
 			mPdfExpand = FileAccess.accessType(mFilePath);
@@ -3562,13 +3570,37 @@ public class ImageManager extends InputStream implements Runnable {
 		return id;
 	}
 
+	public boolean checkAnimeFile(int page) {
+		boolean enable = false;
+
+		if (!mAnimationEnable || !mArchiveAnimationEnable) return false;
+
+		File animFile = new File(mCacheDir, "anim_source." + page);
+		try {
+			if (animFile.exists() && FileData.getType(mActivity, mFilePath) == FileData.FILETYPE_ARC) {
+				enable = true;
+			}
+		}
+		catch (Exception e) {
+		}
+		return enable;
+	}
+
 	// アニメーション可能かどうかをチェック
 	public boolean checkAnimeEnable(int page) {
 		boolean enable = false;
 		if (FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_AVIF && FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_JXL) {
 			try {
-				String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[page].name);
-				File file = new File(filepath);
+				File file = null;
+				File animFile = new File(mCacheDir, "anim_source." + page);
+				short type = FileData.getType(mActivity, mFilePath);
+				if (animFile.exists() && type == FileData.FILETYPE_ARC) {
+					file = animFile;
+				}
+				else {
+					String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[page].name);
+					file = new File(filepath);
+				}
 				// デコーダーへファイルを送る
 				ImageDecoder.Source source = ImageDecoder.createSource(file);
 				// デコード結果を得る
@@ -5598,7 +5630,40 @@ public class ImageManager extends InputStream implements Runnable {
 
 		inputStream.mark(orglen + 1);
 		if (FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_AVIF && FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_JXL) {
-			bm = BitmapFactory.decodeStream(new BufferedInputStream(inputStream), null, option);
+			if ((FileData.getExtType(mActivity, mFileList[page].name) == FileData.EXTTYPE_WEBP || FileData.getExtType(mActivity, mFileList[page].name) == FileData.EXTTYPE_GIF) && FileData.getType(mActivity, mFilePath) == FileData.FILETYPE_ARC && mAnimationEnable && mArchiveAnimationEnable) {
+				// 再読み込み可能にするためBufferedInputStreamでラップ
+				BufferedInputStream bis = new BufferedInputStream(inputStream);
+				// 後で先頭に戻れるようにマーク(読み込み制限を64KBに設定)
+				bis.mark(HEADER_LOOKAHEAD_SIZE);
+				// 判定に必要な先頭部分だけを読み出す
+				byte[] headerBuffer = new byte[HEADER_LOOKAHEAD_SIZE];
+				int bytesRead = bis.read(headerBuffer, 0, HEADER_LOOKAHEAD_SIZE);
+				// ストリームを先頭にリセット
+				bis.reset();
+				File animFile = new File(mCacheDir, "anim_source." + page);
+				try {
+					animFile.delete();
+				}
+				catch (Exception e) {
+				}
+				// アニメーション判定(バイト配列の先頭のみをチェック)
+				boolean isAnim = isAnimatedFromHeader(headerBuffer, bytesRead);
+				if (isAnim) {
+					// アニメーションの場合はストリームを全部書き出す
+					// キャッシュへ保存
+					saveStreamToFile(bis, animFile);
+					mAnimeFile = true;
+					bm = BitmapFactory.decodeFile(animFile.getAbsolutePath());
+				}
+				else {
+					// ストリームを先頭にリセット
+					bis.reset();
+					bm = BitmapFactory.decodeStream(new BufferedInputStream(bis), null, option);
+				}
+			}
+			else {
+				bm = BitmapFactory.decodeStream(new BufferedInputStream(inputStream), null, option);
+			}
 		}
 		// どんな形式でデコードされていようが標準の8bitカラー形式に作り直す(16bit png対策)
 		if (bm != null) {
@@ -5711,6 +5776,41 @@ public class ImageManager extends InputStream implements Runnable {
 //		Logcat.i(logLevel, "time: " + (int)(SystemClock.uptimeMillis() - sttime));
 		Logcat.v(logLevel, "End. " + mFileList[page].name);
 		return id;
+	}
+
+	private boolean isAnimatedFromHeader(byte[] data, int length) {
+		if (length < 12) return false;
+		// GIF判定:先頭が"GIF89a"かどうか
+		if (data[0] == 'G' && data[1] == 'I' && data[2] == 'F') {
+			return true; 
+		}
+		// WebP判定:"RIFF"かつ"WEBP"を含み"ANIM"チャンクがあるか
+		String headerStr = new String(data, 0, Math.min(length, 100));
+		if (headerStr.startsWith("RIFF") && headerStr.contains("WEBP")) {
+			// "ANIM"チャンクをバイナリ走査
+			for (int i = 0; i < length - 4; i++) {
+				if (data[i] == 'A' && data[i+1] == 'N' && data[i+2] == 'I' && data[i+3] == 'M') {
+					return true;
+				}
+			}
+		}
+		// APNG判定:"acTL"チャンクがあるか
+		for (int i = 0; i < length - 4; i++) {
+		    if (data[i] == 'a' && data[i+1] == 'c' && data[i+2] == 'T' && data[i+3] == 'L') {
+				return true;
+			}
+		}
+		return false;
+	}
+	// キャッシュへ保存
+	private void saveStreamToFile(InputStream is, File file) throws IOException {
+		try (FileOutputStream fos = new FileOutputStream(file)) {
+			byte[] buffer = new byte[8192];
+			int len;
+			while ((len = is.read(buffer)) != -1) {
+				fos.write(buffer, 0, len);
+			}
+		}
 	}
 
 	private int mScrWidth;

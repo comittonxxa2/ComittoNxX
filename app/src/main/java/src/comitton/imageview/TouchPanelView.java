@@ -265,6 +265,7 @@ public class TouchPanelView extends View {
 		true,
 		true,
 		true,
+		true,
 	};
 
 	// タッチパネル設定に有効な項目をtrueにする(テキストビューア)
@@ -387,6 +388,7 @@ public class TouchPanelView extends View {
 		false,
 		false,
 		false,
+		false,
 	};
 
 	// タッチパネル設定に有効な項目をtrueにする(EPUBビューア)
@@ -503,6 +505,7 @@ public class TouchPanelView extends View {
 		false,
 		false,
 		false,	//	110
+		false,
 		false,
 		false,
 		false,
@@ -632,6 +635,7 @@ public class TouchPanelView extends View {
 		R.string.AnimationPause,
 		R.string.selContentsMenu,
 		R.string.kelvinMenu,	// 色温度
+		R.string.ZoomReset,
 	};
 
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル
@@ -839,7 +843,7 @@ public class TouchPanelView extends View {
 		return ViewCodeData;
 	}
 
-	public static void SetAlertDialogZookLevel(Activity activity) {
+	public static void SetAlertDialogZoomLevel(Activity activity) {
 		zoomlevel_builder = new AlertDialog.Builder(activity, R.style.MyAlertDialogStyle);
 		LayoutInflater inflater = LayoutInflater.from(activity);
 		View dialogView = inflater.inflate(R.layout.dialog_zoomlevel, null);

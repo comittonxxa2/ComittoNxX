@@ -697,6 +697,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int cursory;
 	private boolean mAnimationEnable;
 	private boolean mAnimationScan;
+	private boolean mArchiveAnimationEnable;
 	private int mScrollMode;
 	private boolean mInertiaScroll;
 	private boolean mDisablePageButton;
@@ -2367,7 +2368,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			boolean isSingle = false; // 現在ページが単ページか
 			if (isHalfView() && bm[0] != null) {
-				if (mImageMgr.mAnimeList != null && mAnimationEnable && mImageMgr.checkAnimeEnable(mCurrentPage) && mImageMgr.mAnimeList[mCurrentPage].getAnimeFile()) {
+				if (checkAnimeOn()) {
 					// アニメーションを表示する場合は横長画面でも単ページ扱いにする
 					mHalfPos = HALFPOS_1ST;
 					mSourceImage[0] = bm[0];
@@ -2492,6 +2493,38 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					ImageScaling();
 					// アニメーションを表示
 					mImageMgr.loadAnime(mCurrentPage);
+				}
+				else {
+					// アニメーションを表示しない場合は元のスケールに戻す
+					mImageMgr.setImageScale(mPinchScale);
+					ImageScaling();
+					// 塗りつぶしをオフにする
+					mImageView.ViewOff(false);
+				}
+			}
+
+			if (mImageMgr.mAnimeFile && mAnimationEnable && mArchiveAnimationEnable && !mScrlNext) {
+				// 以前の表示を取り消す前に背景を塗りつぶす
+				mImageView.ViewOff(true);
+				// 以前の表示を取り消す
+				stopGifAnimation();
+				if (mImageMgr.checkAnimeFile(mCurrentPage)) {
+					// アニメーション可能かどうかをチェック
+					if (mImageMgr.checkAnimeEnable(mCurrentPage)) {
+						// アニメーション可能だった場合
+						// アニメーションを表示中は画面内に収めるため半分にする
+						mImageMgr.setImageScale(50);
+						ImageScaling();
+						// アニメーションを表示
+						mImageMgr.loadAnime(mCurrentPage);
+					}
+					else {
+						// アニメーションを表示しない場合は元のスケールに戻す
+						mImageMgr.setImageScale(mPinchScale);
+						ImageScaling();
+						// 塗りつぶしをオフにする
+						mImageView.ViewOff(false);
+					}
 				}
 				else {
 					// アニメーションを表示しない場合は元のスケールに戻す
@@ -2725,6 +2758,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 	}
 
+	private boolean checkAnimeOn() {
+		boolean check = false;
+		if ((mImageMgr.mAnimeList != null && mImageMgr.mAnimeList[mCurrentPage].getAnimeOn() || mImageMgr.checkAnimeFile(mCurrentPage)) && mAnimationEnable) {
+			check = true;
+		}
+		return check;
+	}
+
 	/**
 	 * View がタッチされた時に発生します。
 	 *
@@ -2799,7 +2840,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		int action = event.getAction();
 
 		// ピンチイン・アウト対応
-		if (mImageMgr.mAnimeList != null && mImageMgr.mAnimeList[mCurrentPage].getAnimeOn() && mAnimationEnable) {
+		if (checkAnimeOn()) {
 			// アニメーションを表示中はピンチイン・アウトを行わせない
 		}
 		else if (mPinchEnable) {
@@ -3237,7 +3278,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							this.mTouchFirst = false;
 							mPageBack = false;
 							boolean next = checkTapDirectionNext(x, y, cx, cy);
-							if (mTapScrl) {
+							if (mTapScrl && !checkAnimeOn()) {
 								Logcat.v(logLevel, "タップでスクロール");
 								// タップでスクロール
 								int move = next ? 1 : -1;
@@ -3697,7 +3738,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mImageMgr.setCacheSleep(false);
 				}
 				// ページ戻or進、スクロール処理
-				if (this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
+				if (mScrlNext && this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
 					// タッチ後に範囲を超えて移動した場合はスクロールモードへ
 					this.mTouchFirst = false;
 					mLongTouchCount ++;
@@ -3774,7 +3815,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARNEXTSCROLL:
 				// 次のページへスクロール
-				if (mTapScrl) {
+				if (mTapScrl && !checkAnimeOn()) {
 					// タップでスクロール
 					int move = true ? 1 : -1;
 					// 読込中の表示
@@ -3791,7 +3832,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARPREVSCROLL:
 				// 前のページへスクロール
-				if (mTapScrl) {
+				if (mTapScrl && !checkAnimeOn()) {
 					// タップでスクロール
 					int move = false ? 1 : -1;
 					// 読込中の表示
@@ -4250,6 +4291,22 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.TAP_SELECTCONTENTSMENU:
 				// 目次の選択
 				execCommand(DEF.MENU_CONTENTS);
+				break;
+			case DEF.TAP_ZOOMRESET:
+				// ズームレベルのリセット
+				// 描画スレッド停止
+				mImageView.lockDraw();
+				synchronized (mImageView) {
+					// スケーリング変更
+					mPinchScale = 100;
+					mImageMgr.setImageScale(mPinchScale);
+					// イメージ拡大縮小
+					ImageScaling();
+				}
+				// ビットマップを調整
+				this.updateOverSize(true);
+				// 描画スレッド開始
+				mImageView.update(true);
 				break;
 			case DEF.TAP_EXIT_VIEWER:
 				finishActivity(true);
@@ -5878,7 +5935,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.MENU_ZOOMLEVEL_SETTING:
 				TouchPanelView.setHandler(mHandler, mPinchScaleSel);
-				TouchPanelView.SetAlertDialogZookLevel(mActivity);
+				TouchPanelView.SetAlertDialogZoomLevel(mActivity);
 				break;
 
 			default: {
@@ -6508,6 +6565,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mBackgroundPause = SetImageActivity.getBackgroundPause(sharedPreferences);
 			mAnimationEnable = SetImageActivity.getAnimationEnable(sharedPreferences);
 			mAnimationScan = SetImageActivity.getAnimationScan(sharedPreferences);
+			mArchiveAnimationEnable = SetImageActivity.getArchiveAnimationEnable(sharedPreferences);
 			mScrollMode = SetImageActivity.getScrollMode(sharedPreferences);
 			mInertiaScroll = SetImageActivity.getInertiaScroll(sharedPreferences);
 			mDisablePageButton = SetImageActivity.getDisablePageButton(sharedPreferences);
