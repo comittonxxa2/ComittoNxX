@@ -169,6 +169,41 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="リスト表示のサムネイルサイズ" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ThumbnailGrid"
+            android:summary="サムネイルグリッドを列数で指定する場合にチェックを入れる\n※サムネイルグリッドの列数を増やすとサムネイルの表示更新に失敗する場合にはサムネイルのサイズを小さくしてみる"
+            android:title="サムネイルグリッドを列数で指定" />
+        <ListPreference
+            android:defaultValue="3"
+            android:dialogTitle="サムネイルグリッドの列数(縦)"
+            android:entries="@array/thumbgridv_name_list"
+            android:entryValues="@array/thumbgridv_value_list"
+            android:key="ThumbnailGridVertical"
+            android:summary="dummy"
+            android:title="サムネイルグリッドの列数(縦)" />
+        <ListPreference
+            android:defaultValue="6"
+            android:dialogTitle="サムネイルグリッドの列数(横)"
+            android:entries="@array/thumbgridh_name_list"
+            android:entryValues="@array/thumbgridh_value_list"
+            android:key="ThumbnailGridHorizontal"
+            android:summary="dummy"
+            android:title="サムネイルグリッドの列数(横)" />
+        <src.comitton.config.seekbar.TileThumbRatioSeekbar
+            android:dialogMessage="タイル表示のサムネイルの拡大率を設定"
+            android:dialogTitle="タイル表示のサムネイルの拡大率"
+            android:key="TileThumbRatioSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="タイル表示のサムネイルの拡大率" />
+        <src.comitton.config.seekbar.ListThumbRatioSeekbar
+            android:dialogMessage="リスト表示のサムネイルの拡大率を設定"
+            android:dialogTitle="リスト表示のサムネイルの拡大率"
+            android:key="ListThumbRatioSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="リスト表示のサムネイルの拡大率" />
         <ListPreference
             android:defaultValue="3"
             android:dialogTitle="サムネイルのキャッシュ"

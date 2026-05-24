@@ -187,6 +187,11 @@
             android:title="WebP/Gifファイルのスキャンを有効にする" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="ArchiveAnimationEnable"
+            android:summary="書庫のWebP/Gifアニメーション表示を行いたい場合はチェックを入れる"
+            android:title="書庫のWebP/Gifアニメーションを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="Reduced"
             android:summary="表示の頻度を下げて消費電力を抑える場合はチェックを入れる"
             android:title="間引き表示を行う＊" />
