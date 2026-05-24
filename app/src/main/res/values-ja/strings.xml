@@ -131,6 +131,7 @@
     <string name="ZoomLevelDecision">設定保存</string>
     <string name="ZoomLevelReset">リセット</string>
     <string name="ZoomLevelUndo">元に戻す</string>
+    <string name="ZoomReset">ズームリセット</string>
 
     <string name="downloadCountMenu">ダウンロード数</string>
     <string name="licenseMenu">ライセンス情報</string>
