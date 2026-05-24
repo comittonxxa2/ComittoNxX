@@ -168,6 +168,41 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="List Thumbnail Size" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ThumbnailGrid"
+            android:summary="Check this box to specify the number of columns in the thumbnail grid.\n*If increasing the number of columns in the thumbnail grid causes thumbnail display updates to fail, try reducing the thumbnail size."
+            android:title="Specify the number of columns for the thumbnail grid." />
+        <ListPreference
+            android:defaultValue="3"
+            android:dialogTitle="Number of columns (vertical) in the thumbnail grid"
+            android:entries="@array/thumbgridv_name_list"
+            android:entryValues="@array/thumbgridv_value_list"
+            android:key="ThumbnailGridVertical"
+            android:summary="dummy"
+            android:title="Number of columns (vertical) in the thumbnail grid" />
+        <ListPreference
+            android:defaultValue="6"
+            android:dialogTitle=""
+            android:entries="@array/thumbgridh_name_list"
+            android:entryValues="@array/thumbgridh_value_list"
+            android:key="ThumbnailGridHorizontal"
+            android:summary="dummy"
+            android:title="Number of columns (horizontal) in the thumbnail grid" />
+        <src.comitton.config.seekbar.TileThumbRatioSeekbar
+            android:dialogMessage="Set the zoom level for tile view thumbnails."
+            android:dialogTitle="Thumbnail zoom level in tile view"
+            android:key="TileThumbRatioSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Thumbnail zoom level in tile view" />
+        <src.comitton.config.seekbar.ListThumbRatioSeekbar
+            android:dialogMessage="Set the zoom level for thumbnails in list view."
+            android:dialogTitle="Thumbnail zoom level in list view"
+            android:key="ListThumbRatioSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Thumbnail zoom level in list view" />
         <ListPreference
             android:defaultValue="3"
             android:dialogTitle="Thumbnail Cache"

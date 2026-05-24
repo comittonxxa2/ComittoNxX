@@ -187,6 +187,11 @@
             android:title="Enable scanning of WebP/Gif files" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="ArchiveAnimationEnable"
+            android:summary="Check this box if you want to display WebP/GIF animations in the archive."
+            android:title="Enable WebP/GIF animations in the library." />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="Reduced"
             android:summary="Check this box to reduce power consumption by reducing the display frequency."
             android:title="Display thinned images(*)" />
