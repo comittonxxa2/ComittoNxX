@@ -8,6 +8,8 @@ import src.comitton.config.seekbar.ItemMarginSeekbar;
 import src.comitton.config.seekbar.ListThumbSeekbar;
 import src.comitton.config.seekbar.MenuLongTapSeekbar;
 import src.comitton.config.seekbar.ToolbarSeekbar;
+import src.comitton.config.seekbar.ListThumbRatioSeekbar;
+import src.comitton.config.seekbar.TileThumbRatioSeekbar;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -27,6 +29,7 @@ import android.preference.PreferenceScreen;
 import android.view.View;
 import android.view.WindowManager;
 
+import android.preference.CheckBoxPreference;
 import androidx.preference.PreferenceManager;
 
 public class SetFileListActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
@@ -53,6 +56,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 
 	private ToolbarSeekbar mToolbarSeek;
 	private ListThumbSeekbar mListThumbSeek;
+	private ListThumbRatioSeekbar mListThumbRatioSeek;
+	private TileThumbRatioSeekbar mTileThumbRatioSeek;
 
 	private ThumbnailPreference mThumbnail;
 
@@ -60,6 +65,10 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ListPreference mReadStyleSetting;
 	private ListPreference mReadProgressbarPosition;
 	private ListPreference mReadProgressbarWidth;
+
+	private ListPreference mThumbnailGridVertical;
+	private ListPreference mThumbnailGridHorizontal;
+	private CheckBoxPreference mThumbnailGrid;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -194,6 +203,32 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mReadStyleSetting = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READSTYLESETTING);
 		mReadProgressbarPosition = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READPROGRESSBARPOSITION);
 		mReadProgressbarWidth = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_READPROGRESSBARWIDTH);
+		mListThumbRatioSeek = (ListThumbRatioSeekbar)getPreferenceScreen().findPreference(DEF.KEY_LISTTHUMBRATIO);
+		mTileThumbRatioSeek = (TileThumbRatioSeekbar)getPreferenceScreen().findPreference(DEF.KEY_TILETHUMBRATIO);
+		mThumbnailGridVertical = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_THUMBGRIDV);
+		mThumbnailGridHorizontal = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_THUMBGRIDH);
+		mThumbnailGrid = (CheckBoxPreference) findPreference(DEF.KEY_THUMBGRID);
+
+		if (!getThumbnailGrid(sharedPreferences)) {
+			mListThumbRatioSeek.setEnabled(false);
+			mTileThumbRatioSeek.setEnabled(false);
+			mThumbnailGridVertical.setEnabled(false);
+			mThumbnailGridHorizontal.setEnabled(false);
+		}
+
+		mThumbnailGrid.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// newValue には新しいチェック状態(Boolean)が入ってくる
+				boolean isChecked = (Boolean) newValue;
+				mListThumbRatioSeek.setEnabled(isChecked);
+				mTileThumbRatioSeek.setEnabled(isChecked);
+				mThumbnailGridVertical.setEnabled(isChecked);
+				mThumbnailGridHorizontal.setEnabled(isChecked);
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FILEHELP);
@@ -244,6 +279,10 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mReadStyleSetting.setSummary(getReadStyleSettingSummary(sharedPreferences));
 		mReadProgressbarPosition.setSummary(getReadProgressbarPositionSummary(sharedPreferences));
 		mReadProgressbarWidth.setSummary(getReadProgressbarWidthSummary(sharedPreferences));
+		mListThumbRatioSeek.setSummary(getListThumbRatioSeekSummary(sharedPreferences));
+		mTileThumbRatioSeek.setSummary(getTileThumbRatioSeekSummary(sharedPreferences));
+		mThumbnailGridVertical.setSummary(getThumbnailGridVerticalSummary(sharedPreferences));
+		mThumbnailGridHorizontal.setSummary(getThumbnailGridHorizontalSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 }
 
@@ -350,6 +389,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		else if(key.equals(DEF.KEY_READPROGRESSBARWIDTH)){
 			mReadProgressbarWidth.setSummary(getReadProgressbarWidthSummary(sharedPreferences));
 		}
+		else if(key.equals(DEF.KEY_LISTTHUMBRATIO)){
+			mListThumbRatioSeek.setSummary(getListThumbRatioSeekSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_TILETHUMBRATIO)){
+			mTileThumbRatioSeek.setSummary(getTileThumbRatioSeekSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_THUMBGRIDV)){
+			mThumbnailGridVertical.setSummary(getThumbnailGridVerticalSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_THUMBGRIDH)){
+			mThumbnailGridHorizontal.setSummary(getThumbnailGridHorizontalSummary(sharedPreferences));
+		}
 	}
 
 	// 設定の読込
@@ -435,6 +486,15 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	}
 	public static int getListThumbSizeH(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_LISTTHUMBSEEK, DEF.DEFAULT_LISTTHUMBSIZEH);
+		return val;
+	}
+
+	public static int getListThumbRatio(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_LISTTHUMBRATIO, DEF.DEFAULT_LISTTHUMBRATIO);
+		return val;
+	}
+	public static int getTileThumbRatio(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_TILETHUMBRATIO, DEF.DEFAULT_TILETHUMBRATIO);
 		return val;
 	}
 
@@ -706,6 +766,22 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return val;
 	}
 
+	public static int getThumbnailGridHorizontal(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_THUMBGRIDH, "1");
+		if(val < 1 || val > 16){
+			val = 1;
+		}
+		return val;
+	}
+
+	public static int getThumbnailGridVertical(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_THUMBGRIDV, "1");
+		if(val < 1 || val > 8){
+			val = 1;
+		}
+		return val;
+	}
+
 	public static boolean getExpandTextEnable(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_EXPANDTEXTENABLE, false);
@@ -763,6 +839,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static boolean getPdfExpand(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_PDFEXPAND, false);
+		return flag;
+	}
+
+	public static boolean getThumbnailGrid(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_THUMBGRID, false);
 		return flag;
 	}
 
@@ -930,5 +1012,25 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		int val = getReadProgressbarWidth(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(ReadProgressbarWidth[val]);
+	}
+
+	private String getListThumbRatioSeekSummary(SharedPreferences sharedPreferences){
+		int size = getListThumbRatio(sharedPreferences);
+		return DEF.getListThumbRatioStr(size);
+	}
+
+	private String getTileThumbRatioSeekSummary(SharedPreferences sharedPreferences){
+		int size = getTileThumbRatio(sharedPreferences);
+		return DEF.getTileThumbRatioStr(size);
+	}
+
+	private String getThumbnailGridVerticalSummary(SharedPreferences sharedPreferences){
+		int val = getThumbnailGridVertical(sharedPreferences);
+		return String.valueOf(val);
+	}
+
+	private String getThumbnailGridHorizontalSummary(SharedPreferences sharedPreferences){
+		int val = getThumbnailGridHorizontal(sharedPreferences);
+		return String.valueOf(val);
 	}
 }

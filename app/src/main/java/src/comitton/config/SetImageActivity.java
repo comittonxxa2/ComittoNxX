@@ -744,6 +744,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		return flag;
 	}
 
+	public static boolean getArchiveAnimationEnable(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_ARCHIVEANIMATIONENABLE, false);
+		return flag;
+	}
+
 	public static int getScrollMode(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_SCROLLMODE, "0");
 		if (val < 0 || val >= ScrollMode.length){
