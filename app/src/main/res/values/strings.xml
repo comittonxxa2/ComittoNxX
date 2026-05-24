@@ -132,6 +132,7 @@
     <string name="ZoomLevelDecision">Save settings</string>
     <string name="ZoomLevelReset">reset</string>
     <string name="ZoomLevelUndo">undo</string>
+    <string name="ZoomReset">Zoom reset</string>
     <string name="downloadCountMenu">Number of Downloads</string>
     <string name="licenseMenu">License</string>
     <string name="noiseMenu">Operation by noise</string>
