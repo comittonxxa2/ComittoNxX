@@ -354,6 +354,11 @@
             android:key="EnableContentsFile"
             android:summary="Check to enable the table of contents text file"
             android:title="Enable table of contents files in compressed files" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ChgPageNext"
+            android:summary="Check this box if you want the page turning direction and cover orientation to be the same.\nIf the left cover is selected, selecting the next page will move you to the previous page."
+            android:title="Synchronize cover orientation and page turning." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
