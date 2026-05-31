@@ -788,6 +788,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		return flag;
 	}
 
+	public static boolean getChgPageNext(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CHGPAGENEXT, false);
+		return flag;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getViewRotaSummary(SharedPreferences sharedPreferences){
 		int val = getViewRota(sharedPreferences);
