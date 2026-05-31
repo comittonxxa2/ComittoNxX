@@ -800,6 +800,7 @@ public class DEF {
 	public static final String KEY_TOPMENU = "TopMenu";
 	public static final String KEY_TAP_PATTERN_MENU = "tapPatternMenu";
 	public static final String KEY_TAP_SETUP_MENU = "tapSettingMenu";
+	public static final String KEY_CHGPAGENEXT = "ChgPageNext";
 
 	public static final String KEY_MarginAspectMask = "MarginAspectMask";
 	public static final String KEY_MarginForceIgnoreAspect = "MarginForceIgnoreAspect";
