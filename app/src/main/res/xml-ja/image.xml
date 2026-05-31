@@ -352,6 +352,11 @@
             android:key="EnableContentsFile"
             android:summary="目次のテキストファイルを有効にする場合にチェックを入れる"
             android:title="圧縮ファイル内の目次ファイルを有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ChgPageNext"
+            android:summary="ページめくりと表紙方向の向きを同じにする場合にチェックを入れる\n左表紙の場合に次のページを選択すると前のページに移動する"
+            android:title="表紙方向とページめくりを同期" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
