@@ -32,6 +32,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 
 import android.annotation.SuppressLint;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
@@ -118,6 +120,7 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 	private int mRedLevel;
 	private int mGreenLevel;
 	private int mBlueLevel;
+	private OnBackPressedCallback backCallback;
 
 	// RenderScriptの再利用に用いる
 	private RenderScript mRS;
@@ -251,6 +254,17 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		webViewSettings.setDomStorageEnabled(true);
 		// 混合コンテンツ(HTTP/HTTPS)を許可
 		webViewSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+		// コールバックを初期値false(無効)で作成
+		backCallback = new OnBackPressedCallback(false) {
+			@Override
+			public void handleOnBackPressed() {
+				if (mywebView.canGoBack()) {
+					mywebView.goBack();
+				}
+			}
+		};
+		// ActivityのDispatcherにコールバックを登録
+		getOnBackPressedDispatcher().addCallback(this, backCallback);
 		// User-AgentをPC版に偽装する
 		if (mWebviewUserAgent) {
 			String desktopUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -338,12 +352,20 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 					}
 					return super.shouldInterceptRequest(view, request);
 				}
+				@Override
+				public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+					super.doUpdateVisitedHistory(view, url, isReload);
+					// WebViewに戻る履歴があればコールバックを有効化、なければ無効化してOSの処理（Activity終了など）に任せる
+					if (backCallback != null) {
+						backCallback.setEnabled(mywebView.canGoBack());
+					}
+				}
 			});
 		}
 		// URLを読み込む
 		mywebView.loadUrl(mFilePath); 
 	}
-
+/*
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent e){
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -362,7 +384,7 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 			return super.onKeyDown(keyCode, e);
 		}
 	}
-
+*/
 	@Override
 	protected void onResume() {
 		super.onResume();
