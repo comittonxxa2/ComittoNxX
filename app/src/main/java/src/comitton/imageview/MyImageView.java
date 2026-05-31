@@ -617,6 +617,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// ページ番号が戻った場合は反転
 								mDir = -mDir;
 							}
+							if (mPageWay != DEF.PAGEWAY_RIGHT) {
+								mDir = -mDir;
+							}
 							canvas.translate(0, ty * mDir);
 						}
 						else {
@@ -629,6 +632,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							}
 							if (!mMove) {
 								// ページ番号が戻った場合は反転
+								mDir = -mDir;
+							}
+							if (mPageWay != DEF.PAGEWAY_RIGHT) {
 								mDir = -mDir;
 							}
 							canvas.translate(tx * mDir, 0);
@@ -655,6 +661,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 								// ページ番号が戻った場合は反転
 								mDir = -mDir;
 							}
+							if (mPageWay != DEF.PAGEWAY_RIGHT) {
+								mDir = -mDir;
+							}
 							drawTop += ty * mDir;
 						}
 						else {
@@ -667,6 +676,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							}
 							if (!mMove) {
 								// ページ番号が戻った場合
+								mDir = -mDir;
+							}
+							if (mPageWay != DEF.PAGEWAY_RIGHT) {
 								mDir = -mDir;
 							}
 							drawLeft += tx * mDir;

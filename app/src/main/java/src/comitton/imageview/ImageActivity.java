@@ -493,6 +493,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mChgPageKey = false;
 	private boolean mEpubOrder = false;
 	private boolean mEpubThumb = false;
+	private boolean mChgPageNext = false;
 
 	// ファイル情報
 	/** 選択したサーバのインデックス */
@@ -1547,11 +1548,21 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						if ((code == (!mChgPageKey ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT) && mPageWay == DEF.PAGEWAY_RIGHT) ||
 							(code == (!mChgPageKey ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT) && mPageWay != DEF.PAGEWAY_RIGHT)) {
 							// 次ページへ
-							nextPage();
+							if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+								prevPage();
+							}
+							else {
+								nextPage();
+							}
 						}
 						else {
 							// 前ページへ
-							prevPage();
+							if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+								nextPage();
+							}
+							else {
+								prevPage();
+							}
 						}
 						break;
 					}
@@ -2392,6 +2403,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mHalfPos = HALFPOS_1ST;
 					mSourceImage[0] = bm[0];
 				}
+				// 単ページ扱いにする
+				mSourceImage[1] = null;
 			}
 			else if (isDualView()) {
 				if (bm[0] != null && bm[1] != null) {
@@ -3293,13 +3306,23 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 									if (mScrlNext) {
 										mImageView.scrollReset();
 									}
-									nextPage();
+									if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+										prevPage();
+									}
+									else {
+										nextPage();
+									}
 								} else {
 									// 前ページへ
 									if (mScrlNext) {
 										mImageView.scrollReset();
 									}
-									prevPage();
+									if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+										nextPage();
+									}
+									else {
+										prevPage();
+									}
 								}
 							}
 						}
@@ -3313,18 +3336,28 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								if (mFlickEdge && mTouchDrawLeft > mImmCancelRange) {
 									// 端からフリックしないときはページめくりしない
 									;
-								} else if ((flickPage > 0 && (mPageWay == DEF.PAGEWAY_RIGHT && mScrollMode == 0 || mPageWay != DEF.PAGEWAY_RIGHT && mScrollMode != 0)) || (flickPage < 0 && (mPageWay != DEF.PAGEWAY_RIGHT && mScrollMode == 0 || mPageWay == DEF.PAGEWAY_RIGHT && mScrollMode != 0)) ? !mChgFlick : mChgFlick) {
+								} else if ((flickPage > 0 && (mPageWay == DEF.PAGEWAY_RIGHT && mScrollMode == 0 || mPageWay != DEF.PAGEWAY_RIGHT && mScrollMode != 0)) || (flickPage < 0 && (mPageWay != DEF.PAGEWAY_RIGHT && mScrollMode == 0 || mPageWay == DEF.PAGEWAY_RIGHT && mScrollMode != 0))) {
 									// 次ページへ
 									if (mScrlNext) {
 										mImageView.scrollReset();
 									}
-									nextPage();
+									if (mChgFlick) {
+										prevPage();
+									}
+									else {
+										nextPage();
+									}
 								} else {
 									// 前ページへ
 									if (mScrlNext) {
 										mImageView.scrollReset();
 									}
-									prevPage();
+									if (mChgFlick) {
+										nextPage();
+									}
+									else {
+										prevPage();
+									}
 								}
 							} else if (mMomentMode > 0) {
 								long now = SystemClock.uptimeMillis();
@@ -3738,7 +3771,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mImageMgr.setCacheSleep(false);
 				}
 				// ページ戻or進、スクロール処理
-				if (mScrlNext && this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
+				if ((mScrlNext || mFlickPage) && this.mTouchFirst && ((Math.abs(this.mTouchBeginX - x) > mMoveRange || Math.abs(this.mTouchBeginY - y) > mMoveRange))) {
 					// タッチ後に範囲を超えて移動した場合はスクロールモードへ
 					this.mTouchFirst = false;
 					mLongTouchCount ++;
@@ -3827,7 +3860,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (mScrlNext) {
 						mImageView.scrollReset();
 					}
-					nextPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						prevPage();
+					}
+					else {
+						nextPage();
+					}
 				}
 				break;
 			case DEF.TAP_TOOLBARPREVSCROLL:
@@ -3844,12 +3882,22 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (mScrlNext) {
 						mImageView.scrollReset();
 					}
-					prevPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						nextPage();
+					}
+					else {
+						prevPage();
+					}
 				}
 				break;
 			case DEF.TAP_TOOLBARLEFTMOST:
 				if (mCurrentPage == (mImageMgr.length() - 1)) {
-					nextPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						prevPage();
+					}
+					else {
+						nextPage();
+					}
 				}
 				else {
 					mCurrentPage = mImageMgr.length() - 1;
@@ -3862,7 +3910,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARLEFT100:
 				if (mCurrentPage == (mImageMgr.length() - 1)) {
-					nextPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						prevPage();
+					}
+					else {
+						nextPage();
+					}
 				}
 				else {
 					mCurrentPage += 100;
@@ -3878,7 +3931,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARLEFT10:
 				if (mCurrentPage == (mImageMgr.length() - 1)) {
-					nextPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						prevPage();
+					}
+					else {
+						nextPage();
+					}
 				}
 				else {
 					mCurrentPage += 10;
@@ -3894,7 +3952,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARLEFT1:
 				if (mCurrentPage == (mImageMgr.length() - 1)) {
-					nextPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						prevPage();
+					}
+					else {
+						nextPage();
+					}
 				}
 				else {
 					if (mCurrentPage < (mImageMgr.length() - 1)) {
@@ -3909,7 +3972,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARRIGHT1:
 				if (mCurrentPage == 0) {
-					prevPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						nextPage();
+					}
+					else {
+						prevPage();
+					}
 				}
 				else {
 					if (mCurrentPage > 0) {
@@ -3924,7 +3992,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARRIGHT10:
 				if (mCurrentPage == 0) {
-					prevPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						nextPage();
+					}
+					else {
+						prevPage();
+					}
 				}
 				else {
 					mCurrentPage -= 10;
@@ -3940,7 +4013,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARRIGHT100:
 				if (mCurrentPage == 0) {
-					prevPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						nextPage();
+					}
+					else {
+						prevPage();
+					}
 				}
 				else {
 					mCurrentPage -= 100;
@@ -3956,7 +4034,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.TAP_TOOLBARRIGHTMOST:
 				if (mCurrentPage == 0) {
-					prevPage();
+					if (mChgPageNext && mPageWay != DEF.PAGEWAY_RIGHT) {
+						nextPage();
+					}
+					else {
+						prevPage();
+					}
 				}
 				else {
 					mCurrentPage = 0;
@@ -6591,6 +6674,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 
 			mEpubOrder = SetEpubActivity.getEpubOrder(sharedPreferences);
+			mChgPageNext = SetImageActivity.getChgPageNext(sharedPreferences);
 		}
 		catch (Exception e) {
 			Logcat.e(logLevel, "error.");
