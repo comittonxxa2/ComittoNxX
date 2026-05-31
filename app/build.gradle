@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "BO"
+def revision = "BP"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -29,7 +29,7 @@ android {
     defaultConfig {
         applicationId packageName
         targetSdk 36 // Android 16("Baklava")
-        minSdk 21 // Android 5.0("Lollipop")
+        minSdk 24 // Android 7.0("Nougat")
 
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
         versionName "${versionMajor}.${versionMinor}.${versionPatch}.${revision}"
@@ -199,30 +199,30 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.activity:activity:1.10.1'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.activity:activity:1.13.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.core:core:1.18.0'
     implementation "androidx.constraintlayout:constraintlayout:2.2.1"
-    implementation "androidx.documentfile:documentfile:1.1.0-alpha01"
-    implementation 'androidx.fragment:fragment:1.8.6'
+    implementation 'androidx.documentfile:documentfile:1.1.0'
+    implementation 'androidx.fragment:fragment:1.8.9'
     implementation "androidx.preference:preference:1.2.1"
     implementation "androidx.viewpager2:viewpager2:1.1.0"
     implementation 'com.github.cachapa:ExpandableLayout:2.9.2'
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'commons-io:commons-io:2.18.0'
+    implementation 'com.google.android.material:material:1.14.0'
+    implementation 'commons-io:commons-io:2.22.0'
 
     // SMB接続用ライブラリjcifs(SMB1, SMB202, SMB210, SMB300, SMB302, SMB311に対応)
-    implementation 'org.codelibs:jcifs:2.1.39'
+    implementation 'org.codelibs:jcifs:2.1.34'
 
     // 文字コード判定用ライブラリ
     // 2.5.0と2.0.4は同時リリースのため、Android 5でも使用できる2.0.4を選択する
-    implementation 'com.github.albfernandez:juniversalchardet:2.0.4'
+    implementation 'com.github.albfernandez:juniversalchardet:2.5.0'
 
-    implementation 'org.apache.commons:commons-compress:1.26.1'
-    implementation 'org.tukaani:xz:1.9' // これがないと7zのLZMA解凍でエラーになる
+    implementation 'org.apache.commons:commons-compress:1.28.0'
+    implementation 'org.tukaani:xz:1.12' // これがないと7zのLZMA解凍でエラーになる
 
     implementation 'com.github.omicronapps:7-Zip-JBinding-4Android:Release-16.02-2.03'
-    implementation 'androidx.webkit:webkit:1.9.0'
+    implementation 'androidx.webkit:webkit:1.16.0'
 
     implementation('io.documentnode:epub4j-core:4.2.3') {
         // 以下の2つがAndroid標準と衝突するため除外する
@@ -230,7 +230,7 @@ dependencies {
         exclude group: 'net.sf.kxml', module: 'kxml2'
     }
 
-    implementation 'org.jsoup:jsoup:1.15.4'
+    implementation 'org.jsoup:jsoup:1.22.2'
 
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 }
