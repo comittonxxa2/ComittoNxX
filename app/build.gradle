@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "BP"
+def revision = "BQ"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -212,7 +212,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.22.0'
 
     // SMB接続用ライブラリjcifs(SMB1, SMB202, SMB210, SMB300, SMB302, SMB311に対応)
-    implementation 'org.codelibs:jcifs:2.1.34'
+    implementation 'org.codelibs:jcifs:2.1.40'
 
     // 文字コード判定用ライブラリ
     // 2.5.0と2.0.4は同時リリースのため、Android 5でも使用できる2.0.4を選択する
@@ -221,7 +221,7 @@ dependencies {
     implementation 'org.apache.commons:commons-compress:1.28.0'
     implementation 'org.tukaani:xz:1.12' // これがないと7zのLZMA解凍でエラーになる
 
-    implementation 'com.github.omicronapps:7-Zip-JBinding-4Android:Release-16.02-2.03'
+    implementation 'com.sorrowblue.sevenzipjbinding:7-Zip-JBinding-4Android:16.02-2.4'
     implementation 'androidx.webkit:webkit:1.16.0'
 
     implementation('io.documentnode:epub4j-core:4.2.3') {
