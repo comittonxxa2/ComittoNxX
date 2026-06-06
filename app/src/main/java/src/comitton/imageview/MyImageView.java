@@ -1331,7 +1331,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 
     			// オーバースクロール
 				//「スクロールで前後のページへ移動」の設定が無効のときスクロール量が超過していれば、引っ張りエフェクトを表示
-				if ((!mScrlNext || mScrlNextStop) && mOverScrollX != 0 && mOverScrollY != 0) {
+				if ((!mScrlNext || mScrlNextStop) && (mOverScrollX != 0 || mOverScrollY != 0)) {
     				// グラデーション幅算出
     				int grad_cx = Math.min(cx, cy) / 20;
     				int cen_x1, cen_x2, cen_y1, cen_y2;
@@ -1983,7 +1983,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 					mOverScrollY = mOverScrollMax * (mOverScrollY > 0 ? 1 : -1);
 				}
 				//Logcat.d(logLevel, "overScroll=" + mOverScrollX + ", moveX=" + moveX + ", move=" + (int)(mDrawLeft - orgLeft));
-				if (mOverScrollX != 0 && mOverScrollY != 0) {
+				if (mOverScrollX != 0 || mOverScrollY != 0) {
 					// 減衰開始
 					attenuate();
 					// 描画
@@ -3687,8 +3687,21 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 							mOverScrollX = 0;
 						}
 					}
+					if (mOverScrollY > 0) {
+						mOverScrollY -= mOverScrollMax / 8;
+						if (mOverScrollY < 0) {
+							mOverScrollY = 0;
+						}
+					}
+					else if (mOverScrollY < 0) {
+						// 8段階で減衰
+						mOverScrollY += mOverScrollMax / 8;
+						if (mOverScrollY > 0) {
+							mOverScrollY = 0;
+						}
+					}
 					updateNotify();
-					if (mOverScrollX != 0 && mOverScrollY != 0) {
+					if (mOverScrollX != 0 || mOverScrollY != 0) {
 						long NextTime = SystemClock.uptimeMillis() + ATTENUATE_TERM;
 						Message nextmsg = mHandler.obtainMessage(HMSG_ATTENUATE);
 						nextmsg.arg1 = ++ mAttenuateCount;
