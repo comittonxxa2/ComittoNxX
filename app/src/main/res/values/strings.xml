@@ -1005,6 +1005,9 @@
     <string name="selepubview04">Spread display (top, bottom, left and right)</string>
     <string name="fontEpubBody">Body font enlargement rate(%)</string>
     <string name="fontEpubText">Text dot pitch scaling(%)</string>
+    <string name="selecttheme00">light mode</string>
+    <string name="selecttheme01">dark mode</string>
+    <string name="selecttheme02">Follow system settings</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

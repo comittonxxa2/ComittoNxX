@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="MyTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+    <style name="MyTheme" parent="@style/Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
-    <style name="MyAppCompat" parent="@style/Theme.AppCompat.Light.NoActionBar">
+    <style name="MyAppCompat" parent="@style/Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowNoTitle">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
@@ -60,7 +60,7 @@
         <item name="editTextStyle">@style/MyEditText</item>
     </style>
 
-    <style name="spinnerDropDownItemStyle" parent="android:Widget.Holo.Light.DropDownItem.Spinner">
+    <style name="spinnerDropDownItemStyle" parent="Widget.AppCompat.DropDownItem.Spinner">
         <item name="android:gravity">center</item>
         <item name="android:textSize">20sp</item>  
     </style>

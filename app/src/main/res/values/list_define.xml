@@ -944,5 +944,15 @@
         <item>15</item>
         <item>16</item>
     </string-array>
+    <string-array name="theme_name_list">
+        <item>light mode</item>
+        <item>dark mode</item>
+        <item>Follow system settings</item>
+    </string-array>
+    <string-array name="theme_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
 </resources>
