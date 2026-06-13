@@ -848,6 +848,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static boolean getSkipUpdateFileList(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_SKIPUPDATEFILELIST, false);
+		return flag;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();

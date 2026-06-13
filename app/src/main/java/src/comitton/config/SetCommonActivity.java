@@ -66,10 +66,15 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		, R.string.rotaall05		// 回転あり(縦横上下反転)
 		, R.string.rotaall06		// 縦固定(上下反転)
 		, R.string.rotaall07 };		// 横固定(上下反転)
+	public static final int[] SelectThemeName =
+		{ R.string.selecttheme00
+		, R.string.selecttheme01
+		, R.string.selecttheme02 };
 
 	private ListPreference mRotateBtn;
 	private ListPreference mCharset;
 	private ListPreference mViewRotaAll;
+	private ListPreference mSelectTheme;
 
 	private EditTextPreference mPriorityWord01;
 	private EditTextPreference mPriorityWord02;
@@ -119,6 +124,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		mRotateBtn  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_ROTATEBTN);
 		mCharset    = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CHARSET);
 		mViewRotaAll   = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_VIEWROTAALL);
+		mSelectTheme = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SELECTTHEME);
 
 		mPriorityWord01 = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_SORT_PRIORITY_WORD_01);
 		mPriorityWord02 = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_SORT_PRIORITY_WORD_02);
@@ -268,6 +274,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		mRotateBtn.setSummary(getRotateBtnSummary(sharedPreferences));	// 回転用ボタン
 		mCharset.setSummary(getCharsetSummary(sharedPreferences));		// 文字コード
 		mViewRotaAll.setSummary(getViewRotaAllSummary(sharedPreferences));	// 画面の回転制御
+		mSelectTheme.setSummary(getSelectThemeSummary(sharedPreferences));
 
 		mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_01, ""));
 		mPriorityWord02.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_02, ""));
@@ -304,6 +311,9 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		else if(key.equals(DEF.KEY_VIEWROTAALL)){
 			//
 			mViewRotaAll.setSummary(getViewRotaAllSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_SELECTTHEME)){
+			mSelectTheme.setSummary(getSelectThemeSummary(sharedPreferences));
 		}
 
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_01)){
@@ -363,6 +373,14 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		return val;
 	}
 
+	public static int getSelectTheme(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_SELECTTHEME, "0");
+		if( val < 0 || val > SelectThemeName.length ){
+			val = 0;
+		}
+		return val;
+	}
+
 	public static boolean getHiddenFile(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_HIDDENFILE, true);
@@ -385,6 +403,12 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		int val = getViewRotaAll(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(RotateName[val]);
+	}
+
+	private String getSelectThemeSummary(SharedPreferences sharedPreferences){
+		int val = getSelectTheme(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(SelectThemeName[val]);
 	}
 
 	public static void loadSettings(SharedPreferences sharedPreferences) {

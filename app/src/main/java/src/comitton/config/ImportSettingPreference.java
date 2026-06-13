@@ -388,12 +388,12 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 				// レイアウト
 				LinearLayout layout = new LinearLayout( context );
 				layout.setPadding( 10, 10, 10, 10 );
-				layout.setBackgroundColor(Color.WHITE);
+//				layout.setBackgroundColor(Color.WHITE);
 				view = layout;
 				// テキスト
 				TextView textview = new TextView(context);
 				textview.setTag("text");
-				textview.setTextColor(Color.BLACK);
+//				textview.setTextColor(Color.BLACK);
 				textview.setPadding(10, 10, 10, 10);
 				textview.setTextSize(18);
 				layout.addView(textview);
