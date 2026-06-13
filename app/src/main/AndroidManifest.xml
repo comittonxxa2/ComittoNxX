@@ -108,6 +108,7 @@
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:screenOrientation="behind"
+            android:process=":webview_process"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.webview.WebViewActivity"
@@ -115,6 +116,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:process=":webview_process"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.cropimageview.CropImageActivity"
@@ -127,6 +129,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:process=":webview_process"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.config.SetConfigActivity"
