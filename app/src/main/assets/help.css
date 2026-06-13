@@ -1,5 +1,11 @@
+  :root {
+    --theme-color: #333333; 
+  }
+
   body {
     margin: 0;
+    background-color: #ffffff;
+    color: #000000;
   }
 
   #banners {
@@ -45,6 +51,7 @@
     position: fixed;
     text-align: center;
     width: 100%;
+    color: #333333;
   }
 
   @media only screen and (max-device-width: 800px) {
@@ -86,4 +93,31 @@
 
   ul {
     list-style-type: circle;
+  }
+
+  h1, h2, h3, li {
+    color: var(--theme-color);
+    font-weight: bold;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    #banners, 
+    #banners #title-banner {
+      background: #1e1e1e;
+      border-bottom-color: #444;
+    }
+
+    #footer {
+      background: #1a1a1a;
+      border-bottom-color: #444;
+      color: #b0b0b0;
+    }
+
+    [data-theme="type1"] { --theme-color: #8ed66c; }
+    [data-theme="type2"] { --theme-color: #9fc5e8; }
   }
