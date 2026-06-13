@@ -376,6 +376,11 @@
             android:key="PdfExpand"
             android:summary="ローカルファイル以外のpdfファイルを開く前に一時ファイルへ展開してページ送りを速くする場合はチェックを入れる"
             android:title="pdfファイルを開く前に一時ファイルへ展開" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipUpdateFileList"
+            android:summary="履歴やブックマークからビューアを開く時にファイル一覧画面の更新をスキップする場合にチェックを入れる\n※現在のファイル一覧と異なる場合はファイル一覧画面の更新が行われる"
+            android:title="ファイル一覧画面の更新をスキップ" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
