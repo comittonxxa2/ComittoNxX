@@ -53,6 +53,14 @@
             android:key="ViewRotaAll"
             android:summary="dummy"
             android:title="Display direction(all except viewer)" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Theme selection at startup(The changes will take effect after restarting.)"
+            android:entries="@array/theme_name_list"
+            android:entryValues="@array/theme_value_list"
+            android:key="SelectTheme"
+            android:summary="dummy"
+            android:title="Theme selection at startup(The changes will take effect after restarting.)" />
     </PreferenceCategory>
 
 

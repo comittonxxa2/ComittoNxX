@@ -359,6 +359,11 @@
             android:key="ChgPageNext"
             android:summary="Check this box if you want the page turning direction and cover orientation to be the same.\nIf the left cover is selected, selecting the next page will move you to the previous page."
             android:title="Synchronize cover orientation and page turning." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MakeZoomSameAsPinch"
+            android:summary="Check this box to make the processing for zoom in/out/reset operations the same as for changing the zoom level using pinch gestures."
+            android:title="Make zoom and pinch-in/out gestures the same." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

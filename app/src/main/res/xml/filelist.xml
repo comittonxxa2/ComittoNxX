@@ -374,6 +374,11 @@
             android:key="PdfExpand"
             android:summary="Check this option to speed up page turning by extracting PDF files other than local files to a temporary file before opening them."
             android:title="Extract to a temporary file before opening the pdf file" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipUpdateFileList"
+            android:summary="Check this box to skip updating the file list screen when opening a viewer from history or bookmarks.\n* The file list screen will be updated if it differs from the latest file list."
+            android:title="Skip updating the file list screen." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
