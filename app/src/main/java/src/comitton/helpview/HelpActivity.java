@@ -2,12 +2,14 @@ package src.comitton.helpview;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.cropimageview.CropImageActivity;
+import src.comitton.fileview.FileSelectActivity;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
@@ -25,6 +27,14 @@ public class HelpActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			try {
+				WebView.setDataDirectorySuffix("webview_process");
+			}
+			catch (IllegalStateException e) {
+				e.printStackTrace();
+			}
+		}
 		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
@@ -63,6 +73,8 @@ public class HelpActivity extends AppCompatActivity {
         String url = intent.getStringExtra("Url");
 
         mWebView = (WebView) new WebView(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		FileSelectActivity.applyAppTheme(sharedPreferences);
         mWebView.loadUrl("file:///android_asset/" + url);
         setContentView(mWebView);
 
