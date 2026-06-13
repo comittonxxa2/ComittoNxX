@@ -144,6 +144,7 @@ public class DEF {
 	public static final int HMSG_EVENT_ZOOMLEVELUPDATE = 225;
 	public static final int HMSG_EVENT_ZOOMLEVELDECISION = 226;
 	public static final int HMSG_EVENT_ZOOMLEVELUNDO = 227;
+	public static final int HMSG_EVENT_ZOOMVIEWOFF = 228;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -157,6 +158,7 @@ public class DEF {
 	public static final int INTERVAL_MOMENTIUM = 10;
 	public static final int INTERVAL_FLOATINGICON = 500;	// Milliseconds
 	public static final int INTERVAL_BACKGROUND_CACHE = 500;	// Milliseconds
+	public static final int INTERVAL_ZOOMVIEWOFF = 500;
 
 	public static final int MENU_HELP = Menu.FIRST + 0;
 	public static final int MENU_SETTING = Menu.FIRST + 1;
@@ -592,6 +594,7 @@ public class DEF {
 	public static final String KEY_CHAR_DETECT = "CharDetect";
 	public static final String KEY_CHARSET = "Charset";
 	public static final String KEY_VIEWROTAALL = "ViewRotaAll";
+	public static final String KEY_SELECTTHEME = "SelectTheme";
 	public static final String KEY_SORT_BY_IGNORE_WIDTH = "SortByIgnoreWidth";
 	public static final String KEY_SORT_BY_IGNORE_CASE = "SortByIgnoreCase";
 	public static final String KEY_SORT_BY_SYMBOL = "SortBySymbol";
@@ -735,6 +738,8 @@ public class DEF {
 	public static final String KEY_ARCHIVEANIMATIONENABLE = "ArchiveAnimationEnable";
 	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
 	public static final String KEY_ENABLECONTENTSFILE = "EnableContentsFile";
+	public static final String KEY_MAKEZOOMSAMEASPINCH = "MakeZoomSameAsPinch";
+	public static final String KEY_SKIPUPDATEFILELIST = "SkipUpdateFileList";
 	public static final String KEY_WEBVIEWFILTER = "WebviewFilter";
 	public static final String KEY_WEBVIEWUSEREGENT = "WebviewUserAgent";
 	public static final String KEY_WEBVIEWPULLDOWNMENU = "WebviewPulldownMenu";
