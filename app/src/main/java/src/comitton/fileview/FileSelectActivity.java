@@ -112,6 +112,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
 import android.os.storage.StorageManager;
+
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 import androidx.activity.OnBackPressedCallback;
 
@@ -338,10 +340,32 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mAozoraZipFile;
 	private int currentOrientation;
 	private boolean mThumbnailGrid;
+	private boolean mSkipUpdateFileList;
+
+	public static void applyAppTheme(SharedPreferences sharedPreferences) {
+		int themeValue = SetCommonActivity.getSelectTheme(sharedPreferences);
+		switch (themeValue) {
+			case 0:
+			default:
+				// ライトモード固定
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+				break;
+			case 1:
+				// ダークモード固定
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+				break;
+			case 2:
+				// システム連動
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+				break;
+		}
+	}
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		applyAppTheme(sharedPreferences);
 		super.onCreate(savedInstanceState);
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.v(logLevel, "開始します");
@@ -1664,6 +1688,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mSkipGetThumbnail = SetFileListActivity.getSkipGetThumbnail(mSharedPreferences);
 		mAozoraZipFile = SetFileListActivity.getAozoraZipFile(mSharedPreferences);
 		mThumbnailGrid = SetFileListActivity.getThumbnailGrid(mSharedPreferences);
+		mSkipUpdateFileList = SetFileListActivity.getSkipUpdateFileList(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -6235,7 +6260,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 
 				// サーバー選択とパス選択をファイル一覧に反映
-				moveFileSelectFromServer(server, mLoadListNextPath);
+				if (mSkipUpdateFileList && (listtype == RecordList.TYPE_BOOKMARK || listtype == RecordList.TYPE_HISTORY) && mLoadListNextPath.equals(mPath)) {
+					// ファイル一覧の更新をスキップする場合はサーバー選択とパス選択をファイル一覧に反映しない
+				}
+				else {
+					moveFileSelectFromServer(server, mLoadListNextPath);
+				}
 
 				if (listtype == RecordList.TYPE_BOOKMARK) {
 					mLoadListNextOpen = CloseDialog.CLICK_BOOKMARK;
@@ -6245,6 +6275,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				else if (type == RecordItem.TYPE_NONE || type == RecordItem.TYPE_FOLDER) {
 					mLoadListNextOpen = CloseDialog.CLICK_NONE;
+				}
+				if (mSkipUpdateFileList && (listtype == RecordList.TYPE_BOOKMARK || listtype == RecordList.TYPE_HISTORY) && mLoadListNextPath.equals(mPath)) {
+					// ファイル一覧の更新をスキップする場合は直接ファイルを開く
+					if (nextFileOpen(mLoadListNextOpen, mLoadListNextPath, mLoadListNextFile, mLoadListNextInFile, mLoadListNextType, mLoadListNextPage)) {
+						// オープンできた
+						return;
+					}
 				}
 
 				if (listtype == RecordList.TYPE_DIRECTORY){
