@@ -134,6 +134,14 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 
 		super.onCreate(savedInstanceState);
 
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			try {
+				WebView.setDataDirectorySuffix("webview_process");
+			}
+			catch (IllegalStateException e) {
+				e.printStackTrace();
+			}
+		}
 		// RenderScriptを使用する準備
 		mRS = RenderScript.create(this);
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
