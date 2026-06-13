@@ -708,6 +708,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mProgressbarMode;
 	private boolean mSkipZiplib;
 	private boolean mSetUnRarlib;
+	private boolean mMakeZoomSameAsPinch;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -2218,6 +2219,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 描画スレッド開始
 				mImageView.update(true);
 				break;
+			case DEF.HMSG_EVENT_ZOOMVIEWOFF:
+				// 画面更新中の文字を消す
+				mGuideView.setGuideText(null);
+				break;
 		}
 		return false;
 	}
@@ -2907,6 +2912,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							if (mBackgroundPause) {
 								mImageMgr.setCacheSleep(true);
 							}
+							// ピンチズームの更新
+    						SetPinchScaleSetting();
     						// 2点間が10sp以上であれば拡大縮小開始
     						mPinchOn = true;
     						mPinchScaleSel = mPinchScale;
@@ -4062,6 +4069,16 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mImageView.setPinchChanging(mPinchScaleSel);
 				mGuideView.setGuideText(mPinchScaleSel + "%");
 				mPinchScaleSetting = true;
+				if (mMakeZoomSameAsPinch) {
+					// ズームとピンチインアウトを共通にする場合はスケーリングを保存
+					Editor ed = mSharedPreferences.edit();
+					ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScaleSel));
+					ed.apply();
+				}
+				// 直前のメッセージを取り消す
+				mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
+				// 画面更新中の文字を消すメッセージを送る
+				startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				break;
 			case DEF.TAP_PINCHSCALEDOWN:
 				// ピンチズーム変更
@@ -4075,6 +4092,16 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mImageView.setPinchChanging(mPinchScaleSel);
 				mGuideView.setGuideText(mPinchScaleSel + "%");
 				mPinchScaleSetting = true;
+				if (mMakeZoomSameAsPinch) {
+					// ズームとピンチインアウトを共通にする場合はスケーリングを保存
+					Editor ed = mSharedPreferences.edit();
+					ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScaleSel));
+					ed.apply();
+				}
+				// 直前のメッセージを取り消す
+				mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
+				// 画面更新中の文字を消すメッセージを送る
+				startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				break;
 			case DEF.TAP_TOOLBARBOOKLEFT:
 				// 前のファイル(最終ページ)/次のファイル(先頭ページ)
@@ -4378,18 +4405,33 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.TAP_ZOOMRESET:
 				// ズームレベルのリセット
 				// 描画スレッド停止
-				mImageView.lockDraw();
-				synchronized (mImageView) {
-					// スケーリング変更
-					mPinchScale = 100;
-					mImageMgr.setImageScale(mPinchScale);
-					// イメージ拡大縮小
-					ImageScaling();
+				if (mPinchScaleSel != 100) {
+					mImageView.setPinchChanging(100);
+					mGuideView.setGuideText(100 + "%");
+					mImageView.lockDraw();
+					synchronized (mImageView) {
+						// スケーリング変更
+						mPinchScale = 100;
+						mPinchScaleSel = mPinchScale;
+						mImageMgr.setImageScale(mPinchScale);
+						// イメージ拡大縮小
+						ImageScaling();
+					}
+					// ビットマップを調整
+					this.updateOverSize(true);
+					// 描画スレッド開始
+					mImageView.update(true);
+					if (mMakeZoomSameAsPinch) {
+						// ズームとピンチインアウトを共通にする場合はスケーリングを保存
+						Editor ed = mSharedPreferences.edit();
+						ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
+						ed.apply();
+					}
+					// 直前のメッセージを取り消す
+					mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
+					// 画面更新中の文字を消すメッセージを送る
+					startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				}
-				// ビットマップを調整
-				this.updateOverSize(true);
-				// 描画スレッド開始
-				mImageView.update(true);
 				break;
 			case DEF.TAP_EXIT_VIEWER:
 				finishActivity(true);
@@ -6661,6 +6703,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			ImageManager.setSkipZiplib(mSkipZiplib);
 			mSetUnRarlib = SetFileListActivity.getSetUnRarlib(sharedPreferences);
 			ImageManager.setSetUnRarlib(mSetUnRarlib);
+			mMakeZoomSameAsPinch = SetImageActivity.getMakeZoomSameAsPinch(sharedPreferences);
 
 			// 上部メニューの設定を読み込み
 			loadTopMenuState();
@@ -7050,6 +7093,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		else if (event == DEF.HMSG_EVENT_BACKGROUND_CACHE) {
 			NextTime += DEF.INTERVAL_BACKGROUND_CACHE;
+		}
+		else if (event == DEF.HMSG_EVENT_ZOOMVIEWOFF) {
+			NextTime += DEF.INTERVAL_ZOOMVIEWOFF;
 		}
 		else {
 			NextTime += DEF.INTERVAL_DEFAULT;
