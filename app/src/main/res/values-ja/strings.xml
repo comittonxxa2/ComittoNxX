@@ -1005,5 +1005,8 @@
     <string name="selepubview04">見開き表示(上下左右)</string>
     <string name="fontEpubBody">本文フォントの拡大率(%)</string>
     <string name="fontEpubText">テキストのドットピッチ拡大率(%)</string>
+    <string name="selecttheme00">ライトモード</string>
+    <string name="selecttheme01">ダークモード</string>
+    <string name="selecttheme02">システム設定に従う</string>
 
 </resources>
