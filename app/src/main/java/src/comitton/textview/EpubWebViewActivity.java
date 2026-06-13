@@ -514,6 +514,14 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+			try {
+				WebView.setDataDirectorySuffix("webview_process");
+			}
+			catch (IllegalStateException e) {
+				e.printStackTrace();
+			}
+		}
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		// タイトル非表示
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
