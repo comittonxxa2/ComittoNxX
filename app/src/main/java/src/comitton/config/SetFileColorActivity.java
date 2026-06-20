@@ -22,6 +22,7 @@ import src.comitton.config.color.ColorFibSetting;
 import src.comitton.config.color.ColorEvtSetting;
 import src.comitton.config.color.ColorEvbSetting;
 import src.comitton.config.SetCommonActivity;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
@@ -236,12 +237,14 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		boolean change = false;
 		// 色
 		if (key.equals(DEF.KEY_PRESET)) {
 			// プリセット選択
 			int val = getPreset(sharedPreferences);
 			mPreset.setSummary(getPresetSummary(val));
 			setEnableViews(val == 0);
+			change = true;
 		}
 //		if(key.equals(DEF.KEY_TITLECLR)){
 //			//
@@ -254,86 +257,111 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		else if (key.equals(DEF.KEY_TXTRGB)) {
 			//
 			mTxtColor.setSummary(getColorSummary(getTxtColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_DIRRGB)) {
 			//
 			mDirColor.setSummary(getColorSummary(getDirColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_BEFRGB)) {
 			//
 			mBefColor.setSummary(getColorSummary(getBefColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_NOWRGB)) {
 			//
 			mNowColor.setSummary(getColorSummary(getNowColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_AFTRGB)) {
 			//
 			mAftColor.setSummary(getColorSummary(getAftColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_RRBRGB)) {
 			//
 			mRrbColor.setSummary(getColorSummary(getRrbColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_IMGRGB)) {
 			//
 			mImgColor.setSummary(getColorSummary(getImgColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_INFRGB)) {
 			//
 			mInfColor.setSummary(getColorSummary(getInfColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_MRKRGB)) {
 			//
 			mMrkColor.setSummary(getColorSummary(getMrkColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_BAKRGB)) {
 			//
 			mBakColor.setSummary(getColorSummary(getBakColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_CURRGB)) {
 			//
 			mCurColor.setSummary(getColorSummary(getCurColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_TITRGB)) {
 			//
 			mTitColor.setSummary(getColorSummary(getTitColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_TIBRGB)) {
 			//
 			mTibColor.setSummary(getColorSummary(getTibColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_TLDRGB)) {
 			//
 			mTldColor.setSummary(getColorSummary(getTldColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_TLBRGB)) {
 			//
 			mTlbColor.setSummary(getColorSummary(getTlbColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_BSFRGB)) {
 			//
 			mBsfColor.setSummary(getColorSummary(getBsfColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_BSERGB)) {
 			//
 			mBseColor.setSummary(getColorSummary(getBseColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_FIFRGB)) {
 			//
 			mFifColor.setSummary(getColorSummary(getFifColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_FIBRGB)) {
 			//
 			mFibColor.setSummary(getColorSummary(getFibColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_EVTRGB)) {
 			//
 			mEvtColor.setSummary(getColorSummary(getEvtColor(sharedPreferences, true)));
+			change = true;
 		}
 		else if (key.equals(DEF.KEY_EVBRGB)) {
 			//
 			mEvbColor.setSummary(getColorSummary(getEvbColor(sharedPreferences, true)));
+			change = true;
+		}
+		if (change) {
+			// 親のActivityを再生成させる
+			FileSelectActivity.setChangeTheme();
 		}
 	}
 

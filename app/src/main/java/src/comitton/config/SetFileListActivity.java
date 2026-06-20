@@ -11,6 +11,7 @@ import src.comitton.config.seekbar.ToolbarSeekbar;
 import src.comitton.config.seekbar.ListThumbRatioSeekbar;
 import src.comitton.config.seekbar.TileThumbRatioSeekbar;
 import src.comitton.config.SetCommonActivity;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
@@ -297,33 +298,41 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
+		boolean change = false;
 		if(key.equals(DEF.KEY_LISTROTA)){
 			//
 			mListRota.setSummary(getListRotaSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_LISTSORT)){
 			//
 			mListSort.setSummary(getListSortSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_FONTTITLE)){
 			// テキストのフォントサイズ
 			mFontTitle.setSummary(getFontTitleSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_FONTMAIN)){
 			// テキストのフォントサイズ
 			mFontMain.setSummary(getFontMainSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_FONTSUB)){
 			// サマリのフォントサイズ
 			mFontSub.setSummary(getFontSubSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_FONTTILE)){
 			// テキストのフォントサイズ
 			mFontTile.setSummary(getFontTileSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_ITEMMRGN)){
 			// 余白サイズ
 			mItemMrgn.setSummary(getItemMarginSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_BACKMODE)){
 			//
@@ -336,6 +345,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		else if(key.equals(DEF.KEY_THUMBSIZEW) || key.equals(DEF.KEY_THUMBSIZEH)){
 			// サムネイルサイズ
 			mThumbnail.setSummary(getThumbnailSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_THUMBCACHE)){
 			//
@@ -356,14 +366,17 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		else if(key.equals(DEF.KEY_TOOLBARSEEK)){
 			//
 			mToolbarSeek.setSummary(getToolbarSeekSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_LISTTHUMBSEEK)){
 			//
 			mListThumbSeek.setSummary(getListThumbSeekSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_MAX_LINES)){
 			//
 			mMaxLines.setSummary(getMaxLinesSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_FILEDELMENU)){
 			//
@@ -379,27 +392,39 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		}
 		else if(key.equals(DEF.KEY_READTEXTSETTING)){
 			mReadTextSetting.setSummary(getReadTextSettingSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_READSTYLESETTING)){
 			mReadStyleSetting.setSummary(getReadStyleSettingSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_READPROGRESSBARPOSITION)){
 			mReadProgressbarPosition.setSummary(getReadProgressbarPositionSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_READPROGRESSBARWIDTH)){
 			mReadProgressbarWidth.setSummary(getReadProgressbarWidthSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_LISTTHUMBRATIO)){
 			mListThumbRatioSeek.setSummary(getListThumbRatioSeekSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_TILETHUMBRATIO)){
 			mTileThumbRatioSeek.setSummary(getTileThumbRatioSeekSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_THUMBGRIDV)){
 			mThumbnailGridVertical.setSummary(getThumbnailGridVerticalSummary(sharedPreferences));
+			change = true;
 		}
 		else if(key.equals(DEF.KEY_THUMBGRIDH)){
 			mThumbnailGridHorizontal.setSummary(getThumbnailGridHorizontalSummary(sharedPreferences));
+			change = true;
+		}
+		if (change) {
+			// 親のActivityを再生成させる
+			FileSelectActivity.setChangeTheme();
 		}
 	}
 

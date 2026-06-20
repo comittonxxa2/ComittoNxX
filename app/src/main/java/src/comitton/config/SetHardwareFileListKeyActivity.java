@@ -48,6 +48,7 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 	private ListPreference mDpadCenterKey;
 	private ListPreference mEnterKey;
 	private ListPreference mDelKey;
+	private ListPreference mForwardDelKey;
 	private ListPreference mSpaceKey;
 	private ListPreference mSearchKey;
 	private ListPreference mPageUpKey;
@@ -217,6 +218,7 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 		mDpadCenterKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_DPAD_CENTER);
 		mEnterKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_ENTER);
 		mDelKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_DEL);
+		mForwardDelKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_FORWARD_DEL);
 		mSpaceKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_SPACE);
 		mSearchKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_SEARCH);
 		mPageUpKey  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_F_PAGE_UP);
@@ -272,6 +274,7 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 		mDpadCenterKey.setSummary(getDpadCenterKeySummary(sharedPreferences));
 		mEnterKey.setSummary(getEnterKeySummary(sharedPreferences));
 		mDelKey.setSummary(getDelKeySummary(sharedPreferences));
+		mForwardDelKey.setSummary(getFrowardDelKeySummary(sharedPreferences));
 		mSpaceKey.setSummary(getSpaceKeySummary(sharedPreferences));
 		mSearchKey.setSummary(getSearchKeySummary(sharedPreferences));
 		mPageUpKey.setSummary(getPageUpKeySummary(sharedPreferences));
@@ -356,6 +359,9 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 		}
 		else if(key.equals(DEF.KEY_CODE_F_DEL)){
 			mDelKey.setSummary(getDelKeySummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_CODE_F_FORWARD_DEL)){
+			mForwardDelKey.setSummary(getFrowardDelKeySummary(sharedPreferences));
 		}
 		else if(key.equals(DEF.KEY_CODE_F_SPACE)){
 			mSpaceKey.setSummary(getSpaceKeySummary(sharedPreferences));
@@ -556,6 +562,14 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 
 	public static int getDelKey(SharedPreferences sharedPreferences){
 		int val = convertdata(DEF.getInt(sharedPreferences, DEF.KEY_CODE_F_DEL, "0"));
+		if (val < 0 || val >= HardwareKeyName.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static int getForwardDelKey(SharedPreferences sharedPreferences){
+		int val = convertdata(DEF.getInt(sharedPreferences, DEF.KEY_CODE_F_FORWARD_DEL, "0"));
 		if (val < 0 || val >= HardwareKeyName.length){
 			val = 0;
 		}
@@ -889,6 +903,12 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 
 	private String getDelKeySummary(SharedPreferences sharedPreferences){
 		int val = getDelKey(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(HardwareKeyName[val]);
+	}
+
+	private String getFrowardDelKeySummary(SharedPreferences sharedPreferences){
+		int val = getForwardDelKey(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(HardwareKeyName[val]);
 	}
@@ -1254,6 +1274,9 @@ public class SetHardwareFileListKeyActivity extends PreferenceActivity implement
 				break;
 			case DEF.CODE_MEDIAPLAYPAUSE:
 				data = getMediaPlayPauseKey(sharedPreferences);
+				break;
+			case DEF.CODE_FORWARD_DEL:
+				data = getForwardDelKey(sharedPreferences);
 				break;
 			case DEF.CODE_CUSTOMKEY01:
 				data = getCustom01Key(sharedPreferences);
