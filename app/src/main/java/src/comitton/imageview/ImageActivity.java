@@ -1584,6 +1584,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 					case KeyEvent.KEYCODE_DEL:
 					case KeyEvent.KEYCODE_BACK: {
+						if (Build.VERSION.SDK_INT >= 36 && code == KeyEvent.KEYCODE_BACK) {
+							// Android16以降の戻るキーの場合は予測型戻るジェスチャーに委ねる(ランチャーからの戻るキーの呼び出しに対応)
+							return true;
+						}
 						operationBack();
 						return true;
 					}
@@ -1626,6 +1630,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			else {
 				// 通常設定の場合
+				if (Build.VERSION.SDK_INT >= 36 && code == KeyEvent.KEYCODE_BACK) {
+					// Android16以降の戻るキーの場合は予測型戻るジェスチャーに委ねる(ランチャーからの戻るキーの呼び出しに対応)
+					return true;
+				}
 				if (!mAutoRepeatCheck) {
 					// オートリピート対策
 					mAutoRepeatCheck = true;
