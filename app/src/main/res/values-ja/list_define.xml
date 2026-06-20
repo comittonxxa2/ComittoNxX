@@ -954,5 +954,27 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="themepreset_name_list">
+        <item>システム設定</item>
+        <item>テーマ1</item>
+        <item>テーマ2</item>
+        <item>テーマ3</item>
+        <item>テーマ4</item>
+        <item>テーマ5</item>
+        <item>テーマ6</item>
+        <item>テーマ7</item>
+        <item>テーマ8</item>
+    </string-array>
+    <string-array name="themepreset_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
 
 </resources>
