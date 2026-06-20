@@ -954,5 +954,27 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="themepreset_name_list">
+        <item>System settings</item>
+        <item>Theme 1</item>
+        <item>Theme 2</item>
+        <item>Theme 3</item>
+        <item>Theme 4</item>
+        <item>Theme 5</item>
+        <item>Theme 6</item>
+        <item>Theme 7</item>
+        <item>Theme 8</item>
+    </string-array>
+    <string-array name="themepreset_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
 
 </resources>
