@@ -119,6 +119,7 @@ import androidx.activity.OnBackPressedCallback;
 
 import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -129,6 +130,7 @@ import android.view.WindowManager;
 import android.view.OrientationEventListener;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import android.os.Looper;
 
@@ -192,7 +194,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static int progress;
 	private static int numerator;
 	private static int denominator;
-	private static Handler mainHandler;
+	private static Handler mainHandler = new Handler(Looper.getMainLooper());
 	private static boolean threadstartcheck = false;
 	private static boolean threadstartcheck2 = false;
 	private static boolean threadstartcheck3 = false;
@@ -341,6 +343,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int currentOrientation;
 	private boolean mThumbnailGrid;
 	private boolean mSkipUpdateFileList;
+	private FrameLayout rootLayout;
+	private FrameLayout autoLoadingOverlay = null;
+	// 画面ロックのタイムアウト処理(timeoutRunnable)を登録
+	private final Runnable timeoutRunnable = this::unlockScreenAndHideProgress;
+	private static final int UI_LOCK_TIMEOUT_MS = 3000;
+	private int extkeydata = 0;
+	private static boolean mChangeTheme = false;
 
 	public static void applyAppTheme(SharedPreferences sharedPreferences) {
 		int themeValue = SetCommonActivity.getSelectTheme(sharedPreferences);
@@ -359,6 +368,49 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 				break;
 		}
+	}
+
+	private void lockScreenAndShowProgress() {
+		getWindow().setFlags(
+			WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+			WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+		);
+		// ユーザーに処理中(ロック中)であることを伝えるためのUIを動的に生成
+		if (autoLoadingOverlay == null && rootLayout != null) {
+			// 全画面を覆う半透明のグレー背景
+			autoLoadingOverlay = new FrameLayout(this);
+			autoLoadingOverlay.setLayoutParams(new FrameLayout.LayoutParams(
+				FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+			// 薄い黒
+			autoLoadingOverlay.setBackgroundColor(0x40000000);
+			// 中央のぐるぐる(インジケータ)
+			ProgressBar progressBar = new ProgressBar(this);
+			FrameLayout.LayoutParams progressParams = new FrameLayout.LayoutParams(
+				FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+			progressParams.gravity = Gravity.CENTER;
+			progressBar.setLayoutParams(progressParams);
+			autoLoadingOverlay.addView(progressBar);
+			// 最前面に追加して表示する
+			rootLayout.addView(autoLoadingOverlay);
+		}
+	}
+
+	private void unlockScreenAndHideProgress() {
+		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+		// 表示していたローディングUIをレイアウトから完全に消去
+		if (autoLoadingOverlay != null && rootLayout != null) {
+			rootLayout.removeView(autoLoadingOverlay);
+			// メモリ解放
+			autoLoadingOverlay = null;
+		}
+	}
+
+	// 非同期通信が発生しない(即座に処理が終わる)場合の安全な解除用メソッド
+	private void onOperationFinishedImmediate() {
+		// 画面ロックのタイムアウト処理(timeoutRunnable)を取り除く
+		mainHandler.removeCallbacks(timeoutRunnable);
+		// 中央のぐるぐる(インジケータ)を消す
+		unlockScreenAndHideProgress();
 	}
 
 	/** Called when the activity is first created. */
@@ -405,6 +457,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		super.onResume();
 
 		SetOrientationEventListenerEnable(mSharedPreferences);
+	}
+
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if (hasFocus) {
+			if (Build.VERSION.SDK_INT >= 36) {
+				if (mainHandler != null) {
+					// 画面ロックのタイムアウト処理(timeoutRunnable)を取り除く
+					mainHandler.removeCallbacks(timeoutRunnable);
+				}
+				// 中央のぐるぐる(インジケータ)を消す
+				unlockScreenAndHideProgress();
+			}
+		}
 	}
 
 	@Override
@@ -553,6 +620,20 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	
 				@Override
 				public void handleOnBackPressed() {
+					if (extkeydata != 0 && extkeydata != DEF.TAP_FILELIST_BACK) {
+						// ハードウェアキーの設定が有効で戻るキーの設定以外の場合は通常の処理を実行
+						SetHardwareKey(KeyEvent.KEYCODE_BACK, extkeydata);
+						// 念のためクリア
+						extkeydata = 0;
+						return;
+					}
+					// ※戻るキーの処理が連続で処理されないように画面をロックする
+					// 中央のぐるぐる(インジケータ)を表示(画面のロック処理)
+					lockScreenAndShowProgress();
+					// 直前の画面ロックのタイムアウト処理(timeoutRunnable)を取り除く
+					mainHandler.removeCallbacks(timeoutRunnable);
+					// メインスレッドで画面ロックのタイムアウト処理(timeoutRunnable)を実行
+					mainHandler.postDelayed(timeoutRunnable, UI_LOCK_TIMEOUT_MS);
 					int listtype = mListScreenView.getListType();
 					if(listtype != RecordList.TYPE_FILELIST){
 						// サムネイルを読み込ませる
@@ -576,6 +657,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 					if (mBackMode == BACKMODE_EXIT) {
 						checkExitTimer();
+						onOperationFinishedImmediate();
 						return;
 					}
 					else if (mBackMode == BACKMODE_PARENT) {
@@ -583,6 +665,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						if (mPath.equals("/")) {
 							// アプリ終了
 							checkExitTimer();
+							onOperationFinishedImmediate();
 							return;
 						}
 						moveParentDir();
@@ -597,6 +680,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						if (data == null) {
 							// 最初のディレクトリ
 							checkExitTimer();
+							onOperationFinishedImmediate();
 							return;
 						}
 						else if (data.mCode == null || data.mCode.length() <= 0) {
@@ -606,6 +690,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						else {
 							if (!mServer.select(data.mCode)) {
 								mExitBackTimer = 0;
+								onOperationFinishedImmediate();
 								return;
 							}
 							uri = mServer.getURI();
@@ -640,10 +725,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			mPathHistory = new PathHistory();
 		}
 
-		FrameLayout layout = new FrameLayout(this);
+		rootLayout = new FrameLayout(this);
 		mListScreenView = new ListScreenView(this, mHandler, mDuration);
-		layout.addView(mListScreenView);
-		setContentView(layout);
+		rootLayout.addView(mListScreenView);
+		setContentView(rootLayout);
 
 		// リストモードの設定
 		mListMode = (short) mSharedPreferences.getInt(DEF.KEY_LISTMODE, FileListArea.LISTMODE_LIST);
@@ -1205,6 +1290,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 			});
 
+	// 親のActivityを再生成させるため設定から呼び出される
+	public static void setChangeTheme() {
+		mChangeTheme = true;
+	}
+
 	// 画面遷移が戻ってきた時の通知
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
@@ -1293,6 +1383,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 			default:
 
+				if (mChangeTheme) {
+					mChangeTheme = false;
+					// 現在のActivityを再生成する
+					this.recreate();
+				}
 				// 履歴の内容を更新する
 				mListScreenView.updateRecordList();
 
@@ -2195,6 +2290,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// 戻るキーが無かった場合に破綻しないようにする
 			keydata = 0;
 		}
+		extkeydata = keydata;
 
 		int keycode = event.getKeyCode();
 		if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -2228,6 +2324,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						break;
 					case KeyEvent.KEYCODE_ESCAPE:
 					case KeyEvent.KEYCODE_BACK:
+						if (Build.VERSION.SDK_INT >= 36 && keycode == KeyEvent.KEYCODE_BACK) {
+							// Android16以降の戻るキーの場合は予測型戻るジェスチャーに委ねる(ランチャーからの戻るキーの呼び出しに対応)
+							return true;
+						}
 						int listtype = mListScreenView.getListType();
 						if(listtype != RecordList.TYPE_FILELIST){
 							// サムネイルを読み込ませる
@@ -2317,6 +2417,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 			else {
 				// 通常設定の場合
+				if (Build.VERSION.SDK_INT >= 36 && keycode == KeyEvent.KEYCODE_BACK) {
+					// Android16以降の戻るキーの場合は予測型戻るジェスチャーに委ねる(ランチャーからの戻るキーの呼び出しに対応)
+					return true;
+				}
 				// ハードウェアキーの設定
 				SetHardwareKey(keycode, keydata);
 				return true;
@@ -2376,6 +2480,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	// Activityの破棄
 	protected void onDestroy() {
 		super.onDestroy();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			if (mainHandler != null) {
+				// 画面ロックのタイムアウト処理(timeoutRunnable)を取り除く
+				mainHandler.removeCallbacks(timeoutRunnable);
+			}
+		}
 
 		// サムネイルスレッド終了
 		if (mThumbnailLoader != null) {
