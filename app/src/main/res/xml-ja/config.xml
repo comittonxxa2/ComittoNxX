@@ -33,6 +33,14 @@
                 android:targetClass="src.comitton.config.SetBookShelfActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="CommThemeSet"
+            android:title="テーマの切り替え"
+            android:summary="テーマのプリセット値を切り替える" >
+            <intent
+                android:targetClass="src.comitton.config.SetThemeActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="イメージ＆テキスト表示画面" >
         <PreferenceScreen
