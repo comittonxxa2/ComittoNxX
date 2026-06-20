@@ -294,6 +294,12 @@
             android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
+            android:name="src.comitton.config.SetThemeActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:screenOrientation="behind"
+            android:theme="@style/MyTheme"></activity>
+        <activity
             android:name="src.comitton.config.SetWebViewActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
