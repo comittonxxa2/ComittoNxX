@@ -1,5 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="Setting theme presets" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="EnableTheme"
+            android:summary="Check this box to enable theme switching."
+            android:title="Enable theme switching" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Preset value"
+            android:entries="@array/themepreset_name_list"
+            android:entryValues="@array/themepreset_value_list"
+            android:key="ThemePreset"
+            android:summary="dummy"
+            android:title="Preset value" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="File List Settings" >
+        <src.comitton.config.seekbar.FontTitleSeekbar
+            android:dialogMessage="Select font size of the title."
+            android:dialogTitle="Title Font Size"
+            android:key="FontTitleSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Title Font Size" />
+        <src.comitton.config.seekbar.FontMainSeekbar
+            android:dialogMessage="Select font size of the list."
+            android:dialogTitle="Font Size"
+            android:key="FontMainSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Font Size" />
+        <src.comitton.config.seekbar.FontSubSeekbar
+            android:dialogMessage="Select summary font size of the list."
+            android:dialogTitle="Summary Font Size"
+            android:key="FontSubSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Summary Font Size" />
+        <src.comitton.config.seekbar.FontTileSeekbar
+            android:dialogMessage="Select font size of the tile view."
+            android:dialogTitle="Tile View Font Size"
+            android:key="FontTileSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Font Size" />
+        <src.comitton.config.seekbar.ItemMarginSeekbar
+            android:dialogMessage="Select margin size of list item."
+            android:dialogTitle="List Item Margin"
+            android:key="ItemMarginSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="List Item Margin" />
+        <src.comitton.config.seekbar.ToolbarSeekbar
+            android:dialogMessage="Set the icon size of the toolbar."
+            android:dialogTitle="Toolbar Size"
+            android:key="ToolbarSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Toolbar Size" />
+    </PreferenceCategory>
     <PreferenceCategory android:title="Preset Color" >
         <ListPreference
             android:defaultValue="1"
@@ -184,12 +243,5 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatorevbrgb"
             android:title="Background color of web-based EPUB files" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Help" >
-        <PreferenceScreen
-            android:key="FClrHelp"
-            android:summary="Displays the help for these settings."
-            android:title="Description of the item" >
-        </PreferenceScreen>
     </PreferenceCategory>
 </PreferenceScreen>
