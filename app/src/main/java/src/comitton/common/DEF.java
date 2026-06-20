@@ -1270,6 +1270,291 @@ public class DEF {
 	public static final String KEY_PROFILE_BLUELEVEL_09 = "ProfileBlueLevel9";
 	public static final String KEY_PROFILE_BLUELEVEL_10 = "ProfileBlueLevel10";
 
+	// テーマの切り替えの保存用
+	public static final String KEY_ENABLE_THEME = "EnableTheme";
+	public static final String KEY_THEME_PRESET = "ThemePreset";
+	public static final String KEY_THEME_OLD_PRESET = "ThemeOldPreset";
+
+	public static final String KEY_THEMES_PRESET = "ThemeSPreset";
+	public static final String KEY_THEME1_PRESET = "Theme1Preset";
+	public static final String KEY_THEME2_PRESET = "Theme2Preset";
+	public static final String KEY_THEME3_PRESET = "Theme3Preset";
+	public static final String KEY_THEME4_PRESET = "Theme4Preset";
+	public static final String KEY_THEME5_PRESET = "Theme5Preset";
+	public static final String KEY_THEME6_PRESET = "Theme6Preset";
+	public static final String KEY_THEME7_PRESET = "Theme7Preset";
+	public static final String KEY_THEME8_PRESET = "Theme8Preset";
+
+	public static final String KEY_THEMES_TXTRGB = "ThemeSTxtRGB";
+	public static final String KEY_THEME1_TXTRGB = "Theme1TxtRGB";
+	public static final String KEY_THEME2_TXTRGB = "Theme2TxtRGB";
+	public static final String KEY_THEME3_TXTRGB = "Theme3TxtRGB";
+	public static final String KEY_THEME4_TXTRGB = "Theme4TxtRGB";
+	public static final String KEY_THEME5_TXTRGB = "Theme5TxtRGB";
+	public static final String KEY_THEME6_TXTRGB = "Theme6TxtRGB";
+	public static final String KEY_THEME7_TXTRGB = "Theme7TxtRGB";
+	public static final String KEY_THEME8_TXTRGB = "Theme8TxtRGB";
+
+	public static final String KEY_THEMES_DIRRGB = "ThemeSDirRGB";
+	public static final String KEY_THEME1_DIRRGB = "Theme1DirRGB";
+	public static final String KEY_THEME2_DIRRGB = "Theme2DirRGB";
+	public static final String KEY_THEME3_DIRRGB = "Theme3DirRGB";
+	public static final String KEY_THEME4_DIRRGB = "Theme4DirRGB";
+	public static final String KEY_THEME5_DIRRGB = "Theme5DirRGB";
+	public static final String KEY_THEME6_DIRRGB = "Theme6DirRGB";
+	public static final String KEY_THEME7_DIRRGB = "Theme7DirRGB";
+	public static final String KEY_THEME8_DIRRGB = "Theme8DirRGB";
+
+	public static final String KEY_THEMES_BEFRGB = "ThemeSBefRGB";
+	public static final String KEY_THEME1_BEFRGB = "Theme1BefRGB";
+	public static final String KEY_THEME2_BEFRGB = "Theme2BefRGB";
+	public static final String KEY_THEME3_BEFRGB = "Theme3BefRGB";
+	public static final String KEY_THEME4_BEFRGB = "Theme4BefRGB";
+	public static final String KEY_THEME5_BEFRGB = "Theme5BefRGB";
+	public static final String KEY_THEME6_BEFRGB = "Theme6BefRGB";
+	public static final String KEY_THEME7_BEFRGB = "Theme7BefRGB";
+	public static final String KEY_THEME8_BEFRGB = "Theme8BefRGB";
+
+	public static final String KEY_THEMES_NOWRGB = "ThemeSNowRGB";
+	public static final String KEY_THEME1_NOWRGB = "Theme1NowRGB";
+	public static final String KEY_THEME2_NOWRGB = "Theme2NowRGB";
+	public static final String KEY_THEME3_NOWRGB = "Theme3NowRGB";
+	public static final String KEY_THEME4_NOWRGB = "Theme4NowRGB";
+	public static final String KEY_THEME5_NOWRGB = "Theme5NowRGB";
+	public static final String KEY_THEME6_NOWRGB = "Theme6NowRGB";
+	public static final String KEY_THEME7_NOWRGB = "Theme7NowRGB";
+	public static final String KEY_THEME8_NOWRGB = "Theme8NowRGB";
+
+	public static final String KEY_THEMES_AFTRGB = "ThemeSAftRGB";
+	public static final String KEY_THEME1_AFTRGB = "Theme1AftRGB";
+	public static final String KEY_THEME2_AFTRGB = "Theme2AftRGB";
+	public static final String KEY_THEME3_AFTRGB = "Theme3AftRGB";
+	public static final String KEY_THEME4_AFTRGB = "Theme4AftRGB";
+	public static final String KEY_THEME5_AFTRGB = "Theme5AftRGB";
+	public static final String KEY_THEME6_AFTRGB = "Theme6AftRGB";
+	public static final String KEY_THEME7_AFTRGB = "Theme7AftRGB";
+	public static final String KEY_THEME8_AFTRGB = "Theme8AftRGB";
+
+	public static final String KEY_THEMES_RRBRGB = "ThemeSRrbRGB";
+	public static final String KEY_THEME1_RRBRGB = "Theme1RrbRGB";
+	public static final String KEY_THEME2_RRBRGB = "Theme2RrbRGB";
+	public static final String KEY_THEME3_RRBRGB = "Theme3RrbRGB";
+	public static final String KEY_THEME4_RRBRGB = "Theme4RrbRGB";
+	public static final String KEY_THEME5_RRBRGB = "Theme5RrbRGB";
+	public static final String KEY_THEME6_RRBRGB = "Theme6RrbRGB";
+	public static final String KEY_THEME7_RRBRGB = "Theme7RrbRGB";
+	public static final String KEY_THEME8_RRBRGB = "Theme8RrbRGB";
+
+	public static final String KEY_THEMES_IMGRGB = "ThemeSImgRGB";
+	public static final String KEY_THEME1_IMGRGB = "Theme1ImgRGB";
+	public static final String KEY_THEME2_IMGRGB = "Theme2ImgRGB";
+	public static final String KEY_THEME3_IMGRGB = "Theme3ImgRGB";
+	public static final String KEY_THEME4_IMGRGB = "Theme4ImgRGB";
+	public static final String KEY_THEME5_IMGRGB = "Theme5ImgRGB";
+	public static final String KEY_THEME6_IMGRGB = "Theme6ImgRGB";
+	public static final String KEY_THEME7_IMGRGB = "Theme7ImgRGB";
+	public static final String KEY_THEME8_IMGRGB = "Theme8ImgRGB";
+
+	public static final String KEY_THEMES_INFRGB = "ThemeSInfRGB";
+	public static final String KEY_THEME1_INFRGB = "Theme1InfRGB";
+	public static final String KEY_THEME2_INFRGB = "Theme2InfRGB";
+	public static final String KEY_THEME3_INFRGB = "Theme3InfRGB";
+	public static final String KEY_THEME4_INFRGB = "Theme4InfRGB";
+	public static final String KEY_THEME5_INFRGB = "Theme5InfRGB";
+	public static final String KEY_THEME6_INFRGB = "Theme6InfRGB";
+	public static final String KEY_THEME7_INFRGB = "Theme7InfRGB";
+	public static final String KEY_THEME8_INFRGB = "Theme8InfRGB";
+
+	public static final String KEY_THEMES_MRKRGB = "ThemeSMrkRGB";
+	public static final String KEY_THEME1_MRKRGB = "Theme1MrkRGB";
+	public static final String KEY_THEME2_MRKRGB = "Theme2MrkRGB";
+	public static final String KEY_THEME3_MRKRGB = "Theme3MrkRGB";
+	public static final String KEY_THEME4_MRKRGB = "Theme4MrkRGB";
+	public static final String KEY_THEME5_MRKRGB = "Theme5MrkRGB";
+	public static final String KEY_THEME6_MRKRGB = "Theme6MrkRGB";
+	public static final String KEY_THEME7_MRKRGB = "Theme7MrkRGB";
+	public static final String KEY_THEME8_MRKRGB = "Theme8MrkRGB";
+
+	public static final String KEY_THEMES_BAKRGB = "ThemeSBakRGB";
+	public static final String KEY_THEME1_BAKRGB = "Theme1BakRGB";
+	public static final String KEY_THEME2_BAKRGB = "Theme2BakRGB";
+	public static final String KEY_THEME3_BAKRGB = "Theme3BakRGB";
+	public static final String KEY_THEME4_BAKRGB = "Theme4BakRGB";
+	public static final String KEY_THEME5_BAKRGB = "Theme5BakRGB";
+	public static final String KEY_THEME6_BAKRGB = "Theme6BakRGB";
+	public static final String KEY_THEME7_BAKRGB = "Theme7BakRGB";
+	public static final String KEY_THEME8_BAKRGB = "Theme8BakRGB";
+
+	public static final String KEY_THEMES_CURRGB = "ThemeSCurRGB";
+	public static final String KEY_THEME1_CURRGB = "Theme1CurRGB";
+	public static final String KEY_THEME2_CURRGB = "Theme2CurRGB";
+	public static final String KEY_THEME3_CURRGB = "Theme3CurRGB";
+	public static final String KEY_THEME4_CURRGB = "Theme4CurRGB";
+	public static final String KEY_THEME5_CURRGB = "Theme5CurRGB";
+	public static final String KEY_THEME6_CURRGB = "Theme6CurRGB";
+	public static final String KEY_THEME7_CURRGB = "Theme7CurRGB";
+	public static final String KEY_THEME8_CURRGB = "Theme8CurRGB";
+
+	public static final String KEY_THEMES_TITRGB = "ThemeSTitRGB";
+	public static final String KEY_THEME1_TITRGB = "Theme1TitRGB";
+	public static final String KEY_THEME2_TITRGB = "Theme2TitRGB";
+	public static final String KEY_THEME3_TITRGB = "Theme3TitRGB";
+	public static final String KEY_THEME4_TITRGB = "Theme4TitRGB";
+	public static final String KEY_THEME5_TITRGB = "Theme5TitRGB";
+	public static final String KEY_THEME6_TITRGB = "Theme6TitRGB";
+	public static final String KEY_THEME7_TITRGB = "Theme7TitRGB";
+	public static final String KEY_THEME8_TITRGB = "Theme8TitRGB";
+
+	public static final String KEY_THEMES_TIBRGB = "ThemeSTibRGB";
+	public static final String KEY_THEME1_TIBRGB = "Theme1TibRGB";
+	public static final String KEY_THEME2_TIBRGB = "Theme2TibRGB";
+	public static final String KEY_THEME3_TIBRGB = "Theme3TibRGB";
+	public static final String KEY_THEME4_TIBRGB = "Theme4TibRGB";
+	public static final String KEY_THEME5_TIBRGB = "Theme5TibRGB";
+	public static final String KEY_THEME6_TIBRGB = "Theme6TibRGB";
+	public static final String KEY_THEME7_TIBRGB = "Theme7TibRGB";
+	public static final String KEY_THEME8_TIBRGB = "Theme8TibRGB";
+
+	public static final String KEY_THEMES_TLDRGB = "ThemeSTldRGB";
+	public static final String KEY_THEME1_TLDRGB = "Theme1TldRGB";
+	public static final String KEY_THEME2_TLDRGB = "Theme2TldRGB";
+	public static final String KEY_THEME3_TLDRGB = "Theme3TldRGB";
+	public static final String KEY_THEME4_TLDRGB = "Theme4TldRGB";
+	public static final String KEY_THEME5_TLDRGB = "Theme5TldRGB";
+	public static final String KEY_THEME6_TLDRGB = "Theme6TldRGB";
+	public static final String KEY_THEME7_TLDRGB = "Theme7TldRGB";
+	public static final String KEY_THEME8_TLDRGB = "Theme8TldRGB";
+
+	public static final String KEY_THEMES_TLBRGB = "ThemeSTlbRGB";
+	public static final String KEY_THEME1_TLBRGB = "Theme1TlbRGB";
+	public static final String KEY_THEME2_TLBRGB = "Theme2TlbRGB";
+	public static final String KEY_THEME3_TLBRGB = "Theme3TlbRGB";
+	public static final String KEY_THEME4_TLBRGB = "Theme4TlbRGB";
+	public static final String KEY_THEME5_TLBRGB = "Theme5TlbRGB";
+	public static final String KEY_THEME6_TLBRGB = "Theme6TlbRGB";
+	public static final String KEY_THEME7_TLBRGB = "Theme7TlbRGB";
+	public static final String KEY_THEME8_TLBRGB = "Theme8TlbRGB";
+
+	public static final String KEY_THEMES_BSFRGB = "ThemeSBsfRGB";
+	public static final String KEY_THEME1_BSFRGB = "Theme1BsfRGB";
+	public static final String KEY_THEME2_BSFRGB = "Theme2BsfRGB";
+	public static final String KEY_THEME3_BSFRGB = "Theme3BsfRGB";
+	public static final String KEY_THEME4_BSFRGB = "Theme4BsfRGB";
+	public static final String KEY_THEME5_BSFRGB = "Theme5BsfRGB";
+	public static final String KEY_THEME6_BSFRGB = "Theme6BsfRGB";
+	public static final String KEY_THEME7_BSFRGB = "Theme7BsfRGB";
+	public static final String KEY_THEME8_BSFRGB = "Theme8BsfRGB";
+
+	public static final String KEY_THEMES_BSERGB = "ThemeSBseRGB";
+	public static final String KEY_THEME1_BSERGB = "Theme1BseRGB";
+	public static final String KEY_THEME2_BSERGB = "Theme2BseRGB";
+	public static final String KEY_THEME3_BSERGB = "Theme3BseRGB";
+	public static final String KEY_THEME4_BSERGB = "Theme4BseRGB";
+	public static final String KEY_THEME5_BSERGB = "Theme5BseRGB";
+	public static final String KEY_THEME6_BSERGB = "Theme6BseRGB";
+	public static final String KEY_THEME7_BSERGB = "Theme7BseRGB";
+	public static final String KEY_THEME8_BSERGB = "Theme8BseRGB";
+
+	public static final String KEY_THEMES_FIFRGB = "ThemeSFifRGB";
+	public static final String KEY_THEME1_FIFRGB = "Theme1FifRGB";
+	public static final String KEY_THEME2_FIFRGB = "Theme2FifRGB";
+	public static final String KEY_THEME3_FIFRGB = "Theme3FifRGB";
+	public static final String KEY_THEME4_FIFRGB = "Theme4FifRGB";
+	public static final String KEY_THEME5_FIFRGB = "Theme5FifRGB";
+	public static final String KEY_THEME6_FIFRGB = "Theme6FifRGB";
+	public static final String KEY_THEME7_FIFRGB = "Theme7FifRGB";
+	public static final String KEY_THEME8_FIFRGB = "Theme8FifRGB";
+
+	public static final String KEY_THEMES_FIBRGB = "ThemeSFibRGB";
+	public static final String KEY_THEME1_FIBRGB = "Theme1FibRGB";
+	public static final String KEY_THEME2_FIBRGB = "Theme2FibRGB";
+	public static final String KEY_THEME3_FIBRGB = "Theme3FibRGB";
+	public static final String KEY_THEME4_FIBRGB = "Theme4FibRGB";
+	public static final String KEY_THEME5_FIBRGB = "Theme5FibRGB";
+	public static final String KEY_THEME6_FIBRGB = "Theme6FibRGB";
+	public static final String KEY_THEME7_FIBRGB = "Theme7FibRGB";
+	public static final String KEY_THEME8_FIBRGB = "Theme8FibRGB";
+
+	public static final String KEY_THEMES_EVTRGB = "ThemeSEvtRGB";
+	public static final String KEY_THEME1_EVTRGB = "Theme1EvtRGB";
+	public static final String KEY_THEME2_EVTRGB = "Theme2EvtRGB";
+	public static final String KEY_THEME3_EVTRGB = "Theme3EvtRGB";
+	public static final String KEY_THEME4_EVTRGB = "Theme4EvtRGB";
+	public static final String KEY_THEME5_EVTRGB = "Theme5EvtRGB";
+	public static final String KEY_THEME6_EVTRGB = "Theme6EvtRGB";
+	public static final String KEY_THEME7_EVTRGB = "Theme7EvtRGB";
+	public static final String KEY_THEME8_EVTRGB = "Theme8EvtRGB";
+
+	public static final String KEY_THEMES_EVBRGB = "ThemeSEvbRGB";
+	public static final String KEY_THEME1_EVBRGB = "Theme1EvbRGB";
+	public static final String KEY_THEME2_EVBRGB = "Theme2EvbRGB";
+	public static final String KEY_THEME3_EVBRGB = "Theme3EvbRGB";
+	public static final String KEY_THEME4_EVBRGB = "Theme4EvbRGB";
+	public static final String KEY_THEME5_EVBRGB = "Theme5EvbRGB";
+	public static final String KEY_THEME6_EVBRGB = "Theme6EvbRGB";
+	public static final String KEY_THEME7_EVBRGB = "Theme7EvbRGB";
+	public static final String KEY_THEME8_EVBRGB = "Theme8EvbRGB";
+
+	public static final String KEY_THEMES_FONTTITLE = "ThemeSFontTitleSp";
+	public static final String KEY_THEME1_FONTTITLE = "Theme1FontTitleSp";
+	public static final String KEY_THEME2_FONTTITLE = "Theme2FontTitleSp";
+	public static final String KEY_THEME3_FONTTITLE = "Theme3FontTitleSp";
+	public static final String KEY_THEME4_FONTTITLE = "Theme4FontTitleSp";
+	public static final String KEY_THEME5_FONTTITLE = "Theme5FontTitleSp";
+	public static final String KEY_THEME6_FONTTITLE = "Theme6FontTitleSp";
+	public static final String KEY_THEME7_FONTTITLE = "Theme7FontTitleSp";
+	public static final String KEY_THEME8_FONTTITLE = "Theme8FontTitleSp";
+
+	public static final String KEY_THEMES_FONTMAIN = "ThemeSFontMainSp";
+	public static final String KEY_THEME1_FONTMAIN = "Theme1FontMainSp";
+	public static final String KEY_THEME2_FONTMAIN = "Theme2FontMainSp";
+	public static final String KEY_THEME3_FONTMAIN = "Theme3FontMainSp";
+	public static final String KEY_THEME4_FONTMAIN = "Theme4FontMainSp";
+	public static final String KEY_THEME5_FONTMAIN = "Theme5FontMainSp";
+	public static final String KEY_THEME6_FONTMAIN = "Theme6FontMainSp";
+	public static final String KEY_THEME7_FONTMAIN = "Theme7FontMainSp";
+	public static final String KEY_THEME8_FONTMAIN = "Theme8FontMainSp";
+
+	public static final String KEY_THEMES_FONTSUB = "ThemeSFontSubSp";
+	public static final String KEY_THEME1_FONTSUB = "Theme1FontSubSp";
+	public static final String KEY_THEME2_FONTSUB = "Theme2FontSubSp";
+	public static final String KEY_THEME3_FONTSUB = "Theme3FontSubSp";
+	public static final String KEY_THEME4_FONTSUB = "Theme4FontSubSp";
+	public static final String KEY_THEME5_FONTSUB = "Theme5FontSubSp";
+	public static final String KEY_THEME6_FONTSUB = "Theme6FontSubSp";
+	public static final String KEY_THEME7_FONTSUB = "Theme7FontSubSp";
+	public static final String KEY_THEME8_FONTSUB = "Theme8FontSubSp";
+
+	public static final String KEY_THEMES_FONTTILE = "ThemeSFontTileSp";
+	public static final String KEY_THEME1_FONTTILE = "Theme1FontTileSp";
+	public static final String KEY_THEME2_FONTTILE = "Theme2FontTileSp";
+	public static final String KEY_THEME3_FONTTILE = "Theme3FontTileSp";
+	public static final String KEY_THEME4_FONTTILE = "Theme4FontTileSp";
+	public static final String KEY_THEME5_FONTTILE = "Theme5FontTileSp";
+	public static final String KEY_THEME6_FONTTILE = "Theme6FontTileSp";
+	public static final String KEY_THEME7_FONTTILE = "Theme7FontTileSp";
+	public static final String KEY_THEME8_FONTTILE = "Theme8FontTileSp";
+
+	public static final String KEY_THEMES_ITEMMRGN = "ThemeSItemMarginSp";
+	public static final String KEY_THEME1_ITEMMRGN = "Theme1ItemMarginSp";
+	public static final String KEY_THEME2_ITEMMRGN = "Theme2ItemMarginSp";
+	public static final String KEY_THEME3_ITEMMRGN = "Theme3ItemMarginSp";
+	public static final String KEY_THEME4_ITEMMRGN = "Theme4ItemMarginSp";
+	public static final String KEY_THEME5_ITEMMRGN = "Theme5ItemMarginSp";
+	public static final String KEY_THEME6_ITEMMRGN = "Theme6ItemMarginSp";
+	public static final String KEY_THEME7_ITEMMRGN = "Theme7ItemMarginSp";
+	public static final String KEY_THEME8_ITEMMRGN = "Theme8ItemMarginSp";
+
+	public static final String KEY_THEMES_TOOLBARSEEK = "ThemeSToolbarSeek";
+	public static final String KEY_THEME1_TOOLBARSEEK = "Theme1ToolbarSeek";
+	public static final String KEY_THEME2_TOOLBARSEEK = "Theme2ToolbarSeek";
+	public static final String KEY_THEME3_TOOLBARSEEK = "Theme3ToolbarSeek";
+	public static final String KEY_THEME4_TOOLBARSEEK = "Theme4ToolbarSeek";
+	public static final String KEY_THEME5_TOOLBARSEEK = "Theme5ToolbarSeek";
+	public static final String KEY_THEME6_TOOLBARSEEK = "Theme6ToolbarSeek";
+	public static final String KEY_THEME7_TOOLBARSEEK = "Theme7ToolbarSeek";
+	public static final String KEY_THEME8_TOOLBARSEEK = "Theme8ToolbarSeek";
+
 	public static final int DEFAULT_INISCHALE = 5; //全体を表示(見開き対応)
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
 	public static final int DEFAULT_QUALITY = 1; //画質を優先する
@@ -2176,43 +2461,44 @@ public class DEF {
 	public static final int CODE_DPAD_DOWN = 10;	//	カーソル下キー
 	public static final int CODE_DPAD_CENTER = 11;	// 決定キー
 	public static final int CODE_ENTER = 12;	// エンターキー
-	public static final int CODE_DEL = 13;	//	削除キー
-	public static final int CODE_SPACE = 14;	//	スペースキー
-	public static final int CODE_SERACH = 15;	//	検索キー
-	public static final int CODE_PAGEUP = 16;	//	ページアップキー
-	public static final int CODE_PAGEDOWN = 17;	//	ページダウンキー
-	public static final int CODE_ESCAPE = 18;	//	エスケープキー
-	public static final int CODE_MOVEHOME = 19;	//	ホームキー
-	public static final int CODE_MOVEEND = 20;	//	エンドキー
-	public static final int CODE_FORWARD = 21;	//	フォワードボタン
+	public static final int CODE_DEL = 13;	//	Backspaceキー
+	public static final int CODE_FORWARD_DEL = 14;	//	Deleteキー
+	public static final int CODE_SPACE = 15;	//	スペースキー
+	public static final int CODE_SERACH = 16;	//	検索キー
+	public static final int CODE_PAGEUP = 17;	//	ページアップキー
+	public static final int CODE_PAGEDOWN = 18;	//	ページダウンキー
+	public static final int CODE_ESCAPE = 19;	//	エスケープキー
+	public static final int CODE_MOVEHOME = 20;	//	ホームキー
+	public static final int CODE_MOVEEND = 21;	//	エンドキー
+	public static final int CODE_FORWARD = 22;	//	フォワードボタン
 	// ゲームパッド
-	public static final int CODE_BUTTON_L1 = 22;		//	L1ボタン
-	public static final int CODE_BUTTON_L2 = 23;		//	L2ボタン
-	public static final int CODE_BUTTON_THUMBL = 24;	//	L3ボタン
-	public static final int CODE_BUTTON_R1 = 25;		//	R1ボタン
-	public static final int CODE_BUTTON_R2 = 26;		//	R2ボタン
-	public static final int CODE_BUTTON_THUMBR = 27;	//	R3ボタン
-	public static final int CODE_BUTTON_A = 28;		//	Aボタン
-	public static final int CODE_BUTTON_B = 29;		//	Bボタン
-	public static final int CODE_BUTTON_X = 30;		//	Xボタン
-	public static final int CODE_BUTTON_Y = 31;		//	Yボタン
-	public static final int CODE_BUTTON_SELECT = 32;	//	SELECTボタン
-	public static final int CODE_BUTTON_START = 33;	//	STARTボタン
+	public static final int CODE_BUTTON_L1 = 23;		//	L1ボタン
+	public static final int CODE_BUTTON_L2 = 24;		//	L2ボタン
+	public static final int CODE_BUTTON_THUMBL = 25;	//	L3ボタン
+	public static final int CODE_BUTTON_R1 = 26;		//	R1ボタン
+	public static final int CODE_BUTTON_R2 = 27;		//	R2ボタン
+	public static final int CODE_BUTTON_THUMBR = 28;	//	R3ボタン
+	public static final int CODE_BUTTON_A = 29;		//	Aボタン
+	public static final int CODE_BUTTON_B = 30;		//	Bボタン
+	public static final int CODE_BUTTON_X = 31;		//	Xボタン
+	public static final int CODE_BUTTON_Y = 32;		//	Yボタン
+	public static final int CODE_BUTTON_SELECT = 33;	//	SELECTボタン
+	public static final int CODE_BUTTON_START = 34;	//	STARTボタン
 	// メディアプレイヤー
-	public static final int CODE_MEDIANEXT = 34;	//	曲送りボタン
-	public static final int CODE_MEDIAPREV = 35;	//	曲戻しボタン
-	public static final int CODE_MEDIAPLAYPAUSE = 36;	//	再生一時停止ボタン
+	public static final int CODE_MEDIANEXT = 35;	//	曲送りボタン
+	public static final int CODE_MEDIAPREV = 36;	//	曲戻しボタン
+	public static final int CODE_MEDIAPLAYPAUSE = 37;	//	再生一時停止ボタン
 	// カスタムキー
-	public static final int CODE_CUSTOMKEY01 = 37;	//	カスタムキー1
-	public static final int CODE_CUSTOMKEY02 = 38;	//	カスタムキー2
-	public static final int CODE_CUSTOMKEY03 = 39;	//	カスタムキー3
-	public static final int CODE_CUSTOMKEY04 = 40;	//	カスタムキー4
-	public static final int CODE_CUSTOMKEY05 = 41;	//	カスタムキー5
-	public static final int CODE_CUSTOMKEY06 = 42;	//	カスタムキー6
-	public static final int CODE_CUSTOMKEY07 = 43;	//	カスタムキー7
-	public static final int CODE_CUSTOMKEY08 = 44;	//	カスタムキー8
-	public static final int CODE_CUSTOMKEY09 = 45;	//	カスタムキー9
-	public static final int CODE_CUSTOMKEY10 = 46;	//	カスタムキー10
+	public static final int CODE_CUSTOMKEY01 = 38;	//	カスタムキー1
+	public static final int CODE_CUSTOMKEY02 = 39;	//	カスタムキー2
+	public static final int CODE_CUSTOMKEY03 = 40;	//	カスタムキー3
+	public static final int CODE_CUSTOMKEY04 = 41;	//	カスタムキー4
+	public static final int CODE_CUSTOMKEY05 = 42;	//	カスタムキー5
+	public static final int CODE_CUSTOMKEY06 = 43;	//	カスタムキー6
+	public static final int CODE_CUSTOMKEY07 = 44;	//	カスタムキー7
+	public static final int CODE_CUSTOMKEY08 = 45;	//	カスタムキー8
+	public static final int CODE_CUSTOMKEY09 = 46;	//	カスタムキー9
+	public static final int CODE_CUSTOMKEY10 = 47;	//	カスタムキー10
 
 	public static final int KEY_CODE_CUSTOM_MAX = 10;
 
@@ -2231,7 +2517,7 @@ public class DEF {
 	public static final String KEY_CODE_I_DPAD_DOWN = "CodeIDpadDown";	//	カーソル下キー
 	public static final String KEY_CODE_I_DPAD_CENTER = "CodeIDpadCenter";	// 決定キー
 	public static final String KEY_CODE_I_ENTER = "CodeIEnter";	//	エンターキー
-	public static final String KEY_CODE_I_DEL = "CodeIDel";	//	削除キー
+	public static final String KEY_CODE_I_DEL = "CodeIDel";	//	backspaceキー
 	public static final String KEY_CODE_I_SPACE = "CodeISpace";	//	スペースキー
 	public static final String KEY_CODE_I_SEARCH = "CodeISearch";	//	検索キー
 	public static final String KEY_CODE_I_PAGE_UP = "CodeIPageUp";	//	ページアップキー
@@ -2268,6 +2554,7 @@ public class DEF {
 	public static final String KEY_CODE_I_CUSTOMKEY08 = "CustomKeyI08";	//	カスタムキー8
 	public static final String KEY_CODE_I_CUSTOMKEY09 = "CustomKeyI09";	//	カスタムキー9
 	public static final String KEY_CODE_I_CUSTOMKEY10 = "CustomKeyI10";	//	カスタムキー10
+	public static final String KEY_CODE_I_FORWARD_DEL = "CodeIForwardDel";	//	Deleteキー
 
 	// テキストビューア用
 	// スマホ/タブレット
@@ -2284,7 +2571,7 @@ public class DEF {
 	public static final String KEY_CODE_T_DPAD_DOWN = "CodeTDpadDown";	//	カーソル下キー
 	public static final String KEY_CODE_T_DPAD_CENTER = "CodeTDpadCenter";	// 決定キー
 	public static final String KEY_CODE_T_ENTER = "CodeTEnter";	//	エンターキー
-	public static final String KEY_CODE_T_DEL = "CodeTDel";	//	削除キー
+	public static final String KEY_CODE_T_DEL = "CodeTDel";	//	Backspaceキー
 	public static final String KEY_CODE_T_SPACE = "CodeTSpace";	//	スペースキー
 	public static final String KEY_CODE_T_SEARCH = "CodeTSearch";	//	検索キー
 	public static final String KEY_CODE_T_PAGE_UP = "CodeTPageUp";	//	ページアップキー
@@ -2321,6 +2608,7 @@ public class DEF {
 	public static final String KEY_CODE_T_CUSTOMKEY08 = "CustomKeyT08";	//	カスタムキー8
 	public static final String KEY_CODE_T_CUSTOMKEY09 = "CustomKeyT09";	//	カスタムキー9
 	public static final String KEY_CODE_T_CUSTOMKEY10 = "CustomKeyT10";	//	カスタムキー10
+	public static final String KEY_CODE_T_FORWARD_DEL = "CodeTForwardDel";	//	Deleteキー
 
 	// EPUBビューア用
 	// スマホ/タブレット
@@ -2337,7 +2625,7 @@ public class DEF {
 	public static final String KEY_CODE_E_DPAD_DOWN = "CodeEDpadDown";	//	カーソル下キー
 	public static final String KEY_CODE_E_DPAD_CENTER = "CodeEDpadCenter";	// 決定キー
 	public static final String KEY_CODE_E_ENTER = "CodeEEnter";	//	エンターキー
-	public static final String KEY_CODE_E_DEL = "CodeEDel";	//	削除キー
+	public static final String KEY_CODE_E_DEL = "CodeEDel";	//	Backspaceキー
 	public static final String KEY_CODE_E_SPACE = "CodeESpace";	//	スペースキー
 	public static final String KEY_CODE_E_SEARCH = "CodeESearch";	//	検索キー
 	public static final String KEY_CODE_E_PAGE_UP = "CodeEPageUp";	//	ページアップキー
@@ -2374,6 +2662,7 @@ public class DEF {
 	public static final String KEY_CODE_E_CUSTOMKEY08 = "CustomKeyE08";	//	カスタムキー8
 	public static final String KEY_CODE_E_CUSTOMKEY09 = "CustomKeyE09";	//	カスタムキー9
 	public static final String KEY_CODE_E_CUSTOMKEY10 = "CustomKeyE10";	//	カスタムキー10
+	public static final String KEY_CODE_E_FORWARD_DEL = "CodeEForwardDel";	//	Deleteキー
 
 	// ファイルリスト用
 	// スマホ/タブレット
@@ -2390,7 +2679,7 @@ public class DEF {
 	public static final String KEY_CODE_F_DPAD_DOWN = "CodeFDpadDown";	//	カーソル下キー
 	public static final String KEY_CODE_F_DPAD_CENTER = "CodeFDpadCenter";	// 決定キー
 	public static final String KEY_CODE_F_ENTER = "CodeFEnter";	//	エンターキー
-	public static final String KEY_CODE_F_DEL = "CodeFDel";	//	削除キー
+	public static final String KEY_CODE_F_DEL = "CodeFDel";	//	Backspaceキー
 	public static final String KEY_CODE_F_SPACE = "CodeFSpace";	//	スペースキー
 	public static final String KEY_CODE_F_SEARCH = "CodeFSearch";	//	検索キー
 	public static final String KEY_CODE_F_PAGE_UP = "CodeFPageUp";	//	ページアップキー
@@ -2427,6 +2716,7 @@ public class DEF {
 	public static final String KEY_CODE_F_CUSTOMKEY08 = "CustomKeyF08";	//	カスタムキー8
 	public static final String KEY_CODE_F_CUSTOMKEY09 = "CustomKeyF09";	//	カスタムキー9
 	public static final String KEY_CODE_F_CUSTOMKEY10 = "CustomKeyF10";	//	カスタムキー10
+	public static final String KEY_CODE_F_FORWARD_DEL = "CodeFForwardDel";	//	Deleteキー
 
 	public static final int TAP_FILELIST_NONE = 0;
 	public static final int TAP_FILELIST_NOSELECT = 1;
@@ -2507,6 +2797,7 @@ public class DEF {
 	public static final int KEYCODE_BUTTON_START = 108;
 	public static final int KEYCODE_BUTTON_SELECT = 109;
 	public static final int KEYCODE_ESCAPE = 111;
+	public static final int KEYCODE_FORWARD_DEL = 112;
 	public static final int KEYCODE_MOVE_HOME = 122;
 	public static final int KEYCODE_MOVE_END = 123;
 	public static final int KEYCODE_FORWARD = 125;
@@ -2526,6 +2817,7 @@ public class DEF {
 		DEF.KEYCODE_DPAD_CENTER,
 		DEF.KEYCODE_ENTER,
 		DEF.KEYCODE_DEL,
+		DEF.KEYCODE_FORWARD_DEL,
 		DEF.KEYCODE_SPACE,
 		DEF.KEYCODE_SEARCH,
 		DEF.KEYCODE_PAGE_UP,
@@ -2597,7 +2889,8 @@ public class DEF {
 		, R.string.hardwarekeytitle42
 		, R.string.hardwarekeytitle43
 		, R.string.hardwarekeytitle44
-		, R.string.hardwarekeytitle45 };
+		, R.string.hardwarekeytitle45
+		, R.string.hardwarekeytitle46 };
 
 	public static final String[] HardwareImageKeyIdName =
 		{ DEF.KEY_CODE_I_BACK
@@ -2613,6 +2906,7 @@ public class DEF {
 		, DEF.KEY_CODE_I_DPAD_CENTER
 		, DEF.KEY_CODE_I_ENTER
 		, DEF.KEY_CODE_I_DEL
+		, DEF.KEY_CODE_I_FORWARD_DEL
 		, DEF.KEY_CODE_I_SPACE
 		, DEF.KEY_CODE_I_SEARCH
 		, DEF.KEY_CODE_I_PAGE_UP
@@ -2661,6 +2955,7 @@ public class DEF {
 		, DEF.KEY_CODE_T_DPAD_CENTER
 		, DEF.KEY_CODE_T_ENTER
 		, DEF.KEY_CODE_T_DEL
+		, DEF.KEY_CODE_T_FORWARD_DEL
 		, DEF.KEY_CODE_T_SPACE
 		, DEF.KEY_CODE_T_SEARCH
 		, DEF.KEY_CODE_T_PAGE_UP
@@ -2709,6 +3004,7 @@ public class DEF {
 		, DEF.KEY_CODE_F_DPAD_CENTER
 		, DEF.KEY_CODE_F_ENTER
 		, DEF.KEY_CODE_F_DEL
+		, DEF.KEY_CODE_F_FORWARD_DEL
 		, DEF.KEY_CODE_F_SPACE
 		, DEF.KEY_CODE_F_SEARCH
 		, DEF.KEY_CODE_F_PAGE_UP
@@ -2757,6 +3053,7 @@ public class DEF {
 		, DEF.KEY_CODE_E_DPAD_CENTER
 		, DEF.KEY_CODE_E_ENTER
 		, DEF.KEY_CODE_E_DEL
+		, DEF.KEY_CODE_E_FORWARD_DEL
 		, DEF.KEY_CODE_E_SPACE
 		, DEF.KEY_CODE_E_SEARCH
 		, DEF.KEY_CODE_E_PAGE_UP
