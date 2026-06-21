@@ -56,7 +56,7 @@ ComittoNxX はオープンソースの画像ビュワーです.
 
 ## ダウンロード
 
-[Releases](https://github.com/comittonxxa2/ComittoNxX/releases) よりご利用ください.
+[Releases](https://github.com/comittonxxa2/ComittoNxX/releases/tag/2.4.10.BS) よりご利用ください.
 
 #### [NxD](https://github.com/Kdroidwin/cnxd/tree/cnxd) からの修正点
 
