@@ -345,6 +345,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mFlickPage;
 	private boolean mFlickEdge;
 	private String mRestoreValue;
+	private String mReturnValue;
 	private boolean mIsConfSave;
 	private boolean mForceNotice = false;
 	private boolean mAutoRepeatCheck = false;
@@ -584,7 +585,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			mFilePath = mUriPath;
 		}
-		if (mFilePath.toLowerCase().endsWith(".zip")) {
+		if (mFilePath.toLowerCase().endsWith(".zip") || mFilePath.toLowerCase().endsWith(".txt")) {
 			isAozora = true;
 		}
 		mLocalFileName = DEF.relativePath(mActivity, mPath, mFileName);
@@ -594,7 +595,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// 読書の情報を読みこむ
 		String id = (isAozora) ? "#aozora" : "#newepub";
 		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName + ", id=" + id);
-		String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mUser, mPass) + id, "-1,-1,0,0,0.0,0.0");
+		String mRestoreValue = intent.getStringExtra("Value");
 		mFirstRead = false;
 		mAozoraDirText = 0;
 		if (mRestoreValue != null) {
@@ -1551,7 +1552,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	}
 
 	private void saveCurrentPage() {
-		int logLevel = Logcat.LOG_LEVEL_WARN;
+		int logLevel = 1;//Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 		// 現在ページ情報を保存
 		if (isAozora) {
@@ -1596,6 +1597,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			value = nowpage + "," + maxpage + "," + mTimestamp + "," + currentSpineIndex + "," + ratiox + "," + ratioy;
 			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", value);
 		}
+		mReturnValue = value;
 		ed.apply();
 		Logcat.v(logLevel, "value=" + value);
 	}
@@ -1611,6 +1613,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", mRestoreValue);
 		}
+		mReturnValue = mRestoreValue;
 		ed.apply();
 	}
 
@@ -1655,6 +1658,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		intent.putExtra("NextOpen", select);
 		intent.putExtra("LastFile", mFileName);
 		intent.putExtra("LastPath", mPath);
+		intent.putExtra("ReturnValue", mReturnValue);
+		intent.putExtra("ReturnMode", isAozora);
+		intent.putExtra("FilePath", mFilePath);
+		intent.putExtra("User", mUser);
+		intent.putExtra("Pass", mPass);
 		setResult(RESULT_OK, intent);
 		finish();
 	}
@@ -3021,7 +3029,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 							}
 							// ファイルを読み直す
 							File file = new File(mFilePath);
-							loadZip(file);
+							loadSource(file);
 						}
 						break;
 				}
@@ -3867,7 +3875,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 			}
 			File file = new File(path);
-			loadZip(file);
+			loadSource(file);
 			return;
 		}
 
@@ -6731,6 +6739,122 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			}
 		}
 	};
+
+
+	// 青空文庫のZIPファイルまたはTXTファイルを開く
+	private void loadSource(File sourceFile) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		if (mLoadingSpinner != null) {
+			mLoadingSpinner.setVisibility(View.VISIBLE);
+			mLoadingSpinner.bringToFront();
+		}
+		executor.execute(() -> {
+			try {
+				Map<String, String> imagesBase64 = new HashMap<>();
+				String rawText = null;
+				final String baseUrl;
+				String fileName = sourceFile.getName().toLowerCase();
+				// テキストファイル(.txt)の場合
+				if (fileName.endsWith(".txt")) {
+					// テキストファイルが置かれている「親フォルダ」をベースURLにする
+					File parentDir = sourceFile.getParentFile();
+					if (parentDir != null) {
+						baseUrl = "file://" + parentDir.getAbsolutePath() + "/";
+					}
+					else {
+						baseUrl = "file://" + getCacheDir().getAbsolutePath() + "/";
+					}
+					// テキストファイルの読み込み (Shift_JIS = MS932)
+					ByteArrayOutputStream bos = new ByteArrayOutputStream();
+					try (FileInputStream fis = new FileInputStream(sourceFile)) {
+						byte[] buffer = new byte[8192];
+						int len;
+						while ((len = fis.read(buffer)) != -1) {
+							bos.write(buffer, 0, len);
+						}
+					}
+					rawText = new String(bos.toByteArray(), "MS932");
+					// ※ 画像は親フォルダにあるものを直接参照するため、ここではコピーしません
+				}
+				// ZIPファイル(.zip)の場合
+				else if (fileName.endsWith(".zip")) {
+					// 解凍先のキャッシュディレクトリを参照するベースURL
+					baseUrl = "file://" + getCacheDir().getAbsolutePath() + "/";
+					try (ZipInputStream zis = new ZipInputStream(new FileInputStream(sourceFile), Charset.forName("MS932"))) {
+						ZipEntry entry;
+						while ((entry = zis.getNextEntry()) != null) {
+							String fullName = entry.getName();
+							if (entry.isDirectory()) continue;
+							File outFile = new File(getCacheDir(), new File(fullName).getName());
+							if (fullName.toLowerCase().endsWith(".txt")) {
+								ByteArrayOutputStream bos = new ByteArrayOutputStream();
+								byte[] buffer = new byte[8192];
+								int len;
+								while ((len = zis.read(buffer)) != -1) {
+									bos.write(buffer, 0, len);
+								}
+								rawText = new String(bos.toByteArray(), "MS932");
+							}
+							else if (isImage(fullName)) {
+								// ZIP内の画像はキャッシュフォルダへコピー
+								try (FileOutputStream fos = new FileOutputStream(outFile)) {
+									byte[] buffer = new byte[8192];
+									int len;
+									while ((len = zis.read(buffer)) != -1) {
+										fos.write(buffer, 0, len);
+									}
+								}
+							}
+						}
+					}
+				}
+				else {
+					// 対応していない拡張子の場合
+					Logcat.w(logLevel, "未対応のファイル形式です: " + fileName);
+					return;
+				}
+				// ==========================================
+				// 共通処理: HTML変換・WebView表示処理
+				// ==========================================
+				if (rawText != null) {
+					Logcat.v(logLevel, "タグを除去して純粋なテキストの長さを測る");
+					String textOnly = rawText.replaceAll("<[^>]*>", "").replaceAll("\\s+", "").trim();
+					mAozoratextLength = textOnly.length();
+					mTextLength = mAozoratextLength + 1;
+					Logcat.v(logLevel, "変換開始");
+					mAozoraHtml = buildFinalHtml(rawText, imagesBase64, isJapaneseMode);
+					Logcat.v(logLevel, "一時ファイルに保存");
+					mAozoraFile = new File(getCacheDir(), "temp.html");
+					try (FileOutputStream fos = new FileOutputStream(mAozoraFile)) {
+						fos.write(mAozoraHtml.getBytes(StandardCharsets.UTF_8));
+					}
+					catch (IOException e) {
+						e.printStackTrace();
+					}
+					Logcat.v(logLevel, "変換完了");
+					runOnUiThread(() -> {
+						fileUrl = "file://" + mAozoraFile.getAbsolutePath();
+						if (mLoadingSpinner != null) {
+							mLoadingSpinner.setVisibility(View.VISIBLE);
+							mLoadingSpinner.bringToFront();
+						}
+						WebSettings settings = leftWebView.getSettings();
+						settings.setLoadWithOverviewMode(false);
+						settings.setUseWideViewPort(false);
+						settings.setAllowFileAccess(true);
+						// 正しいベースURLを適用してHTMLを読み込む
+						leftWebView.loadUrl(fileUrl);
+						setAsyncScrollSet();
+						updateLayout();
+						GetLeftWidthSpecial(leftWebView, 500 + mAozoratextLength / 200);
+					});
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+	}
 
 	// 青空文庫のZIPファイルを開く
 	private void loadZip(File zipFile) {
