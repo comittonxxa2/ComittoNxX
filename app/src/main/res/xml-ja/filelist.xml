@@ -381,6 +381,11 @@
             android:key="SkipUpdateFileList"
             android:summary="履歴やブックマークからビューアを開く時にファイル一覧画面の更新をスキップする場合にチェックを入れる\n※現在のファイル一覧と異なる場合はファイル一覧画面の更新が行われる"
             android:title="ファイル一覧画面の更新をスキップ" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AozoraTextFile"
+            android:summary="青空文庫のテキストファイルの識別を行う場合はチェックを入れる(WebベースのEPUBビューアを用いて表示を行う)"
+            android:title="青空文庫のテキストファイルの読み込みを行う" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
