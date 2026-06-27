@@ -472,18 +472,108 @@ public class Information implements DialogInterface.OnDismissListener {
 		private void getDownloads() {
 			int logLevel = Logcat.LOG_LEVEL_WARN;
 			Logcat.d(logLevel, "開始します.");
+			// メッセージの完全初期化
+			mDownloadsMessage = "";
+			// ベースURLを補正(末尾の/releasesや/を綺麗に取り除く)
+			String baseApiUrl = DEF.APP_DOWNLOADS;
+			if (baseApiUrl.endsWith("/releases") || baseApiUrl.endsWith("/releases/")) {
+				baseApiUrl = baseApiUrl.replaceAll("/releases/?$", "");
+			}
+			// 最新版専用URLと全件一覧URLを個別に生成
+			String latestUrlStr = baseApiUrl + "/releases/latest";
+			String allReleasesUrlStr = baseApiUrl + "/releases";
+			String latestTagName = "";
+			// 最新リリース(Latest)を単一APIから強制取得
+			HttpURLConnection conLatest = null;
 			try {
-				URL url = new URL(DEF.APP_DOWNLOADS);
-				HttpURLConnection con = (HttpURLConnection)url.openConnection();
-				con.setRequestProperty("Accept", "application/vnd.github+json");
-				setMessage(con.getInputStream());
+				URL url = new URL(latestUrlStr);
+				conLatest = (HttpURLConnection)url.openConnection();
+				conLatest.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android)");
+				conLatest.setRequestProperty("Accept", "application/vnd.github+json");
+				conLatest.setConnectTimeout(5000);
+				conLatest.setReadTimeout(5000);
+				if (conLatest.getResponseCode() == HttpURLConnection.HTTP_OK) {
+					BufferedReader br = new BufferedReader(new InputStreamReader(conLatest.getInputStream()));
+					StringBuilder sb = new StringBuilder();
+					String line;
+					while ((line = br.readLine()) != null) {
+						sb.append(line);
+					}
+					br.close();
+					// 最新オブジェクトのパース
+					JSONObject top_child = new JSONObject(sb.toString());
+					// ここでの型宣言を削除し外側で宣言した変数に代入
+					latestTagName = top_child.optString("tag_name", "").trim();
+					if (!latestTagName.isEmpty()) {
+						mDownloadsMessage += "Version: " + latestTagName;
+						mDownloadsMessage += "  :  " + top_child.optString("published_at", "-") + "\n";
+						if (top_child.has("assets") && !top_child.isNull("assets")) {
+							JSONArray assets = top_child.getJSONArray("assets");
+							for (int j = 0; j < assets.length(); j++) {
+								JSONObject assets_child = assets.getJSONObject(j);
+								mDownloadsMessage += "    " + assets_child.optString("name", "Unknown File");
+								mDownloadsMessage += "  :  " + assets_child.optString("download_count", "0") + "\n";
+							}
+						}
+						mDownloadsMessage += "\n";
+					}
+				}
 			}
-			catch (MalformedURLException e) {
-				Logcat.e(logLevel, "", e);
-				mDownloadsMessage = mActivity.getString(R.string.GetError);
+			catch (Exception e) {
+				Logcat.e(logLevel, "Latest取得エラー", e);
 			}
-			catch (IOException e) {
-				Logcat.e(logLevel, "", e);
+			finally {
+				if (conLatest != null) conLatest.disconnect();
+			}
+			// 連続アクセス規制を回避するための短いウェイト
+			try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+			// 過去一覧から配列ループで下に結合
+			HttpURLConnection conAll = null;
+			try {
+				URL url = new URL(allReleasesUrlStr);
+				conAll = (HttpURLConnection)url.openConnection();
+				conAll.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android)");
+				conAll.setRequestProperty("Accept", "application/vnd.github+json");
+				conAll.setConnectTimeout(5000);
+				conAll.setReadTimeout(5000);
+				if (conAll.getResponseCode() == HttpURLConnection.HTTP_OK) {
+					BufferedReader br = new BufferedReader(new InputStreamReader(conAll.getInputStream()));
+					StringBuilder sb = new StringBuilder();
+					String line;
+					while ((line = br.readLine()) != null) {
+						sb.append(line);
+					}
+					br.close();
+					JSONArray top = new JSONArray(sb.toString());
+					for (int i = 0; i < top.length(); i++) {
+						JSONObject top_child = top.getJSONObject(i);
+						// 将来の重複対策：今処理しようとしているタグ名
+						String currentTagName = top_child.optString("tag_name", "").trim();
+						if (!latestTagName.isEmpty() && latestTagName.equals(currentTagName)) {
+							continue;
+						}
+						mDownloadsMessage += "Version: " + top_child.getString("tag_name");
+						mDownloadsMessage += "  :  " + top_child.getString("published_at") + "\n";
+						if (top_child.has("assets") && !top_child.isNull("assets")) {
+							JSONArray assets = top_child.getJSONArray("assets");
+							for (int j = 0; j < assets.length(); j++) {
+								JSONObject assets_child = assets.getJSONObject(j);
+								mDownloadsMessage += "    " + assets_child.getString("name");
+								mDownloadsMessage += "  :  " + assets_child.getString("download_count") + "\n";
+							}
+						}
+						mDownloadsMessage += "\n";
+					}
+				}
+			}
+			catch (Exception e) {
+				Logcat.e(logLevel, "過去一覧取得・パースエラー", e);
+			}
+			finally {
+				if (conAll != null) conAll.disconnect();
+			}
+			// 最終バックアップ
+			if (mDownloadsMessage.trim().isEmpty()) {
 				mDownloadsMessage = mActivity.getString(R.string.GetError);
 			}
 			Message message = new Message();
@@ -514,19 +604,74 @@ public class Information implements DialogInterface.OnDismissListener {
 					JSONObject top_child = top.getJSONObject(i);
 					mDownloadsMessage += "Version: " + top_child.getString("tag_name");
 					mDownloadsMessage += "  :  " + top_child.getString("published_at") + "\n";
-
-					JSONArray assets = top_child.getJSONArray("assets");
-					for (int j = 0; j < assets.length(); j++) {
-						JSONObject assets_child = assets.getJSONObject(j);
-						mDownloadsMessage += "    " + assets_child.getString("name");
-						mDownloadsMessage += "  :  " + assets_child.getString("download_count") + "\n";
+					// GitHubの仕様変更により一覧APIの assets 配列が空、あるいは存在しなくても、絶対に例外でクラッシュさせずに無視して処理を流す防衛コード
+					if (top_child.has("assets") && !top_child.isNull("assets")) {
+						JSONArray assets = top_child.getJSONArray("assets");
+						for (int j = 0; j < assets.length(); j++) {
+							JSONObject assets_child = assets.getJSONObject(j);
+							mDownloadsMessage += "    " + assets_child.getString("name");
+							mDownloadsMessage += "  :  " + assets_child.getString("download_count") + "\n";
+						}
 					}
 					mDownloadsMessage += "\n";
 				}
-
-			} catch (JSONException e) {
-				Logcat.e(logLevel, "", e);
+			}
+			catch (JSONException e) {
+				Logcat.e(logLevel, "JSONパースエラー", e);
 				mDownloadsMessage = mActivity.getString(R.string.ParseError);
+			}
+			if (mDownloadsMessage.trim().isEmpty()) {
+				mDownloadsMessage = "[公開されているリリース情報がありません]";
+			}
+		}
+
+		private String streamToString(InputStream is) throws IOException {
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			StringBuilder sb = new StringBuilder();
+			String line;
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+			}
+			br.close();
+			return sb.toString();
+		}
+		// 最新リリースのJSONパース(通信1回目用・最新のダウンロード数を確実に拾う)
+		private String processLatestReleaseJson(InputStream is) throws Exception {
+			String string = streamToString(is);
+			JSONObject top_child = new JSONObject(string);
+			String tagName = top_child.optString("tag_name", "");
+			if (!tagName.isEmpty()) {
+				mDownloadsMessage += "Version: " + tagName;
+				mDownloadsMessage += "  :  " + top_child.optString("published_at", "-") + "\n";
+				// latestエンドポイントのレスポンスから、ファイル名とダウンロード数を完全に復元
+				if (top_child.has("assets")) {
+					JSONArray assets = top_child.getJSONArray("assets");
+					for (int j = 0; j < assets.length(); j++) {
+						JSONObject assets_child = assets.getJSONObject(j);
+						mDownloadsMessage += "    " + assets_child.optString("name", "Unknown File");
+						mDownloadsMessage += "  :  " + assets_child.optString("download_count", "0") + "\n";
+					}
+				}
+				mDownloadsMessage += "\n";
+			}
+			// 重複を避けるために最新のタグ名を返す
+			return tagName;
+		}
+		// 過去リリースのJSONパース(通信2回目用・最新をスキップしてタイムライン化)
+		private void processAllReleasesJson(InputStream is, String latestTagName) throws Exception {
+			String string = streamToString(is);
+			JSONArray top = new JSONArray(string);
+			for (int i = 0; i < top.length(); i++) {
+				JSONObject top_child = top.getJSONObject(i);
+				String currentTagName = top_child.optString("tag_name", "");
+				// 万が一過去一覧側にも最新版が含まれていた場合の「二重表示防止」スキップ処理
+				if (!latestTagName.isEmpty() && latestTagName.equals(currentTagName)) {
+					continue;
+				}
+				// 過去バージョンはタイトルと日付のみを出力
+				mDownloadsMessage += "Version: " + currentTagName;
+				mDownloadsMessage += "  :  " + top_child.optString("published_at", "-") + "\n";
+				mDownloadsMessage += "\n";
 			}
 		}
 	}
