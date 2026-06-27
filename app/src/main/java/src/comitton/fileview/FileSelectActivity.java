@@ -5425,6 +5425,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// WebベースのEPUBビューアの場合
 			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
 			intent.putExtra("Text", "");
+			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#aozora", "-1,-1,0,0,0.0,0.0");
+			intent.putExtra("Value", mValue);
 			// ... 他の共通Extra ...
 			setupCommonExtras(intent, name);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
