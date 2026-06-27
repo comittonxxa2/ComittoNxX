@@ -29,6 +29,7 @@ import src.comitton.config.SetHardwareFileListKeyActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
+import src.comitton.config.SetWebViewActivity;
 import src.comitton.expandview.ExpandActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
@@ -340,6 +341,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static int deviceOrientation = -1;
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	private boolean mAozoraZipFile;
+	private boolean mAozoraTextFile;
 	private int currentOrientation;
 	private boolean mThumbnailGrid;
 	private boolean mSkipUpdateFileList;
@@ -1399,6 +1401,45 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					readConfig();
 					setRequestedOrientation(currentOrientation);
 				}
+				if (requestCode == DEF.REQUEST_WEB) {
+					// 設定を保存(ImageConfigDialog.onCreateView()と同じ補正を行う)
+					boolean mGray = data.getExtras().getBoolean("Gray");
+					boolean mInvert = data.getExtras().getBoolean("Invert");
+					boolean mColoring = data.getExtras().getBoolean("Coloring");
+					int mSharpen = data.getExtras().getInt("Sharpen", 0);
+					int mBright = data.getExtras().getInt("Bright", 0);
+					int mGamma = data.getExtras().getInt("Gamma", 0);
+					int mContrast = data.getExtras().getInt("Contrast", 0);
+					int mHue = data.getExtras().getInt("Hue", 0);
+					int mSaturation = data.getExtras().getInt("Saturation", 0);
+					int mKelvin = data.getExtras().getInt("Kelvin", 0);
+					boolean mCheckRgbLevel = data.getExtras().getBoolean("CheckRgbLevel");
+					int mRedLevel = data.getExtras().getInt("RedLevel", 0);
+					int mGreenLevel = data.getExtras().getInt("GreenLevel", 0);
+					int mBlueLevel = data.getExtras().getInt("BlueLevel", 0);
+					boolean mIsConfSave = data.getExtras().getBoolean("IsConfSave");
+					if (mIsConfSave) {
+						SharedPreferences.Editor ed = mSharedPreferences.edit();
+						ed.putBoolean(DEF.KEY_WEBVIEWGRAY, mGray);
+						ed.putBoolean(DEF.KEY_WEBVIEWCOLORING, mColoring);
+						ed.putBoolean(DEF.KEY_WEBVIEWINVERT, mInvert);
+						ed.putInt(DEF.KEY_WEBVIEWSHARPEN, mSharpen);
+						ed.putInt(DEF.KEY_WEBVIEWBRIGHT, mBright + 5);
+						ed.putInt(DEF.KEY_WEBVIEWGAMMA, mGamma + 5);
+						ed.putInt(DEF.KEY_WEBVIEWCONTRAST, mContrast / 5);
+						ed.putInt(DEF.KEY_WEBVIEWHUE, mHue / 5 + 20);
+						ed.putInt(DEF.KEY_WEBVIEWSATURATION, mSaturation / 5);
+						ed.putInt(DEF.KEY_WEBVIEWKELVIN, mKelvin);
+						ed.putBoolean(DEF.KEY_WEBVIEWCHECKRGBLEVEL, mCheckRgbLevel);
+						if (mCheckRgbLevel) {
+							// RGBレベルをマニュアル設定する場合のみ保存
+							ed.putInt(DEF.KEY_WEBVIEWREDLEVEL, mRedLevel);
+							ed.putInt(DEF.KEY_WEBVIEWGREENLEVEL, mGreenLevel);
+							ed.putInt(DEF.KEY_WEBVIEWBLUELEVEL, mBlueLevel);
+						}
+						ed.apply();
+					}
+				}
 				if (requestCode == DEF.REQUEST_IMAGE || requestCode == DEF.REQUEST_TEXT || requestCode == DEF.REQUEST_EPUB || requestCode == DEF.REQUEST_EXPAND) {
 					Logcat.d(logLevel, "REQUEST_IMAGE || REQUEST_TEXT || REQUEST_EPUB || REQUEST_EXPAND");
 					if (resultCode == RESULT_OK && data != null) {
@@ -1410,6 +1451,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						String path = data.getExtras().getString("LastPath");
 						Logcat.d(logLevel, "nextopen=" + nextopen + ", file=" + file + ", path=" + path);
 
+						if (requestCode == DEF.REQUEST_EPUB) {
+							String mReturnValue = data.getExtras().getString("ReturnValue");
+							boolean mReturnMode = data.getExtras().getBoolean("ReturnMode");
+							String filepath = data.getExtras().getString("FilePath");
+							String user = data.getExtras().getString("User");
+							String pass = data.getExtras().getString("Pass");
+							SharedPreferences.Editor ed = mSharedPreferences.edit();
+							if (mReturnMode) {
+								ed.putString(DEF.createUrl(filepath, user, pass) + "#aozora", mReturnValue);
+							}
+							else {
+								ed.putString(DEF.createUrl(filepath, user, pass) + "#newepub", mReturnValue);
+							}
+							ed.apply();
+						}
 						if (nextopen != CloseDialog.CLICK_CLOSE) {
 							// 次のファイルを開く場合
 							Logcat.d(logLevel, "nextopen != CloseDialog.CLICK_CLOSE");
@@ -1782,6 +1838,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mApplyDir = SetFileListActivity.getMarkerDirOn(mSharedPreferences);
 		mSkipGetThumbnail = SetFileListActivity.getSkipGetThumbnail(mSharedPreferences);
 		mAozoraZipFile = SetFileListActivity.getAozoraZipFile(mSharedPreferences);
+		mAozoraTextFile = SetFileListActivity.getAozoraTextFile(mSharedPreferences);
 		mThumbnailGrid = SetFileListActivity.getThumbnailGrid(mSharedPreferences);
 		mSkipUpdateFileList = SetFileListActivity.getSkipUpdateFileList(mSharedPreferences);
 
@@ -3288,7 +3345,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// ファイルリスト取得条件セット
 		mFileList.setPath(mURI, mPath, user, pass);
-		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer, mEpubWebView, mAozoraZipFile);
+		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer, mEpubWebView, mAozoraZipFile, mAozoraTextFile);
 
 		mListScreenView.mFileListArea.setThumbnailId(0);
 
@@ -5132,6 +5189,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 			intent.putExtra("File", name);					// EPUBファイル名
 			intent.putExtra("Text", "META-INF/container.xml"); // 中身のファイル名
+			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+			String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
+			final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
+			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#newepub", "-1,-1,0,0,0.0,0.0");
+			intent.putExtra("Value", mValue);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
 			return;
 		}
@@ -5177,17 +5239,38 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			filename = FileAccess.filename(mActivity, name);
 		}
 
+		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
+		final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
+		final File path = new File(mFilePath);
+
+		boolean mode = true;
+		// ここでZip解析を実行
+		final boolean checkAozora = (mAozoraTextFile && mode) ? analyzeTextFile(path) : false;
+
 		Intent intent;
-		intent = new Intent(FileSelectActivity.this, TextActivity.class);
-		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
-		intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
-		intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
-		intent.putExtra("User", mServer.getUser());		// SMB認証用
-		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
-		intent.putExtra("File", filename);					// ZIPファイル名
-		intent.putExtra("Text", name); 					// 中身のテキストファイル名
-		startActivityForResult(intent, DEF.REQUEST_TEXT);
+		if (checkAozora) {
+			// WebベースのEPUBビューアの場合
+			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
+			intent.putExtra("Text", "");
+			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#aozora", "-1,-1,0,0,0.0,0.0");
+			intent.putExtra("Value", mValue);
+			// ... 他の共通Extra ...
+			setupCommonExtras(intent, name);
+			startActivityForResult(intent, DEF.REQUEST_EPUB);
+		} else {
+			// テキストビューアの場合
+			intent = new Intent(FileSelectActivity.this, TextActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			intent.putExtra("Server", mServer.getSelect());	// サーバー選択番号
+			intent.putExtra("Uri", mURI);						// ベースディレクトリのuri
+			intent.putExtra("Path", mPath);					// ベースURIからの相対パス名
+			intent.putExtra("User", mServer.getUser());		// SMB認証用
+			intent.putExtra("Pass", mServer.getPass());		// SMB認証用
+			intent.putExtra("File", filename);					// ZIPファイル名
+			intent.putExtra("Text", name); 					// 中身のテキストファイル名
+			startActivityForResult(intent, DEF.REQUEST_TEXT);
+		}
 	}
 
 	/**
@@ -5252,7 +5335,35 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 		intent.putExtra("File", file);					// ZIPファイル名
 		intent.putExtra("Text", name); 					// 中身のテキストファイル名
-		startActivityForResult(intent, DEF.REQUEST_TEXT);
+		// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+		boolean mGray = SetWebViewActivity.getWebviewGray(mSharedPreferences);
+		boolean mInvert = SetWebViewActivity.getWebviewInvert(mSharedPreferences);
+		boolean mColoring = SetWebViewActivity.getWebviewColoring(mSharedPreferences);
+		int mSharpen = SetWebViewActivity.getWebviewSharpen(mSharedPreferences);
+		int mBright = SetWebViewActivity.getWebviewBright(mSharedPreferences) - 5;
+		int mGamma = SetWebViewActivity.getWebviewGamma(mSharedPreferences) - 5;
+		int mContrast = SetWebViewActivity.getWebviewContrast(mSharedPreferences) * 5;
+		int mHue = (SetWebViewActivity.getWebviewHue(mSharedPreferences) - 20) * 5;
+		int mSaturation = SetWebViewActivity.getWebviewSaturation(mSharedPreferences) * 5;
+		int mKelvin = SetWebViewActivity.getKelvin(mSharedPreferences);
+		boolean mCheckRgbLevel = SetWebViewActivity.getCheckRgbLevel(mSharedPreferences);
+		int mRedLevel = SetWebViewActivity.getRedLevel(mSharedPreferences);
+		int mGreenLevel = SetWebViewActivity.getGreenLevel(mSharedPreferences);
+		int mBlueLevel = SetWebViewActivity.getBlueLevel(mSharedPreferences);
+		intent.putExtra("Gray", mGray);
+		intent.putExtra("Invert", mInvert);
+		intent.putExtra("Coloring", mColoring);
+		intent.putExtra("Sharpen", mSharpen);
+		intent.putExtra("Bright", mBright);
+		intent.putExtra("Gamma", mGamma);
+		intent.putExtra("Contrast", mContrast);
+		intent.putExtra("Saturation", mSaturation);
+		intent.putExtra("Kelvin", mKelvin);
+		intent.putExtra("CheckRgbLevel", mCheckRgbLevel);
+		intent.putExtra("RedLevel", mRedLevel);
+		intent.putExtra("GreenLevel", mGreenLevel);
+		intent.putExtra("BlueLevel", mBlueLevel);
+		startActivityForResult(intent, DEF.REQUEST_WEB);
 	}
 
 	/**
@@ -5365,30 +5476,52 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		return;
 	}
 
-	private static boolean analyzeZip(File zipFile) {
-		// 青空文庫かどうかを判定
-		Charset ms932 = Charset.forName("MS932");
+	// MS932 (Shift_JIS拡張) を共通で使用
+	private static final Charset MS932 = Charset.forName("MS932");
 
-		try (ZipFile zf = new ZipFile(zipFile, ZipFile.OPEN_READ, ms932)) {
+	// 通常のテキストファイルを判定するメソッド
+	public static boolean analyzeTextFile(File textFile) {
+		if (textFile == null || !textFile.exists() || !textFile.getName().toLowerCase().endsWith(".txt")) {
+			return false;
+		}
+		try {
+			// まずは冒頭部分をチェック
+			if (checkHeader(() -> new FileInputStream(textFile))) return true;
+			// 冒頭でわからなければ、末尾をチェック
+			if (checkFooter(() -> new FileInputStream(textFile), textFile.length())) return true;
+		} catch (IOException e) {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "テキストファイル分析エラー: " + e.getMessage());
+		}
+		return false;
+	}
+
+	// Zipファイルを判定するメソッド
+	private static boolean analyzeZip(File zipFile) {
+		try (ZipFile zf = new ZipFile(zipFile, ZipFile.OPEN_READ, MS932)) {
 			Enumeration<? extends ZipEntry> entries = zf.entries();
 			while (entries.hasMoreElements()) {
 				ZipEntry entry = entries.nextElement();
 				if (entry.isDirectory() || !entry.getName().toLowerCase().endsWith(".txt")) continue;
+
+				// ラムダ式を使ってZip内のInputStreamを都度生成できるようにする
+				InputStreamProvider streamProvider = () -> zf.getInputStream(entry);
+
 				// まずは冒頭部分をチェック
-				if (checkHeader(zf, entry, ms932)) return true;
+				if (checkHeader(streamProvider)) return true;
 				// 冒頭でわからなければ、末尾をチェック
-				if (checkFooter(zf, entry, ms932)) return true;
+				if (checkFooter(streamProvider, entry.getSize())) return true;
 			}
 		}
 		catch (IOException e) {
-	    	Logcat.e(Logcat.LOG_LEVEL_ERROR, "Zip分析エラー: " + e.getMessage());
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "Zip分析エラー: " + e.getMessage());
 		}
 		return false;
 	}
 
 	// 冒頭をチェックするメソッド
-	private static boolean checkHeader(ZipFile zf, ZipEntry entry, Charset cs) throws IOException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(zf.getInputStream(entry), cs))) {
+	private static boolean checkHeader(InputStreamProvider provider) throws IOException {
+		try (InputStream is = provider.get();
+			 BufferedReader reader = new BufferedReader(new InputStreamReader(is, MS932))) {
 			String line;
 			int count = 0;
 			while ((line = reader.readLine()) != null && count < 100) {
@@ -5401,12 +5534,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 
 	// 末尾(フッター)をチェックするメソッド
-	private static boolean checkFooter(ZipFile zf, ZipEntry entry, Charset cs) throws IOException {
-		long size = entry.getSize();
-		if (size <= 0) return false;
+	private static boolean checkFooter(InputStreamProvider provider, long totalSize) throws IOException {
+		if (totalSize <= 0) return false;
 		// 末尾から何バイト戻るか(2000バイトもあれば十分クレジットが入る)
-		long seekPosition = Math.max(0, size - 2000);
-		try (InputStream is = zf.getInputStream(entry)) {
+		long seekPosition = Math.max(0, totalSize - 2000);
+		try (InputStream is = provider.get()) {
 			// 先頭からseekPosition分だけ読み飛ばす
 			long skipped = 0;
 			while (skipped < seekPosition) {
@@ -5415,7 +5547,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				skipped += s;
 			}
 			// 残りの部分(末尾2000バイト分)を読み取って判定
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, cs))) {
+	    	try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, MS932))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
 					if (line.contains("www.aozora.gr.jp")) return true;
@@ -5423,6 +5555,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 		}
 		return false;
+	}
+
+	// InputStreamを関数型インターフェースで渡すための補助インターフェース
+	@FunctionalInterface
+	private interface InputStreamProvider {
+		InputStream get() throws IOException;
 	}
 
 	private void setDrawEnable() {
@@ -5960,6 +6098,35 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#date", (int)((mFileData.getDate() / 1000)));
 				ed.apply();
 				releaseManager();
+				if (mAozoraTextFile) {
+					if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+						mUriFilePath = mURI + mFileData.getName();
+					}
+					else {
+						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+					}
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
+					if (mRestoreValue != null) {
+						String[] parts = mRestoreValue.split(",");
+						if (parts.length >= 6) {
+							try {
+								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
+									// 読書情報が無かった場合は何もしない
+								}
+								else {
+
+									// 末尾の2つを1.0にして既読にしてしまう
+									String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0";
+									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+									ed.apply();
+								}
+							}
+							catch (Exception e) {
+							}
+						}
+					}
+				}
 			}
 			if (mFileData.getType() == FileData.FILETYPE_ARC
 				|| mFileData.getType() == FileData.FILETYPE_PDF){
@@ -6102,6 +6269,34 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage");
 				ed.remove(DEF.createUrl(mUriFilePath, user, pass));
 				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#date");
+
+				if (mAozoraTextFile) {
+					if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特例でパスのURLを解決する(これを入れないと値が取り出せない)
+						mUriFilePath = mURI + mFileData.getName();
+					}
+					else {
+						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
+					}
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
+					if (mRestoreValue != null) {
+						String[] parts = mRestoreValue.split(",");
+						if (parts.length >= 6) {
+							try {
+								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
+									// 読書情報が無かった場合は何もしない
+								}
+								else {
+									// 先頭の値を-1にして未読にしてしまう
+									String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0";
+									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
+								}
+							}
+							catch (Exception e) {
+							}
+						}
+					}
+				}
 			}
 			else {
 				ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()) + "#maxpage", user, pass));
