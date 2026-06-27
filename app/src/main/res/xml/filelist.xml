@@ -379,6 +379,11 @@
             android:key="SkipUpdateFileList"
             android:summary="Check this box to skip updating the file list screen when opening a viewer from history or bookmarks.\n* The file list screen will be updated if it differs from the latest file list."
             android:title="Skip updating the file list screen." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AozoraTextFile"
+            android:summary="Check this box to identify Aozora Bunko text files (for display using a web-based EPUB viewer)."
+            android:title="Load a text file from Aozora Bunko." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
