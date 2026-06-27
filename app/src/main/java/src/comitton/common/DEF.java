@@ -399,6 +399,7 @@ public class DEF {
 	public static final int REQUEST_LICENSE = 109;
 	public static final int REQUEST_EPUB = 110;
 	public static final int REQUEST_CROP = 111;
+	public static final int REQUEST_WEB = 112;
 	public static final int APP_STORAGE_ACCESS_REQUEST_CODE = 501;
 	public static final int REQUEST_CODE_ACTION_OPEN_DOCUMENT = 502;
 	public static final int REQUEST_CODE_ACTION_OPEN_DOCUMENT_TREE = 503;
@@ -909,6 +910,7 @@ public class DEF {
 	public static final String KEY_SKIPZIPLIB = "SkipZipLib";
 	public static final String KEY_SETUNRARLIB = "SetUnRarLib";
 	public static final String KEY_AOZORAZIPFILE = "AozoraZipFile";
+	public static final String KEY_AOZORATEXTFILE = "AozoraTextFile";
 	public static final String KEY_LISTEXTENSION = "ListExtension";
 	public static final String KEY_PDFEXPAND = "PdfExpand";
 
