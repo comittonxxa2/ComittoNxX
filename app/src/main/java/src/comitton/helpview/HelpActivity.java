@@ -1,12 +1,15 @@
 package src.comitton.helpview;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.fileview.FileSelectActivity;
@@ -23,6 +26,24 @@ public class HelpActivity extends AppCompatActivity {
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 	private static SharedPreferences sharedPreferences;
 
+	@Override
+	protected void attachBaseContext(Context newBase) {
+		// 共通のSharedPreferencesから現在のテーマ設定を取得
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(newBase);
+		int themeValue = SetCommonActivity.getSelectTheme(sp);
+		Configuration overrideConfig = new Configuration(newBase.getResources().getConfiguration());
+		// 各モードに合わせてuiModeを強制上書きする
+		if (themeValue == 0) {
+			overrideConfig.uiMode = (overrideConfig.uiMode & ~Configuration.UI_MODE_NIGHT_MASK) | Configuration.UI_MODE_NIGHT_NO;
+		}
+		else if (themeValue == 1) {
+			overrideConfig.uiMode = (overrideConfig.uiMode & ~Configuration.UI_MODE_NIGHT_MASK) | Configuration.UI_MODE_NIGHT_YES;
+		}
+		// 上書きした環境変数を適用
+		Context context = newBase.createConfigurationContext(overrideConfig);
+		super.attachBaseContext(context);
+	}
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,7 +56,7 @@ public class HelpActivity extends AppCompatActivity {
 				e.printStackTrace();
 			}
 		}
-		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -73,7 +94,7 @@ public class HelpActivity extends AppCompatActivity {
         String url = intent.getStringExtra("Url");
 
         mWebView = (WebView) new WebView(this);
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 		FileSelectActivity.applyAppTheme(sharedPreferences);
         mWebView.loadUrl("file:///android_asset/" + url);
         setContentView(mWebView);
