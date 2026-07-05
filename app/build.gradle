@@ -10,14 +10,14 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "BU"
+def revision = "BV"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
 android {
 
     namespace packageName
-    compileSdk 36 // Android 16("Baklava")
+    compileSdk 37 // Android 17("CinnamonBun")
 
     // 28にすると -lpthread が勝手に追加されてビルドできない時がある
     // C言語の書式バージョン問題でビルドエラーが発生する場合はndkバージョンを24まで下げること
@@ -83,7 +83,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         debug {
@@ -124,7 +124,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         arm32 {
@@ -139,7 +139,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         x64 {
@@ -154,7 +154,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         x86 {
@@ -169,7 +169,7 @@ android {
             debuggable false
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
@@ -201,7 +201,7 @@ android {
 dependencies {
     implementation 'androidx.activity:activity:1.13.0'
     implementation 'androidx.appcompat:appcompat:1.7.1'
-    implementation 'androidx.core:core:1.18.0'
+    implementation 'androidx.core:core:1.19.0'
     implementation "androidx.constraintlayout:constraintlayout:2.2.1"
     implementation 'androidx.documentfile:documentfile:1.1.0'
     implementation 'androidx.fragment:fragment:1.8.9'
