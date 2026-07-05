@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import src.comitton.common.DEF;
 import src.comitton.common.ImageAccess;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.common.TextFormatter;
 import src.comitton.config.SetBookShelfActivity;
 import src.comitton.config.SetFileListActivity;
@@ -253,7 +254,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 		mContext = context;
 		mDrawNoticeListener = listener;
 
-		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		sharedPreferences = MultiProcessPreferences.getInstance(context);
 	}
 
 	@Override

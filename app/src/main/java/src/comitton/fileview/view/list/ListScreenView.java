@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetFileColorActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.data.RecordItem;
@@ -139,7 +140,7 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		mTargetRect = new Rect();
 		mListRect = new Rect();
 
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(context);
 		mBakColor = SetFileColorActivity.getTibColor(sp);
 		mUpdateArea = 0;
 	}
