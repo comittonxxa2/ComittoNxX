@@ -66,6 +66,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.annotation.SuppressLint;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetConfigActivity;
 import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetFileColorActivity;
@@ -345,7 +346,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mFlickPage;
 	private boolean mFlickEdge;
 	private String mRestoreValue;
-	private String mReturnValue;
 	private boolean mIsConfSave;
 	private boolean mForceNotice = false;
 	private boolean mAutoRepeatCheck = false;
@@ -462,6 +462,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mTextBakColorFix;
 	private int mDispOffset = 0;
 	private boolean mNoCache;
+	private boolean mHorizontalWriting;
+	private boolean mEnableHorizontalWriting = false;
 	private boolean mDispChange = false;
 	private boolean mInitSet = false;
 	private int mBackupCurrentScrolllX;
@@ -474,6 +476,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private String mAozoraHtml;
 	private int mAozoratextLength;
 	private int mAozoraDirText;
+	private int[] option =  {0, 0, 0, 0, 0};;
 
 	public class PageMetadata {
 		// 判定項目
@@ -514,6 +517,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		// 裏起動(ウォームアップ)フラグがある場合は描画せず即終了
+		if (getIntent().getBooleanExtra("IS_WARM_UP", false)) {
+			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+				overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
+				overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
+			}
+			else {
+				overridePendingTransition(0, 0);
+			}
+			super.onCreate(savedInstanceState);
+			finish();
+			return;
+		}
 		super.onCreate(savedInstanceState);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 			try {
@@ -530,7 +546,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mHandler = new Handler(this);
 		new TouchPanelView(mActivity, 3, mHandler);
 		setContentView(R.layout.epubreader);
-		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		mSharedPreferences = MultiProcessPreferences.getInstance(this);
 		mVibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
 		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 32);
@@ -595,13 +611,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// 読書の情報を読みこむ
 		String id = (isAozora) ? "#aozora" : "#newepub";
 		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName + ", id=" + id);
-		String mRestoreValue = intent.getStringExtra("Value");
+		String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mUser, mPass) + id, "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
 		mFirstRead = false;
 		mAozoraDirText = 0;
 		if (mRestoreValue != null) {
 			String[] parts = mRestoreValue.split(",");
 			if (parts.length >= 6) {
-				Logcat.v(logLevel, "parts=" + parts[0] + "," + parts[1] + "," + parts[2] + "," + parts[3] + "," + parts[4] + "," + parts[5]);
+				if (parts.length >= 7) {
+					for (int i = 0 ; i < (parts.length - 6) ; i++) {
+						option[i] = Integer.parseInt(parts[6 + i]);
+					}
+				}
+				Logcat.v(logLevel, "parts=" + parts[0] + "," + parts[1] + "," + parts[2] + "," + parts[3] + "," + parts[4] + "," + parts[5] + "," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4]);
 				// 文字列が破損していれば例外が出るのでtry～catchで囲む
 				try {
 					mFirstRead = (Integer.parseInt(parts[0]) == -1 && Integer.parseInt(parts[1]) == -1) ? true : false;
@@ -716,7 +737,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			// ダブルタップ検出のリスナーを有効にする(これを入れないとタップ操作ができなくなる)
 			mDetector.setOnDoubleTapListener(this);
 			// 設定の読込
-			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 			ReadSetting(sharedPreferences);
 			// 直前に設定したページに関する内容を復元する
 			restoreSetting();
@@ -1103,7 +1124,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			measurementWebView = null;
 		}
 		// サーフェスビューを止める
-		mSurfaceView.setVisibility(View.GONE);
+		try {
+			mSurfaceView.setVisibility(View.GONE);
+		}
+		catch (Exception e) {
+		}
 		// EPUBファイルをクローズする
 		try {
 			if (epub4jis != null) {
@@ -1552,7 +1577,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	}
 
 	private void saveCurrentPage() {
-		int logLevel = 1;//Logcat.LOG_LEVEL_WARN;
+		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 		// 現在ページ情報を保存
 		if (isAozora) {
@@ -1560,7 +1585,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			if (currentBook == null) return;
 		}
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
 		SharedPreferences.Editor ed = sp.edit();
 		int nowpage = GetNowPage();
 		int maxpage = getTotalPagesNow();
@@ -1590,14 +1615,13 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		}
 		String value;
 		if (isAozora) {
-			value = nowpage + "," + maxpage + "," + mTimestamp + "," + mAozoraDirText + "," + ratiox + "," + ratioy;
+			value = nowpage + "," + maxpage + "," + mTimestamp + "," + mAozoraDirText + "," + ratiox + "," + ratioy + "," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
 			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#aozora", value);
 		}
 		else {
-			value = nowpage + "," + maxpage + "," + mTimestamp + "," + currentSpineIndex + "," + ratiox + "," + ratioy;
+			value = nowpage + "," + maxpage + "," + mTimestamp + "," + currentSpineIndex + "," + ratiox + "," + ratioy + "," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
 			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", value);
 		}
-		mReturnValue = value;
 		ed.apply();
 		Logcat.v(logLevel, "value=" + value);
 	}
@@ -1605,7 +1629,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	// 起動時のページ情報に戻す
 	private void restoreCurrentPage() {
 
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
 		SharedPreferences.Editor ed = sp.edit();
 		if (isAozora) {
 			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#aozora", mRestoreValue);
@@ -1613,7 +1637,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", mRestoreValue);
 		}
-		mReturnValue = mRestoreValue;
 		ed.apply();
 	}
 
@@ -1658,11 +1681,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		intent.putExtra("NextOpen", select);
 		intent.putExtra("LastFile", mFileName);
 		intent.putExtra("LastPath", mPath);
-		intent.putExtra("ReturnValue", mReturnValue);
-		intent.putExtra("ReturnMode", isAozora);
-		intent.putExtra("FilePath", mFilePath);
-		intent.putExtra("User", mUser);
-		intent.putExtra("Pass", mPass);
 		setResult(RESULT_OK, intent);
 		finish();
 	}
@@ -1752,7 +1770,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// テキスト表示設定
 		mMenuDialog.addItem(DEF.MENU_TXTCONF, res.getString(R.string.txtConfMenu));
 		// 見開き設定
-		mMenuDialog.addItem(DEF.MENU_IMGVIEW, res.getString(R.string.tguide02));
+		mMenuDialog.addItem(DEF.MENU_IMGVIEW, res.getString(R.string.tguide02));		// 横書き表示に変更
+		if (mHorizontalWriting && mEnableHorizontalWriting) {
+			mMenuDialog.addItem(DEF.MENU_HORIZONTIALWRITING, res.getString(R.string.HorizontalWriting), getSetHorizontalWriting());
+		}
+
 		// 画面方向切り替え
 		if (isAozora) {
 			mMenuDialog.addItem(DEF.MENU_ROTATE, res.getString(R.string.rotateMenu));
@@ -2834,6 +2856,30 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 				break;
 			}
+			case DEF.MENU_HORIZONTIALWRITING:
+				// 横書き表示の切り替え
+				float old_ratiox = ratiox;
+				float old_ratioy = ratioy;
+				if (getSetHorizontalWriting()) {
+					setSetHorizontalWriting(false);
+					// 横長から縦長へ変更
+					isJapaneseMode = true;
+					// 横を縦へ変換
+					ratiox = 1.0f - old_ratioy;
+					ratioy = 0.0f;
+				}
+				else {
+					setSetHorizontalWriting(true);
+					// 縦長から横長へ変更
+					isJapaneseMode = false;
+					// 縦を横へ変換
+					ratioy = 1.0f - old_ratiox;
+					ratiox = 0.0f;
+				}
+				renderSpine(currentSpineIndex, leftWebView);
+				setAsyncScrollSet();
+				updateLayout();
+				break;
 			case DEF.MENU_ADDBOOKMARK: {
 				// ブックマーク追加ダイアログ表示
 				BookmarkDialog bookmarkDlg = new BookmarkDialog(this, R.style.MyDialog);
@@ -3658,6 +3704,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
 		mRotateBtn = DEF.RotateBtnList[SetCommonActivity.getRotateBtn(sharedPreferences)];
 		mNoCache = SetEpubActivity.getNoCache(sharedPreferences);
+		mHorizontalWriting = SetEpubActivity.getHorizontalWriting(sharedPreferences);
 	}
 
 	// サーフェスビューの設定
@@ -4105,9 +4152,28 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 				if (r != null) {
 					try {
-						return new WebResourceResponse(r.getMediaType().getName(), "UTF-8", new ByteArrayInputStream(r.getData()));
+						String mimeType = r.getMediaType().getName();
+						if (mimeType.contains("html")) {
+							// 横書きモードがONのときだけ変換する
+							if (getSetHorizontalWriting()) {
+								String html = convertStreamToString(r.getInputStream());
+								html = applyHorizontalStyles(html);
+								InputStream newStream = new ByteArrayInputStream(html.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+								return new WebResourceResponse(mimeType, "UTF-8", newStream);
+							}
+							else {
+								// 横書きOFF(縦書き)なら本来のデータをそのまま返す
+								return new WebResourceResponse(mimeType, "UTF-8", new ByteArrayInputStream(r.getData()));
+							}
+						}
+						else {
+							return new WebResourceResponse(mimeType, "UTF-8", new ByteArrayInputStream(r.getData()));
+						}
 					}
-					catch (IOException e) { return null; }
+					catch (Exception e) { 
+						Log.e(TAG, "Error during cache html conversion", e);
+						return null; 
+					}
 				}
 
 				if (isFontRequest) {
@@ -4133,8 +4199,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 						// epub4jからリソースを取得
 						Resource res = currentBook.getSpine().getResource(currentIndex);
 						InputStream is = res.getInputStream();
-						// 文字化けを防ぐため UTF-8 を指定
-						return new WebResourceResponse("text/html", "UTF-8", is);
+						// 横書きモードがONのときだけ変換する
+						if (getSetHorizontalWriting()) {
+							String html = convertStreamToString(is);
+							html = applyHorizontalStyles(html);
+							InputStream newStream = new ByteArrayInputStream(html.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+							// 文字化けを防ぐため UTF-8 を指定
+							return new WebResourceResponse("text/html", "UTF-8", newStream);
+						}
+						else {
+							// 横書きOFF(縦書き)ならそのままストリームを返す
+							// 文字化けを防ぐため UTF-8 を指定
+							return new WebResourceResponse("text/html", "UTF-8", is);
+						}
 					}
 					catch (Exception e) {
 						Log.e(TAG, "Resource loading failed", e);
@@ -4154,6 +4231,43 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			return true; // アプリを終了させない
 		}
 	};
+
+	// 横書き置換ロジックを共通メソッド化
+	private String applyHorizontalStyles(String html) {
+		// 既存の縦書きCSSプロパティを横書きに置換
+		html = html.replaceAll("writing-mode:\\s*vertical-rl", "writing-mode: horizontal-tb");
+		html = html.replaceAll("-webkit-writing-mode:\\s*vertical-rl", "-webkit-writing-mode: horizontal-tb");
+		html = html.replaceAll("-epub-writing-mode:\\s*vertical-rl", "-epub-writing-mode: horizontal-tb");
+		html = html.replaceAll("direction:\\s*rtl", "direction: ltr");
+		// 強制的に上書きするためのスタイルシートをインジェクション
+		String forceCss = "<style type=\"text/css\">\n" +
+			"html, body, p, div, span, asm, section {\n" +
+			"  writing-mode: horizontal-tb !important;\n" +
+			"  -webkit-writing-mode: horizontal-tb !important;\n" +
+			"  -epub-writing-mode: horizontal-tb !important;\n" +
+			"  direction: ltr !important;\n" +
+			"}\n" +
+			"</style>\n" +
+			"</head>";
+		if (html.contains("</head>")) {
+			html = html.replace("</head>", forceCss);
+		}
+		else if (html.contains("<body>")) {
+			html = html.replace("<body>", "<body>" + forceCss.replace("</head>", ""));
+		}
+		return html;
+	}
+
+	private String convertStreamToString(InputStream is) throws Exception {
+		java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		while ((line = reader.readLine()) != null) {
+			sb.append(line).append("\n");
+		}
+		reader.close();
+		return sb.toString();
+	}
 
 	// 検索が完了したら呼び出される
 	private final WebView.FindListener commonFindListener = (activeMatchOrdinal, numberOfMatches, isDoneCounting) -> {
@@ -5197,7 +5311,9 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				// OPF解析
 				boolean direction = isVerticalWriting(currentBook); 
 				Logcat.v(logLevel, "lang=" + lang + ", direction=" + direction);
-				isJapaneseMode = (lang != null && lang.toLowerCase().startsWith("ja") && direction);
+				mEnableHorizontalWriting = (lang != null && lang.toLowerCase().startsWith("ja") && direction);
+				isJapaneseMode = mEnableHorizontalWriting;
+				if (getSetHorizontalWriting()) isJapaneseMode = false;
 			}
 			catch (Exception e) {
 				Log.e(TAG, "Error during fetchMetadata", e);
@@ -5207,6 +5323,16 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			lock.unlock(); // 確実に解放
 		}
 		return mMeta;
+	}
+
+	private boolean getSetHorizontalWriting() {
+		boolean flag;
+		flag =  (option[0] == 1 && mHorizontalWriting) ? true : false;
+		return flag;
+	}
+
+	private void setSetHorizontalWriting(boolean value) {
+		option[0] = (value) ? 1 : 0;
 	}
 
 	public int getViewportWidth(Resource resource) {
