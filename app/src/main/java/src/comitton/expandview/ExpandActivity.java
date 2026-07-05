@@ -10,6 +10,7 @@ import java.util.Comparator;
 import jp.dip.muracoro.comittonx.R;
 
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetTextActivity;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.fileview.FileSelectActivity;
@@ -167,7 +168,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -202,7 +203,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
 
 		mHandler = new Handler(this);
-		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		mSharedPreferences = MultiProcessPreferences.getInstance(this);
 		SetCommonActivity.loadSettings(mSharedPreferences);
 
 		mBefColor = SetFileColorActivity.getBefColor(mSharedPreferences);
