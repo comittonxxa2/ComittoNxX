@@ -136,6 +136,7 @@
     <string name="downloadCountMenu">Number of Downloads</string>
     <string name="licenseMenu">License</string>
     <string name="noiseMenu">Operation by noise</string>
+    <string name="HorizontalWriting">Change to horizontal display</string>
     <string name="playMenu">Auto Play</string>
     <string name="thumbMenu">Delete Thumbnail Cache</string>
     <string name="shareMenu">Share</string>
