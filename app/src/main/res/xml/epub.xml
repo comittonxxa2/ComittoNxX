@@ -166,6 +166,11 @@
             android:key="epTextFrame"
             android:summary="Check this box to display a border around the main text area."
             android:title="Display an outline in the main text." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epHorizontalWriting"
+            android:summary="Check this box to add an option to the pull-down menu settings for switching the display from vertical to horizontal.\n*The pull-down menu appears for vertically oriented EPUB files."
+            android:title="Enable horizontal text display" />
         <ListPreference
             android:defaultValue=""
             android:dialogTitle="Font selection (Choose from [sdcard]/comittona/font/)"
