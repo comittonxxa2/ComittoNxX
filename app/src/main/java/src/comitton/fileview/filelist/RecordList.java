@@ -16,6 +16,7 @@ import android.content.res.Resources;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.fileview.data.RecordItem;
 
 import android.content.SharedPreferences;
@@ -105,7 +106,7 @@ public class RecordList {
 
 			for (int i = DEF.INDEX_LOCAL; i < DEF.MAX_SERVER; i++) {
 				// データ設定
-				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+				SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(mContext);
 				ServerSelect server = new ServerSelect(sharedPreferences, mContext);
 				RecordItem data = new RecordItem();
 				data.setType(RecordItem.TYPE_SERVER);
@@ -389,7 +390,7 @@ public class RecordList {
 		BufferedWriter bw;
 
 		if(listtype == TYPE_SERVER){
-			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(mContext);
 			ServerSelect server = new ServerSelect(sharedPreferences, mContext);
 			for (int i = 1; i < list.size(); i++) {
 				int index = list.get(i).getServer();

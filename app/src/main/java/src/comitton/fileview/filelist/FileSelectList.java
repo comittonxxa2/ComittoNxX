@@ -610,7 +610,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					state = -1;
 					if (mAozoraTextFile) {
 						// 青空文庫のテキストが有効の場合
-						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#aozora", "-1,-1,0,0,0.0,0.0");
+						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#aozora", "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
 						state = DEF.PAGENUMBER_UNREAD;
 						size = DEF.PAGENUMBER_NONE;
 						if (rawValue != null) {
@@ -698,7 +698,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					state = -1;
 					if (mAozoraZipFile) {
 						// 青空文庫のZIPが有効の場合
-						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#aozora", "-1,-1,0,0,0.0,0.0");
+						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#aozora", "-1,-1,0,0,0.0,0.0,0,0,0,0");
 						state = DEF.PAGENUMBER_UNREAD;
 						size = DEF.PAGENUMBER_NONE;
 						if (rawValue != null) {
@@ -836,7 +836,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						}
 					}
 					else if (DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
-						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#newepub", "0,0,0,0,0.0,0.0");
+						String rawValue = mSp.getString(DEF.createUrl(uri, mUser, mPass) + "#newepub", "0,0,0,0,0.0,0.0,0,0,0,0,0");
 						state = DEF.PAGENUMBER_UNREAD;
 						size = DEF.PAGENUMBER_NONE;
 						if (rawValue != null) {
