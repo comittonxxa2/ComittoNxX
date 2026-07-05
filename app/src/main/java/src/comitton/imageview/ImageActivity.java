@@ -8,6 +8,7 @@ import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetFileColorActivity;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.dialog.FloatingIconDialog;
@@ -830,7 +831,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.i(logLevel, "開始します.");
 
 		// 起動処理失敗回数をリセット
-		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		mSharedPreferences = MultiProcessPreferences.getInstance(this);
 		SharedPreferences.Editor ed = mSharedPreferences.edit();
 		ed.putInt(DEF.KEY_INITIALIZE, 0);
 		ed.apply();
@@ -2605,7 +2606,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// 第3引数は、表示期間（LENGTH_SHORT、または、LENGTH_LONG）
 		// Toast.makeText(this, strScaleMode, Toast.LENGTH_SHORT).show();
 
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
 		Editor ed = sp.edit();
 		ed.putInt("scalemode", mScaleMode);
 		ed.apply();
@@ -2748,7 +2749,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		// モードが変わればスケールは初期化
 		if (scaleinit) {
-			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 			synchronized (mImageView) {
 				mPinchScale = SetImageActivity.getPinScale(sharedPreferences);
 				mImageMgr.setImageScale(mPinchScale);
@@ -6408,7 +6409,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (requestCode == DEF.REQUEST_SETTING) {
 			// 設定の読込
-			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 			ReadSetting(sharedPreferences);
 			// 他アクティビティからの復帰通知時に元に戻す
@@ -7285,7 +7286,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "開始します.");
 
 		if (mImageMgr != null) {
-			SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences sp = MultiProcessPreferences.getInstance(this);
 			Editor ed = sp.edit();
 			int savePage = mCurrentPage;
 			int	maxpage = mImageMgr.length();
@@ -7386,7 +7387,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "開始します.");
 
 		if (mImageMgr != null && mImageMgr.length() > 0) {
-			SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences sp = MultiProcessPreferences.getInstance(this);
 			Editor ed = sp.edit();
 			if (mRestorePage == DEF.PAGENUMBER_UNREAD) {
 				ed.remove(DEF.createUrl(mFilePath, mUser, mPass) + "#maxpage");

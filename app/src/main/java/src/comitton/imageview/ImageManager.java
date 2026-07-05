@@ -87,6 +87,7 @@ import jcifs.smb.SmbFile;
 import jcifs.smb.SmbRandomAccessFile;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
 import src.comitton.fileaccess.FileAccess;
@@ -348,7 +349,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mHidden = hidden;
 		mOpenMode = openmode;
 		mTimestamp = (int)FileAccess.date(mActivity, mFilePath, mUser, mPass);//(int)timestamp;
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 		mFileListCacheOff = SetFileListActivity.GetFileListCacheOff(sp);
 		mExpandTextEnable = SetFileListActivity.getExpandTextEnable(sp);
 		mArchiveCheck= SetFileListActivity.getArchiveCheckManualMode(sp);
@@ -1107,7 +1108,7 @@ public class ImageManager extends InputStream implements Runnable {
 				mFileType = FILETYPE_RAR;
 				if (mOpenMode == OPENMODE_THUMBSORT) {
 					// RARファイルかつソートありのサムネイル取得であればソート条件を取得
-					SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+					SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 					thumbSortType = SetFileListActivity.getThumbSortType(sp);
 					Logcat.d(logLevel, "thumbSortType=" + thumbSortType);
 				}
@@ -2539,7 +2540,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mFileList = (FileListItem[]) list.toArray(new FileListItem[0]);
 		mMaxOrgLength = maxorglen;
 
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 		boolean mAnimationScan = SetImageActivity.getAnimationScan(sp);
 
 		List<AnimeList> animelist = new ArrayList<AnimeList>();

@@ -6,6 +6,7 @@ import static androidx.core.content.ContextCompat.getSystemService;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCornerEndEpubWebViewActivity;
 import src.comitton.config.SetCornerEndImageViewerActivity;
 import src.comitton.config.SetCornerEndTextViewerActivity;
@@ -650,7 +651,7 @@ public class TouchPanelView extends View {
 		super(context);
 		mContext = context;
 		ViewHandler = handler;
-		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+		mSharedPreferences = MultiProcessPreferences.getInstance(mContext);
 		// 値を読み出す
 		if (index == 1) {
 			mMode = 1;
