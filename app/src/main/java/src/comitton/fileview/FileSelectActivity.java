@@ -25,6 +25,7 @@ import java.util.zip.ZipInputStream;
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetHardwareFileListKeyActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
@@ -89,6 +90,7 @@ import androidx.appcompat.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -113,7 +115,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
 import android.os.storage.StorageManager;
-
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 import androidx.activity.OnBackPressedCallback;
@@ -418,7 +419,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 		applyAppTheme(sharedPreferences);
 		super.onCreate(savedInstanceState);
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -427,7 +428,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mSavedInstanceState = savedInstanceState;
 		if (mSavedInstanceState != null) {
 			// 既にレジューム起動用のデータがあればSharedPreferencesのレジューム内容を破棄する
-			mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+			mSharedPreferences = MultiProcessPreferences.getInstance(this);
 			Editor ed = mSharedPreferences.edit();
 			ed.remove("ResumePath");
 			ed.remove("ResumeServer");
@@ -1401,46 +1402,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					readConfig();
 					setRequestedOrientation(currentOrientation);
 				}
-				if (requestCode == DEF.REQUEST_WEB) {
-					// 設定を保存(ImageConfigDialog.onCreateView()と同じ補正を行う)
-					boolean mGray = data.getExtras().getBoolean("Gray");
-					boolean mInvert = data.getExtras().getBoolean("Invert");
-					boolean mColoring = data.getExtras().getBoolean("Coloring");
-					int mSharpen = data.getExtras().getInt("Sharpen", 0);
-					int mBright = data.getExtras().getInt("Bright", 0);
-					int mGamma = data.getExtras().getInt("Gamma", 0);
-					int mContrast = data.getExtras().getInt("Contrast", 0);
-					int mHue = data.getExtras().getInt("Hue", 0);
-					int mSaturation = data.getExtras().getInt("Saturation", 0);
-					int mKelvin = data.getExtras().getInt("Kelvin", 0);
-					boolean mCheckRgbLevel = data.getExtras().getBoolean("CheckRgbLevel");
-					int mRedLevel = data.getExtras().getInt("RedLevel", 0);
-					int mGreenLevel = data.getExtras().getInt("GreenLevel", 0);
-					int mBlueLevel = data.getExtras().getInt("BlueLevel", 0);
-					boolean mIsConfSave = data.getExtras().getBoolean("IsConfSave");
-					if (mIsConfSave) {
-						SharedPreferences.Editor ed = mSharedPreferences.edit();
-						ed.putBoolean(DEF.KEY_WEBVIEWGRAY, mGray);
-						ed.putBoolean(DEF.KEY_WEBVIEWCOLORING, mColoring);
-						ed.putBoolean(DEF.KEY_WEBVIEWINVERT, mInvert);
-						ed.putInt(DEF.KEY_WEBVIEWSHARPEN, mSharpen);
-						ed.putInt(DEF.KEY_WEBVIEWBRIGHT, mBright + 5);
-						ed.putInt(DEF.KEY_WEBVIEWGAMMA, mGamma + 5);
-						ed.putInt(DEF.KEY_WEBVIEWCONTRAST, mContrast / 5);
-						ed.putInt(DEF.KEY_WEBVIEWHUE, mHue / 5 + 20);
-						ed.putInt(DEF.KEY_WEBVIEWSATURATION, mSaturation / 5);
-						ed.putInt(DEF.KEY_WEBVIEWKELVIN, mKelvin);
-						ed.putBoolean(DEF.KEY_WEBVIEWCHECKRGBLEVEL, mCheckRgbLevel);
-						if (mCheckRgbLevel) {
-							// RGBレベルをマニュアル設定する場合のみ保存
-							ed.putInt(DEF.KEY_WEBVIEWREDLEVEL, mRedLevel);
-							ed.putInt(DEF.KEY_WEBVIEWGREENLEVEL, mGreenLevel);
-							ed.putInt(DEF.KEY_WEBVIEWBLUELEVEL, mBlueLevel);
-						}
-						ed.apply();
-					}
-				}
-				if (requestCode == DEF.REQUEST_IMAGE || requestCode == DEF.REQUEST_TEXT || requestCode == DEF.REQUEST_EPUB || requestCode == DEF.REQUEST_EXPAND) {
+				if (requestCode == DEF.REQUEST_IMAGE || requestCode == DEF.REQUEST_TEXT || requestCode == DEF.REQUEST_EPUB || requestCode == DEF.REQUEST_WEB || requestCode == DEF.REQUEST_EXPAND) {
 					Logcat.d(logLevel, "REQUEST_IMAGE || REQUEST_TEXT || REQUEST_EPUB || REQUEST_EXPAND");
 					if (resultCode == RESULT_OK && data != null) {
 
@@ -1451,21 +1413,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						String path = data.getExtras().getString("LastPath");
 						Logcat.d(logLevel, "nextopen=" + nextopen + ", file=" + file + ", path=" + path);
 
-						if (requestCode == DEF.REQUEST_EPUB) {
-							String mReturnValue = data.getExtras().getString("ReturnValue");
-							boolean mReturnMode = data.getExtras().getBoolean("ReturnMode");
-							String filepath = data.getExtras().getString("FilePath");
-							String user = data.getExtras().getString("User");
-							String pass = data.getExtras().getString("Pass");
-							SharedPreferences.Editor ed = mSharedPreferences.edit();
-							if (mReturnMode) {
-								ed.putString(DEF.createUrl(filepath, user, pass) + "#aozora", mReturnValue);
-							}
-							else {
-								ed.putString(DEF.createUrl(filepath, user, pass) + "#newepub", mReturnValue);
-							}
-							ed.apply();
-						}
 						if (nextopen != CloseDialog.CLICK_CLOSE) {
 							// 次のファイルを開く場合
 							Logcat.d(logLevel, "nextopen != CloseDialog.CLICK_CLOSE");
@@ -3420,7 +3367,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private void updateListView() {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "updateListView: 開始します.");
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 		String path = DEF.relativePath(mActivity, mURI, mPath);
 		String user = mServer.getUser();
 		String pass = mServer.getPass();
@@ -3457,66 +3404,138 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, path, name);
 					}
-					maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
-					state = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass), DEF.PAGENUMBER_UNREAD);
-					if (state >= 0)	{ // 先頭ページでも動作するようにした
-						if (maxpage == DEF.PAGENUMBER_NONE) {
-							//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
-							int openmode = 0;
-							// ファイルリストの読み込み
-							openmode = ImageManager.OPENMODE_TEXTVIEW;
-							mImageMgr = new ImageManager(this.mActivity, path, "", user, pass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
-							mTextMgr = new TextManager(mImageMgr, name, user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
-							FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
-							maxpage = mTextMgr.length();
-							Editor ed;
-							ed = mSharedPreferences.edit();
-							ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", maxpage);
-							ed.putInt(DEF.createUrl(mUriFilePath, user, pass), state);
-							ed.apply();
-							releaseManager();
-							if (state >= (maxpage - mMargin)) {
+					boolean chkAozora = false;
+					state = -1;
+					if (mAozoraTextFile) {
+						// 青空文庫のテキストが有効の場合
+						String rawValue = sharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
+						state = DEF.PAGENUMBER_UNREAD;
+						if (rawValue != null) {
+							String[] parts = rawValue.split(",");
+							if (parts.length >= 6) {
+								try {
+									state = Integer.parseInt(parts[0]);
+									maxpage = Integer.parseInt(parts[1]);
+									if (state == -1 && maxpage == -1) {
+										// 読書情報が無かった場合は何もしない
+									}
+									else {
+										if (state == 0 && maxpage == 0) {
+											state = -1;
+										}
+										else if (state == maxpage) {
+											state = -2;
+										}
+										else {
+											state--;
+										}
+										data.setMaxpage(maxpage - 1);
+										chkAozora = true;
+									}
+								}
+		    				    catch (Exception e) {
+								}
+							}
+						}
+					}
+					if (!chkAozora) {
+						maxpage = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = sharedPreferences.getInt(DEF.createUrl(mUriFilePath, user, pass), DEF.PAGENUMBER_UNREAD);
+						if (state >= 0)	{ // 先頭ページでも動作するようにした
+							if (maxpage == DEF.PAGENUMBER_NONE) {
+								//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
+								int openmode = 0;
+								// ファイルリストの読み込み
+								openmode = ImageManager.OPENMODE_TEXTVIEW;
+								mImageMgr = new ImageManager(this.mActivity, path, "", user, pass, 0, mHandler, mHidden, openmode, 1);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+								mTextMgr = new TextManager(mImageMgr, name, user, pass, mHandler, mActivity, FileData.FILETYPE_TXT);
+								FileSelectList.SetReadConfig(mSharedPreferences,mTextMgr);
+								maxpage = mTextMgr.length();
+								Editor ed;
+								ed = mSharedPreferences.edit();
+								ed.putInt(DEF.createUrl(mUriFilePath, user, pass) + "#maxpage", maxpage);
+								ed.putInt(DEF.createUrl(mUriFilePath, user, pass), state);
+								ed.apply();
+								releaseManager();
+								if (state >= (maxpage - mMargin)) {
+									//	最大ページ数に達した場合は既読にする
+									state = DEF.PAGENUMBER_READ;
+								}
+							} else if (state >= (maxpage - mMargin))	{
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
-						} else if (state >= (maxpage - mMargin))	{
-							//	最大ページ数に達した場合は既読にする
-							state = DEF.PAGENUMBER_READ;
+							data.setMaxpage(maxpage - 1);
 						}
-						data.setMaxpage(maxpage - 1);
 					}
 					data.setState(state);
 				}
 				if (type == FileData.FILETYPE_ARC
 						|| type == FileData.FILETYPE_PDF) {
-					maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
-					state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), DEF.PAGENUMBER_UNREAD);
-					if (state >= 0)	{ // 先頭ページでも動作するようにした
-						if	(maxpage == DEF.PAGENUMBER_NONE)	{
-							//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
-							int openmode = 0;
-							// ファイルリストの読み込み
-							openmode = ImageManager.OPENMODE_VIEW;
-							// 設定の読み込み
-							mImageMgr = new ImageManager(this.mActivity,path, name, user, pass, 0, mHandler, mHidden, openmode, 1);
-							mImageMgr.LoadImageList(0, 0, 0, 0, 0);
-							maxpage = mImageMgr.length();
-							Editor ed;
-							ed = mSharedPreferences.edit();
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", maxpage);
-							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
-							ed.apply();
-							releaseManager();
-							if (state >= (maxpage - mMargin)) {
+					boolean chkAozora = false;
+					state = -1;
+					if (mAozoraZipFile) {
+						// 青空文庫のテキストが有効の場合
+						String rawValue = sharedPreferences.getString(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#aozora", "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
+						state = DEF.PAGENUMBER_UNREAD;
+						if (rawValue != null) {
+							String[] parts = rawValue.split(",");
+							if (parts.length >= 6) {
+								try {
+									state = Integer.parseInt(parts[0]);
+									maxpage = Integer.parseInt(parts[1]);
+									if (state == -1 && maxpage == -1) {
+										// 読書情報が無かった場合は何もしない
+									}
+									else {
+										if (state == 0 && maxpage == 0) {
+											state = -1;
+										}
+										else if (state == maxpage) {
+											state = -2;
+										}
+										else {
+											state--;
+										}
+										data.setMaxpage(maxpage - 1);
+										chkAozora = true;
+									}
+								}
+		    				    catch (Exception e) {
+								}
+							}
+						}
+					}
+					if (!chkAozora) {
+						maxpage = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = sharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), DEF.PAGENUMBER_UNREAD);
+						if (state >= 0)	{ // 先頭ページでも動作するようにした
+							if	(maxpage == DEF.PAGENUMBER_NONE)	{
+								//	未読状態からファイルを開いて閉じた場合は最大ページ数0になるので補完する
+								int openmode = 0;
+								// ファイルリストの読み込み
+								openmode = ImageManager.OPENMODE_VIEW;
+								// 設定の読み込み
+								mImageMgr = new ImageManager(this.mActivity,path, name, user, pass, 0, mHandler, mHidden, openmode, 1);
+								mImageMgr.LoadImageList(0, 0, 0, 0, 0);
+								maxpage = mImageMgr.length();
+								Editor ed;
+								ed = mSharedPreferences.edit();
+								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass) + "#maxpage", maxpage);
+								ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, path, name), user, pass), state);
+								ed.apply();
+								releaseManager();
+								if (state >= (maxpage - mMargin)) {
+									//	最大ページ数に達した場合は既読にする
+									state = DEF.PAGENUMBER_READ;
+								}
+							} else if (state >= (maxpage - mMargin))	{
 								//	最大ページ数に達した場合は既読にする
 								state = DEF.PAGENUMBER_READ;
 							}
-						} else if (state >= (maxpage - mMargin))	{
-							//	最大ページ数に達した場合は既読にする
-							state = DEF.PAGENUMBER_READ;
+							data.setMaxpage(maxpage - 1);
 						}
-						data.setMaxpage(maxpage - 1);
 					}
 					data.setState(state);
 				}
@@ -3562,7 +3581,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						data.setState(state);
 					}
 					else if (DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
-						String rawValue = sharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "0,0,0,0,0.0,0.0");
+						String rawValue = sharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "0,0,0,0,0.0,0.0,0,0,0,0");
 						if (rawValue != null) {
 							String[] parts = rawValue.split(",");
 							if (parts.length >= 6) {
@@ -5189,11 +5208,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 			intent.putExtra("File", name);					// EPUBファイル名
 			intent.putExtra("Text", "META-INF/container.xml"); // 中身のファイル名
-			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
-			String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
-			final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
-			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#newepub", "-1,-1,0,0,0.0,0.0");
-			intent.putExtra("Value", mValue);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
 			return;
 		}
@@ -5208,7 +5222,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 		intent.putExtra("File", name);					// EPUBファイル名
 		intent.putExtra("Text", "META-INF/container.xml"); // 中身のファイル名
-		startActivityForResult(intent, DEF.REQUEST_EPUB);
+		startActivityForResult(intent, DEF.REQUEST_TEXT);
 	}
 
 	/**
@@ -5252,9 +5266,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// WebベースのEPUBビューアの場合
 			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
 			intent.putExtra("Text", "");
-			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
-			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#aozora", "-1,-1,0,0,0.0,0.0");
-			intent.putExtra("Value", mValue);
 			// ... 他の共通Extra ...
 			setupCommonExtras(intent, name);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
@@ -5335,34 +5346,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 		intent.putExtra("File", file);					// ZIPファイル名
 		intent.putExtra("Text", name); 					// 中身のテキストファイル名
-		// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
-		boolean mGray = SetWebViewActivity.getWebviewGray(mSharedPreferences);
-		boolean mInvert = SetWebViewActivity.getWebviewInvert(mSharedPreferences);
-		boolean mColoring = SetWebViewActivity.getWebviewColoring(mSharedPreferences);
-		int mSharpen = SetWebViewActivity.getWebviewSharpen(mSharedPreferences);
-		int mBright = SetWebViewActivity.getWebviewBright(mSharedPreferences) - 5;
-		int mGamma = SetWebViewActivity.getWebviewGamma(mSharedPreferences) - 5;
-		int mContrast = SetWebViewActivity.getWebviewContrast(mSharedPreferences) * 5;
-		int mHue = (SetWebViewActivity.getWebviewHue(mSharedPreferences) - 20) * 5;
-		int mSaturation = SetWebViewActivity.getWebviewSaturation(mSharedPreferences) * 5;
-		int mKelvin = SetWebViewActivity.getKelvin(mSharedPreferences);
-		boolean mCheckRgbLevel = SetWebViewActivity.getCheckRgbLevel(mSharedPreferences);
-		int mRedLevel = SetWebViewActivity.getRedLevel(mSharedPreferences);
-		int mGreenLevel = SetWebViewActivity.getGreenLevel(mSharedPreferences);
-		int mBlueLevel = SetWebViewActivity.getBlueLevel(mSharedPreferences);
-		intent.putExtra("Gray", mGray);
-		intent.putExtra("Invert", mInvert);
-		intent.putExtra("Coloring", mColoring);
-		intent.putExtra("Sharpen", mSharpen);
-		intent.putExtra("Bright", mBright);
-		intent.putExtra("Gamma", mGamma);
-		intent.putExtra("Contrast", mContrast);
-		intent.putExtra("Saturation", mSaturation);
-		intent.putExtra("Kelvin", mKelvin);
-		intent.putExtra("CheckRgbLevel", mCheckRgbLevel);
-		intent.putExtra("RedLevel", mRedLevel);
-		intent.putExtra("GreenLevel", mGreenLevel);
-		intent.putExtra("BlueLevel", mBlueLevel);
 		startActivityForResult(intent, DEF.REQUEST_WEB);
 	}
 
@@ -5425,9 +5408,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// WebベースのEPUBビューアの場合
 			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
 			intent.putExtra("Text", "");
-			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
-			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#aozora", "-1,-1,0,0,0.0,0.0");
-			intent.putExtra("Value", mValue);
 			// ... 他の共通Extra ...
 			setupCommonExtras(intent, name);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
@@ -6065,8 +6045,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					releaseManager();
 				}
 				else if (DEF.TEXT_VIEWER == mEpubViewer && mEpubWebView) {
-					ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "999999,999999,0,999999,1.0,1.0");
-					ed.apply();
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "999999,999999,0,999999,1.0,1.0,0,0,0,0,0");
+					if (mRestoreValue != null) {
+						String[] parts = mRestoreValue.split(",");
+						if (parts.length >= 6) {
+							int[] option =  {0, 0, 0, 0, 0};;
+							if (parts.length >= 7) {
+								for (int i = 0 ; i < (parts.length - 6) ; i++) {
+									option[i] = Integer.parseInt(parts[6 + i]);
+								}
+							}
+							try {
+								// 既読にしてしまう
+								String value = "999999,999999,0,999999,1.0,1.0," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
+								ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", value);
+								ed.apply();
+							}
+							catch (Exception e) {
+							}
+						}
+					}
 				}
 				else {
 					int openmode = 0;
@@ -6109,10 +6107,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 					}
-					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0,0,0,0,0,0");
 					if (mRestoreValue != null) {
 						String[] parts = mRestoreValue.split(",");
 						if (parts.length >= 6) {
+							int[] option =  {0, 0, 0, 0, 0};;
+							if (parts.length >= 7) {
+								for (int i = 0 ; i < (parts.length - 6) ; i++) {
+									option[i] = Integer.parseInt(parts[6 + i]);
+								}
+							}
 							try {
 								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
 									// 読書情報が無かった場合は何もしない
@@ -6120,7 +6124,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								else {
 
 									// 末尾の2つを1.0にして既読にしてしまう
-									String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0";
+									String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
 									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
 									ed.apply();
 								}
@@ -6170,10 +6174,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 					}
-					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0,0,0,0,0,0");
 					if (mRestoreValue != null) {
 						String[] parts = mRestoreValue.split(",");
 						if (parts.length >= 6) {
+							int[] option =  {0, 0, 0, 0, 0};;
+							if (parts.length >= 7) {
+								for (int i = 0 ; i < (parts.length - 6) ; i++) {
+									option[i] = Integer.parseInt(parts[6 + i]);
+								}
+							}
 							try {
 								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
 									// 読書情報が無かった場合は何もしない
@@ -6181,7 +6191,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								else {
 
 									// 末尾の2つを1.0にして既読にしてしまう
-									String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0";
+									String value = Integer.parseInt(parts[0]) + "," + Integer.parseInt(parts[1]) + "," + 0 + "," + Integer.parseInt(parts[3]) + ",1.0,1.0," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
 									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
 									ed.apply();
 								}
@@ -6259,7 +6269,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				else {
 					mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 				}
-				ed.remove(DEF.createUrl(mUriFilePath, user, pass) + "#newepub");
+				String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", "0,0,0,0,0.0,0.0,0,0,0,0,0");
+				if (mRestoreValue != null) {
+					String[] parts = mRestoreValue.split(",");
+					if (parts.length >= 6) {
+						int[] option =  {0, 0, 0, 0, 0};;
+						if (parts.length >= 7) {
+							for (int i = 0 ; i < (parts.length - 6) ; i++) {
+								option[i] = Integer.parseInt(parts[6 + i]);
+							}
+						}
+						try {
+							// 未續にしてしまう
+							String value = "0,0,0,0,0.0,0.0," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
+							ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#newepub", value);
+							ed.apply();
+						}
+						catch (Exception e) {
+						}
+					}
+				}
 			}
 			else if (mFileData.getType() == FileData.FILETYPE_TXT) {
 				if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
@@ -6281,17 +6310,23 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 					}
-					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0,0,0,0,0,0");
 					if (mRestoreValue != null) {
 						String[] parts = mRestoreValue.split(",");
 						if (parts.length >= 6) {
+							int[] option =  {0, 0, 0, 0, 0};;
+							if (parts.length >= 7) {
+								for (int i = 0 ; i < (parts.length - 6) ; i++) {
+									option[i] = Integer.parseInt(parts[6 + i]);
+								}
+							}
 							try {
 								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
 									// 読書情報が無かった場合は何もしない
 								}
 								else {
 									// 先頭の値を-1にして未読にしてしまう
-									String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0";
+									String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
 									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
 								}
 							}
@@ -6314,17 +6349,23 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else {
 						mUriFilePath = DEF.relativePath(mActivity, mURI, mPath, mFileData.getName());
 					}
-					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0");
+					String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", "-2,-2,0,0,0.0,0.0,0,0,0,0,0");
 					if (mRestoreValue != null) {
 						String[] parts = mRestoreValue.split(",");
 						if (parts.length >= 6) {
+							int[] option =  {0, 0, 0, 0, 0};;
+							if (parts.length >= 7) {
+								for (int i = 0 ; i < (parts.length - 6) ; i++) {
+									option[i] = Integer.parseInt(parts[6 + i]);
+								}
+							}
 							try {
 								if (Integer.parseInt(parts[0]) == -2 && Integer.parseInt(parts[1]) == -2)	{
 									// 読書情報が無かった場合は何もしない
 								}
 								else {
 									// 先頭の値を-1にして未読にしてしまう
-									String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0";
+									String value = "-1,-1,0," + Integer.parseInt(parts[3]) + ",0.0,0.0," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
 									ed.putString(DEF.createUrl(mUriFilePath, user, pass) + "#aozora", value);
 								}
 							}

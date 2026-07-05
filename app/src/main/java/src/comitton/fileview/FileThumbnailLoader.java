@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import src.comitton.common.DEF;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.fileaccess.FileAccessException;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.common.ImageAccess;
@@ -56,7 +57,7 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 		if (debug) {Log.d(TAG, "FileThumbnailLoader: 開始します. epubThumb=" + epubThumb);}
 
 		mActivity = activity;
-		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+		mSharedPreferences = MultiProcessPreferences.getInstance(activity);
 		mServer = server;
 		mUser = user;
 		mPass = pass;
