@@ -21,29 +21,38 @@
         android:largeHeap="true"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
-        <activity
-            android:name="src.comitton.dialog.SettingsActivity"
+        <provider
+            android:name="src.comitton.common.SharedPrefProvider"
+            android:authorities="${applicationId}.prefprovider"
             android:exported="false"
-            android:label="@string/title_activity_settings" />
-
+            android:process=":main" />
         <meta-data
             android:name="android.max_aspect"
             android:value="3.0" />
-
+        <service
+            android:name="src.comitton.common.SplashActivity$WebViewService" 
+            android:process=":webview_process" />
+        <service
+            android:name="src.comitton.common.SplashActivity$ConfigService"/>
+        <activity
+            android:name="src.comitton.common.SplashActivity"
+            android:exported="true"
+            android:theme="@style/MyAppCompat">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="src.comitton.fileview.FileSelectActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
             android:exported="true"
+            android:process=":main"
             android:label="@string/app_launch_name"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:screenOrientation="fullUser"
             android:theme="@style/MyAppCompat">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
 
             <meta-data
                 android:name="flutter_deeplinking_enabled"
@@ -87,6 +96,7 @@
             android:name="src.comitton.imageview.ImageActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
             android:exported="true"
+            android:process=":main"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
@@ -94,6 +104,7 @@
             android:name="src.comitton.textview.TextActivity"
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize"
             android:exported="true"
+            android:process=":main"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/MyAppCompat"></activity>
@@ -102,6 +113,7 @@
             android:configChanges="keyboardHidden|orientation|keyboard|screenSize|screenLayout"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:process=":main"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.helpview.HelpActivity"
@@ -122,6 +134,7 @@
             android:name="src.comitton.cropimageview.CropImageActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
+            android:process=":main"
             android:theme="@style/MyAppCompat"></activity>
         <activity
             android:name="src.comitton.textview.EpubWebViewActivity"
