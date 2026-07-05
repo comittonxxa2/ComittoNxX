@@ -7,6 +7,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.MultiProcessPreferences;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
@@ -18,7 +19,7 @@ public class ColorBefSetting extends ColorPreference {
 		super(context, attrs);
 		// テキストモード
 		super.setConfig(DEF.KEY_BEFCOLOR, DEF.KEY_BEFRGB, DEF.ColorList[1], true);
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 	}
 
 	@Override

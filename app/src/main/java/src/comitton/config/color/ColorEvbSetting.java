@@ -7,6 +7,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.MultiProcessPreferences;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
@@ -18,7 +19,7 @@ public class ColorEvbSetting extends ColorPreference {
 		super(context, attrs);
 		// EPUBビューアの背景
 		super.setConfig(DEF.KEY_EVBCOLOR, DEF.KEY_EVBRGB, DEF.ColorList[24], true);
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 	}
 
 	@Override

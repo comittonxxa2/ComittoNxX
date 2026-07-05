@@ -7,6 +7,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.MultiProcessPreferences;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
@@ -18,7 +19,7 @@ public class ColorHitSetting extends ColorPreference {
 		super(context, attrs);
 		// 検索ヒットの背景色
 		super.setConfig(null, DEF.KEY_TX_HITRGB, DEF.COLOR_TX_HITRGB, false);
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 	}
 
 	@Override
