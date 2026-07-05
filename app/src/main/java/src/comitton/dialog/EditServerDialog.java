@@ -27,6 +27,7 @@ import java.util.EventListener;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.fileaccess.SafFileAccess;
 import src.comitton.fileview.filelist.ServerSelect;
 
@@ -79,7 +80,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 		setOnDismissListener(this);
 
 		Resources res = mActivity.getResources();
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 		mServer = new ServerSelect(sp, mActivity);
 
 		mIndex = index;

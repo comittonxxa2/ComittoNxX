@@ -47,6 +47,7 @@ import org.json.JSONArray;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 
 @SuppressLint("NewApi")
 public class Information implements DialogInterface.OnDismissListener {
@@ -138,7 +139,7 @@ public class Information implements DialogInterface.OnDismissListener {
 
 		if (!mManually) {
 			// 自動実行ならダイアログを表示した時刻を保存する
-			SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+			SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 			SharedPreferences.Editor ed = sp.edit();
 			ed.putLong(DEF.KEY_TIME_CHECK_RELEASE, System.currentTimeMillis());
 			ed.apply();
@@ -180,7 +181,7 @@ public class Information implements DialogInterface.OnDismissListener {
 		// 新しいリリースのチェック
 		mTurnOff = !manually;
 		boolean flag = false;
-		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 		if (manually) {
 			// 手動実行なら実行する
 			flag = true;
@@ -352,7 +353,7 @@ public class Information implements DialogInterface.OnDismissListener {
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int whichButton) {
 								// 通知設定をOFFにする
-								SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
+								SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
 								SharedPreferences.Editor ed = sp.edit();
 								ed.putBoolean(DEF.KEY_CHECK_RELEASE, false);
 								ed.apply();

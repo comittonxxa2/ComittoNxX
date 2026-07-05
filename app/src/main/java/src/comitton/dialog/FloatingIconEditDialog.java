@@ -48,6 +48,7 @@ import java.util.List;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 
 @SuppressLint("NewApi")
 public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickListener, SeekBar.OnSeekBarChangeListener {
@@ -269,7 +270,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		mStates = loadToolbarState(mActivity);
 		mHandler = handler;
 
-		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(activity);
+		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(activity);
 		mProfileWord = new String[10];
 
 		// 初期値を読み出す
@@ -331,7 +332,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 
 		Resources res = mActivity.getResources();
 		mDefaultStr = res.getString(R.string.auto);
-		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(mActivity);
 
 		mTitleText.setText(mTitle);
 		// リストの設定
@@ -376,7 +377,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		int count = 0;
 		try {
 			Resources res = context.getResources();
-			SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
+			SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
 
 			states = new boolean[COMMAND_ID.length];
 			for (int i = 0; i < states.length; i++) {
@@ -404,7 +405,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		int[] states;
 		states = new int[COMMAND_ID.length];
 		try {
-			SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
+			SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
 
 			int count = 0;
 			for (int i = 0; i < states.length; i++) {
@@ -428,7 +429,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		boolean[] states = null;
 		try {
 			Resources res = context.getResources();
-			SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
+			SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
 
 			Logcat.d(logLevel, "保存された設定を取得します.");
 			states = new boolean[COMMAND_ID.length];
@@ -479,7 +480,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. states.length=" + states.length);
 
-		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
+		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
 		SharedPreferences.Editor ed = sharedPreference.edit();
 		for (int i = 0 ; i < states.length ; i ++) {
 			try {
