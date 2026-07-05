@@ -166,6 +166,11 @@
             android:key="epTextFrame"
             android:summary="本文の表示領域に外枠を表示する場合にチェックを入れる"
             android:title="本文に外枠を表示する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epHorizontalWriting"
+            android:summary="プルダウンメニューの表示設定に縦書き表示を横書き表示に変更するオプションを追加する場合にチェックを入れる\n※縦書きのEPUBファイルの時にプルダウンメニューが表示される"
+            android:title="横書き表示を有効にする" />
         <ListPreference
             android:defaultValue=""
             android:dialogTitle="フォント選択 ([sdcard]/comittona/font/から選択)"
