@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.CenterSeekbar;
 import src.comitton.config.seekbar.ClickAreaSeekbar;
 import src.comitton.config.seekbar.EffectTimeSeekbar;
@@ -28,7 +29,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetImageTextDetailActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetImageTextDetailActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ScrollSeekbar mScroll;
 	private ClickAreaSeekbar mClickArea;
 	private PageRangeSeekbar mPageRange;
@@ -48,7 +49,7 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

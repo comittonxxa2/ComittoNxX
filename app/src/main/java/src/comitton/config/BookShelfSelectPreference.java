@@ -3,6 +3,7 @@ package src.comitton.config;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.fileview.view.SelectIconView;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.fileview.view.SelectIconViewCustom;
@@ -49,6 +50,7 @@ public class BookShelfSelectPreference extends DialogPreference implements OnCli
 	private Spinner mRateSel;
 	private SelectIconViewCustom[] mSelIcon;
 	private int mSelIndex;
+	private Resources mResources;
 
 	private static String[] BookShelfBmpFile = {
 		DEF.KEY_BOOKSHELFBMPFILE1,
@@ -61,12 +63,32 @@ public class BookShelfSelectPreference extends DialogPreference implements OnCli
 		DEF.KEY_BOOKSHELFBMPFILE8
 	};
 
+	private static final int[] SetBookShelfPatternName =
+		{ R.string.BookShelf00
+		, R.string.BookShelf01
+		, R.string.BookShelf02
+		, R.string.BookShelf03
+		, R.string.BookShelf04
+		, R.string.BookShelf05
+		, R.string.BookShelf06
+		, R.string.BookShelf07
+		, R.string.BookShelf08
+		, R.string.BookShelfcustom1
+		, R.string.BookShelfcustom2
+		, R.string.BookShelfcustom3
+		, R.string.BookShelfcustom4
+		, R.string.BookShelfcustom5
+		, R.string.BookShelfcustom6
+		, R.string.BookShelfcustom7
+		, R.string.BookShelfcustom8 };
+
 	public BookShelfSelectPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 		mDensity = context.getResources().getDisplayMetrics().scaledDensity;
 		mSelIcon = new SelectIconViewCustom[ICON_NUM];
+		mResources = context.getResources();
 
 		LAYOUT_PADDING = (int)(4 * mDensity);
 	}
@@ -219,6 +241,7 @@ public class BookShelfSelectPreference extends DialogPreference implements OnCli
 		Editor ed = mSP.edit();
 		ed.putInt(DEF.KEY_BOOKSHELFPATTERN, pattern);
 		ed.apply();
+		setSummary(mResources.getString(SetBookShelfPatternName[pattern]));
 	}
 
 	private int getPatternValue() {

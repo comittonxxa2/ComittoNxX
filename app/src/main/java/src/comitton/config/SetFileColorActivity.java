@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.color.ColorAftSetting;
 import src.comitton.config.color.ColorBakSetting;
 import src.comitton.config.color.ColorBefSetting;
@@ -42,7 +43,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetFileColorActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetFileColorActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ListPreference mPreset;
 
 	private PreferenceScreen mCustomUpdate;
@@ -127,7 +128,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

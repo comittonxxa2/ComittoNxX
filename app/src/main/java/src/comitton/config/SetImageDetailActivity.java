@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.AutoPlaySeekbar;
 import src.comitton.config.seekbar.LongTapSeekbar;
 import src.comitton.config.seekbar.ScalingSeekbar;
@@ -27,7 +28,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetImageDetailActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetImageDetailActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private WAdjustSeekbar mWAdjust;
 	private WScalingSeekbar mWScaling;
 	private ScalingSeekbar mScaling;
@@ -73,7 +74,7 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		// 斜め方向のスクロールの速度をスクロールの速度からコピーしてくる
 		int tempScrlDiag = DEF.getInt(sharedPreferences, DEF.KEY_SCRLDIAG, -1);

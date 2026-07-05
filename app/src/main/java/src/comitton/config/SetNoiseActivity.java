@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.NoiseOverSeekbar;
 import src.comitton.config.seekbar.NoiseScrlSeekbar;
 import src.comitton.config.seekbar.NoiseUnderSeekbar;
@@ -22,7 +23,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetNoiseActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetNoiseActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private NoiseScrlSeekbar mNoiseScrl;
 	private NoiseUnderSeekbar mNoiseUnder;
 	private NoiseOverSeekbar mNoiseOver;
@@ -41,7 +42,7 @@ public class SetNoiseActivity extends PreferenceActivity implements OnSharedPref
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

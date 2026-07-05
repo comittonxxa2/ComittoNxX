@@ -18,9 +18,10 @@ import androidx.preference.PreferenceManager;
 import src.comitton.common.Logcat;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 
-public class SetCustomUrlSchemeActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetCustomUrlSchemeActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	Resources mResources;
 
 	private EditTextPreference mPriorityWord;
@@ -34,7 +35,7 @@ public class SetCustomUrlSchemeActivity extends PreferenceActivity implements On
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences mSharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(mSharedPreferences);
 		if (mNotice) {

@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.color.ColorCntSetting;
 import src.comitton.config.color.ColorGuiSetting;
 import src.comitton.config.color.ColorHitSetting;
@@ -29,7 +30,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetImageTextColorActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetImageTextColorActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ColorMgnSetting mMgnColor;
 	private ColorCntSetting mCntColor;
 	private ColorGuiSetting mGuiColor;
@@ -65,7 +66,7 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.fileview.filelist.RecordList;
@@ -20,7 +21,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetRecorderActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetRecorderActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ListPreference mHistNum;
 
  	public static final int[] HistNumName =
@@ -39,7 +40,7 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

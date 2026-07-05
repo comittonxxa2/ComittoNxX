@@ -1,13 +1,17 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.fileview.FileSelectActivity;
 import jp.dip.muracoro.comittonx.R;
+
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -18,19 +22,32 @@ import android.preference.PreferenceScreen;
 import android.view.View;
 import android.view.WindowManager;
 
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 
-public class SetConfigActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
+public class SetConfigActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		// 裏起動(ウォームアップ)フラグがある場合は描画せず即終了
+		if (getIntent().getBooleanExtra("IS_WARM_UP", false)) {
+			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+				overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
+				overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
+			}
+			else {
+				overridePendingTransition(0, 0);
+			}
+			super.onCreate(savedInstanceState);
+			finish();
+			return;
+		}
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
 			// 通知領域非表示

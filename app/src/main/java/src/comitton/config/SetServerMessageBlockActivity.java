@@ -10,12 +10,13 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
-public class SetServerMessageBlockActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetServerMessageBlockActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -26,7 +27,7 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

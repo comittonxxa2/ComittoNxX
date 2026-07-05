@@ -28,12 +28,13 @@ import androidx.preference.SeekBarPreference;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.CornerEndHeightEpubLevelSeekbar;
 import src.comitton.config.seekbar.CornerEndWidthEpubLevelSeekbar;
 import src.comitton.imageview.TouchPanelView;
 import src.comitton.config.SetCommonActivity;
 
-public class SetCornerEndEpubWebViewActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetCornerEndEpubWebViewActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private static TouchPanelView mTpView;
 
@@ -65,7 +66,7 @@ public class SetCornerEndEpubWebViewActivity extends PreferenceActivity implemen
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

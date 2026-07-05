@@ -16,6 +16,7 @@ import android.preference.CheckBoxPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceManager;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.config.seekbar.BrightSeekbar;
 import src.comitton.config.seekbar.ConsrastSeekbar;
@@ -33,7 +34,7 @@ import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
 import src.comitton.dialog.ImageConfigDialog;
 
-public class SetWebViewActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetWebViewActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -62,7 +63,7 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

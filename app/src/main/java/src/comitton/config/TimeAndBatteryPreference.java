@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
+import src.comitton.common.MultiProcessPreferences;
 
 public class TimeAndBatteryPreference extends DialogPreference implements SeekBar.OnSeekBarChangeListener {
 	private CheckBox mChkDisp;
@@ -31,7 +32,7 @@ public class TimeAndBatteryPreference extends DialogPreference implements SeekBa
 	public TimeAndBatteryPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 		setDialogLayoutResource(R.layout.timeandbattery);
 		Resources res = context.getResources();
 		mDots = res.getString(R.string.unitSumm1);

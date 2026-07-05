@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.config.SetCommonActivity;
@@ -43,7 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
-public class BookShelfFileSelectActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class BookShelfFileSelectActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -71,7 +72,7 @@ public class BookShelfFileSelectActivity extends PreferenceActivity implements O
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = MultiProcessPreferences.getInstance(this);
 		mResources = getResources();
 
 		// Intentに保存されたデータを取り出す

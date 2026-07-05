@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.FontMainSeekbar;
 import src.comitton.config.seekbar.FontSubSeekbar;
 import src.comitton.config.seekbar.FontTileSeekbar;
@@ -50,7 +51,7 @@ import android.view.WindowManager;
 import android.preference.CheckBoxPreference;
 import androidx.preference.PreferenceManager;
 
-public class SetThemeActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetThemeActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ListPreference mPreset;
 
 	private PreferenceScreen mCustomUpdate;
@@ -155,7 +156,7 @@ public class SetThemeActivity extends PreferenceActivity implements OnSharedPref
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);

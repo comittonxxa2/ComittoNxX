@@ -26,10 +26,11 @@ import androidx.preference.PreferenceManager;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.imageview.TouchPanelView;
 import src.comitton.config.SetCommonActivity;
 
-public class SetHardwareTextViewerKeyActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetHardwareTextViewerKeyActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private static TouchPanelView mTpView;
 
@@ -91,7 +92,7 @@ public class SetHardwareTextViewerKeyActivity extends PreferenceActivity impleme
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

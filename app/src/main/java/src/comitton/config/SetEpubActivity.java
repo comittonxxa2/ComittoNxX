@@ -17,6 +17,7 @@ import androidx.preference.PreferenceManager;
 
 import java.io.File;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.EpubFontBodySeekbar;
 import src.comitton.config.seekbar.EpubFontTextSeekbar;
 import src.comitton.config.seekbar.EpubFontInfoSeekbar;
@@ -27,7 +28,7 @@ import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
-public class SetEpubActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetEpubActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	Resources mResources;
 
 //    private static final String TAG = "EPUB_DEBUG";
@@ -90,7 +91,7 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -331,6 +332,12 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 	public static boolean getTextFrame(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_EP_TEXTFRAME, false);
+		return flag;
+	}
+
+	public static boolean getHorizontalWriting(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_EP_HORIZONTIALWRITING, false);
 		return flag;
 	}
 

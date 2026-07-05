@@ -19,6 +19,7 @@ import javax.crypto.spec.SecretKeySpec;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.MultiProcessPreferences;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -67,7 +68,7 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 	public ImportSettingPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSp = PreferenceManager.getDefaultSharedPreferences(context);
+		mSp = MultiProcessPreferences.getInstance(context);
 		setSummary(getSummary().toString().replace("[sdcard]", "[" + Environment.getExternalStorageDirectory().getAbsolutePath() + "]"));
 
 		// OKボタンを非表示にする

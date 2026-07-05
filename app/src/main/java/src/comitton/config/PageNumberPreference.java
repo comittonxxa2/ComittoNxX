@@ -2,6 +2,7 @@ package src.comitton.config;
 
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.MultiProcessPreferences;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -30,7 +31,7 @@ public class PageNumberPreference extends DialogPreference implements SeekBar.On
 	public PageNumberPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 		setDialogLayoutResource(R.layout.pagenumber);
 		Resources res = context.getResources();
 		mDots = res.getString(R.string.unitSumm1);

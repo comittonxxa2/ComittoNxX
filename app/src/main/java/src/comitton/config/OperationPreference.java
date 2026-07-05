@@ -1,6 +1,7 @@
 package src.comitton.config;
 
 import src.comitton.common.DEF;
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.fileview.view.SelectIconView;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Context;
@@ -39,7 +40,7 @@ public class OperationPreference extends DialogPreference implements OnClickList
 	public OperationPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSP = PreferenceManager.getDefaultSharedPreferences(context);
+		mSP = MultiProcessPreferences.getInstance(context);
 		mDensity = context.getResources().getDisplayMetrics().scaledDensity;
 		mSelIcon = new SelectIconView[ICON_NUM];
 

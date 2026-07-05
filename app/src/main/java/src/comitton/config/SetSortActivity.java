@@ -11,12 +11,13 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
-public class SetSortActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetSortActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	Resources mResources;
 	private ListPreference mSoftFileTop;
 	private ListPreference mSoftDirFile;
@@ -54,7 +55,7 @@ public class SetSortActivity extends PreferenceActivity implements OnSharedPrefe
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

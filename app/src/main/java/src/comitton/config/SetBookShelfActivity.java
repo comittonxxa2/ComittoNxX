@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.BookShelfBrightLevelSeekbar;
 import src.comitton.config.seekbar.BookShelfEdgeLevelSeekbar;
 import src.comitton.config.seekbar.FilenameBottomSeekbar;
@@ -26,7 +27,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetBookShelfActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetBookShelfActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private BookShelfSelectPreference mBookShelfPattern;
 	private ThumbnailTopSeekbar mThumbnailTopSpace;
@@ -64,7 +65,7 @@ public class SetBookShelfActivity extends PreferenceActivity implements OnShared
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -115,7 +116,7 @@ public class SetBookShelfActivity extends PreferenceActivity implements OnShared
 	protected void onPause() {
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 		SetCommonActivity.SetOrientationEventListenerDisable(sharedPreferences);
 	}
 

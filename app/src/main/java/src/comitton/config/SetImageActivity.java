@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.common.MultiProcessPreferences;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
@@ -19,7 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 import androidx.preference.PreferenceManager;
 
-public class SetImageActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetImageActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ListPreference mViewRota;
 	private ListPreference mFileSort;
 	private ListPreference mIniScale;
@@ -179,7 +180,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		// ルーペの倍率の元サイズを除外したので表示サイズへ変換する
 		String tempZoomType = sharedPreferences.getString(DEF.KEY_ZOOMTYPE, "4");
