@@ -21,7 +21,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
-import src.comitton.common.MultiProcessPreferences;
 
 import android.app.Dialog;
 import android.content.ContentResolver;
@@ -75,7 +74,7 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 	public ExportSettingPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSp = MultiProcessPreferences.getInstance(context);
+		mSp = PreferenceManager.getDefaultSharedPreferences(context);
 		setSummary(getSummary().toString().replace("[sdcard]", "[" + Environment.getExternalStorageDirectory().getAbsolutePath() + "]"));
 
 		androidId = Settings.Secure.getString(mContext.getContentResolver(), "android_id");

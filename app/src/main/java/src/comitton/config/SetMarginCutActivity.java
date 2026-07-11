@@ -1,6 +1,5 @@
 package src.comitton.config;
 
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.MarginLevelSeekbar;
 import src.comitton.config.seekbar.MarginStartSeekbar;
 import src.comitton.config.seekbar.MarginSpaceSeekbar;
@@ -26,7 +25,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetMarginCutActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetMarginCutActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private MarginLevelSeekbar mMarginLevel;
 	private MarginStartSeekbar mMarginStart;
 	private MarginSpaceSeekbar mMarginSpace;
@@ -43,7 +42,7 @@ public class SetMarginCutActivity extends BasePreferenceActivity implements OnSh
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

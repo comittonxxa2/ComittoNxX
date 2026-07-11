@@ -1,17 +1,14 @@
 package src.comitton.config;
 
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.fileview.FileSelectActivity;
+import src.comitton.textview.EpubWebViewActivity;
 import jp.dip.muracoro.comittonx.R;
-
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -19,35 +16,23 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 
-public class SetConfigActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
+public class SetConfigActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// 裏起動(ウォームアップ)フラグがある場合は描画せず即終了
-		if (getIntent().getBooleanExtra("IS_WARM_UP", false)) {
-			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-				overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
-				overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
-			}
-			else {
-				overridePendingTransition(0, 0);
-			}
-			super.onCreate(savedInstanceState);
-			finish();
-			return;
-		}
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
 			// 通知領域非表示
@@ -80,6 +65,27 @@ public class SetConfigActivity extends BasePreferenceActivity implements OnShare
 				return true;
 			}
 		});
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// 戻るキーが押された場合
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			String callerClassName = getIntent().getStringExtra("KeyCallerName");
+			if (EpubWebViewActivity.class.getName().equals(callerClassName)) {
+				// EpubWebViewActivityからの呼び出しの場合はJSONへ設定を書き出す
+				SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+				FileSelectActivity.setEpubWebViewData(sharedPreferences);
+				Intent resultIntent = new Intent();
+				// JSONを呼び出し元へセット
+				resultIntent.putExtra("EpubWebview_Data", FileSelectActivity.getJsonEpubWebviewData());
+				// finish()される前に結果をセットする
+				setResult(this.RESULT_OK, resultIntent);
+				finish();
+				return true;
+			}
+		}
+		return super.onKeyDown(keyCode, event);
 	}
 
 	@Override

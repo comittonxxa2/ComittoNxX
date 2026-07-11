@@ -1,6 +1,5 @@
 package src.comitton.config;
 
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.MemNextSeekbar;
 import src.comitton.config.seekbar.MemPrevSeekbar;
 import src.comitton.config.seekbar.MemSizeSeekbar;
@@ -23,7 +22,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetCacheActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetCacheActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private MemSizeSeekbar mMemSize;
 	private MemNextSeekbar mMemNext;
 	private MemPrevSeekbar mMemPrev;
@@ -49,7 +48,7 @@ public class SetCacheActivity extends BasePreferenceActivity implements OnShared
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences mSharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(mSharedPreferences);
 		if (mNotice) {

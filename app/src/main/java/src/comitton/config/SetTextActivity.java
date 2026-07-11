@@ -2,7 +2,6 @@ package src.comitton.config;
 
 import java.io.File;
 
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.TextFontBodySeekbar;
 import src.comitton.config.seekbar.TextFontInfoSeekbar;
 import src.comitton.config.seekbar.TextFontRubiSeekbar;
@@ -34,7 +33,7 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-public class SetTextActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetTextActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private TextFontTopSeekbar mFontTop;
 	private TextFontBodySeekbar mFontBody;
 	private TextFontRubiSeekbar mFontRubi;
@@ -128,7 +127,7 @@ public class SetTextActivity extends BasePreferenceActivity implements OnSharedP
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

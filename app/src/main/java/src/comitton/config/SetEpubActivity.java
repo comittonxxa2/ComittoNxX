@@ -17,7 +17,6 @@ import androidx.preference.PreferenceManager;
 
 import java.io.File;
 
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.EpubFontBodySeekbar;
 import src.comitton.config.seekbar.EpubFontTextSeekbar;
 import src.comitton.config.seekbar.EpubFontInfoSeekbar;
@@ -28,7 +27,7 @@ import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
-public class SetEpubActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetEpubActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	Resources mResources;
 
 //    private static final String TAG = "EPUB_DEBUG";
@@ -91,7 +90,7 @@ public class SetEpubActivity extends BasePreferenceActivity implements OnSharedP
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = MultiProcessPreferences.getInstance(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

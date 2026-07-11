@@ -13,12 +13,11 @@ import android.view.WindowManager;
 import androidx.preference.PreferenceManager;
 
 import jp.dip.muracoro.comittonx.R;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 
 // ビューアとファイルリストのハードウェアキーの管理のリストビューを選択する
 // 分岐用に用いているのでこのアクティビティでは何もしない
-public class SetHardwareSelectKeyActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetHardwareSelectKeyActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -29,7 +28,7 @@ public class SetHardwareSelectKeyActivity extends BasePreferenceActivity impleme
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

@@ -2,8 +2,6 @@ package src.comitton.config;
 
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
-import src.comitton.common.MultiProcessPreferences;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -32,7 +30,7 @@ public class ThumbnailPreference extends DialogPreference implements SeekBar.OnS
 	public ThumbnailPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSP = MultiProcessPreferences.getInstance(context);
+		mSP = PreferenceManager.getDefaultSharedPreferences(context);
 		mSizeUnit = context.getString(R.string.rangeSumm1);
 	}
 

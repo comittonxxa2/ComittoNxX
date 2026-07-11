@@ -3,7 +3,6 @@ package src.comitton.config;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.fileview.view.SelectIconView;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.fileview.view.SelectIconViewCustom;
@@ -66,7 +65,7 @@ public class BookShelfDeletePreference extends DialogPreference implements OnCli
 	public BookShelfDeletePreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSP = MultiProcessPreferences.getInstance(context);
+		mSP = PreferenceManager.getDefaultSharedPreferences(context);
 		mDensity = context.getResources().getDisplayMetrics().scaledDensity;
 		mSelIcon = new SelectIconViewCustom[ICON_NUM];
 

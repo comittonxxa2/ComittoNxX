@@ -28,13 +28,12 @@ import androidx.preference.SeekBarPreference;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.seekbar.CornerEndHeightTextLevelSeekbar;
 import src.comitton.config.seekbar.CornerEndWidthTextLevelSeekbar;
 import src.comitton.imageview.TouchPanelView;
 import src.comitton.config.SetCommonActivity;
 
-public class SetCornerEndTextViewerActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetCornerEndTextViewerActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private static TouchPanelView mTpView;
 
@@ -66,7 +65,7 @@ public class SetCornerEndTextViewerActivity extends BasePreferenceActivity imple
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {

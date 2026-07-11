@@ -10,13 +10,12 @@ import android.view.WindowManager;
 
 import androidx.preference.PreferenceManager;
 
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCommonActivity;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
-public class SetServerMessageBlockActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetServerMessageBlockActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -27,11 +26,11 @@ public class SetServerMessageBlockActivity extends BasePreferenceActivity implem
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = MultiProcessPreferences.getInstance(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
-			// �ʒm�̈��\��
+			// 通知領域非表示
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		}
 		mImmEnable = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
@@ -64,6 +63,11 @@ public class SetServerMessageBlockActivity extends BasePreferenceActivity implem
 
 	public static boolean getSmbMode(SharedPreferences sharedPreferences){
 		boolean num =  DEF.getBoolean(sharedPreferences, DEF.KEY_SMB_MODE, false);
+		return num;
+	}
+
+	public static boolean getSmbRetryMode(SharedPreferences sharedPreferences){
+		boolean num =  DEF.getBoolean(sharedPreferences, DEF.KEY_SMBRETRYMODE, false);
 		return num;
 	}
 }

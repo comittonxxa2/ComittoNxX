@@ -1,7 +1,6 @@
 package src.comitton.config;
 
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
@@ -34,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 
-public class SetCommonActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetCommonActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private static final String TAG = "SetCommonActivity";
 
 
@@ -105,7 +104,7 @@ public class SetCommonActivity extends BasePreferenceActivity implements OnShare
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		sharedPreferences = MultiProcessPreferences.getInstance(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -269,7 +268,7 @@ public class SetCommonActivity extends BasePreferenceActivity implements OnShare
 	@Override
 	protected void onResume() {
 		super.onResume();
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
 		mRotateBtn.setSummary(getRotateBtnSummary(sharedPreferences));	// 回転用ボタン
@@ -295,7 +294,7 @@ public class SetCommonActivity extends BasePreferenceActivity implements OnShare
 		super.onPause();
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SetOrientationEventListenerDisable(sharedPreferences);
 	}
 

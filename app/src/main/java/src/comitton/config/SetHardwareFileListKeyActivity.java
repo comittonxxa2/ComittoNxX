@@ -26,11 +26,10 @@ import androidx.preference.PreferenceManager;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.imageview.TouchPanelView;
 import src.comitton.config.SetCommonActivity;
 
-public class SetHardwareFileListKeyActivity extends BasePreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SetHardwareFileListKeyActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -136,7 +135,7 @@ public class SetHardwareFileListKeyActivity extends BasePreferenceActivity imple
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
