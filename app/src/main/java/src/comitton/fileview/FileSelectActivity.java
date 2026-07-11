@@ -25,8 +25,14 @@ import java.util.zip.ZipInputStream;
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
+import src.comitton.common.EpubWebViewSharedData;
+import src.comitton.common.CustomKeySharedData;
+import src.comitton.common.DialogSharedData;
+import src.comitton.common.TappatternSharedData;
+import src.comitton.config.SetHardwareEpubWebViewKeyActivity;
 import src.comitton.config.SetHardwareFileListKeyActivity;
+import src.comitton.config.SetImageTextColorActivity;
+import src.comitton.config.SetNoiseActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
@@ -78,8 +84,13 @@ import src.comitton.fileview.view.list.TitleArea;
 import src.comitton.webview.WebViewActivity;
 import src.comitton.config.SetServerMessageBlockActivity;
 
+import static src.comitton.common.DEF.DEFAULT_TOOLBAR_SIZE;
+import static src.comitton.dialog.ToolbarEditDialog.COMMAND_ID;
+import static src.comitton.dialog.ToolbarEditDialog.DEFAULT_VALUES;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
+import com.google.gson.Gson;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -90,7 +101,6 @@ import androidx.appcompat.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -115,6 +125,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
 import android.os.storage.StorageManager;
+
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 import androidx.activity.OnBackPressedCallback;
@@ -166,7 +177,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 	private ListScreenView mListScreenView;
 
-	private float mDensity;
+	private static float mDensity;
 
 	private FileSelectList mFileList = null;
 	private ImageManager mImageMgr = null;
@@ -299,7 +310,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mSambaSave;
 
 	private static SharedPreferences mSharedPreferences;
-	private FileSelectActivity mActivity;
+	private static FileSelectActivity mActivity;
 
 	private PathHistory mPathHistory;
 
@@ -353,6 +364,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static final int UI_LOCK_TIMEOUT_MS = 3000;
 	private int extkeydata = 0;
 	private static boolean mChangeTheme = false;
+	private static String jsonEpubWebviewString;
+	private static String jsonDialogString;
+	private static String jsonTappatternString;
+	private static String jsonCustomkeyString;
 
 	public static void applyAppTheme(SharedPreferences sharedPreferences) {
 		int themeValue = SetCommonActivity.getSelectTheme(sharedPreferences);
@@ -419,7 +434,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		applyAppTheme(sharedPreferences);
 		super.onCreate(savedInstanceState);
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -428,7 +443,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mSavedInstanceState = savedInstanceState;
 		if (mSavedInstanceState != null) {
 			// 既にレジューム起動用のデータがあればSharedPreferencesのレジューム内容を破棄する
-			mSharedPreferences = MultiProcessPreferences.getInstance(this);
+			mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = mSharedPreferences.edit();
 			ed.remove("ResumePath");
 			ed.remove("ResumeServer");
@@ -459,6 +474,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	protected void onResume() {
 		super.onResume();
 
+		applyAppTheme(mSharedPreferences);
 		SetOrientationEventListenerEnable(mSharedPreferences);
 	}
 
@@ -1413,6 +1429,94 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						String path = data.getExtras().getString("LastPath");
 						Logcat.d(logLevel, "nextopen=" + nextopen + ", file=" + file + ", path=" + path);
 
+						if (requestCode == DEF.REQUEST_WEB) {
+							// 設定を保存(ImageConfigDialog.onCreateView()と同じ補正を行う)
+							boolean mGray = data.getExtras().getBoolean("Gray");
+							boolean mInvert = data.getExtras().getBoolean("Invert");
+							boolean mColoring = data.getExtras().getBoolean("Coloring");
+							int mSharpen = data.getExtras().getInt("Sharpen", 0);
+							int mBright = data.getExtras().getInt("Bright", 0);
+							int mGamma = data.getExtras().getInt("Gamma", 0);
+							int mContrast = data.getExtras().getInt("Contrast", 0);
+							int mHue = data.getExtras().getInt("Hue", 0);
+							int mSaturation = data.getExtras().getInt("Saturation", 0);
+							int mKelvin = data.getExtras().getInt("Kelvin", 0);
+							boolean mCheckRgbLevel = data.getExtras().getBoolean("CheckRgbLevel");
+							int mRedLevel = data.getExtras().getInt("RedLevel", 0);
+							int mGreenLevel = data.getExtras().getInt("GreenLevel", 0);
+							int mBlueLevel = data.getExtras().getInt("BlueLevel", 0);
+							boolean mIsConfSave = data.getExtras().getBoolean("IsConfSave");
+							if (mIsConfSave) {
+								SharedPreferences.Editor ed = mSharedPreferences.edit();
+								ed.putBoolean(DEF.KEY_WEBVIEWGRAY, mGray);
+								ed.putBoolean(DEF.KEY_WEBVIEWCOLORING, mColoring);
+								ed.putBoolean(DEF.KEY_WEBVIEWINVERT, mInvert);
+								ed.putInt(DEF.KEY_WEBVIEWSHARPEN, mSharpen);
+								ed.putInt(DEF.KEY_WEBVIEWBRIGHT, mBright + 5);
+								ed.putInt(DEF.KEY_WEBVIEWGAMMA, mGamma + 5);
+								ed.putInt(DEF.KEY_WEBVIEWCONTRAST, mContrast / 5);
+								ed.putInt(DEF.KEY_WEBVIEWHUE, mHue / 5 + 20);
+								ed.putInt(DEF.KEY_WEBVIEWSATURATION, mSaturation / 5);
+								ed.putInt(DEF.KEY_WEBVIEWKELVIN, mKelvin);
+								ed.putBoolean(DEF.KEY_WEBVIEWCHECKRGBLEVEL, mCheckRgbLevel);
+								if (mCheckRgbLevel) {
+									// RGBレベルをマニュアル設定する場合のみ保存
+									ed.putInt(DEF.KEY_WEBVIEWREDLEVEL, mRedLevel);
+									ed.putInt(DEF.KEY_WEBVIEWGREENLEVEL, mGreenLevel);
+									ed.putInt(DEF.KEY_WEBVIEWBLUELEVEL, mBlueLevel);
+								}
+								ed.apply();
+							}
+						}
+						if (requestCode == DEF.REQUEST_EPUB) {
+							String mReturnValue = data.getExtras().getString("ReturnValue");
+							boolean mReturnMode = data.getExtras().getBoolean("ReturnMode");
+							String filepath = data.getExtras().getString("FilePath");
+							String user = data.getExtras().getString("User");
+							String pass = data.getExtras().getString("Pass");
+							SharedPreferences.Editor ed = mSharedPreferences.edit();
+							if (mReturnMode) {
+								ed.putString(DEF.createUrl(filepath, user, pass) + "#aozora", mReturnValue);
+							}
+							else {
+								ed.putString(DEF.createUrl(filepath, user, pass) + "#newepub", mReturnValue);
+							}
+							int mFontBody = data.getExtras().getInt("FontBody", 0);
+							int mFontText = data.getExtras().getInt("FontText", 0);
+							int mFontInfo = data.getExtras().getInt("FontInfo", 0);
+							int mMarginW = data.getExtras().getInt("MarginW", 0);
+							int mMarginH = data.getExtras().getInt("MarginH", 0);
+							boolean mIsConfSave = data.getExtras().getBoolean("IsConfSave");
+							if (mIsConfSave) {
+								ed.putInt(DEF.KEY_EP_FONTBODY, mFontBody);
+								ed.putInt(DEF.KEY_EP_FONTTEXT, mFontText);
+								ed.putInt(DEF.KEY_EP_FONTINFO, mFontInfo);
+								ed.putInt(DEF.KEY_EP_MARGINW, mMarginW);
+								ed.putInt(DEF.KEY_EP_MARGINH, mMarginH);
+							}
+							int server = data.getExtras().getInt("LastServer");
+							String Path = data.getExtras().getString("LastPath");
+							String User = data.getExtras().getString("LastUser");
+							String Pass = data.getExtras().getString("LastPass");
+							String filename = data.getExtras().getString("LastFile");
+							String textname = data.getExtras().getString("LastText");
+							int lastopen = data.getExtras().getInt("LastOpen");
+							ed.putInt("LastServer", server);
+							ed.putString("LastPath", Path);
+							ed.putString("LastUser", User);
+							ed.putString("LastPass", Pass);
+							ed.putString("LastFile", filename);
+							ed.putString("LastText", textname);
+							ed.putInt("LastOpen", lastopen);
+							ed.apply();
+							// 別プロセスなので書き戻す
+							jsonDialogString = data.getStringExtra("Dialog_Data");
+							jsonTappatternString = data.getStringExtra("Tappattern_Data");
+							jsonCustomkeyString = data.getStringExtra("Customkey_Data");
+							ReadDialogSetting(mSharedPreferences, jsonDialogString);
+							ReadTappatternSetting(mSharedPreferences, jsonTappatternString);
+							ReadCustomKeySetting(mSharedPreferences, jsonCustomkeyString);
+						}
 						if (nextopen != CloseDialog.CLICK_CLOSE) {
 							// 次のファイルを開く場合
 							Logcat.d(logLevel, "nextopen != CloseDialog.CLICK_CLOSE");
@@ -3367,7 +3471,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private void updateListView() {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "updateListView: 開始します.");
-		SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		String path = DEF.relativePath(mActivity, mURI, mPath);
 		String user = mServer.getUser();
 		String pass = mServer.getPass();
@@ -5208,6 +5312,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 			intent.putExtra("File", name);					// EPUBファイル名
 			intent.putExtra("Text", "META-INF/container.xml"); // 中身のファイル名
+			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+			String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
+			final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
+			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#newepub", "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
+			intent.putExtra("Value", mValue);
+			setEpubWebViewData(mSharedPreferences);
+			setDialogSharedData(mSharedPreferences);
+			setTappatternSharedData(mSharedPreferences);
+			setCustomKeySharedData(mSharedPreferences);
+			intent.putExtra("EpubWebview_Data", jsonEpubWebviewString);
+			intent.putExtra("Dialog_Data", jsonDialogString);
+			intent.putExtra("Tappattern_Data", jsonTappatternString);
+			intent.putExtra("Customkey_Data", jsonCustomkeyString);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
 			return;
 		}
@@ -5266,8 +5383,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// WebベースのEPUBビューアの場合
 			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
 			intent.putExtra("Text", "");
+			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#aozora", "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
+			intent.putExtra("Value", mValue);
 			// ... 他の共通Extra ...
 			setupCommonExtras(intent, name);
+			setEpubWebViewData(mSharedPreferences);
+			setDialogSharedData(mSharedPreferences);
+			setTappatternSharedData(mSharedPreferences);
+			setCustomKeySharedData(mSharedPreferences);
+			intent.putExtra("EpubWebview_Data", jsonEpubWebviewString);
+			intent.putExtra("Dialog_Data", jsonDialogString);
+			intent.putExtra("Tappattern_Data", jsonTappatternString);
+			intent.putExtra("Customkey_Data", jsonCustomkeyString);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
 		} else {
 			// テキストビューアの場合
@@ -5346,6 +5474,43 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 		intent.putExtra("File", file);					// ZIPファイル名
 		intent.putExtra("Text", name); 					// 中身のテキストファイル名
+		// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+		boolean mWebviewFilter = SetWebViewActivity.getWebviewFilter(mSharedPreferences);
+		boolean mWebviewUserAgent = SetWebViewActivity.getWebviewUserAgent(mSharedPreferences);
+		boolean mWebviewPulldownMenu = SetWebViewActivity.getWebviewPulldownMenu(mSharedPreferences);
+		int mWebviewPulldownTapPosition = SetWebViewActivity.getPulldownTap(mSharedPreferences);
+		intent.putExtra("WebviewFilter", mWebviewFilter);
+		intent.putExtra("WebviewUserAgent", mWebviewUserAgent);
+		intent.putExtra("WebviewPulldownMenu", mWebviewPulldownMenu);
+		intent.putExtra("WebviewPulldownTapPosition", mWebviewPulldownTapPosition);
+		boolean mGray = SetWebViewActivity.getWebviewGray(mSharedPreferences);
+		boolean mInvert = SetWebViewActivity.getWebviewInvert(mSharedPreferences);
+		boolean mColoring = SetWebViewActivity.getWebviewColoring(mSharedPreferences);
+		int mSharpen = SetWebViewActivity.getWebviewSharpen(mSharedPreferences);
+		int mBright = SetWebViewActivity.getWebviewBright(mSharedPreferences) - 5;
+		int mGamma = SetWebViewActivity.getWebviewGamma(mSharedPreferences) - 5;
+		int mContrast = SetWebViewActivity.getWebviewContrast(mSharedPreferences) * 5;
+		int mHue = (SetWebViewActivity.getWebviewHue(mSharedPreferences) - 20) * 5;
+		int mSaturation = SetWebViewActivity.getWebviewSaturation(mSharedPreferences) * 5;
+		int mKelvin = SetWebViewActivity.getKelvin(mSharedPreferences);
+		boolean mCheckRgbLevel = SetWebViewActivity.getCheckRgbLevel(mSharedPreferences);
+		int mRedLevel = SetWebViewActivity.getRedLevel(mSharedPreferences);
+		int mGreenLevel = SetWebViewActivity.getGreenLevel(mSharedPreferences);
+		int mBlueLevel = SetWebViewActivity.getBlueLevel(mSharedPreferences);
+		intent.putExtra("Gray", mGray);
+		intent.putExtra("Invert", mInvert);
+		intent.putExtra("Coloring", mColoring);
+		intent.putExtra("Sharpen", mSharpen);
+		intent.putExtra("Bright", mBright);
+		intent.putExtra("Gamma", mGamma);
+		intent.putExtra("Contrast", mContrast);
+		intent.putExtra("Hue", mHue);
+		intent.putExtra("Saturation", mSaturation);
+		intent.putExtra("Kelvin", mKelvin);
+		intent.putExtra("CheckRgbLevel", mCheckRgbLevel);
+		intent.putExtra("RedLevel", mRedLevel);
+		intent.putExtra("GreenLevel", mGreenLevel);
+		intent.putExtra("BlueLevel", mBlueLevel);
 		startActivityForResult(intent, DEF.REQUEST_WEB);
 	}
 
@@ -5408,8 +5573,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// WebベースのEPUBビューアの場合
 			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
 			intent.putExtra("Text", "");
+			// Webviewは別プロセスで起動するのでSharedPreferencesのValueをintentで受け渡す
+			String mValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mServer.getUser(), mServer.getPass()) + "#aozora", "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
+			intent.putExtra("Value", mValue);
 			// ... 他の共通Extra ...
 			setupCommonExtras(intent, name);
+			setEpubWebViewData(mSharedPreferences);
+			setDialogSharedData(mSharedPreferences);
+			setTappatternSharedData(mSharedPreferences);
+			setCustomKeySharedData(mSharedPreferences);
+			intent.putExtra("EpubWebview_Data", jsonEpubWebviewString);
+			intent.putExtra("Dialog_Data", jsonDialogString);
+			intent.putExtra("Tappattern_Data", jsonTappatternString);
+			intent.putExtra("Customkey_Data", jsonCustomkeyString);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
 		} else {
 			// 画像ビューアの場合
@@ -6851,5 +7027,338 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public static boolean getSmbMode() {
 		boolean sw = SetServerMessageBlockActivity.getSmbMode(mSharedPreferences);
 		return sw;
+	}
+
+	public static void setDialogSharedData(SharedPreferences sharedPreferences) {
+		DialogSharedData bigData = new DialogSharedData();
+		// 設定値取得
+		for (int i = 0; i < COMMAND_ID.length; i++) {
+			bigData.mPageSelectToolbar[i] = DEF.getBoolean(sharedPreferences, DEF.KEY_PAGE_SELECT_TOOLBAR + COMMAND_ID[i], DEFAULT_VALUES[i]);
+			bigData.mPageSelectToolbarIndex[i] = DEF.getInt(sharedPreferences, DEF.KEY_PAGE_SELECT_TOOLBAR_INDEX + COMMAND_ID[i], i);
+		}
+		bigData.mToolbarSize = DEF.getInt(sharedPreferences, DEF.KEY_TOOLBAR_SIZE, DEFAULT_TOOLBAR_SIZE);
+		// JSON(文字列)に変換
+		jsonDialogString = new Gson().toJson(bigData);
+	}
+	public static void setTappatternSharedData(SharedPreferences sharedPreferences) {
+		TappatternSharedData bigData = new TappatternSharedData();
+		// 設定値取得
+		bigData.mTapPatENum = DEF.getInt(sharedPreferences, DEF.KEY_TAP_E_PATTERN_NUMBER, 0);
+		// パターン1
+		bigData.mTapPate0101 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_01_01, DEF.TAP_PATTERN_E01_DEFAULT_01);
+		bigData.mTapPate0102 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_01_02, DEF.TAP_PATTERN_E01_DEFAULT_02);
+		bigData.mTapPate0103 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_01_03, DEF.TAP_PATTERN_E01_DEFAULT_03);
+		bigData.mTapPate0104 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_01_04, DEF.TAP_PATTERN_E01_DEFAULT_04);
+		// パターン2
+		bigData.mTapPate0201 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_02_01, DEF.TAP_PATTERN_E02_DEFAULT_01);
+		bigData.mTapPate0202 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_02_02, DEF.TAP_PATTERN_E02_DEFAULT_02);
+		bigData.mTapPate0203 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_02_03, DEF.TAP_PATTERN_E02_DEFAULT_03);
+		bigData.mTapPate0204 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_02_04, DEF.TAP_PATTERN_E02_DEFAULT_04);
+		bigData.mTapPate0205 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_02_05, DEF.TAP_PATTERN_E02_DEFAULT_05);
+		bigData.mTapPate0206 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_02_06, DEF.TAP_PATTERN_E02_DEFAULT_06);
+		// パターン3
+		bigData.mTapPate0301 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_03_01, DEF.TAP_PATTERN_E03_DEFAULT_01);
+		bigData.mTapPate0302 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_03_02, DEF.TAP_PATTERN_E03_DEFAULT_02);
+		bigData.mTapPate0303 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_03_03, DEF.TAP_PATTERN_E03_DEFAULT_03);
+		bigData.mTapPate0304 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_03_04, DEF.TAP_PATTERN_E03_DEFAULT_04);
+		bigData.mTapPate0305 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_03_05, DEF.TAP_PATTERN_E03_DEFAULT_05);
+		bigData.mTapPate0306 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_03_06, DEF.TAP_PATTERN_E03_DEFAULT_06);
+		// パターン4
+		bigData.mTapPate0401 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_01, DEF.TAP_PATTERN_E04_DEFAULT_01);
+		bigData.mTapPate0402 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_02, DEF.TAP_PATTERN_E04_DEFAULT_02);
+		bigData.mTapPate0403 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_03, DEF.TAP_PATTERN_E04_DEFAULT_03);
+		bigData.mTapPate0404 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_04, DEF.TAP_PATTERN_E04_DEFAULT_04);
+		bigData.mTapPate0405 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_05, DEF.TAP_PATTERN_E04_DEFAULT_05);
+		bigData.mTapPate0406 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_06, DEF.TAP_PATTERN_E04_DEFAULT_06);
+		bigData.mTapPate0407 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_07, DEF.TAP_PATTERN_E04_DEFAULT_07);
+		bigData.mTapPate0408 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_08, DEF.TAP_PATTERN_E04_DEFAULT_08);
+		bigData.mTapPate0409 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_04_09, DEF.TAP_PATTERN_E04_DEFAULT_09);
+		// パターン5
+		bigData.mTapPate0501 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_01, DEF.TAP_PATTERN_E05_DEFAULT_01);
+		bigData.mTapPate0502 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_02, DEF.TAP_PATTERN_E05_DEFAULT_02);
+		bigData.mTapPate0503 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_03, DEF.TAP_PATTERN_E05_DEFAULT_03);
+		bigData.mTapPate0504 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_04, DEF.TAP_PATTERN_E05_DEFAULT_04);
+		bigData.mTapPate0505 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_05, DEF.TAP_PATTERN_E05_DEFAULT_05);
+		bigData.mTapPate0506 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_06, DEF.TAP_PATTERN_E05_DEFAULT_06);
+		bigData.mTapPate0507 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_07, DEF.TAP_PATTERN_E05_DEFAULT_07);
+		bigData.mTapPate0508 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_08, DEF.TAP_PATTERN_E05_DEFAULT_08);
+		bigData.mTapPate0509 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_09, DEF.TAP_PATTERN_E05_DEFAULT_09);
+		bigData.mTapPate0510 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_10, DEF.TAP_PATTERN_E05_DEFAULT_10);
+		bigData.mTapPate0511 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_05_11, DEF.TAP_PATTERN_E05_DEFAULT_11);
+		// パターン6
+		bigData.mTapPate0601 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_06_01, DEF.TAP_PATTERN_E06_DEFAULT_01);
+		bigData.mTapPate0602 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_06_02, DEF.TAP_PATTERN_E06_DEFAULT_02);
+		bigData.mTapPate0603 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_06_03, DEF.TAP_PATTERN_E06_DEFAULT_03);
+		bigData.mTapPate0604 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_06_04, DEF.TAP_PATTERN_E06_DEFAULT_04);
+		bigData.mTapPate0605 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_06_05, DEF.TAP_PATTERN_E06_DEFAULT_05);
+		// パターン7
+		bigData.mTapPate0701 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_01, DEF.TAP_PATTERN_E07_DEFAULT_01);
+		bigData.mTapPate0702 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_02, DEF.TAP_PATTERN_E07_DEFAULT_02);
+		bigData.mTapPate0703 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_03, DEF.TAP_PATTERN_E07_DEFAULT_03);
+		bigData.mTapPate0704 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_04, DEF.TAP_PATTERN_E07_DEFAULT_04);
+		bigData.mTapPate0705 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_05, DEF.TAP_PATTERN_E07_DEFAULT_05);
+		bigData.mTapPate0706 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_06, DEF.TAP_PATTERN_E07_DEFAULT_06);
+		bigData.mTapPate0707 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_07_07, DEF.TAP_PATTERN_E07_DEFAULT_07);
+		// パターン8
+		bigData.mTapPate0801 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_08_01, DEF.TAP_PATTERN_E08_DEFAULT_01);
+		bigData.mTapPate0802 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_08_02, DEF.TAP_PATTERN_E08_DEFAULT_02);
+		bigData.mTapPate0803 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_08_03, DEF.TAP_PATTERN_E08_DEFAULT_03);
+		bigData.mTapPate0804 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_08_04, DEF.TAP_PATTERN_E08_DEFAULT_04);
+		bigData.mTapPate0805 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_08_05, DEF.TAP_PATTERN_E08_DEFAULT_05);
+		// パターン9
+		bigData.mTapPate0901 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_01, DEF.TAP_PATTERN_E09_DEFAULT_01);
+		bigData.mTapPate0902 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_02, DEF.TAP_PATTERN_E09_DEFAULT_02);
+		bigData.mTapPate0903 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_03, DEF.TAP_PATTERN_E09_DEFAULT_03);
+		bigData.mTapPate0904 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_04, DEF.TAP_PATTERN_E09_DEFAULT_04);
+		bigData.mTapPate0905 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_05, DEF.TAP_PATTERN_E09_DEFAULT_05);
+		bigData.mTapPate0906 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_06, DEF.TAP_PATTERN_E09_DEFAULT_06);
+		bigData.mTapPate0907 = DEF.getInt(sharedPreferences, DEF.KEY_TAP_PATTERN_E_09_07, DEF.TAP_PATTERN_E09_DEFAULT_07);
+		// JSON(文字列)に変換
+		jsonTappatternString = new Gson().toJson(bigData);
+	}
+	public static void setCustomKeySharedData(SharedPreferences sharedPreferences) {
+		CustomKeySharedData bigData = new CustomKeySharedData();
+		// 設定値取得
+		bigData.mCustomkeytitle01 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_01, "");
+		bigData.mCustomkeytitle02 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_02, "");
+		bigData.mCustomkeytitle03 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_03, "");
+		bigData.mCustomkeytitle04 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_04, "");
+		bigData.mCustomkeytitle05 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_05, "");
+		bigData.mCustomkeytitle06 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_06, "");
+		bigData.mCustomkeytitle07 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_07, "");
+		bigData.mCustomkeytitle08 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_08, "");
+		bigData.mCustomkeytitle09 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_09, "");
+		bigData.mCustomkeytitle10 = sharedPreferences.getString(DEF.KEY_CUSTOMKEY_TITLE_10, "");
+		bigData.mCustomkeycode01 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_01, 0);
+		bigData.mCustomkeycode02 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_02, 0);
+		bigData.mCustomkeycode03 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_03, 0);
+		bigData.mCustomkeycode04 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_04, 0);
+		bigData.mCustomkeycode05 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_05, 0);
+		bigData.mCustomkeycode06 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_06, 0);
+		bigData.mCustomkeycode07 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_07, 0);
+		bigData.mCustomkeycode08 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_08, 0);
+		bigData.mCustomkeycode09 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_09, 0);
+		bigData.mCustomkeycode10 = DEF.getInt(sharedPreferences, DEF.KEY_CUSTOMKEY_CODE_10, 0);
+		// JSON(文字列)に変換
+		jsonCustomkeyString = new Gson().toJson(bigData);
+	}
+	public static void setEpubWebViewData(SharedPreferences sharedPreferences) {
+		// 設定の読み込み
+		SetCommonActivity.loadSettings(sharedPreferences);
+		// パラメータの数が膨大なのでJSON(文字列)へ変換する
+		EpubWebViewSharedData bigData = new EpubWebViewSharedData();
+		// 設定値取得
+		bigData.mDispMode = SetEpubActivity.getInitView(sharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
+		bigData.mNotice = SetEpubActivity.getNotice(sharedPreferences);
+		bigData.mForceNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
+		bigData.mNoSleep = SetEpubActivity.getNoSleep(sharedPreferences);
+		bigData.mImmEnable = SetImageTextDetailActivity.getImmEnable(sharedPreferences);
+		bigData.mImmForce = SetCommonActivity.getForceHideNavigationBar(sharedPreferences);
+		bigData.mTextColor = SetImageTextColorActivity.getTvtColor(sharedPreferences);
+		bigData.mBackColor = SetImageTextColorActivity.getTvbColor(sharedPreferences);
+		bigData.mGradColor = SetImageTextColorActivity.getTvgColor(sharedPreferences);
+		bigData.mGradation = SetImageTextColorActivity.getGradation(sharedPreferences);
+		bigData.mSrchColor = SetImageTextColorActivity.getHitColor(sharedPreferences);
+		bigData.mMgnColor = SetImageTextColorActivity.getTxtMgnColor(sharedPreferences);
+		bigData.mTopColor1 = SetImageTextColorActivity.getTxtGuiColor(sharedPreferences);
+		// 時刻と充電表示有無
+		bigData.mTimeDisp = SetImageActivity.getTimeDisp(sharedPreferences);
+		// 時刻と充電表示書式
+		bigData.mTimeFormat = SetImageActivity.getTimeFormat(sharedPreferences);
+		// 時刻と充電表示位置
+		bigData.mTimePos = SetImageActivity.getTimePos(sharedPreferences);
+		// 時刻と充電表示サイズ
+		bigData.mTimeSize = DEF.calcPnumSizePix(SetImageActivity.getTimeSize(sharedPreferences), mDensity); 
+		// 時刻と充電表示色
+		bigData.mTimeColor = SetImageActivity.getTimeColor(sharedPreferences);
+		// 戻るキーで確認メッセージ
+		bigData.mConfirmBack = SetImageText.getConfirmBack(sharedPreferences);	
+		bigData.mClickArea = DEF.calcClickAreaPix(SetImageTextDetailActivity.getClickArea(sharedPreferences), mDensity);
+		bigData.mPageSelect = SetImageText.getTxPageSelect(sharedPreferences);
+		bigData.mPageRange = DEF.calcPageRangePix(SetImageTextDetailActivity.getPageRange(sharedPreferences), mDensity);
+		bigData.mOldMenu = SetImageTextDetailActivity.getOldMenu(sharedPreferences);
+		bigData.mBottomFile = SetImageTextDetailActivity.getBottomFile(sharedPreferences);
+		bigData.mChgPage = SetImageText.getChgPage(sharedPreferences);
+		bigData.mChgPageKey = SetImageText.getChgPageKey(sharedPreferences);
+		// タップパターン
+		bigData.mTapPattern = SetImageText.getTapPattern(sharedPreferences);
+		// タップの比率
+		bigData.mTapRate = SetImageText.getTapRate(sharedPreferences);
+		bigData.mTapScrl = SetImageText.getTapScrl(sharedPreferences);
+		// 音量キー操作
+		bigData.mVolKeyMode = SetImageText.getVolKey(sharedPreferences);
+		bigData.mNoiseScrl = DEF.calcScrlSpeedPix(SetNoiseActivity.getNoiseScrl(sharedPreferences), mDensity);
+		bigData.mNoiseUnder = DEF.calcNoiseLevel(SetNoiseActivity.getNoiseUnder(sharedPreferences));
+		bigData.mNoiseOver = DEF.calcNoiseLevel(SetNoiseActivity.getNoiseOver(sharedPreferences));
+		bigData.mNoiseLevel = SetNoiseActivity.getNoiseLevel(sharedPreferences);
+		bigData.mNoiseDec = SetNoiseActivity.getNoiseDec(sharedPreferences);
+		bigData.mLastMsg = SetImageText.getLastPage(sharedPreferences);
+		bigData.mVibFlag = SetImageText.getVibFlag(sharedPreferences);
+		bigData.mFlickPage = SetImageText.getFlickPage(sharedPreferences);
+		bigData.mFlickEdge = SetImageText.getFlickEdge(sharedPreferences);
+		bigData.mFontText = SetEpubActivity.getFontText(sharedPreferences);
+		bigData.mFontBody = SetEpubActivity.getFontBody(sharedPreferences);
+		bigData.mFontInfo = SetEpubActivity.getFontInfo(sharedPreferences);
+		bigData.mMarginW = SetEpubActivity.getMarginW(sharedPreferences);
+		bigData.mMarginH = SetEpubActivity.getMarginH(sharedPreferences);
+		bigData.mDisableTextInfo = SetEpubActivity.getDisableTextInfo(sharedPreferences);
+		bigData.mTextFrame = SetEpubActivity.getTextFrame(sharedPreferences);
+		bigData.mDisablePageButton = SetTextActivity.getDisablePageButton(sharedPreferences);
+		bigData.mScaleValiable = SetEpubActivity.getTextSizeVariable(sharedPreferences);
+		bigData.mTxtColor = SetFileColorActivity.getEvtColor(sharedPreferences);
+		bigData.mBakColor = SetFileColorActivity.getEvbColor(sharedPreferences);
+		bigData.mFixBodyColor = SetEpubActivity.getTextColorFix(sharedPreferences);
+		bigData.mFixBackgroundColor = SetEpubActivity.getTextBakColorFix(sharedPreferences);
+		// 画面が裏に入った場合にリスト一覧へ戻る
+		bigData.mReturnListView = SetImageText.getReturnListView(mSharedPreferences);
+		bigData.mViewRota = SetEpubActivity.getViewRota(sharedPreferences);
+		bigData.mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
+		bigData.mGetRotateBtn = DEF.RotateBtnList[SetCommonActivity.getRotateBtn(sharedPreferences)];
+		bigData.mNoCache = SetEpubActivity.getNoCache(sharedPreferences);
+		bigData.mHorizontalWriting = SetEpubActivity.getHorizontalWriting(sharedPreferences);
+		bigData.fontname = SetEpubActivity.getFontName(sharedPreferences);
+		for (int i = 0; i < DEF.KEY_CODE_CUSTOM_MAX; i++) {
+			bigData.mLoadCustomkeyCode[i] = TouchPanelView.LoadCustomkeyCode(sharedPreferences, i);
+		}
+		for (int i = 0; i < (DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX); i++) {
+			bigData.mGetHardwareKeySetData[i] = SetHardwareEpubWebViewKeyActivity.GetHardwareKeySetData(sharedPreferences, i + 1);
+		}
+		bigData.mRBSort = sharedPreferences.getInt("RBSort", 0);
+		// JSON(文字列)に変換
+		jsonEpubWebviewString = new Gson().toJson(bigData);
+	}
+	public static String getJsonEpubWebviewData() {
+		return jsonEpubWebviewString;
+	}
+	public static String getJsonDialogData() {
+		return jsonDialogString;
+	}
+	public static String getJsonTappatternData() {
+		return jsonTappatternString;
+	}
+	public static String getJsonCustomkeyData() {
+		return jsonCustomkeyString;
+	}
+	public static void ReadDialogSetting(SharedPreferences sharedPreferences, String jsonString) {
+		// 設定値取得
+		DialogSharedData bigData = new Gson().fromJson(jsonString, DialogSharedData.class);
+		if (bigData != null) {
+			// 設定値を共有リファレンスへ書き込む
+			SharedPreferences.Editor ed = sharedPreferences.edit();
+			ed.putInt(DEF.KEY_TOOLBAR_SIZE, bigData.mToolbarSize);
+			for (int i = 0; i < COMMAND_ID.length; i++) {
+				ed.putBoolean(DEF.KEY_PAGE_SELECT_TOOLBAR + COMMAND_ID[i], bigData.mPageSelectToolbar[i]);
+				ed.putInt(DEF.KEY_PAGE_SELECT_TOOLBAR_INDEX + COMMAND_ID[i], bigData.mPageSelectToolbarIndex[i]);
+			}
+			ed.apply();
+		}
+	}
+	public static void ReadTappatternSetting(SharedPreferences sharedPreferences, String jsonString) {
+		// 設定値取得
+		TappatternSharedData bigData = new Gson().fromJson(jsonString, TappatternSharedData.class);
+		if (bigData != null) {
+			// 設定値を共有リファレンスへ書き込む
+			SharedPreferences.Editor ed = sharedPreferences.edit();
+			ed.putInt(DEF.KEY_TAP_E_PATTERN_NUMBER, bigData.mTapPatENum);
+			// パターン2
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_01_01, bigData.mTapPate0101);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_01_02, bigData.mTapPate0102);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_01_03, bigData.mTapPate0103);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_01_04, bigData.mTapPate0104);
+			// パターン3
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_02_01, bigData.mTapPate0201);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_02_02, bigData.mTapPate0202);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_02_03, bigData.mTapPate0203);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_02_04, bigData.mTapPate0204);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_02_05, bigData.mTapPate0205);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_02_06, bigData.mTapPate0206);
+			// パターン1
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_03_01, bigData.mTapPate0301);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_03_02, bigData.mTapPate0302);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_03_03, bigData.mTapPate0303);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_03_04, bigData.mTapPate0304);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_03_05, bigData.mTapPate0305);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_03_06, bigData.mTapPate0306);
+			// パターン4
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_01, bigData.mTapPate0401);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_02, bigData.mTapPate0402);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_03, bigData.mTapPate0403);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_04, bigData.mTapPate0404);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_05, bigData.mTapPate0405);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_06, bigData.mTapPate0406);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_07, bigData.mTapPate0407);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_08, bigData.mTapPate0408);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_04_09, bigData.mTapPate0409);
+			// パターン5
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_01, bigData.mTapPate0501);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_02, bigData.mTapPate0502);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_03, bigData.mTapPate0503);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_04, bigData.mTapPate0504);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_05, bigData.mTapPate0505);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_06, bigData.mTapPate0506);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_07, bigData.mTapPate0507);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_08, bigData.mTapPate0508);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_09, bigData.mTapPate0509);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_10, bigData.mTapPate0510);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_05_11, bigData.mTapPate0511);
+			// パターン6
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_06_01, bigData.mTapPate0601);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_06_02, bigData.mTapPate0602);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_06_03, bigData.mTapPate0603);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_06_04, bigData.mTapPate0604);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_06_05, bigData.mTapPate0605);
+			// パターン7
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_01, bigData.mTapPate0701);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_02, bigData.mTapPate0702);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_03, bigData.mTapPate0703);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_04, bigData.mTapPate0704);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_05, bigData.mTapPate0705);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_06, bigData.mTapPate0706);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_07_07, bigData.mTapPate0707);
+			// パターン8
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_08_01, bigData.mTapPate0801);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_08_02, bigData.mTapPate0802);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_08_03, bigData.mTapPate0803);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_08_04, bigData.mTapPate0804);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_08_05, bigData.mTapPate0805);
+			// パターン9
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_01, bigData.mTapPate0901);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_02, bigData.mTapPate0902);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_03, bigData.mTapPate0903);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_04, bigData.mTapPate0904);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_05, bigData.mTapPate0905);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_06, bigData.mTapPate0906);
+			ed.putInt(DEF.KEY_TAP_PATTERN_E_09_07, bigData.mTapPate0907);
+			ed.apply();
+		}
+	}
+	public static void ReadCustomKeySetting(SharedPreferences sharedPreferences, String jsonString) {
+		// 設定値取得
+		CustomKeySharedData bigData = new Gson().fromJson(jsonString, CustomKeySharedData.class);
+		if (bigData != null) {
+			// 設定値を共有リファレンスへ書き込む
+			SharedPreferences.Editor ed = sharedPreferences.edit();
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_01, bigData.mCustomkeytitle01);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_02, bigData.mCustomkeytitle02);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_03, bigData.mCustomkeytitle03);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_04, bigData.mCustomkeytitle04);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_05, bigData.mCustomkeytitle05);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_06, bigData.mCustomkeytitle06);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_07, bigData.mCustomkeytitle07);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_08, bigData.mCustomkeytitle08);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_09, bigData.mCustomkeytitle09);
+			ed.putString(DEF.KEY_CUSTOMKEY_TITLE_10, bigData.mCustomkeytitle10);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_01, bigData.mCustomkeycode01);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_02, bigData.mCustomkeycode02);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_03, bigData.mCustomkeycode03);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_04, bigData.mCustomkeycode04);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_05, bigData.mCustomkeycode05);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_06, bigData.mCustomkeycode06);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_07, bigData.mCustomkeycode07);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_08, bigData.mCustomkeycode08);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_09, bigData.mCustomkeycode09);
+			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_10, bigData.mCustomkeycode10);
+			ed.apply();
+		}
 	}
 }
