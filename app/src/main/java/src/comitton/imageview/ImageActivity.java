@@ -8,7 +8,6 @@ import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetFileColorActivity;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.dialog.FloatingIconDialog;
@@ -673,6 +672,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mDoubleTapGuardOn = false;
 	private boolean mAutoRepeatCheck = false;
 	private boolean mPinchScaleSetting = false;
+	private boolean mPinchScaleSettingSet = false;
 	private boolean mBackgroundPause = false;
 
 	private static int mFloatingIconSize;
@@ -831,7 +831,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.i(logLevel, "開始します.");
 
 		// 起動処理失敗回数をリセット
-		mSharedPreferences = MultiProcessPreferences.getInstance(this);
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor ed = mSharedPreferences.edit();
 		ed.putInt(DEF.KEY_INITIALIZE, 0);
 		ed.apply();
@@ -1672,6 +1672,19 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		return super.dispatchKeyEvent(event);
 	}
 
+	private void setCacheSleep() {
+		// バックグラウンドでのキャッシュ読み込み停止
+		if (mBackgroundPause) {
+			mImageMgr.setCacheSleep(true);
+			try {
+				// キャッシュ読み込み停止待ちを入れる
+				Thread.sleep(100);
+			}
+			catch (Exception e) {
+			}
+		}
+	}
+
 	String mMessage = "";
 	String mMessage2 = "";
 	String mWorkMessage = "";
@@ -1756,10 +1769,15 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						}
 
 						// バックグラウンドでのキャッシュ読み込み停止
-						if (mBackgroundPause) {
-							mImageMgr.setCacheSleep(true);
-						}
+						setCacheSleep();
 						// タッチ位置が範囲内の時だけ処理
+						// サイズ変更終了
+						mImageView.setPinchChanging(0);
+						// 描画の更新
+						if (mPinchScaleSettingSet) {
+							mPinchScaleSettingSet = false;
+							setBitmapImage();
+						}
 						mLongTouchMode = true;
 						mImageView.setZoomMode(true);
 						// ズーム解除用のイベントを登録
@@ -2606,7 +2624,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// 第3引数は、表示期間（LENGTH_SHORT、または、LENGTH_LONG）
 		// Toast.makeText(this, strScaleMode, Toast.LENGTH_SHORT).show();
 
-		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor ed = sp.edit();
 		ed.putInt("scalemode", mScaleMode);
 		ed.apply();
@@ -2749,7 +2767,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		// モードが変わればスケールは初期化
 		if (scaleinit) {
-			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 			synchronized (mImageView) {
 				mPinchScale = SetImageActivity.getPinScale(sharedPreferences);
 				mImageMgr.setImageScale(mPinchScale);
@@ -2918,9 +2936,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
     					float y2 = (int)event.getY(1);
     					if (Math.abs(x1 - x2) > mSDensity * 20 || Math.abs(y1 - y2) > mSDensity * 20) {
 							// バックグラウンドでのキャッシュ読み込み停止
-							if (mBackgroundPause) {
-								mImageMgr.setCacheSleep(true);
-							}
+							setCacheSleep();
 							// ピンチズームの更新
     						SetPinchScaleSetting();
     						// 2点間が10sp以上であれば拡大縮小開始
@@ -3196,9 +3212,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
 							}
 							// バックグラウンドでのキャッシュ読み込み停止
-							if (mBackgroundPause) {
-								mImageMgr.setCacheSleep(true);
-							}
+							setCacheSleep();
 							// 現在のイメージ表示位置をフリックの判定のため記憶
 							mTouchDrawLeft = (int)x;
 							callZoomAreaDraw(x, y);
@@ -3657,6 +3671,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						}
 						// バックグラウンドでのキャッシュ読み込み停止
 						mImageMgr.setCacheSleep(true);
+						try {
+							// キャッシュ読み込み停止待ちを入れる
+							Thread.sleep(100);
+						}
+						catch (Exception e) {
+						}
 						Intent intent = new Intent(ImageActivity.this, SetConfigActivity.class);
 						intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 						startActivityForResult(intent, DEF.REQUEST_SETTING);
@@ -4075,9 +4095,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mPinchScaleSel = 250;
 				}
 				// スケーリングのリアルタイム変更は処理が重いので画面更新時にスケーリングを行う
+				// バックグラウンドでのキャッシュ読み込み停止
+				setCacheSleep();
 				mImageView.setPinchChanging(mPinchScaleSel);
 				mGuideView.setGuideText(mPinchScaleSel + "%");
 				mPinchScaleSetting = true;
+				mPinchScaleSettingSet = true;
 				if (mMakeZoomSameAsPinch) {
 					// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 					Editor ed = mSharedPreferences.edit();
@@ -4088,6 +4111,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				// 画面更新中の文字を消すメッセージを送る
 				startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
+				// バックグラウンドでのキャッシュ読み込み再開
+				if (mBackgroundPause) {
+					startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+				}
 				break;
 			case DEF.TAP_PINCHSCALEDOWN:
 				// ピンチズーム変更
@@ -4098,9 +4125,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mPinchScaleSel = 10;
 				}
 				// スケーリングのリアルタイム変更は処理が重いので画面更新時にスケーリングを行う
+				// バックグラウンドでのキャッシュ読み込み停止
+				setCacheSleep();
 				mImageView.setPinchChanging(mPinchScaleSel);
 				mGuideView.setGuideText(mPinchScaleSel + "%");
 				mPinchScaleSetting = true;
+				mPinchScaleSettingSet = true;
 				if (mMakeZoomSameAsPinch) {
 					// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 					Editor ed = mSharedPreferences.edit();
@@ -4111,6 +4141,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				// 画面更新中の文字を消すメッセージを送る
 				startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
+				// バックグラウンドでのキャッシュ読み込み再開
+				if (mBackgroundPause) {
+					startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+				}
 				break;
 			case DEF.TAP_TOOLBARBOOKLEFT:
 				// 前のファイル(最終ページ)/次のファイル(先頭ページ)
@@ -4415,6 +4449,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// ズームレベルのリセット
 				// 描画スレッド停止
 				if (mPinchScaleSel != 100) {
+					// バックグラウンドでのキャッシュ読み込み停止
+					setCacheSleep();
 					mImageView.setPinchChanging(100);
 					mGuideView.setGuideText(100 + "%");
 					mImageView.lockDraw();
@@ -4430,6 +4466,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					this.updateOverSize(true);
 					// 描画スレッド開始
 					mImageView.update(true);
+					mPinchScaleSettingSet = false;
 					if (mMakeZoomSameAsPinch) {
 						// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 						Editor ed = mSharedPreferences.edit();
@@ -4440,6 +4477,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 					// 画面更新中の文字を消すメッセージを送る
 					startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
+					// バックグラウンドでのキャッシュ読み込み再開
+					if (mBackgroundPause) {
+						startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+					}
 				}
 				break;
 			case DEF.TAP_EXIT_VIEWER:
@@ -5815,6 +5856,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 				// バックグラウンドでのキャッシュ読み込み停止
 				mImageMgr.setCacheSleep(true);
+				try {
+					// キャッシュ読み込み停止待ちを入れる
+					Thread.sleep(100);
+				}
+				catch (Exception e) {
+				}
 
 				Intent intent = new Intent(ImageActivity.this, SetConfigActivity.class);
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -6409,7 +6456,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (requestCode == DEF.REQUEST_SETTING) {
 			// 設定の読込
-			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 			ReadSetting(sharedPreferences);
 			// 他アクティビティからの復帰通知時に元に戻す
@@ -7286,7 +7333,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "開始します.");
 
 		if (mImageMgr != null) {
-			SharedPreferences sp = MultiProcessPreferences.getInstance(this);
+			SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = sp.edit();
 			int savePage = mCurrentPage;
 			int	maxpage = mImageMgr.length();
@@ -7387,7 +7434,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "開始します.");
 
 		if (mImageMgr != null && mImageMgr.length() > 0) {
-			SharedPreferences sp = MultiProcessPreferences.getInstance(this);
+			SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = sp.edit();
 			if (mRestorePage == DEF.PAGENUMBER_UNREAD) {
 				ed.remove(DEF.createUrl(mFilePath, mUser, mPass) + "#maxpage");

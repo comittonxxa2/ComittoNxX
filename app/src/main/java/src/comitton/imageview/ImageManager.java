@@ -80,16 +80,11 @@ import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
 
-import jcifs.CIFSContext;
-import jcifs.context.SingletonContext;
-import jcifs.smb.NtlmPasswordAuthenticator;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbRandomAccessFile;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
+import src.comitton.config.SetServerMessageBlockActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
@@ -105,6 +100,12 @@ import android.annotation.SuppressLint;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+
+import org.codelibs.jcifs.smb.CIFSContext;
+import org.codelibs.jcifs.smb.context.SingletonContext;
+import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
+import org.codelibs.jcifs.smb.impl.SmbFile;
+import org.codelibs.jcifs.smb.impl.SmbRandomAccessFile;
 
 public class ImageManager extends InputStream implements Runnable {
 	private static final String TAG = "ImageManager";
@@ -122,6 +123,7 @@ public class ImageManager extends InputStream implements Runnable {
 	public static final int FILEERROR_RETRY_SMB = 50;
 	public static final int FILEERROR_DELAY = 10;
 	public static final int FILEERROR_DELAY_SMB = 100;
+	public static final int FILEERROR_DELAY_SMB_LONG = 1000;
 
 	public static final int OPENMODE_VIEW = 0;
 	public static final int OPENMODE_LIST = 1;
@@ -323,6 +325,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private static final int HEADER_LOOKAHEAD_SIZE = 64 * 1024;
 	private boolean mAnimationEnable;
 	private boolean mArchiveAnimationEnable;
+	private boolean mSmbRetryMode;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -349,7 +352,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mHidden = hidden;
 		mOpenMode = openmode;
 		mTimestamp = (int)FileAccess.date(mActivity, mFilePath, mUser, mPass);//(int)timestamp;
-		SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
 		mFileListCacheOff = SetFileListActivity.GetFileListCacheOff(sp);
 		mExpandTextEnable = SetFileListActivity.getExpandTextEnable(sp);
 		mArchiveCheck= SetFileListActivity.getArchiveCheckManualMode(sp);
@@ -361,6 +364,7 @@ public class ImageManager extends InputStream implements Runnable {
 		if (FileAccess.accessType(mFilePath) != DEF.ACCESS_TYPE_LOCAL && SetFileListActivity.getPdfExpand(sp)) {
 			mPdfExpand = FileAccess.accessType(mFilePath);
 		}
+		mSmbRetryMode = SetServerMessageBlockActivity.getSmbRetryMode(sp);
 
  		// スレッド数
  		mMaxThreadNum = maxthread;
@@ -1108,7 +1112,7 @@ public class ImageManager extends InputStream implements Runnable {
 				mFileType = FILETYPE_RAR;
 				if (mOpenMode == OPENMODE_THUMBSORT) {
 					// RARファイルかつソートありのサムネイル取得であればソート条件を取得
-					SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
+					SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
 					thumbSortType = SetFileListActivity.getThumbSortType(sp);
 					Logcat.d(logLevel, "thumbSortType=" + thumbSortType);
 				}
@@ -2540,7 +2544,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mFileList = (FileListItem[]) list.toArray(new FileListItem[0]);
 		mMaxOrgLength = maxorglen;
 
-		SharedPreferences sp = MultiProcessPreferences.getInstance(mActivity);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
 		boolean mAnimationScan = SetImageActivity.getAnimationScan(sp);
 
 		List<AnimeList> animelist = new ArrayList<AnimeList>();
@@ -6824,7 +6828,7 @@ public class ImageManager extends InputStream implements Runnable {
 								sendHandler(DEF.HMSG_LOADING, prog << 24, rate, null);
 							}
 						}
-					} else if (mFileType == FILETYPE_RAR) {
+					} else if (mFileType == FILETYPE_RAR && mSkipSevenZip) {
 						// メモリキャッシュ読込時のみRAR展開する
 						// ファイルキャッシュを作成するときはRAR展開不要
 						mRarStream = new RarInputStream(new BufferedInputStream(this, BIS_BUFFSIZE), page, mFileList[page], mHandler);
@@ -7114,7 +7118,7 @@ public class ImageManager extends InputStream implements Runnable {
 					public void setTotal(long totalValue) {}
 				});
 			}
-			catch (IOException e) {
+			catch (Exception e) {
 				// エラーになった
 				errorcheck = true;
 				errorcount++;
@@ -7122,10 +7126,23 @@ public class ImageManager extends InputStream implements Runnable {
 				// 中断フラグをクリア
 				Thread.interrupted();
 				// リトライ前に時間待ちを入れる
-				try {
-					Thread.sleep(error_delay_max);
+				if (mAccessType == DEF.ACCESS_TYPE_SMB && mSmbRetryMode) {
+					// SMBのリトライ回数に応じて段階的に待ち時間を延ばしてNASの制限に引っかかりにくくする
+					long dynamicDelay = (long) FILEERROR_DELAY_SMB_LONG * errorcount; 
+					try {
+						// 最大30秒
+						Thread.sleep(Math.min(dynamicDelay, 30000));
+					}
+					catch (Exception ex) {
+					}
 				}
-				catch (Exception ex) {
+				else {
+					// ローカル/SAFの場合は定数通りのウェイト
+					try {
+						Thread.sleep(error_delay_max); 
+					}
+					catch (Exception ex) {
+					}
 				}
 			}
 			// もしもエラーになった場合はリトライを行う
