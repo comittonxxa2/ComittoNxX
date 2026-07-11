@@ -47,7 +47,6 @@ import java.util.Base64;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.dialog.ImageConfigDialog;
@@ -100,7 +99,6 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 
 	private ImageConfigDialog mImageConfigDialog;
 
-	private static SharedPreferences mSharedPreferences;
 	private boolean mWebviewFilter;
 	private boolean mWebviewUserAgent;
 	private boolean mWebviewPulldownMenu;
@@ -130,24 +128,7 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 	protected void onCreate(Bundle savedInstanceState) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
-
-		// 裏起動(ウォームアップ)フラグがある場合は描画せず即終了
-		if (getIntent().getBooleanExtra("IS_WARM_UP", false)) {
-			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-				overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
-				overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
-			}
-			else {
-				overridePendingTransition(0, 0);
-			}
-			super.onCreate(savedInstanceState);
-			finish();
-			return;
-		}
-		mActivity = this;
-
-		super.onCreate(savedInstanceState);
-
+		// Android9以降のマルチプロセス対策
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 			try {
 				WebView.setDataDirectorySuffix("webview_process");
@@ -156,14 +137,18 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 				e.printStackTrace();
 			}
 		}
+
+		mActivity = this;
+
+		super.onCreate(savedInstanceState);
+
 		// RenderScriptを使用する準備
 		mRS = RenderScript.create(this);
-		mSharedPreferences = MultiProcessPreferences.getInstance(this);
 
 		// タイトル非表示
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-		sharedPreferences = MultiProcessPreferences.getInstance(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
@@ -197,31 +182,6 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 			return androidx.core.view.WindowInsetsCompat.CONSUMED;
 		});
 
-		mWebviewFilter = SetWebViewActivity.getWebviewFilter(mSharedPreferences);
-		mWebviewUserAgent = SetWebViewActivity.getWebviewUserAgent(mSharedPreferences);
-		mWebviewPulldownMenu = SetWebViewActivity.getWebviewPulldownMenu(mSharedPreferences);
-		mWebviewPulldownTapPosition = SetWebViewActivity.getPulldownTap(mSharedPreferences);
-
-		// フィルターの値の読み込み(ImageConfigDialog.onClick()と同じ補正を行う)
-		mGray = SetWebViewActivity.getWebviewGray(mSharedPreferences);
-		mInvert = SetWebViewActivity.getWebviewInvert(mSharedPreferences);
-		mColoring = SetWebViewActivity.getWebviewColoring(mSharedPreferences);
-		mSharpen = SetWebViewActivity.getWebviewSharpen(mSharedPreferences);
-		mBright = SetWebViewActivity.getWebviewBright(mSharedPreferences) - 5;
-		mGamma = SetWebViewActivity.getWebviewGamma(mSharedPreferences) - 5;
-		mContrast = SetWebViewActivity.getWebviewContrast(sharedPreferences) * 5;
-		mHue = (SetWebViewActivity.getWebviewHue(sharedPreferences) - 20) * 5;
-		mSaturation = SetWebViewActivity.getWebviewSaturation(sharedPreferences) * 5;
-		mKelvin = SetWebViewActivity.getKelvin(sharedPreferences);
-		mCheckRgbLevel = SetWebViewActivity.getCheckRgbLevel(sharedPreferences);
-		mRedLevel = SetWebViewActivity.getRedLevel(sharedPreferences);
-		mGreenLevel = SetWebViewActivity.getGreenLevel(sharedPreferences);
-		mBlueLevel = SetWebViewActivity.getBlueLevel(sharedPreferences);
-
-		mIsConfSave = true;
-
-		SetColorEffect();
-
 		// Intentを取得する
 		Intent intent = getIntent();
 		// Intentに保存されたデータを取り出す
@@ -242,6 +202,30 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 			finish();
 			return;
 		}
+
+		mWebviewFilter = intent.getBooleanExtra("WebviewFilter", false);
+		mWebviewUserAgent = intent.getBooleanExtra("WebviewUserAgent", false);
+		mWebviewPulldownMenu = intent.getBooleanExtra("WebviewPulldownMenu", false);
+		mWebviewPulldownTapPosition = intent.getIntExtra("WebviewPulldownTapPosition", 0);
+		// フィルターの値の読み込み(ImageConfigDialog.onClick()と同じ補正を行う)
+		mGray = intent.getBooleanExtra("Gray", false);
+		mInvert = intent.getBooleanExtra("Invert", false);
+		mColoring = intent.getBooleanExtra("Coloring", false);
+		mSharpen = intent.getIntExtra("Sharpen", 0);
+		mBright = intent.getIntExtra("Bright", 0);
+		mGamma = intent.getIntExtra("Gamma", 0);
+		mContrast = intent.getIntExtra("Contrast", 0);
+		mHue = intent.getIntExtra("Hue", 0);
+		mSaturation = intent.getIntExtra("Saturation", 0);
+		mKelvin = intent.getIntExtra("Kelvin", 0);
+		mCheckRgbLevel = intent.getBooleanExtra("CheckRgbLevel", false);
+		mRedLevel = intent.getIntExtra("RedLevel", 0);
+		mGreenLevel = intent.getIntExtra("GreenLevel", 0);
+		mBlueLevel = intent.getIntExtra("BlueLevel", 0);
+
+		mIsConfSave = true;
+
+		SetColorEffect();
 
 		// 最後に保存したファイル用
 		mUriPath = DEF.relativePath(mActivity, mURI, mPath);
@@ -387,26 +371,30 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		// URLを読み込む
 		mywebView.loadUrl(mFilePath); 
 	}
-/*
+
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent e){
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			// 戻るボタンがタップされた時
-			if (mywebView != null && mywebView.canGoBack()) {
-				// 閲覧履歴があるなら一つ前のウェブページを表示する
-				mywebView.goBack();
-			}
-			else {
-				// 閲覧履歴が無ければ戻る
-				return super.onKeyDown(keyCode, e);
-			}
-			return true;
-		}else{
-			// 他のボタンの場合は戻る
-			return super.onKeyDown(keyCode, e);
-		}
+	public void finish() {
+		// 現在の値を返す
+		Intent intent = new Intent();
+		intent.putExtra("Gray", mGray);
+		intent.putExtra("Invert", mInvert);
+		intent.putExtra("Coloring", mColoring);
+		intent.putExtra("Sharpen", mSharpen);
+		intent.putExtra("Bright", mBright);
+		intent.putExtra("Gamma", mGamma);
+		intent.putExtra("Contrast", mContrast);
+		intent.putExtra("Hue", mHue);
+		intent.putExtra("Saturation", mSaturation);
+		intent.putExtra("Kelvin", mKelvin);
+		intent.putExtra("CheckRgbLevel", mCheckRgbLevel);
+		intent.putExtra("RedLevel", mRedLevel);
+		intent.putExtra("GreenLevel", mGreenLevel);
+		intent.putExtra("BlueLevel", mBlueLevel);
+		intent.putExtra("IsConfSave", mIsConfSave);
+		setResult(RESULT_OK, intent);
+		super.finish();
 	}
-*/
+
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -481,29 +469,6 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 					// リロード
 					SetColorEffect();
 					mywebView.reload();
-				}
-				if (issave) {
-					// 設定を保存(ImageConfigDialog.onCreateView()と同じ補正を行う)
-					SharedPreferences.Editor ed = mSharedPreferences.edit();
-					ed.putBoolean(DEF.KEY_WEBVIEWGRAY, mGray);
-					ed.putBoolean(DEF.KEY_WEBVIEWCOLORING, mColoring);
-					ed.putBoolean(DEF.KEY_WEBVIEWINVERT, mInvert);
-					ed.putInt(DEF.KEY_WEBVIEWSHARPEN, mSharpen);
-					ed.putInt(DEF.KEY_WEBVIEWBRIGHT, mBright + 5);
-					ed.putInt(DEF.KEY_WEBVIEWGAMMA, mGamma + 5);
-					ed.putInt(DEF.KEY_WEBVIEWCONTRAST, mContrast / 5);
-					ed.putInt(DEF.KEY_WEBVIEWHUE, mHue / 5 + 20);
-					ed.putInt(DEF.KEY_WEBVIEWSATURATION, mSaturation / 5);
-					ed.putInt(DEF.KEY_WEBVIEWKELVIN, mKelvin);
-					ed.putBoolean(DEF.KEY_WEBVIEWCHECKRGBLEVEL, mCheckRgbLevel);
-					if (mCheckRgbLevel) {
-						// RGBレベルをマニュアル設定する場合のみ保存
-						ed.putInt(DEF.KEY_WEBVIEWREDLEVEL, mRedLevel);
-						ed.putInt(DEF.KEY_WEBVIEWGREENLEVEL, mGreenLevel);
-						ed.putInt(DEF.KEY_WEBVIEWBLUELEVEL, mBlueLevel);
-					}
-
-					ed.apply();
 				}
 			}
 
