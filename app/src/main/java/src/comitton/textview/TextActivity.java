@@ -7,7 +7,6 @@ import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.config.SetCacheActivity;
 import src.comitton.config.SetHardwareTextViewerKeyActivity;
 import src.comitton.dialog.ToolbarDialog;
@@ -384,7 +383,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 
 		// 起動処理失敗回数をリセット
-		mSharedPreferences = MultiProcessPreferences.getInstance(this);
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor ed = mSharedPreferences.edit();
 		ed.putInt(DEF.KEY_INITIALIZE, 0);
 		ed.apply();
@@ -1344,7 +1343,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		// 第3引数は、表示期間（LENGTH_SHORT、または、LENGTH_LONG）
 		// Toast.makeText(this, strScaleMode, Toast.LENGTH_SHORT).show();
 
-		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this); // ←このthisは普通Activityとかね
 		Editor ed = sp.edit();
 		ed.putInt("scalemode", mScaleMode);
 		ed.apply();
@@ -3413,7 +3412,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mDetector.setOnDoubleTapListener(this);
 
 			// 設定の読込
-			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
+			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 			ReadSetting(sharedPreferences);
 
@@ -3806,7 +3805,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mCurrentPage = mTextView.getPage();
 
 		// 現在ページ情報を保存
-		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor ed = sp.edit();
 		int savePage = mCurrentPage;
 		float savePageRate = (float)mCurrentPage / mTextMgr.length();
@@ -3840,7 +3839,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	// 起動時のページ情報に戻す
 	private void restoreCurrentPage() {
 		if (mImageMgr != null) {
-			SharedPreferences sp = MultiProcessPreferences.getInstance(this);
+			SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = sp.edit();
 			if (mRestorePage == DEF.PAGENUMBER_UNREAD) {
 				ed.remove(DEF.createUrl(mUriTextPath, mUser, mPass) + "#maxpage");

@@ -1,13 +1,6 @@
 package src.comitton.textview;
 
 import io.documentnode.epub4j.domain.Spine;
-import jcifs.CIFSContext;
-import jcifs.config.PropertyConfiguration;
-import jcifs.context.BaseContext;
-import jcifs.context.SingletonContext;
-import jcifs.smb.NtlmPasswordAuthenticator;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbRandomAccessFile;
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 
@@ -66,7 +59,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.annotation.SuppressLint;
 
-import src.comitton.common.MultiProcessPreferences;
+import src.comitton.common.CustomKeySharedData;
 import src.comitton.config.SetConfigActivity;
 import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetFileColorActivity;
@@ -95,6 +88,10 @@ import androidx.activity.OnBackPressedCallback;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.codelibs.jcifs.smb.CIFSContext;
+import org.codelibs.jcifs.smb.context.SingletonContext;
+import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
+import org.codelibs.jcifs.smb.impl.SmbFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -116,6 +113,8 @@ import io.documentnode.epub4j.domain.Book;
 import io.documentnode.epub4j.domain.Resource;
 import io.documentnode.epub4j.epub.EpubReader;
 import io.documentnode.epub4j.domain.SpineReference;
+
+import com.google.gson.Gson;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -143,6 +142,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
+import src.comitton.common.EpubWebViewSharedData;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.cropimageview.CropImageActivity;
@@ -238,6 +238,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mChgPageKey;
 	private int mVolKeyMode = VOLKEY_DOWNTONEXT;
 	private int mViewRota;
+	private int mGetRotateBtn;
 	private int mRotateBtn;
 	private static boolean mRevtRota;
 	private int mPageWay = DEF.PAGEWAY_RIGHT; // テキストビュワーは右開きに固定
@@ -346,6 +347,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mFlickPage;
 	private boolean mFlickEdge;
 	private String mRestoreValue;
+	private String mReturnValue;
 	private boolean mIsConfSave;
 	private boolean mForceNotice = false;
 	private boolean mAutoRepeatCheck = false;
@@ -476,7 +478,15 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private String mAozoraHtml;
 	private int mAozoratextLength;
 	private int mAozoraDirText;
-	private int[] option =  {0, 0, 0, 0, 0};;
+	private int[] option =  {0, 0, 0, 0, 0};
+	private String fontname;
+	private int[] mLoadCustomkeyCode = new int[DEF.KEY_CODE_CUSTOM_MAX];
+	private int[] mGetHardwareKeySetData = new int[DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX];
+	private int mRBSort;
+	private String jsonEpubWebViewString;
+	private String jsonDialogString;
+	private String jsonTappatternString;
+	private String jsonCustomkeyString;
 
 	public class PageMetadata {
 		// 判定項目
@@ -517,20 +527,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// 裏起動(ウォームアップ)フラグがある場合は描画せず即終了
-		if (getIntent().getBooleanExtra("IS_WARM_UP", false)) {
-			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-				overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0);
-				overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0);
-			}
-			else {
-				overridePendingTransition(0, 0);
-			}
-			super.onCreate(savedInstanceState);
-			finish();
-			return;
-		}
-		super.onCreate(savedInstanceState);
+		// Android9以降のマルチプロセス対策
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 			try {
 				WebView.setDataDirectorySuffix("webview_process");
@@ -539,6 +536,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				e.printStackTrace();
 			}
 		}
+		super.onCreate(savedInstanceState);
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		// タイトル非表示
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -546,7 +544,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mHandler = new Handler(this);
 		new TouchPanelView(mActivity, 3, mHandler);
 		setContentView(R.layout.epubreader);
-		mSharedPreferences = MultiProcessPreferences.getInstance(this);
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		mVibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
 		mImmCancelRange = (int)(getResources().getDisplayMetrics().density * 32);
@@ -557,9 +555,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		}
 		mIsConfSave = true;
 		mNoiseSwitch = new NoiseSwitch(mHandler);
+		// JSONデータを取り出す
+		jsonEpubWebViewString = getIntent().getStringExtra("EpubWebview_Data");
+		jsonDialogString = getIntent().getStringExtra("Dialog_Data");
+		jsonTappatternString = getIntent().getStringExtra("Tappattern_Data");
+		jsonCustomkeyString = getIntent().getStringExtra("Customkey_Data");
 		// 設定の読み込み
-		SetCommonActivity.loadSettings(mSharedPreferences);
-		ReadSetting(mSharedPreferences);
+		ReadSetting();
+		// 別プロセスなので新規で書き込む(呼び出し元で書き戻す必要あり)
+		FileSelectActivity.ReadDialogSetting(mSharedPreferences, jsonDialogString);
+		FileSelectActivity.ReadTappatternSetting(mSharedPreferences, jsonTappatternString);
+		FileSelectActivity.ReadCustomKeySetting(mSharedPreferences, jsonCustomkeyString);
+		// JSONデータを破棄する
+		getIntent().removeExtra("EpubWebview_Data");
 		// 強制再描画
 		parentLayout = findViewById(R.id.container);
 		parentLayout.setBackgroundColor(colorInt);
@@ -611,7 +619,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// 読書の情報を読みこむ
 		String id = (isAozora) ? "#aozora" : "#newepub";
 		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName + ", id=" + id);
-		String mRestoreValue = mSharedPreferences.getString(DEF.createUrl(mFilePath, mUser, mPass) + id, "-1,-1,0,0,0.0,0.0,0,0,0,0,0");
+		String mRestoreValue = intent.getStringExtra("Value");
 		mFirstRead = false;
 		mAozoraDirText = 0;
 		if (mRestoreValue != null) {
@@ -700,7 +708,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// ダブルタップ検出のリスナーを有効にする
 		mDetector.setOnDoubleTapListener(this);
 		// ユーザーフォントのファイルパスを取得
-		String fontname = SetEpubActivity.getFontName(mSharedPreferences);
 		mFontFile = (fontname.length() > 0) ? DEF.getFontDirectory() + fontname : null;
 		// ユーザーフォントを読み込む
 		prepareUserFont();
@@ -736,9 +743,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		if (requestCode == DEF.REQUEST_SETTING) {
 			// ダブルタップ検出のリスナーを有効にする(これを入れないとタップ操作ができなくなる)
 			mDetector.setOnDoubleTapListener(this);
+			// JSONデータを取り出す
+			jsonEpubWebViewString = data.getStringExtra("EpubWebview_Data");
 			// 設定の読込
-			SharedPreferences sharedPreferences = MultiProcessPreferences.getInstance(this);
-			ReadSetting(sharedPreferences);
+			ReadSetting();
+			// JSONデータを破棄する
+			data.removeExtra("EpubWebview_Data");
 			// 直前に設定したページに関する内容を復元する
 			restoreSetting();
 			// 本文のフォントの拡大率を変更
@@ -1177,10 +1187,10 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			data = 0;
 			// ハードウェアキーが見つからない場合はカスタムキーの中から探す
 			for (int i = 0; i < DEF.KEY_CODE_CUSTOM_MAX; i++) {
-				if (TouchPanelView.LoadCustomkeyCode(mSharedPreferences, i) == code) {
+				if (mLoadCustomkeyCode[i] == code) {
 					// 見つかった場合はハードウェアキーの設定を取り出す
 					// カスタムキーは末尾から追加されているの長さ分を加算する
-					data = SetHardwareEpubWebViewKeyActivity.GetHardwareKeySetData(mSharedPreferences, DEF.KEYCODE_INDEX.length + i + 1);
+					data = mGetHardwareKeySetData[DEF.KEYCODE_INDEX.length + i];
 					if (data != 0) {
 						// 設定があれば終了
 						// 無ければ他のカスタムキーを探す
@@ -1191,13 +1201,14 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		}
 		else {
 			// ハードウェアキーの設定を取り出す
-			data = SetHardwareEpubWebViewKeyActivity.GetHardwareKeySetData(mSharedPreferences, found_code + 1);
+			data = mGetHardwareKeySetData[found_code];
+			Logcat.v(1, "ハードウェアキーの設定を取り出す data=" + data + ", found_code=" + found_code);
 		}
 
 		found_code = -1;
 		// 戻るキー設定があるかどうかを確認する
 		for (int i = 0; i < (DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX) ; i++) {
-			if (SetHardwareEpubWebViewKeyActivity.GetHardwareKeySetData(mSharedPreferences, i + 1) == DEF.TAP_BACK) {
+			if (mGetHardwareKeySetData[i] == DEF.TAP_BACK) {
 				// 戻る設定があれば処理を委ねる
 				found_code = 0;
 				break;
@@ -1559,21 +1570,9 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	}
 
 	private void saveLastFile() {
-		SharedPreferences.Editor ed = mSharedPreferences.edit();
-		ed.putInt("LastServer", mServer);
-		ed.putString("LastPath", mPath);
-		ed.putString("LastUser", mUser);
-		ed.putString("LastPass", mPass);
-		ed.putString("LastFile", mFileName);
-		ed.putString("LastText", mTextName);
-		ed.putInt("LastOpen", DEF.LASTOPEN_TEXT);
-		ed.apply();
 	}
 
 	private void removeLastFile() {
-		SharedPreferences.Editor ed = mSharedPreferences.edit();
-		ed.putInt("LastOpen", DEF.LASTOPEN_NONE);
-		ed.apply();
 	}
 
 	private void saveCurrentPage() {
@@ -1585,8 +1584,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			if (currentBook == null) return;
 		}
-		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
-		SharedPreferences.Editor ed = sp.edit();
 		int nowpage = GetNowPage();
 		int maxpage = getTotalPagesNow();
 		if (isAozora) {
@@ -1616,28 +1613,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		String value;
 		if (isAozora) {
 			value = nowpage + "," + maxpage + "," + mTimestamp + "," + mAozoraDirText + "," + ratiox + "," + ratioy + "," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
-			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#aozora", value);
 		}
 		else {
 			value = nowpage + "," + maxpage + "," + mTimestamp + "," + currentSpineIndex + "," + ratiox + "," + ratioy + "," + option[0] + "," + option[1] + "," + option[2] + "," + option[3] + "," + option[4];
-			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", value);
 		}
-		ed.apply();
+		mReturnValue = value;
 		Logcat.v(logLevel, "value=" + value);
 	}
 
 	// 起動時のページ情報に戻す
 	private void restoreCurrentPage() {
 
-		SharedPreferences sp = MultiProcessPreferences.getInstance(this);
-		SharedPreferences.Editor ed = sp.edit();
-		if (isAozora) {
-			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#aozora", mRestoreValue);
-		}
-		else {
-			ed.putString(DEF.createUrl(mFilePath, mUser, mPass) + "#newepub", mRestoreValue);
-		}
-		ed.apply();
+		mReturnValue = mRestoreValue;
 	}
 
 	// 履歴を保存
@@ -1681,6 +1668,35 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		intent.putExtra("NextOpen", select);
 		intent.putExtra("LastFile", mFileName);
 		intent.putExtra("LastPath", mPath);
+		intent.putExtra("ReturnValue", mReturnValue);
+		intent.putExtra("ReturnMode", isAozora);
+		intent.putExtra("FilePath", mFilePath);
+		intent.putExtra("User", mUser);
+		intent.putExtra("Pass", mPass);
+		intent.putExtra("FontBody", mFontBody);
+		intent.putExtra("FontText", mFontText);
+		intent.putExtra("FontInfo", mFontInfo);
+		intent.putExtra("MarginW", mMarginW);
+		intent.putExtra("MarginH", mMarginH);
+		intent.putExtra("IsConfSave", mIsConfSave);
+		intent.putExtra("LastServer", mServer);
+		intent.putExtra("LastUser", mUser);
+		intent.putExtra("LastPass", mPass);
+		intent.putExtra("LastFile", mFileName);
+		intent.putExtra("LastText", mTextName);
+		intent.putExtra("LastOpen", DEF.LASTOPEN_TEXT);
+		if (!resume) {
+			intent.putExtra("LastOpen", DEF.LASTOPEN_NONE);
+		}
+		// ツールバーの内容を書き戻す
+		FileSelectActivity.setDialogSharedData(mSharedPreferences);
+		intent.putExtra("Dialog_Data", FileSelectActivity.getJsonDialogData());
+		// タップ操作のパターンの内容を書き戻す
+		FileSelectActivity.setTappatternSharedData(mSharedPreferences);
+		intent.putExtra("Tappattern_Data", FileSelectActivity.getJsonTappatternData());
+		// カスタムキーの内容を書き戻す
+		FileSelectActivity.setCustomKeySharedData(mSharedPreferences);
+		intent.putExtra("Customkey_Data", FileSelectActivity.getJsonCustomkeyData());
 		setResult(RESULT_OK, intent);
 		finish();
 	}
@@ -2835,6 +2851,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				backupSetting();
 				Intent intent = new Intent(EpubWebViewActivity.this, SetConfigActivity.class);
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+				intent.putExtra("KeyCallerName", EpubWebViewActivity.class.getName());
 				startActivityForResult(intent, DEF.REQUEST_SETTING);
 				break;
 			}
@@ -3294,6 +3311,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				mFontInfo = info;
 				mMarginW = marginw;
 				mMarginH = marginh;
+				mIsConfSave = issave;
 				if (ischange) {
 					// 表示を更新
 					mInfoSize = DEF.calcFont(mFontInfo);
@@ -3327,16 +3345,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					updateLayout();
 					renderSpine(currentSpineIndex, leftWebView);
 				}
-				if (issave) {
-					// 設定を指定
-					SharedPreferences.Editor ed = mSharedPreferences.edit();
-					ed.putInt(DEF.KEY_EP_FONTBODY, mFontBody);
-					ed.putInt(DEF.KEY_EP_FONTTEXT, mFontText);
-					ed.putInt(DEF.KEY_EP_FONTINFO, mFontInfo);
-					ed.putInt(DEF.KEY_EP_MARGINW, mMarginW);
-					ed.putInt(DEF.KEY_EP_MARGINH, mMarginH);
-					ed.apply();
-				}
 			}
 
 			@Override
@@ -3364,7 +3372,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		list_copy = new ArrayList<RecordItem>(list);
 		// ArrayListをソート
 		if (list_copy != null) {
-			Collections.sort(list_copy, new FileSelectActivity.BookmarkComparator((short) mSharedPreferences.getInt("RBSort", 0)));
+			Collections.sort(list_copy, new FileSelectActivity.BookmarkComparator((short) mRBSort));
 		}
 		ArrayList<ImageActivity.BookMark> bookmark = new ArrayList<ImageActivity.BookMark>();
 		for (int i = 0; i < list_copy.size(); i++) {
@@ -3613,98 +3621,96 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	}
 
 	// 設定の読み込み
-	private void ReadSetting(SharedPreferences sharedPreferences) {
+	private void ReadSetting() {
 		// 設定値取得
-		mDispMode = SetEpubActivity.getInitView(sharedPreferences); // 表示モード(DUAL/HALF/SERIAL)
-		mNotice = SetEpubActivity.getNotice(sharedPreferences);
-		mForceNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
-		mNoSleep = SetEpubActivity.getNoSleep(sharedPreferences);
+		EpubWebViewSharedData bigData = new Gson().fromJson(jsonEpubWebViewString, EpubWebViewSharedData.class);
+		if (bigData != null) {
+			mDispMode = bigData.mDispMode;
+			mNotice = bigData.mNotice;
+			mForceNotice = bigData.mForceNotice;
+			mNoSleep = bigData.mNoSleep;
+			mImmEnable = bigData.mImmEnable;
+			mImmForce = bigData.mImmForce;
+			mTextColor = bigData.mTextColor;
+			mBackColor = bigData.mBackColor;
+			mGradColor = bigData.mGradColor;
+			mGradation = bigData.mGradation;
+			mSrchColor = bigData.mSrchColor;
+			mMgnColor = bigData.mMgnColor;
+			mTopColor1 = bigData.mTopColor1;
+			mTimeDisp = bigData.mTimeDisp;
+			mTimeFormat = bigData.mTimeFormat;
+			mTimePos = bigData.mTimePos;
+			mTimeSize = bigData.mTimeSize;
+			mTimeColor = bigData.mTimeColor;
+			mConfirmBack = bigData.mConfirmBack;
+			mClickArea = bigData.mClickArea;
+			mPageSelect = bigData.mPageSelect;
+			mPageRange = bigData.mPageRange;
+			mOldMenu = bigData.mOldMenu;
+			mBottomFile = bigData.mBottomFile;
+			mChgPage = bigData.mChgPage;
+			mChgPageKey = bigData.mChgPageKey;
+			mTapPattern = bigData.mTapPattern;
+			mTapRate = bigData.mTapRate;
+			mTapScrl = bigData.mTapScrl;
+			mVolKeyMode = bigData.mVolKeyMode;
+			mNoiseScrl = bigData.mNoiseScrl;
+			mNoiseUnder = bigData.mNoiseUnder;
+			mNoiseOver = bigData.mNoiseOver;
+			mNoiseLevel = bigData.mNoiseLevel;
+			mNoiseDec = bigData.mNoiseDec;
+			mLastMsg = bigData.mLastMsg;
+			mVibFlag = bigData.mVibFlag;
+			mFlickPage = bigData.mFlickPage;
+			mFlickEdge = bigData.mFlickEdge;
+			mFontText = bigData.mFontText;
+			mFontBody = bigData.mFontBody;
+			mFontInfo = bigData.mFontInfo;
+			mMarginW = bigData.mMarginW;
+			mMarginH = bigData.mMarginH;
+			mDisableTextInfo = bigData.mDisableTextInfo;
+			mTextFrame = bigData.mTextFrame;
+			mDisablePageButton = bigData.mDisablePageButton;
+			mScaleValiable = bigData.mScaleValiable;
+			mTxtColor = bigData.mTxtColor;
+			mBakColor = bigData.mBakColor;
+			mFixBodyColor = bigData.mFixBodyColor;
+			mFixBackgroundColor = bigData.mFixBackgroundColor;
+			mReturnListView = bigData.mReturnListView;
+			mViewRota = bigData.mViewRota;
+			mRevtRota = bigData.mRevtRota;
+			mRotateBtn = bigData.mGetRotateBtn;
+			mNoCache = bigData.mNoCache;
+			mHorizontalWriting = bigData.mHorizontalWriting;
+			fontname = bigData.fontname;
+			for (int i = 0; i < DEF.KEY_CODE_CUSTOM_MAX; i++) {
+				mLoadCustomkeyCode[i] = bigData.mLoadCustomkeyCode[i];
+			}
+			for (int i = 0; i < (DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX); i++) {
+				mGetHardwareKeySetData[i] = bigData.mGetHardwareKeySetData[i];
+			}
+			mRBSort = bigData.mRBSort;
+		}
 		if (mSdkVersion >= 19) {
 			// KitKat以降のみ設定読み込み
-			mImmEnable = SetImageTextDetailActivity.getImmEnable(mSharedPreferences);
-			mImmForce = SetCommonActivity.getForceHideNavigationBar(mSharedPreferences);
 		}
 		else {
 			mImmEnable = false;
 			mImmForce = false;
 		}
-		mTextColor = SetImageTextColorActivity.getTvtColor(sharedPreferences);
-		mBackColor = SetImageTextColorActivity.getTvbColor(sharedPreferences);
-		mGradColor = SetImageTextColorActivity.getTvgColor(sharedPreferences);
-		mGradation = SetImageTextColorActivity.getGradation(sharedPreferences);
-
-		mSrchColor = SetImageTextColorActivity.getHitColor(sharedPreferences);
-
-		mMgnColor = SetImageTextColorActivity.getTxtMgnColor(sharedPreferences);
-		mTopColor1 = SetImageTextColorActivity.getTxtGuiColor(sharedPreferences);
 		mTopColor2 = 0x40000000 | (mTopColor1 & 0x00FFFFFF);
-		// 時刻と充電表示有無
-		mTimeDisp = SetImageActivity.getTimeDisp(sharedPreferences);
-		// 時刻と充電表示書式
-		mTimeFormat = SetImageActivity.getTimeFormat(sharedPreferences);
-		// 時刻と充電表示位置
-		mTimePos = SetImageActivity.getTimePos(sharedPreferences);
-		// 時刻と充電表示サイズ
-		mTimeSize = DEF.calcPnumSizePix(SetImageActivity.getTimeSize(sharedPreferences), mDensity); 
-		// 時刻と充電表示色
-		mTimeColor = SetImageActivity.getTimeColor(sharedPreferences);
-		// 戻るキーで確認メッセージ
-		mConfirmBack = SetImageText.getConfirmBack(sharedPreferences);	
-
-		mClickArea = DEF.calcClickAreaPix(SetImageTextDetailActivity.getClickArea(sharedPreferences), mDensity);
-		mPageSelect = SetImageText.getTxPageSelect(sharedPreferences);
-		mPageRange = DEF.calcPageRangePix(SetImageTextDetailActivity.getPageRange(sharedPreferences), mDensity);
-		mOldMenu = SetImageTextDetailActivity.getOldMenu(sharedPreferences);
-		mBottomFile = SetImageTextDetailActivity.getBottomFile(sharedPreferences);
-		mChgPage = SetImageText.getChgPage(sharedPreferences);
-		mChgPageKey = SetImageText.getChgPageKey(sharedPreferences);
-		// タップパターン
-		mTapPattern = SetImageText.getTapPattern(sharedPreferences);
-		// タップの比率
-		mTapRate = SetImageText.getTapRate(sharedPreferences);
-		mTapScrl = SetImageText.getTapScrl(sharedPreferences);
-		// 音量キー操作
-		mVolKeyMode = SetImageText.getVolKey(sharedPreferences);
-		mNoiseScrl = DEF.calcScrlSpeedPix(SetNoiseActivity.getNoiseScrl(sharedPreferences), mDensity);
-		mNoiseUnder = DEF.calcNoiseLevel(SetNoiseActivity.getNoiseUnder(sharedPreferences));
-		mNoiseOver = DEF.calcNoiseLevel(SetNoiseActivity.getNoiseOver(sharedPreferences));
-		mNoiseLevel = SetNoiseActivity.getNoiseLevel(sharedPreferences);
-		mNoiseDec = SetNoiseActivity.getNoiseDec(sharedPreferences);
 		mNoiseSwitch.setConfig(mNoiseUnder, mNoiseOver, mNoiseDec);
-		mLastMsg = SetImageText.getLastPage(sharedPreferences);
-		mVibFlag = SetImageText.getVibFlag(sharedPreferences);
-		mFlickPage = SetImageText.getFlickPage(sharedPreferences);
-		mFlickEdge = SetImageText.getFlickEdge(sharedPreferences);
-		mFontText = SetEpubActivity.getFontText(sharedPreferences);
-		mFontBody = SetEpubActivity.getFontBody(sharedPreferences);
-		mFontInfo = SetEpubActivity.getFontInfo(sharedPreferences);
 		// ヘッダー/フッターのフォントサイズを計算
 		mInfoSize = DEF.calcFont(mFontInfo);
 		mTextSize = mFontBody * 2;
-		mMarginW = SetEpubActivity.getMarginW(sharedPreferences);
-		mMarginH = SetEpubActivity.getMarginH(sharedPreferences);
-		mDisableTextInfo = SetEpubActivity.getDisableTextInfo(sharedPreferences);
 		mHeaderOn = (mDisableTextInfo) ? false : true;
 		mFooterOn = (mDisableTextInfo) ? false : true;
-		mTextFrame = SetEpubActivity.getTextFrame(sharedPreferences);
-		mDisablePageButton = SetTextActivity.getDisablePageButton(sharedPreferences);
-		mScaleValiable = SetEpubActivity.getTextSizeVariable(sharedPreferences);		// テキストの拡大率を計算
+		// テキストの拡大率を計算
 		mScaleDensity = (mScaleValiable) ? getResources().getDisplayMetrics().density * (float)(mFontText * 2) / 100 : getResources().getDisplayMetrics().density;
 		mScaleFix = (mScaleValiable) ? (int)(mScaleDensity * 100) : 0;
-		mTxtColor = SetFileColorActivity.getEvtColor(sharedPreferences);
-		mBakColor = SetFileColorActivity.getEvbColor(sharedPreferences);
 		colorInt = mBakColor;
 		bodyColor = mTxtColor;
-		mFixBodyColor = SetEpubActivity.getTextColorFix(sharedPreferences);
-		mFixBackgroundColor = SetEpubActivity.getTextBakColorFix(sharedPreferences);
-		// 画面が裏に入った場合にリスト一覧へ戻る
-		mReturnListView = SetImageText.getReturnListView(mSharedPreferences);
-
-		mViewRota = SetEpubActivity.getViewRota(sharedPreferences);
-		mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
-		mRotateBtn = DEF.RotateBtnList[SetCommonActivity.getRotateBtn(sharedPreferences)];
-		mNoCache = SetEpubActivity.getNoCache(sharedPreferences);
-		mHorizontalWriting = SetEpubActivity.getHorizontalWriting(sharedPreferences);
 	}
 
 	// サーフェスビューの設定
