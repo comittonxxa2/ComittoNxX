@@ -25,7 +25,6 @@ import androidx.preference.PreferenceManager;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.imageview.ImageManager;
 import src.comitton.config.SetCommonActivity;
 
@@ -59,7 +58,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-		sharedPreferences = MultiProcessPreferences.getInstance(this);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
 		if (mNotice) {
