@@ -10,6 +10,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.codelibs.jcifs.smb.CIFSContext;
+import org.codelibs.jcifs.smb.CIFSException;
+import org.codelibs.jcifs.smb.config.PropertyConfiguration;
+import org.codelibs.jcifs.smb.context.BaseContext;
+import org.codelibs.jcifs.smb.context.SingletonContext;
+import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
+import org.codelibs.jcifs.smb.impl.SmbException;
+import org.codelibs.jcifs.smb.impl.SmbFile;
+import org.codelibs.jcifs.smb.impl.SmbFileInputStream;
+import org.codelibs.jcifs.smb.impl.SmbFileOutputStream;
+import org.codelibs.jcifs.smb.impl.SmbRandomAccessFile;
+import org.codelibs.jcifs.smb1.NtlmPasswordAuthentication;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -21,18 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import jcifs.CIFSContext;
-import jcifs.CIFSException;
-import jcifs.context.SingletonContext;
-import jcifs.smb.NtlmPasswordAuthenticator;
-import jcifs.smb.NtlmPasswordAuthentication;
-import jcifs.smb.SmbException;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbFileInputStream;
-import jcifs.smb.SmbFileOutputStream;
-import jcifs.smb.SmbRandomAccessFile;
-import jcifs.config.PropertyConfiguration;
-import jcifs.context.BaseContext;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
@@ -176,7 +177,7 @@ public class SmbFileAccess {
 					// ComittoN 互換モードでアクセスする
 					baseContext = new BaseContext(new PropertyConfiguration(prop));
 					// 旧式の関数NtlmPasswordAuthenticationを使用する
-					smbAuth = new NtlmPasswordAuthentication(baseContext, "", real_user, pass);
+					smbAuth = new NtlmPasswordAuthenticator("", real_user, pass);
 					context = baseContext.withCredentials(smbAuth);
 				}
 				else {
@@ -186,7 +187,7 @@ public class SmbFileAccess {
 			} else if (real_user.equalsIgnoreCase("guest") && pass.isEmpty()) {
 				// Guest認証を期待するWindows共有の接続向け
 				//接続コンテキストを作成する
-				context = SingletonContext.getInstance().withGuestCrendentials();
+				context = SingletonContext.getInstance().withGuestCredentials();
 			} else {
 				// Connect with anonymous mode
 				//接続コンテキストを作成する

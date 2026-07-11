@@ -6,14 +6,15 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import org.codelibs.jcifs.smb.impl.SmbException;
+import org.codelibs.jcifs.smb.impl.SmbRandomAccessFile;
+
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import jcifs.smb.SmbException;
-import jcifs.smb.SmbRandomAccessFile;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 
