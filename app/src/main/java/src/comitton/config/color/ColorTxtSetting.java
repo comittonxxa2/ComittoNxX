@@ -7,7 +7,6 @@ import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 import jp.dip.muracoro.comittonx.R;
-import src.comitton.common.MultiProcessPreferences;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
@@ -19,7 +18,7 @@ public class ColorTxtSetting extends ColorPreference {
 		super(context, attrs);
 		// 背景モード
 		super.setConfig(DEF.KEY_TXTCOLOR, DEF.KEY_TXTRGB, DEF.ColorList[1], true);
-		mSP = MultiProcessPreferences.getInstance(context);
+		mSP = PreferenceManager.getDefaultSharedPreferences(context);
 	}
 
 	@Override

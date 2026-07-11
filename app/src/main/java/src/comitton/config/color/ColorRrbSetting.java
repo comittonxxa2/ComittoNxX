@@ -7,7 +7,6 @@ import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 import jp.dip.muracoro.comittonx.R;
-import src.comitton.common.MultiProcessPreferences;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
@@ -19,7 +18,7 @@ public class ColorRrbSetting extends ColorPreference {
 		super(context, attrs);
 		// テキストモード
 		super.setConfig(DEF.KEY_RRBCOLOR, DEF.KEY_RRBRGB, DEF.ColorList[23], true);
-		mSP = MultiProcessPreferences.getInstance(context);
+		mSP = PreferenceManager.getDefaultSharedPreferences(context);
 	}
 
 	@Override

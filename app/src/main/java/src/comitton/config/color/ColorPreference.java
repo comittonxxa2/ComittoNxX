@@ -1,7 +1,6 @@
 package src.comitton.config.color;
 
 import src.comitton.common.DEF;
-import src.comitton.common.MultiProcessPreferences;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -38,7 +37,7 @@ public class ColorPreference extends DialogPreference implements SeekBar.OnSeekB
 	public ColorPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSP = MultiProcessPreferences.getInstance(context);
+		mSP = PreferenceManager.getDefaultSharedPreferences(context);
 	}
 
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -148,7 +147,6 @@ public class ColorPreference extends DialogPreference implements SeekBar.OnSeekB
 		mKey = key;
 		mDefValue = defValue;
 		mTextMode = text;
-		notifyChanged();
 	}
 
 	private void setValue() {
@@ -164,9 +162,6 @@ public class ColorPreference extends DialogPreference implements SeekBar.OnSeekB
 			ed.remove(mKeyOld);
 		}
 		ed.apply();
-		// 自身のPreferenceのキャッシュを更新して即時再描画させる
-		persistInt(value);
-		notifyChanged();
 	}
 
 	private int getValue() {
