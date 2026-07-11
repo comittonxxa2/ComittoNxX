@@ -2,7 +2,6 @@ package src.comitton.config.seekbar;
 
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
-import src.comitton.common.MultiProcessPreferences;
 import src.comitton.dialog.ImageConfigDialog;
 
 import android.content.Context;
@@ -37,7 +36,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 	public SeekBarPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
-		mSP = MultiProcessPreferences.getInstance(context);
+		mSP = PreferenceManager.getDefaultSharedPreferences(context);
 	}
 
 	@Override
@@ -208,20 +207,12 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary2 = mContext.getString(R.string.pixSumm2);
 		}
 
-		int currentValue = getValue();
-		// 表示を反映
-		setSummary(getSummaryString(currentValue));
 	}
 
 	private void setValue(int value) {
 		Editor ed = mSP.edit();
 		ed.putInt(mKey, value);
 		ed.apply();
-		// 自身のPreferenceのキャッシュを更新して即時再描画させる
-		persistInt(value);
-		notifyChanged();
-		// 表示を反映
-		setSummary(getSummaryString(value));
 	}
 
 	private int getValue() {
