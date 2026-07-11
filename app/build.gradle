@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "BV"
+def revision = "BW"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -21,14 +21,15 @@ android {
 
     // 28にすると -lpthread が勝手に追加されてビルドできない時がある
     // C言語の書式バージョン問題でビルドエラーが発生する場合はndkバージョンを24まで下げること
-    ndkVersion "28.0.12674087"
+    ndkVersion "30.0.14904198"
+    //ndkVersion "28.0.12674087"
     //ndkVersion "27.0.12077973"
     //ndkVersion "24.0.8215888"
 
 
     defaultConfig {
         applicationId packageName
-        targetSdk 36 // Android 16("Baklava")
+        targetSdk 37 // Android 17("CinnamonBun")
         minSdk 24 // Android 7.0("Nougat")
 
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
@@ -38,7 +39,7 @@ android {
         ndk {
             externalNativeBuild {
                 cmake {
-                    cppFlags += ''
+                    cppFlags += '-std=c++20'
                 }
             }
         }
@@ -49,7 +50,7 @@ android {
         // CmakeLists.txt にオプションを定義する
         externalNativeBuild {
             cmake {
-                arguments ""
+                arguments("-DANDROID_ARM_MODE=arm")
             }
         }
 
@@ -195,7 +196,6 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
-    buildToolsVersion '36.0.0 rc3'
 }
 
 dependencies {
@@ -210,9 +210,10 @@ dependencies {
     implementation 'com.github.cachapa:ExpandableLayout:2.9.2'
     implementation 'com.google.android.material:material:1.14.0'
     implementation 'commons-io:commons-io:2.22.0'
+    implementation 'com.google.code.gson:gson:2.14.0'
 
     // SMB接続用ライブラリjcifs(SMB1, SMB202, SMB210, SMB300, SMB302, SMB311に対応)
-    implementation 'org.codelibs:jcifs:2.1.40'
+    implementation 'org.codelibs:jcifs:3.0.2'
 
     // 文字コード判定用ライブラリ
     // 2.5.0と2.0.4は同時リリースのため、Android 5でも使用できる2.0.4を選択する
