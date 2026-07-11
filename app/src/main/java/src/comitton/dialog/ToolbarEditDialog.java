@@ -44,7 +44,6 @@ import java.util.List;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
-import src.comitton.common.MultiProcessPreferences;
 
 @SuppressLint("NewApi")
 public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListener, SeekBar.OnSeekBarChangeListener {
@@ -154,7 +153,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 			DEF.TOOLBAR_PROFILE10,
 		};
 
-	private static final boolean[] DEFAULT_VALUES =
+	public static final boolean[] DEFAULT_VALUES =
 		{
 			true,		// 一番左のページ
 			false,		// 左へ100ページ
@@ -276,7 +275,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 		mTitle = activity.getString(R.string.ToolbarEditTitle);
 		mStates = loadToolbarState(mActivity);
 
-		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(activity);
+		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(activity);
 		mProfileWord = new String[10];
 
 		// 初期値を読み出す
@@ -338,7 +337,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 
 		Resources res = mActivity.getResources();
 		mDefaultStr = res.getString(R.string.auto);
-		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(mActivity);
+		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(mActivity);
 		mToolbarSize = sharedPreference.getInt(DEF.KEY_TOOLBAR_SIZE, DEF.DEFAULT_TOOLBAR_SIZE);
 		mFooter.addView(inflater.inflate(R.layout.toolbar_size, null, false), 0);
 		mTxtSize = mFooter.findViewById(R.id.label_toolbar_size);
@@ -388,7 +387,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 		int[] states;
 		states = new int[COMMAND_ID.length];
 		try {
-			SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
+			SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
 
 			int count = 0;
 			for (int i = 0; i < states.length; i++) {
@@ -412,7 +411,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 		boolean[] states = null;
 		try {
 			Resources res = context.getResources();
-			SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
+			SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
 
 			Logcat.d(logLevel, "保存された設定を取得します.");
 			states = new boolean[COMMAND_ID.length];
@@ -463,7 +462,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. states.length=" + states.length);
 
-		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
+		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
 		SharedPreferences.Editor ed = sharedPreference.edit();
 		for (int i = 0 ; i < states.length ; i ++) {
 			try {
@@ -480,7 +479,7 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 	}
 
 	public static float getToolbarRatio(Context context) {
-		SharedPreferences sharedPreference = MultiProcessPreferences.getInstance(context);
+		SharedPreferences sharedPreference = PreferenceManager.getDefaultSharedPreferences(context);
 		return 0.25f * (sharedPreference.getInt(DEF.KEY_TOOLBAR_SIZE, DEF.DEFAULT_TOOLBAR_SIZE) + 2);
 	}
 

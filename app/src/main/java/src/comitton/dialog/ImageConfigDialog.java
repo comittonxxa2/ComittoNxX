@@ -525,13 +525,21 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbBlueLevel != null) mSkbBlueLevel.setMax(100);
 		if (mSkbBlueLevel != null) mSkbBlueLevel.setOnSeekBarChangeListener(this);
 
+		// 初期値が0だと表示が更新されないので故意にずらした値で設定を入れる
+		if (mSkbSharpen != null) mSkbSharpen.setProgress(32 - mSharpen);
 		if (mSkbSharpen != null) mSkbSharpen.setProgress(mSharpen);
+		if (mSkbBright != null) mSkbBright.setProgress(10 - (mBright + 5));
 		if (mSkbBright != null) mSkbBright.setProgress(mBright + 5);
+		if (mSkbGamma != null) mSkbGamma.setProgress(10 - (mGamma + 5));
 		if (mSkbGamma != null) mSkbGamma.setProgress(mGamma + 5);
 		if (mSkbBkLight != null) mSkbBkLight.setProgress(mBkLight);
+		if (mSkbContrast != null) mSkbContrast.setProgress(20 - (mContrast / 5));
 		if (mSkbContrast != null) mSkbContrast.setProgress(mContrast / 5);
+		if (mSkbHue != null) mSkbHue.setProgress(40 - (mHue / 5 + 20));
 		if (mSkbHue != null) mSkbHue.setProgress(mHue / 5 + 20);
+		if (mSkbSaturation != null) mSkbSaturation.setProgress(80 - (mSaturation / 5));
 		if (mSkbSaturation != null) mSkbSaturation.setProgress(mSaturation / 5);
+		if (mSkbKelvin != null) mSkbKelvin.setProgress(70 - mKelvin);
 		if (mSkbKelvin != null) mSkbKelvin.setProgress(mKelvin);
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setText(mAlgoModeItems[mAlgoMode]);
 		// ボタンの文字を小文字対応にする(Lanczos3を表示させるため)
