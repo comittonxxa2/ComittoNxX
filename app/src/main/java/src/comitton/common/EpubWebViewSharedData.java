@@ -1,0 +1,71 @@
+package src.comitton.common;
+
+public class EpubWebViewSharedData{
+
+	public int mDispMode;
+	public boolean mNotice;
+	public boolean mForceNotice;
+	public boolean mNoSleep;
+	public boolean mImmEnable;
+	public boolean mImmForce;
+	public int mTextColor;
+	public int mBackColor;
+	public int mGradColor;
+	public int mGradation;
+	public int mSrchColor;
+	public int mMgnColor;
+	public int mCenColor;
+	public int mTopColor1;
+	public int mTopColor2;
+	public boolean mTimeDisp;
+	public int mTimeFormat;
+	public int mTimePos;
+	public int mTimeSize;
+	public int mTimeColor;
+	public boolean mConfirmBack;
+	public int mClickArea;
+	public int mPageSelect;
+	public int mPageRange;
+	public boolean mOldMenu;
+	public boolean mBottomFile;
+	public boolean mChgPage;
+	public boolean mChgPageKey;
+	public int mTapPattern;
+	public int mTapRate;
+	public boolean mTapScrl;
+	public int mVolKeyMode;
+	public int mNoiseScrl;
+	public int mNoiseUnder;
+	public int mNoiseOver;
+	public int mNoiseDec;
+	public boolean mNoiseLevel;
+	public int mLastMsg;
+	public boolean mVibFlag;
+	public boolean mFlickPage;
+	public boolean mFlickEdge;
+	public int mFontBody;
+	public int mFontText;
+	public int mFontInfo;
+	public int mMarginW;
+	public int mMarginH;
+	public boolean mDisableTextInfo;
+	public boolean mTextFrame;
+	public boolean mDisablePageButton;
+	public boolean mScaleValiable;
+	public int mTxtColor;
+	public int mBakColor;
+	public boolean mFixBodyColor;
+	public boolean mFixBackgroundColor;
+	public boolean mReturnListView;
+	public int mViewRota;
+	public boolean mRevtRota;
+	public int mGetRotateBtn;
+	public boolean mNoCache;
+	public boolean mHorizontalWriting;
+	public String fontname;
+	public int[] mLoadCustomkeyCode = new int[DEF.KEY_CODE_CUSTOM_MAX];
+	public int[] mGetHardwareKeySetData = new int[DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX];
+	public int mRBSort;
+
+	public EpubWebViewSharedData() {}
+}

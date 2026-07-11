@@ -157,7 +157,7 @@ public class DEF {
 	public static final int INTERVAL_ATTENUATE = 10;
 	public static final int INTERVAL_MOMENTIUM = 10;
 	public static final int INTERVAL_FLOATINGICON = 500;	// Milliseconds
-	public static final int INTERVAL_BACKGROUND_CACHE = 500;	// Milliseconds
+	public static final int INTERVAL_BACKGROUND_CACHE = 1000;	// Milliseconds
 	public static final int INTERVAL_ZOOMVIEWOFF = 500;
 
 	public static final int MENU_HELP = Menu.FIRST + 0;
@@ -904,6 +904,7 @@ public class DEF {
 
 	public static final String KEY_CUSTOM_URL_SCHEME_KEY = "CustomUrlSchemeAuthenticationKey";
 	public static final String KEY_SMB_MODE = "ComittoNMode";
+	public static final String KEY_SMBRETRYMODE = "SmbRetryMode";
 	public static final String KEY_MARKERFILTERON = "MarkerFilterOn";
 	public static final String KEY_MARKERDIRON = "MarkerDirOn";
 	public static final String KEY_ARCHIVECHECKMANUALMODE = "ArchiveCheckManualMode";
@@ -1964,10 +1965,10 @@ public class DEF {
 	public static final String KEY_TAP_PATTERN_07_01 = "TapPat0701";
 	public static final String KEY_TAP_PATTERN_07_02 = "TapPat0702";
 	public static final String KEY_TAP_PATTERN_07_03 = "TapPat0703";
-	public static final String KEY_TAP_PATTERN_07_04 = "TapPat0604";
-	public static final String KEY_TAP_PATTERN_07_05 = "TapPat0605";
-	public static final String KEY_TAP_PATTERN_07_06 = "TapPat0606";
-	public static final String KEY_TAP_PATTERN_07_07 = "TapPat0607";
+	public static final String KEY_TAP_PATTERN_07_04 = "TapPat0704";
+	public static final String KEY_TAP_PATTERN_07_05 = "TapPat0705";
+	public static final String KEY_TAP_PATTERN_07_06 = "TapPat0706";
+	public static final String KEY_TAP_PATTERN_07_07 = "TapPat0707";
 
 	public static final String KEY_TAP_PATTERN_08_01 = "TapPat0801";
 	public static final String KEY_TAP_PATTERN_08_02 = "TapPat0802";
@@ -2033,10 +2034,10 @@ public class DEF {
 	public static final String KEY_TAP_PATTERN_T_07_01 = "TapPatt0701";
 	public static final String KEY_TAP_PATTERN_T_07_02 = "TapPatt0702";
 	public static final String KEY_TAP_PATTERN_T_07_03 = "TapPatt0703";
-	public static final String KEY_TAP_PATTERN_T_07_04 = "TapPatt0604";
-	public static final String KEY_TAP_PATTERN_T_07_05 = "TapPatt0605";
-	public static final String KEY_TAP_PATTERN_T_07_06 = "TapPatt0606";
-	public static final String KEY_TAP_PATTERN_T_07_07 = "TapPatt0607";
+	public static final String KEY_TAP_PATTERN_T_07_04 = "TapPatt0704";
+	public static final String KEY_TAP_PATTERN_T_07_05 = "TapPatt0705";
+	public static final String KEY_TAP_PATTERN_T_07_06 = "TapPatt0706";
+	public static final String KEY_TAP_PATTERN_T_07_07 = "TapPatt0707";
 
 	public static final String KEY_TAP_PATTERN_T_08_01 = "TapPatt0801";
 	public static final String KEY_TAP_PATTERN_T_08_02 = "TapPatt0802";
@@ -2102,10 +2103,10 @@ public class DEF {
 	public static final String KEY_TAP_PATTERN_E_07_01 = "TapPate0701";
 	public static final String KEY_TAP_PATTERN_E_07_02 = "TapPate0702";
 	public static final String KEY_TAP_PATTERN_E_07_03 = "TapPate0703";
-	public static final String KEY_TAP_PATTERN_E_07_04 = "TapPate0604";
-	public static final String KEY_TAP_PATTERN_E_07_05 = "TapPate0605";
-	public static final String KEY_TAP_PATTERN_E_07_06 = "TapPate0606";
-	public static final String KEY_TAP_PATTERN_E_07_07 = "TapPate0607";
+	public static final String KEY_TAP_PATTERN_E_07_04 = "TapPate0704";
+	public static final String KEY_TAP_PATTERN_E_07_05 = "TapPate0705";
+	public static final String KEY_TAP_PATTERN_E_07_06 = "TapPate0706";
+	public static final String KEY_TAP_PATTERN_E_07_07 = "TapPate0707";
 
 	public static final String KEY_TAP_PATTERN_E_08_01 = "TapPate0801";
 	public static final String KEY_TAP_PATTERN_E_08_02 = "TapPate0802";

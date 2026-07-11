@@ -19,8 +19,7 @@ public class SplashActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		// 2つの別プロセス用サービスを裏で起動する
-		startService(new Intent(this, SplashActivity.ConfigService.class));
+		// 別プロセス用サービスを裏で起動する
 		startService(new Intent(this, SplashActivity.WebViewService.class));
 		// メイン画面を起動
 		Intent intent = new Intent(SplashActivity.this, FileSelectActivity.class);
