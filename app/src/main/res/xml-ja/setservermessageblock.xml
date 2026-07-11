@@ -4,7 +4,12 @@
        <CheckBoxPreference
             android:defaultValue="false"
             android:key="ComittoNMode"
-            android:summary="ComittoN 互換モードでアクセスする"
+            android:summary="ComittoN 互換モード(SMB1のみ)でアクセスする"
             android:title="ComittoN 互換モード" />
+       <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SmbRetryMode"
+            android:summary="圧縮ファイルの展開ライブラリのアクセス失敗による再試行の時間待ちを長くして再試行の頻度を減らす場合にチェックを入れる"
+            android:title="圧縮ファイルの展開ライブラリの再試行を緩和" />
     </PreferenceCategory>
 </PreferenceScreen>
