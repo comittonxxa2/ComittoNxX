@@ -157,7 +157,7 @@ public class DEF {
 	public static final int INTERVAL_ATTENUATE = 10;
 	public static final int INTERVAL_MOMENTIUM = 10;
 	public static final int INTERVAL_FLOATINGICON = 500;	// Milliseconds
-	public static final int INTERVAL_BACKGROUND_CACHE = 1000;	// Milliseconds
+	public static final int INTERVAL_BACKGROUND_CACHE = 500;	// Milliseconds
 	public static final int INTERVAL_ZOOMVIEWOFF = 500;
 
 	public static final int MENU_HELP = Menu.FIRST + 0;
