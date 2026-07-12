@@ -672,7 +672,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mDoubleTapGuardOn = false;
 	private boolean mAutoRepeatCheck = false;
 	private boolean mPinchScaleSetting = false;
-	private boolean mPinchScaleSettingSet = false;
 	private boolean mBackgroundPause = false;
 
 	private static int mFloatingIconSize;
@@ -1672,19 +1671,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		return super.dispatchKeyEvent(event);
 	}
 
-	private void setCacheSleep() {
-		// バックグラウンドでのキャッシュ読み込み停止
-		if (mBackgroundPause) {
-			mImageMgr.setCacheSleep(true);
-			try {
-				// キャッシュ読み込み停止待ちを入れる
-				Thread.sleep(100);
-			}
-			catch (Exception e) {
-			}
-		}
-	}
-
 	String mMessage = "";
 	String mMessage2 = "";
 	String mWorkMessage = "";
@@ -1769,15 +1755,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						}
 
 						// バックグラウンドでのキャッシュ読み込み停止
-						setCacheSleep();
-						// タッチ位置が範囲内の時だけ処理
-						// サイズ変更終了
-						mImageView.setPinchChanging(0);
-						// 描画の更新
-						if (mPinchScaleSettingSet) {
-							mPinchScaleSettingSet = false;
-							setBitmapImage();
+						if (mBackgroundPause) {
+							mImageMgr.setCacheSleep(true);
 						}
+						// タッチ位置が範囲内の時だけ処理
 						mLongTouchMode = true;
 						mImageView.setZoomMode(true);
 						// ズーム解除用のイベントを登録
@@ -2936,7 +2917,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
     					float y2 = (int)event.getY(1);
     					if (Math.abs(x1 - x2) > mSDensity * 20 || Math.abs(y1 - y2) > mSDensity * 20) {
 							// バックグラウンドでのキャッシュ読み込み停止
-							setCacheSleep();
+							if (mBackgroundPause) {
+								mImageMgr.setCacheSleep(true);
+							}
 							// ピンチズームの更新
     						SetPinchScaleSetting();
     						// 2点間が10sp以上であれば拡大縮小開始
@@ -3212,7 +3195,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								startLongTouchTimer(DEF.HMSG_EVENT_LONG_TAP); // ロングタッチのタイマー開始
 							}
 							// バックグラウンドでのキャッシュ読み込み停止
-							setCacheSleep();
+							if (mBackgroundPause) {
+								mImageMgr.setCacheSleep(true);
+							}
 							// 現在のイメージ表示位置をフリックの判定のため記憶
 							mTouchDrawLeft = (int)x;
 							callZoomAreaDraw(x, y);
@@ -3671,12 +3656,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						}
 						// バックグラウンドでのキャッシュ読み込み停止
 						mImageMgr.setCacheSleep(true);
-						try {
-							// キャッシュ読み込み停止待ちを入れる
-							Thread.sleep(100);
-						}
-						catch (Exception e) {
-						}
 						Intent intent = new Intent(ImageActivity.this, SetConfigActivity.class);
 						intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 						startActivityForResult(intent, DEF.REQUEST_SETTING);
@@ -4095,12 +4074,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mPinchScaleSel = 250;
 				}
 				// スケーリングのリアルタイム変更は処理が重いので画面更新時にスケーリングを行う
-				// バックグラウンドでのキャッシュ読み込み停止
-				setCacheSleep();
 				mImageView.setPinchChanging(mPinchScaleSel);
 				mGuideView.setGuideText(mPinchScaleSel + "%");
 				mPinchScaleSetting = true;
-				mPinchScaleSettingSet = true;
 				if (mMakeZoomSameAsPinch) {
 					// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 					Editor ed = mSharedPreferences.edit();
@@ -4111,10 +4087,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				// 画面更新中の文字を消すメッセージを送る
 				startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
-				// バックグラウンドでのキャッシュ読み込み再開
-				if (mBackgroundPause) {
-					startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
-				}
 				break;
 			case DEF.TAP_PINCHSCALEDOWN:
 				// ピンチズーム変更
@@ -4125,12 +4097,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mPinchScaleSel = 10;
 				}
 				// スケーリングのリアルタイム変更は処理が重いので画面更新時にスケーリングを行う
-				// バックグラウンドでのキャッシュ読み込み停止
-				setCacheSleep();
 				mImageView.setPinchChanging(mPinchScaleSel);
 				mGuideView.setGuideText(mPinchScaleSel + "%");
 				mPinchScaleSetting = true;
-				mPinchScaleSettingSet = true;
 				if (mMakeZoomSameAsPinch) {
 					// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 					Editor ed = mSharedPreferences.edit();
@@ -4141,10 +4110,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 				// 画面更新中の文字を消すメッセージを送る
 				startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
-				// バックグラウンドでのキャッシュ読み込み再開
-				if (mBackgroundPause) {
-					startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
-				}
 				break;
 			case DEF.TAP_TOOLBARBOOKLEFT:
 				// 前のファイル(最終ページ)/次のファイル(先頭ページ)
@@ -4449,8 +4414,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// ズームレベルのリセット
 				// 描画スレッド停止
 				if (mPinchScaleSel != 100) {
-					// バックグラウンドでのキャッシュ読み込み停止
-					setCacheSleep();
 					mImageView.setPinchChanging(100);
 					mGuideView.setGuideText(100 + "%");
 					mImageView.lockDraw();
@@ -4466,7 +4429,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					this.updateOverSize(true);
 					// 描画スレッド開始
 					mImageView.update(true);
-					mPinchScaleSettingSet = false;
 					if (mMakeZoomSameAsPinch) {
 						// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 						Editor ed = mSharedPreferences.edit();
@@ -4477,10 +4439,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mHandler.removeMessages(DEF.HMSG_EVENT_ZOOMVIEWOFF);
 					// 画面更新中の文字を消すメッセージを送る
 					startViewTimer(DEF.HMSG_EVENT_ZOOMVIEWOFF);
-					// バックグラウンドでのキャッシュ読み込み再開
-					if (mBackgroundPause) {
-						startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
-					}
 				}
 				break;
 			case DEF.TAP_EXIT_VIEWER:
@@ -5856,12 +5814,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 				// バックグラウンドでのキャッシュ読み込み停止
 				mImageMgr.setCacheSleep(true);
-				try {
-					// キャッシュ読み込み停止待ちを入れる
-					Thread.sleep(100);
-				}
-				catch (Exception e) {
-				}
 
 				Intent intent = new Intent(ImageActivity.this, SetConfigActivity.class);
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
