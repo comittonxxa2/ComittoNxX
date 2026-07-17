@@ -364,6 +364,11 @@
             android:key="MakeZoomSameAsPinch"
             android:summary="Check this box to make the processing for zoom in/out/reset operations the same as for changing the zoom level using pinch gestures."
             android:title="Make zoom and pinch-in/out gestures the same." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AdjustZoomSameAsPinch"
+            android:summary="Check this box to use the press-and-hold magnifier function immediately after zooming in, zooming out, or resetting the zoom."
+            android:title="Adjust zoom operation to match pinch-in and pinch-out gestures." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
