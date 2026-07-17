@@ -1202,7 +1202,6 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else {
 			// ハードウェアキーの設定を取り出す
 			data = mGetHardwareKeySetData[found_code];
-			Logcat.v(1, "ハードウェアキーの設定を取り出す data=" + data + ", found_code=" + found_code);
 		}
 
 		found_code = -1;
