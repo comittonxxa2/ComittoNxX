@@ -741,6 +741,7 @@ public class DEF {
 	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
 	public static final String KEY_ENABLECONTENTSFILE = "EnableContentsFile";
 	public static final String KEY_MAKEZOOMSAMEASPINCH = "MakeZoomSameAsPinch";
+	public static final String KEY_ADJUSTZOOMSAMEASPINCH = "AdjustZoomSameAsPinch";
 	public static final String KEY_SKIPUPDATEFILELIST = "SkipUpdateFileList";
 	public static final String KEY_WEBVIEWFILTER = "WebviewFilter";
 	public static final String KEY_WEBVIEWUSEREGENT = "WebviewUserAgent";
