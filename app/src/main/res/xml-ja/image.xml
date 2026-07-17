@@ -362,6 +362,11 @@
             android:key="MakeZoomSameAsPinch"
             android:summary="ズームイン/アウト/リセットの各操作時の処理をピンチインアウトによるズーム率変更と共通にする場合にチェックを入れる"
             android:title="ズームとピンチインアウトを共通にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="AdjustZoomSameAsPinch"
+            android:summary="ズームのイン/アウト/リセット操作後に続けて長押しルーペ機能を使う場合にチェックを入れる"
+            android:title="ズーム処理をピンチインアウトに合わせる" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
