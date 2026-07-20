@@ -6992,7 +6992,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			mHalfPos = HALFPOS_2ND;
 		}
-		mPageBack = false;
+		mPageBack = true;
 		startVibrate();
 		if (mImageView.getPageLock()) {
 			mPageSelecting = true;
