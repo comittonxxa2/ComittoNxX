@@ -1,6 +1,8 @@
 package src.comitton.imageview;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,6 +68,7 @@ import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentManager;
 
 import android.app.Dialog;
@@ -2400,7 +2403,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			boolean isSingle = false; // 現在ページが単ページか
 			if (isHalfView() && bm[0] != null) {
-				if (checkAnimeOn()) {
+				if (checkAnimeOn() || checkSingleAnimeImage()) {
 					// アニメーションを表示する場合は横長画面でも単ページ扱いにする
 					mHalfPos = HALFPOS_1ST;
 					mSourceImage[0] = bm[0];
@@ -2505,8 +2508,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// アニメーション可能かどうかをチェック
 					if (mImageMgr.checkAnimeEnable(mCurrentPage)) {
 						// アニメーション可能だった場合
-						// アニメーションを表示中は画面内に収めるため半分にする
-						mImageMgr.setImageScale(50);
+						// アニメーションを表示中は画面内に収めるため最小にする
+						mImageMgr.setImageScale(1);
 						ImageScaling();
 						// アニメーションを表示
 						mImageMgr.loadAnime(mCurrentPage);
@@ -2522,8 +2525,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				else if (mImageMgr.mAnimeList[mCurrentPage].getAnimeOn()) {
 					// アニメーションを表示中は背景を塗りつぶす
 					mImageView.ViewOff(true);
-					// アニメーションを表示中は画面内に収めるため半分にする
-					mImageMgr.setImageScale(50);
+					// アニメーションを表示中は画面内に収めるため最小にする
+					mImageMgr.setImageScale(1);
 					ImageScaling();
 					// アニメーションを表示
 					mImageMgr.loadAnime(mCurrentPage);
@@ -2542,23 +2545,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mImageView.ViewOff(true);
 				// 以前の表示を取り消す
 				stopGifAnimation();
-				if (mImageMgr.checkAnimeFile(mCurrentPage)) {
-					// アニメーション可能かどうかをチェック
-					if (mImageMgr.checkAnimeEnable(mCurrentPage)) {
-						// アニメーション可能だった場合
-						// アニメーションを表示中は画面内に収めるため半分にする
-						mImageMgr.setImageScale(50);
-						ImageScaling();
-						// アニメーションを表示
-						mImageMgr.loadAnime(mCurrentPage);
-					}
-					else {
-						// アニメーションを表示しない場合は元のスケールに戻す
-						mImageMgr.setImageScale(mPinchScale);
-						ImageScaling();
-						// 塗りつぶしをオフにする
-						mImageView.ViewOff(false);
-					}
+				// アニメーション可能かどうかをチェック
+				if (mImageMgr.checkAnimeEnable(mCurrentPage)) {
+					// アニメーション可能だった場合
+					// アニメーションを表示中は画面内に収めるため最小にする
+					mImageMgr.setImageScale(1);
+					ImageScaling();
+					// アニメーションを表示
+					mImageMgr.loadAnime(mCurrentPage);
 				}
 				else {
 					// アニメーションを表示しない場合は元のスケールに戻す
@@ -2569,11 +2563,74 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 			}
 
+			if (checkSingleAnimeImage()) {
+				// 単独の画像ファイルの場合
+				if (FileAccess.accessType(mUriPath) == DEF.ACCESS_TYPE_SAF) {
+					// SAFの場合は特別に処理
+					Uri fileUri = Uri.parse(mFilePath);
+					File safeCacheDir = mActivity.getCacheDir();
+					File tempFile = new File(safeCacheDir, "saf_temp_anime" + mTimestamp + mImageMgr.mFileList[mCurrentPage].name);
+					if (tempFile.exists()) {
+						// ファイルが存在すれば読み込み動作はスキップ
+					}
+					else {
+						// 読み込み動作を行いローカルファイルへ書き出す
+						DocumentFile documentFile = DocumentFile.fromSingleUri(mActivity, fileUri);
+						if (documentFile != null && documentFile.exists()) {
+							long fileSize = documentFile.length();
+							long readsize = 0;
+							mImageMgr.mMessageMode = DEF.MESSAGE_IMAGE_START;
+							mImageMgr.sendProgress(0, 0, 0, 0);
+							try (InputStream bis = mActivity.getContentResolver().openInputStream(fileUri);
+								OutputStream out = new FileOutputStream(tempFile)) {
+								// 16KBのバッファ
+								byte[] buffer = new byte[16384];
+								int bytesRead;
+								// データを読み込みながらローカルファイルへ書き出す
+								while ((bytesRead = bis.read(buffer)) != -1) {
+									out.write(buffer, 0, bytesRead);
+									readsize += bytesRead;
+									int nowpercent = (int)((float)readsize * 100 / (float)fileSize);
+									mImageMgr.sendProgress(0, nowpercent, readsize, fileSize);
+								}
+								// 残りのデータを確実に書き出す
+								out.flush();
+							}
+							catch (Exception e) {
+							}
+							mImageMgr.mMessageMode = DEF.MESSAGE_IMAGE_END;
+							mImageMgr.sendProgress(0, 0, 0, 0);
+						}
+					}
+					try {
+						// デコーダーへファイルを送る
+						ImageDecoder.Source source = ImageDecoder.createSource(tempFile);
+						// デコード結果を得る
+						Drawable drawable = ImageDecoder.decodeDrawable(source);
+						if (drawable instanceof AnimatedImageDrawable) {
+							// 可能だった場合
+							// アニメーションを表示中は画面内に収めるため最小にする
+							mImageMgr.setImageScale(1);
+							ImageScaling();
+							// アニメーションを表示
+							PutAnimation(tempFile);
+						}
+					}
+					catch (Exception e) {
+					}
+				}
+			}
+
 			// 終了通知
 			Message message = new Message();
 			message.what = mLoadEndMsg;
 			handler.sendMessage(message);
 		}
+	}
+
+	// 単独のアニメーション画像ファイルかどうかをチェック
+	private boolean checkSingleAnimeImage() {
+		return mImageMgr.mAnimeList == null && !mImageMgr.mAnimeFile && mAnimationEnable && !mScrlNext && mHalfPos == HALFPOS_1ST;
 	}
 
 	// Bitmapを読み込む
@@ -6935,7 +6992,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			mHalfPos = HALFPOS_2ND;
 		}
-		mPageBack = true;
+		mPageBack = false;
 		startVibrate();
 		if (mImageView.getPageLock()) {
 			mPageSelecting = true;

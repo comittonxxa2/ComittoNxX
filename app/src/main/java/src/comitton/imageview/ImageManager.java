@@ -326,6 +326,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mAnimationEnable;
 	private boolean mArchiveAnimationEnable;
 	private boolean mSmbRetryMode;
+	private File mAnimefile;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -336,6 +337,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mFileList = null;
 		mAnimeList = null;
 		mAnimeFile = false;
+		mAnimefile = null;
 		mFilePath = DEF.relativePath(mActivity, path, cmpfile);
 		mPath = path;
 		mFileName = cmpfile;
@@ -2458,15 +2460,20 @@ public class ImageManager extends InputStream implements Runnable {
 	public class AnimeList{
 		boolean animeon;
 		boolean animefile;
-		private AnimeList(boolean enable, boolean fileon) {
+		File filename;
+		private AnimeList(boolean enable, boolean fileon, File file) {
 			animeon = enable;
 			animefile = fileon;
+			filename = file;
 		}
 		public boolean getAnimeOn() {
 			return animeon;
 		}
 		public boolean getAnimeFile() {
 			return animefile;
+		}
+		public File getFile() {
+			return filename;
 		}
 	}
 
@@ -2548,9 +2555,12 @@ public class ImageManager extends InputStream implements Runnable {
 		boolean mAnimationScan = SetImageActivity.getAnimationScan(sp);
 
 		List<AnimeList> animelist = new ArrayList<AnimeList>();
+		mMessageMode = DEF.MESSAGE_IMAGE_START;
+		sendProgress(0, 0, 0, 0);
 		for (int i = 0; i < mFileList.length; i++) {
 			boolean enable = false;
 			boolean fileon = false;
+			File file = null;
 			if (!(mFileList[i].exttype == FileData.EXTTYPE_WEBP) && !(mFileList[i].exttype == FileData.EXTTYPE_GIF)) {
 				// WebP/Gifファイル以外は何もしない
 			}
@@ -2563,7 +2573,23 @@ public class ImageManager extends InputStream implements Runnable {
 				fileon = true;
 				try {
 					String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[i].name);
-					File file = new File(filepath);
+					if (filepath != null && (filepath.startsWith("smb:/") || filepath.startsWith("smb://"))) {
+						File safeCacheDir = mActivity.getCacheDir(); 
+
+						mTimestamp = (int)FileAccess.date(mActivity, filepath, mUser, mPass);
+						File tempFile = new File(safeCacheDir, "smb_temp_anime" + mTimestamp + mFileList[i].name);
+						if (tempFile.exists()) {
+							// ファイルが存在すれば読み込み動作はスキップ
+							file = tempFile;
+						}
+						else{
+							// SMBの場合は読み込み動作(プログレスバーは既に表示済みなので出さない)
+							file = loadSmbfile(filepath, tempFile, false);
+						}
+					}
+					else {
+						file = new File(filepath);
+					}
 					// デコーダーへファイルを送る
 					ImageDecoder.Source source = ImageDecoder.createSource(file);
 					// デコード結果を得る
@@ -2574,9 +2600,14 @@ public class ImageManager extends InputStream implements Runnable {
 				}
 				catch (Exception e) {
 				}
+				
+				int nowpercent = (int)((float)i * 100 / (float)mFileList.length);
+				sendProgress(0, nowpercent, i, mFileList.length);
 			}
-			animelist.add(new AnimeList(enable, fileon));
+			animelist.add(new AnimeList(enable, fileon, file));
 		}
+		mMessageMode = DEF.MESSAGE_IMAGE_END;
+		sendProgress(0, 0, 0, 0);
 		mAnimeList = (AnimeList[]) animelist.toArray(new AnimeList[0]);
 
 		Logcat.d(logLevel, "終了します. ");
@@ -3578,15 +3609,10 @@ public class ImageManager extends InputStream implements Runnable {
 	public boolean checkAnimeFile(int page) {
 		boolean enable = false;
 
-		if (!mAnimationEnable || !mArchiveAnimationEnable) return false;
-
-		File animFile = new File(mCacheDir, "anim_source." + page);
-		try {
-			if (animFile.exists() && FileData.getType(mActivity, mFilePath) == FileData.FILETYPE_ARC) {
+		if (mAnimationEnable) {
+			if (checkAnimeEnable(page)) {
 				enable = true;
 			}
-		}
-		catch (Exception e) {
 		}
 		return enable;
 	}
@@ -3597,14 +3623,34 @@ public class ImageManager extends InputStream implements Runnable {
 		if (FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_AVIF && FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_JXL) {
 			try {
 				File file = null;
-				File animFile = new File(mCacheDir, "anim_source." + page);
+				mAnimefile = null;
 				short type = FileData.getType(mActivity, mFilePath);
-				if (animFile.exists() && type == FileData.FILETYPE_ARC) {
-					file = animFile;
+				if (type == FileData.FILETYPE_ARC) {
+					// 圧縮ファイルはすべてここを通る
+					File animFile = new File(mCacheDir, "anim_source." + page);
+					if (animFile.exists()) {
+						file = animFile;
+					}
 				}
 				else {
 					String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[page].name);
-					file = new File(filepath);
+					if (filepath != null && (filepath.startsWith("smb:/") || filepath.startsWith("smb://"))) {
+						// SMBの場合は特別に処理
+						File safeCacheDir = mActivity.getCacheDir();
+						mTimestamp = (int)FileAccess.date(mActivity, filepath, mUser, mPass);
+						File tempFile = new File(safeCacheDir, "smb_temp_anime" + mTimestamp + mFileList[page].name);
+						if (tempFile.exists()) {
+							// ファイルが存在すれば読み込み動作はスキップ
+							file = tempFile;
+						}
+						else{
+							// SMBの場合は読み込み動作(プログレスバーを表示)
+							file = loadSmbfile(filepath, tempFile, true);
+						}
+					}
+					else {
+						file = new File(filepath);
+					}
 				}
 				// デコーダーへファイルを送る
 				ImageDecoder.Source source = ImageDecoder.createSource(file);
@@ -3613,6 +3659,7 @@ public class ImageManager extends InputStream implements Runnable {
 				if (drawable instanceof AnimatedImageDrawable) {
 					// 可能だった場合
 					enable = true;
+					mAnimefile = file;
 				}
 			}
 				catch (Exception e) {
@@ -3621,12 +3668,60 @@ public class ImageManager extends InputStream implements Runnable {
 		return enable;
 	}
 
+	// SMBの場合は読み込み動作を行いローカルファイルへ書き出す
+	private File loadSmbfile(String filepath, File tempFile, boolean message)
+	{
+		File file = null;
+		try {
+			if (message) {
+				mMessageMode = DEF.MESSAGE_IMAGE_START;
+				sendProgress(0, 0, 0, 0);
+			}
+			CIFSContext mSmbContext = SingletonContext.getInstance().withCredentials(new NtlmPasswordAuthenticator(null, mUser, mPass));
+			// SMBのストリームアクセス
+			SmbFile smbFile = new SmbFile(filepath, mSmbContext);
+			long fileSize = smbFile.length();
+			long readsize = 0;
+			try (InputStream in = smbFile.getInputStream();
+				OutputStream out = new FileOutputStream(tempFile)) {
+				// 16KBのバッファ
+				byte[] buffer = new byte[16384];
+				int bytesRead;
+				// データを読み込みながらローカルファイルへ書き出す
+				while ((bytesRead = in.read(buffer)) != -1) {
+					out.write(buffer, 0, bytesRead);
+					if (message) {
+						readsize += bytesRead;
+						int nowpercent = (int)((float)readsize * 100 / (float)fileSize);
+						sendProgress(0, nowpercent, readsize, fileSize);
+					}
+				}
+				// 残りのデータを確実に書き出す
+				out.flush();
+			}
+			if (message) {
+				mMessageMode = DEF.MESSAGE_IMAGE_END;
+				sendProgress(0, 0, 0, 0);
+			}
+			file = tempFile;
+		}
+		catch (Exception e) {
+			file = null;
+		}
+		return file;
+	}
+
 	public void loadAnime(int page) {
 		if (FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_AVIF && FileData.getExtType(mActivity, mFileList[page].name) != FileData.EXTTYPE_JXL) {
-			String filepath = DEF.relativePath(mActivity, mFilePath, mFileList[page].name);
-			File file = new File(filepath);
 			// アニメーションを表示
-			ImageActivity.PutAnimation(file);
+			if (mAnimeList != null && mAnimeList[page].getFile() != null) {
+				// スキャン済みのファイルがあれば
+				ImageActivity.PutAnimation(mAnimeList[page].getFile());
+			}
+			else if (mAnimefile != null) {
+				// 通常ファイル
+				ImageActivity.PutAnimation(mAnimefile);
+			}
 		}
 	}
 
@@ -3825,6 +3920,9 @@ public class ImageManager extends InputStream implements Runnable {
 				message.obj = e.getLocalizedMessage();
 				mHandler.sendMessage(message);
 			}
+			// 壊れたデータを返すと誤動作するので0を返すようにした
+			return 0;
+			/*
 			// 終了時は壊れたデータを返してやろう
 			try {
 				Arrays.fill(buf, off, len - off, (byte) 0);
@@ -3834,6 +3932,7 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 			return len - off;
 			//throw new IOException(e.getLocalizedMessage());
+			*/
 		}
 
 		if (ret > 0) {
@@ -4322,7 +4421,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private int mMemPrevPages = 0;
 	private int mMemNextPages = 0;
 	private int mMemCacheThreshold = 0;
-	private int mMessageMode = 0;
+	public int mMessageMode = 0;
 	private MemCacheFlag[] mMemCacheFlag;
 	private int[] mMemPriority;
 
