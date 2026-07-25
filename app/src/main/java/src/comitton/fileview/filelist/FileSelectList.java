@@ -10,6 +10,7 @@ import jp.dip.muracoro.comittonx.R;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileview.data.FileData;
@@ -104,6 +105,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private static int mMarginH;
 
 	private static int mAscMode;	// 半角の表示方法
+	private static boolean mEpubAozoraRubyOff;
 	private static String mFontFile;
 	private static boolean mChangeTextSize = false;
 	private static boolean mCacheFile = false;
@@ -369,6 +371,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mMarginW = DEF.calcDispMargin(mMarginWOrg);				// 左右余白
 		mMarginH = mInfoSize + DEF.calcDispMargin(mMarginHOrg);	// 上下余白
 		mAscMode = SetTextActivity.getAscMode(msp);
+		mEpubAozoraRubyOff = SetEpubActivity.getEpubAozoraRubyOff(msp);
+
 		String fontname = SetTextActivity.getFontName(msp);
 		if (fontname != null && fontname.length() > 0) {
 			String path = DEF.getFontDirectory();
@@ -405,7 +409,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			mTextWidth = DEF.PAPERSIZE[mPaperSel][0];
 			mTextHeight = DEF.PAPERSIZE[mPaperSel][1];
 		}
-		manager.formatTextFile(mTextWidth, mTextHeight, mHeadSize, mBodySize, mRubiSize, mSpaceW, mSpaceH, mMarginW, mMarginH, mPicSize, mFontFile, mAscMode);
+		manager.formatTextFile(mTextWidth, mTextHeight, mHeadSize, mBodySize, mRubiSize, mSpaceW, mSpaceH, mMarginW, mMarginH, mPicSize, mFontFile, mAscMode, mEpubAozoraRubyOff);
 	}
 
 	public static void ChangeTextSize()
