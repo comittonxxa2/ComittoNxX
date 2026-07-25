@@ -21,6 +21,11 @@
             android:key="epubWebView"
             android:summary="WebViewでEPUBのxhtmlファイルを表示する(Webブラウザでの表示になるため読み込みに時間が掛かります)"
             android:title="WebViewベースのEPUBビューアを使用する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epubAozoraRubyOff"
+            android:summary="青空文庫形式のルビ《》を変換しない場合にチェックを入れる\nWebViewベースのEPUBビューアでは青空文庫形式のルビ《》が無視される"
+            android:title="青空文庫形式のルビを無視する" />
     </PreferenceCategory>
     <PreferenceCategory android:title="WebViewベースのEPUBビューア設定(＊はテキストと共通)" >
         <ListPreference
