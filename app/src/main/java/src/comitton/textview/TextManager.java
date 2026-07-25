@@ -1211,7 +1211,7 @@ public class TextManager {
 		List<FileListItem> list = new ArrayList<FileListItem>();
 		FileListItem[] ImageList = mImageMgr.getList();
 
-		formatTextFile(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0);
+		formatTextFile(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, false);
 
 		if (mEpubMode == EPUB_MODE_COVER) {
 			if (mCover != null && !mCover.isEmpty()) {
@@ -1223,7 +1223,7 @@ public class TextManager {
 			}
 			else {
 				mEpubMode = EPUB_MODE_FIRST_IMAGE;
-				formatTextFile(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0);
+				formatTextFile(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, false);
 				if (!mImageList.isEmpty()) {
 					// 画像リストがあれば画像リストの最初のファイルを返す
 					loop: for (int i = 0; i < mImageList.size(); ++i) {
@@ -1715,7 +1715,7 @@ public class TextManager {
 		}
 	}
 
-	public String readHtmlFile(String filename, StringBuffer inputSB) {
+	public String readHtmlFile(String filename, StringBuffer inputSB, boolean epubaozorarubyoff) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "本文を解析します. filename=" + filename);
 
@@ -1962,6 +1962,12 @@ public class TextManager {
 						// 英文の空白が埋められるのでコメントアウトにする
 						//	text = text.replaceAll(" ", "");
 
+						if (epubaozorarubyoff) {
+							if (tag_level_rt == 0) {
+								// 本文中の《》を私用領域文字へ置換
+								text = text.replace("《", "\uE000").replace("》", "\uE001");
+							}
+						}
 						if (tag_level_title > 0) {
 							if (!text.isEmpty()) {
 								// タイトル文字列設定
@@ -2011,7 +2017,7 @@ public class TextManager {
 	ArrayList<EpubFile> mToc = new ArrayList<EpubFile>();
 
 	// xmlを解析して青空文庫に変換する
-	public void formatTextFile(int width, int height, float headfont, float textfont, float rubifont, float space_w, float space_h, int margin_w, int margin_h, int pic_scale, String fontfile, int ascmode) {
+	public void formatTextFile(int width, int height, float headfont, float textfont, float rubifont, float space_w, float space_h, int margin_w, int margin_h, int pic_scale, String fontfile, int ascmode, boolean epubaozorarubyoff) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. width=" + width + ",  height=" + height + ", headfont=" + headfont + ", textfont=" + textfont + ", rubifont=" + rubifont);
 
@@ -2056,6 +2062,7 @@ public class TextManager {
 		}
 
 		mAscMode = ascmode;
+		boolean mEpubAozoraRubyOff = (epubaozorarubyoff && mFileType == FileData.FILETYPE_EPUB) ? true : false;
 
 		String title = "";
 		String filename = mTextFile;
@@ -2099,7 +2106,7 @@ public class TextManager {
 				DEF.sendMessage(mHandler, DEF.HMSG_HTML_PARSE, progress, mSpine.size(), null);
 				filename = mSpine.get(epubFileIndex).getHref();
 				if (title == null || title.isEmpty()) {
-					title = readHtmlFile(filename, inputSB);
+					title = readHtmlFile(filename, inputSB, mEpubAozoraRubyOff);
 				}
 			}
 		}
@@ -5588,6 +5595,9 @@ public class TextManager {
 					tb.setRubiTarget();
 				}
 				else {
+					// 本文中の私用領域文字を《》へ置換
+					if (code == '\uE000') code = '《';
+					if (code == '\uE001') code = '》';
 					// 文字種別を取得
 					int chartype = getCharType(code);
 					char[] extdata = null;

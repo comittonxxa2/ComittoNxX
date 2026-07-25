@@ -8,6 +8,7 @@ import java.util.Date;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetCacheActivity;
+import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetHardwareTextViewerKeyActivity;
 import src.comitton.dialog.ToolbarDialog;
 import src.comitton.fileaccess.FileAccess;
@@ -169,6 +170,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private int mGradColor;
 	private int mGradation;
 	private int mSrchColor;
+	private boolean mEpubAozoraRubyOff;
 
 	// 設定値の保持
 	private int mClickArea = 16;
@@ -804,7 +806,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mImageMgr.LoadImageList(0, 0, 0, 0, 0);
 			mTextMgr = new TextManager(mImageMgr, mTextName, mUser, mPass, handler, mActivity, mFileType);
 			//mTextMgr.LoadTextFile();
-			mTextMgr.formatTextFile(mTextWidth, mTextHeight, mHeadSize, mBodySize, mRubiSize, mSpaceW, mSpaceH, mMarginW, mMarginH, mPicSize, mFontFile, mAscMode);
+			mTextMgr.formatTextFile(mTextWidth, mTextHeight, mHeadSize, mBodySize, mRubiSize, mSpaceW, mSpaceH, mMarginW, mMarginH, mPicSize, mFontFile, mAscMode, mEpubAozoraRubyOff);
 
 			if (mTextMgr.length() == 0) {
 				DEF.sendMessage(mActivity, R.string.ErrorNoPages, DEF.HMSG_TOAST, mHandler);
@@ -3604,6 +3606,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mRevtRota = SetCommonActivity.getReverseRotate(sharedPreferences);
 		mScaleMode = SetTextActivity.getIniScale(sharedPreferences);
 		mAscMode = SetTextActivity.getAscMode(sharedPreferences);
+		mEpubAozoraRubyOff = SetEpubActivity.getEpubAozoraRubyOff(sharedPreferences);
 
 		mNotice = SetTextActivity.getNotice(sharedPreferences);
 		mForceNotice = SetCommonActivity.getForceHideStatusBar(sharedPreferences);
