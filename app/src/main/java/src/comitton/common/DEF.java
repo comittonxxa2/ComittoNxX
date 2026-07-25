@@ -1764,6 +1764,7 @@ public class DEF {
 	public static final String KEY_EP_THUMB = "epubThumb";
 	public static final String KEY_EP_WEBVIEW = "epubWebView";
 	public static final String KEY_EP_INITVIEW = "epubInitView";
+	public static final String KEY_EP_AOZORARUBYOFF = "epubAozoraRubyOff";
 
 	public static final String KEY_TX_MGNRGB = "txMgnRGB";
 	public static final String KEY_TX_CNTRGB = "txCntRGB";
