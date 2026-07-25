@@ -2496,6 +2496,10 @@ public class ImageManager extends InputStream implements Runnable {
 
 		int count = 0;
 		while (true) {
+			if (!mRunningFlag) {
+				// 読み込み処理中断
+				break;
+			}
 			FileListItem fl = dirGetFileListItem();
 			if (fl == null) {
 				break;
@@ -2505,6 +2509,8 @@ public class ImageManager extends InputStream implements Runnable {
 			if (maxorglen < fl.orglen) {
 				maxorglen = fl.orglen;
 			}
+			// 使用されていないのでコメントアウトにした
+			/*
 			// 読込通知
 			oldPercent = nowPercent;
 			// 割合を計算する
@@ -2528,6 +2534,7 @@ public class ImageManager extends InputStream implements Runnable {
 				message.setData(bundle);
 				mHandler.sendMessage(message);
 			}
+			*/
 		}
 
 		sort(list);
@@ -2550,17 +2557,25 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		mFileList = (FileListItem[]) list.toArray(new FileListItem[0]);
 		mMaxOrgLength = maxorglen;
+		// アニメーションファイルを有効にしない場合は戻る
+		if (!mAnimationEnable) return;
 
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mActivity);
 		boolean mAnimationScan = SetImageActivity.getAnimationScan(sp);
 
 		List<AnimeList> animelist = new ArrayList<AnimeList>();
-		mMessageMode = DEF.MESSAGE_IMAGE_START;
-		sendProgress(0, 0, 0, 0);
+		if (mAnimationScan) {
+			mMessageMode = DEF.MESSAGE_IMAGE_START;
+			sendProgress(0, 0, 0, 0);
+		}
 		for (int i = 0; i < mFileList.length; i++) {
 			boolean enable = false;
 			boolean fileon = false;
 			File file = null;
+			if (!mRunningFlag) {
+				// 読み込み処理中断
+				break;
+			}
 			if (!(mFileList[i].exttype == FileData.EXTTYPE_WEBP) && !(mFileList[i].exttype == FileData.EXTTYPE_GIF)) {
 				// WebP/Gifファイル以外は何もしない
 			}
@@ -2606,8 +2621,10 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 			animelist.add(new AnimeList(enable, fileon, file));
 		}
-		mMessageMode = DEF.MESSAGE_IMAGE_END;
-		sendProgress(0, 0, 0, 0);
+		if (mAnimationScan) {
+			mMessageMode = DEF.MESSAGE_IMAGE_END;
+			sendProgress(0, 0, 0, 0);
+		}
 		mAnimeList = (AnimeList[]) animelist.toArray(new AnimeList[0]);
 
 		Logcat.d(logLevel, "終了します. ");
@@ -2792,7 +2809,8 @@ public class ImageManager extends InputStream implements Runnable {
 			filelist.name = "Page" + (page+1);
 			filelist.orglen = 0; // ファイルリスト読込中
 			mFileList[page] = filelist;
-
+			// 使用されていないのでコメントアウトにした
+			/*
 			oldPercent = nowPercent;
 			// 割合を計算する
 			nowPercent = (int)(((float)page / (float)maxPage + 0.005) * 100);
@@ -2814,6 +2832,7 @@ public class ImageManager extends InputStream implements Runnable {
 				message.setData(bundle);
 				mHandler.sendMessage(message);
 			}
+			*/
 		}
 		Logcat.d(logLevel, "終了します.");
 	}
@@ -3686,9 +3705,19 @@ public class ImageManager extends InputStream implements Runnable {
 				OutputStream out = new FileOutputStream(tempFile)) {
 				// 16KBのバッファ
 				byte[] buffer = new byte[16384];
+				boolean stop = false;
 				int bytesRead;
 				// データを読み込みながらローカルファイルへ書き出す
 				while ((bytesRead = in.read(buffer)) != -1) {
+					// スレッド中断チェック(ゾンビプロセス防止)
+					if (Thread.currentThread().isInterrupted()) {
+						stop = true;
+						break;
+					}
+					if (!mRunningFlag) {
+						stop = true;
+						break;
+					}
 					out.write(buffer, 0, bytesRead);
 					if (message) {
 						readsize += bytesRead;
@@ -3698,6 +3727,20 @@ public class ImageManager extends InputStream implements Runnable {
 				}
 				// 残りのデータを確実に書き出す
 				out.flush();
+				// 書き込みを確定させる
+				if (out instanceof FileOutputStream) {
+					((FileOutputStream) out).getFD().sync();
+				}
+				if (stop) {
+					// 強制的に終了した場合は削除
+					try {
+						if (tempFile.exists()) {
+							tempFile.delete();
+						}
+					}
+					catch (Exception e) {
+					}
+				}
 			}
 			if (message) {
 				mMessageMode = DEF.MESSAGE_IMAGE_END;

@@ -5364,6 +5364,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// タップ操作の設定の編集中だった場合は解除して戻る
 			mTapEditMode = false;
 			mImageView.ViewTapSw(false);
+			// 再描画
+			setBitmapImage();
 			return;
 		}
 		if (mFloatingIconCursorSw) {
@@ -6175,6 +6177,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			case DEF.MENU_TAP_SETTING: {
 				if (TouchPanelView.GetEditMode()) {
+					// アニメーションを表示しない
+					stopGifAnimation();
 					// タップ操作の設定の編集中にする
 					mTapEditMode = true;
 					mImageView.ViewTapSw(true);
