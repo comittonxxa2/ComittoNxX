@@ -21,6 +21,11 @@
             android:key="epubWebView"
             android:summary="Display the EPUB xhtml file in WebView (it will take some time to load as it will be displayed in a web browser)"
             android:title="Use a WebView-based EPUB viewer" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="epubAozoraRubyOff"
+            android:summary="Check this box to avoid converting Aozora Bunko-style ruby ​​(《》).\nWebView-based EPUB viewers ignore Aozora Bunko-style ruby ​​(《》)."
+            android:title="Ignore Aozora Bunko-style ruby." />
     </PreferenceCategory>
     <PreferenceCategory android:title="WebView-based EPUB viewer settings (* indicates settings common to text viewer settings)" >
         <ListPreference
