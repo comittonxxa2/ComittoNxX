@@ -428,6 +428,12 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		return flag;
 	}
 
+	public static boolean getEpubAozoraRubyOff(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_EP_AOZORARUBYOFF, false);
+		return flag;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getInitViewSummary(SharedPreferences sharedPreferences){
 		int val = getInitView(sharedPreferences);
