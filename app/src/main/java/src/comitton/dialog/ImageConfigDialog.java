@@ -3,6 +3,7 @@ package src.comitton.dialog;
 import java.util.EventListener;
 
 import src.comitton.common.DEF;
+import src.comitton.common.ExternalFilterData;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetImageActivity;
 import src.comitton.dialog.ListDialog.ListSelectListener;
@@ -21,13 +22,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.RadioButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import android.widget.Spinner;
 import android.view.View.OnClickListener;
 
 import androidx.annotation.StyleRes;
@@ -47,6 +52,17 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private final int SELLIST_MARGIN_CUTCOLOR = 4;
 	private final int SELLIST_DISPLAY_POSITION = 5;
 	private final int SELLIST_SCROLL_DIRECTION = 6;
+
+	private final int SELECT_FILTER_BILATERAL = 1;
+	private final int SELECT_FILTER_GUIDED = 2;
+	private final int SELECT_FILTER_ANISOTROPIC_DIFFUSION = 3;
+	private final int SELECT_FILTER_NL_MEANS = 4;
+	private final int SELECT_FILTER_WAVELET_THRESHOLD = 5;
+	private final int SELECT_FILTER_S_CURVE = 1;
+	private final int SELECT_FILTER_ADAPTIVE_THRESHOLD = 2;
+
+	private final int SELECT_FILTER_PRE = 0;
+	private final int SELECT_FILTER_POST = 1;
 
 	private final int[] SCALENAME_ORDER = { 0, 1, 6, 2, 3, 7, 4, 5 };
 
@@ -81,6 +97,9 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private int mMgnCutColor;
 	private int mDisplayPosition;
 	private int mScrollDirection;
+	private ExternalFilterData mExternalFilterData;
+	private ExternalFilterData mexternalfilterdata;
+	private ExternalFilterData mexternalfilterdatacopy;
 	private boolean mIsSave;
 
 	private int mAlgoModeTemp;
@@ -94,6 +113,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private Button mBtnRevert;
 	private Button mBtnApply;
 	private Button mBtnOK;
+	private Button mBtnInit1;
+	private Button mBtnInit2;
 	private CheckBox mChkGray;
 	private CheckBox mChkColoring;
 	private CheckBox mChkInvert;
@@ -101,6 +122,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private CheckBox mChkTopSingle;
 	private CheckBox mChkIsSave;
 	private CheckBox mChkRgbLevel;
+	private CheckBox mChkExtFilter;
+	private Spinner mSpinnerExtFilter1;
+	private Spinner mSpinnerExtFilter2;
+	private Spinner mSpinnerExtFilter3;
+	private Spinner mSpinnerExtFilter4;
 	private TextView mTxtSharpen;
 	private TextView mTxtBright;
 	private TextView mTxtGamma;
@@ -112,6 +138,28 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private TextView mTxtRedLevel;
 	private TextView mTxtGreenLevel;
 	private TextView mTxtBlueLevel;
+	private TextView mTxtExtFilter1;
+	private TextView mTxtExtFilter2;
+	private TextView mTxtExtFilter3;
+	private TextView mTxtExtFilter4;
+	private TextView mTxtRadius;
+	private TextView mTxtSigmaspatial;
+	private TextView mTxtSigmarange;
+	private TextView mTxtGuidedr;
+	private TextView mTxtGuidedeps;
+	private TextView mTxtAditerations;
+	private TextView mTxtAdk;
+	private TextView mTxtAdlambda;
+	private TextView mTxtNlmsearchwindow;
+	private TextView mTxtNlmpatchsize;
+	private TextView mTxtNlmh;
+	private TextView mTxtWaveletthreshold;
+	private TextView mTxtScurvegain;
+	private TextView mTxtScurvecutoff;
+	private TextView mTxtAdaptivewindowsize;
+	private TextView mTxtAdaptivec;
+	private TextView mTxtInit1;
+	private TextView mTxtInit2;
 	private SeekBar mSkbSharpen;
 	private SeekBar mSkbBright;
 	private SeekBar mSkbGamma;
@@ -123,6 +171,22 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private SeekBar mSkbRedLevel;
 	private SeekBar mSkbGreenLevel;
 	private SeekBar mSkbBlueLevel;
+	private SeekBar mSkbRadius;
+	private SeekBar mSkbSigmaspatial;
+	private SeekBar mSkbSigmarange;
+	private SeekBar mSkbGuidedr;
+	private SeekBar mSkbGuidedeps;
+	private SeekBar mSkbAditerations;
+	private SeekBar mSkbAdk;
+	private SeekBar mSkbAdlambda;
+	private SeekBar mSkbNlmsearchwindow;
+	private SeekBar mSkbNlmpatchsize;
+	private SeekBar mSkbNlmh;
+	private SeekBar mSkbWaveletthreshold;
+	private SeekBar mSkbScurvegain;
+	private SeekBar mSkbScurvecutoff;
+	private SeekBar mSkbAdaptivewindowsize;
+	private SeekBar mSkbAdaptivec;
 	private TextView mTxtAlgoMode;
 	private TextView mTxtDispMode;
 	private TextView mTxtScaleMode;
@@ -137,6 +201,9 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private Button mBtnMgncutColor;
 	private Button mBtnDisplayPosition;
 	private Button mBtnScrollDirection;
+	private RadioGroup mRadioGroup;
+	private RadioButton mRadioButtonPre;
+	private RadioButton mRadioButtonPost;
 
 	private String mAlgoModeTitle;
 	private String mDispModeTitle;
@@ -158,6 +225,23 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private String mGreenLevelStr;
 	private String mBlueLevelStr;
 
+	private String mRadiusStr;
+	private String mSigmaspatialStr;
+	private String mSigmarangeStr;
+	private String mGuidedrStr;
+	private String mGuidedepsStr;
+	private String mAditerationsStr;
+	private String mAdkStr;
+	private String mAdlambdaStr;
+	private String mNlmsearchwindowStr;
+	private String mNlmpatchsizeStr;
+	private String mNlmhStr;
+	private String mWaveletthresholdStr;
+	private String mScurvegainStr;
+	private String mScurvecutoffStr;
+	private String mAdaptivewindowsizeStr;
+	private String mAdaptivecStr;
+
 	private String mAutoStr;
 	private static String mNoneStr;
 	private String mDegreeStr;
@@ -173,6 +257,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private int mSelectMode;
 	private int mCommandId;
 	private static int[] mKelvinRgb = { 100, 100, 100 };
+	private static float[] mGuided_eps_data = { 0.001f, 0.002f, 0.005f, 0.01f, 0.02f, 0.05f, 0.1f };
+	private final int SELECT_GUIDED_INIT = 3;
 
 	public ImageConfigDialog(AppCompatActivity activity, @StyleRes int themeResId, int command_id, boolean isclose, MenuDialog.MenuSelectListener listener) {
 		super(activity, themeResId, isclose, false, false, true, listener);
@@ -253,7 +339,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		addItem(inflater.inflate(R.layout.imageconfig_other, null, false));
 	}
 
-	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
+	public void setConfig(boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel, ExternalFilterData externalfilterdata) {
 		mGray = gray;
 		mColoring = coloring;
 		mInvert = invert;
@@ -282,6 +368,12 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mDisplayPositionTemp = mDisplayPosition = displayposition;
 		mScrollDirectionTemp = mScrollDirection = scrolldirection;
 		mKelvinRgb = ImageManager.getRGBFromKelvin(kelvin);
+		mExternalFilterData = externalfilterdata;
+		if (mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) {
+			// 複製を作成
+			mexternalfilterdata = mExternalFilterData.clone();
+			mexternalfilterdatacopy = mExternalFilterData.clone();
+		}
 
 		mIsSave = issave;
 	}
@@ -308,6 +400,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mChkMoire = mChkMoire != null ? mChkMoire : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_moire);
 			mChkTopSingle = mChkTopSingle != null ? mChkTopSingle : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_topsingle);
 			mChkRgbLevel = mChkRgbLevel != null ? mChkRgbLevel : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_rgblevelenable);
+			mChkExtFilter = mChkExtFilter != null ? mChkExtFilter : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_extfilter);
+			mSpinnerExtFilter1 = mSpinnerExtFilter1 != null ? mSpinnerExtFilter1 : (Spinner) mViewArray.get(i).findViewById(R.id.spinner_extfilter1);
+			mSpinnerExtFilter2 = mSpinnerExtFilter2 != null ? mSpinnerExtFilter2 : (Spinner) mViewArray.get(i).findViewById(R.id.spinner_extfilter2);
+			mSpinnerExtFilter3 = mSpinnerExtFilter3 != null ? mSpinnerExtFilter3 : (Spinner) mViewArray.get(i).findViewById(R.id.spinner_extfilter3);
+			mSpinnerExtFilter4 = mSpinnerExtFilter4 != null ? mSpinnerExtFilter4 : (Spinner) mViewArray.get(i).findViewById(R.id.spinner_extfilter4);
 
 			mTxtSharpen = mTxtSharpen != null ? mTxtSharpen : (TextView) mViewArray.get(i).findViewById(R.id.label_sharpen);
 			mTxtBright = mTxtBright != null ? mTxtBright : (TextView) mViewArray.get(i).findViewById(R.id.label_bright);
@@ -320,6 +417,26 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtGreenLevel = mTxtGreenLevel != null ? mTxtGreenLevel : (TextView) mViewArray.get(i).findViewById(R.id.label_greenlevel) ;
 			mTxtBlueLevel = mTxtBlueLevel != null ? mTxtBlueLevel : (TextView) mViewArray.get(i).findViewById(R.id.label_bluelevel) ;
 			mTxtBkLight = mTxtBkLight != null ? mTxtBkLight : (TextView) mViewArray.get(i).findViewById(R.id.label_bklight);
+			mTxtExtFilter1 = mTxtExtFilter1 != null ? mTxtExtFilter1 : (TextView) mViewArray.get(i).findViewById(R.id.label_textextfilter1);
+			mTxtExtFilter2 = mTxtExtFilter2 != null ? mTxtExtFilter2 : (TextView) mViewArray.get(i).findViewById(R.id.label_textextfilter2);
+			mTxtExtFilter3 = mTxtExtFilter3 != null ? mTxtExtFilter3 : (TextView) mViewArray.get(i).findViewById(R.id.label_textextfilter3);
+			mTxtExtFilter4 = mTxtExtFilter4 != null ? mTxtExtFilter4 : (TextView) mViewArray.get(i).findViewById(R.id.label_textextfilter4);
+			mTxtRadius = mTxtRadius != null ? mTxtRadius : (TextView) mViewArray.get(i).findViewById(R.id.label_radius);
+			mTxtSigmaspatial = mTxtSigmaspatial != null ? mTxtSigmaspatial : (TextView) mViewArray.get(i).findViewById(R.id.label_sigma_spatial);
+			mTxtSigmarange = mTxtSigmarange != null ? mTxtSigmarange : (TextView) mViewArray.get(i).findViewById(R.id.label_sigma_range);
+			mTxtGuidedr = mTxtGuidedr != null ? mTxtGuidedr : (TextView) mViewArray.get(i).findViewById(R.id.label_guided_r);
+			mTxtGuidedeps = mTxtGuidedeps != null ? mTxtGuidedeps : (TextView) mViewArray.get(i).findViewById(R.id.label_guided_eps);
+			mTxtAditerations = mTxtAditerations != null ? mTxtAditerations : (TextView) mViewArray.get(i).findViewById(R.id.label_ad_iterations);
+			mTxtAdk = mTxtAdk != null ? mTxtAdk : (TextView) mViewArray.get(i).findViewById(R.id.label_ad_k);
+			mTxtAdlambda = mTxtAdlambda != null ? mTxtAdlambda : (TextView) mViewArray.get(i).findViewById(R.id.label_ad_lambda);
+			mTxtNlmsearchwindow = mTxtNlmsearchwindow != null ? mTxtNlmsearchwindow : (TextView) mViewArray.get(i).findViewById(R.id.label_nlm_search_window);
+			mTxtNlmpatchsize = mTxtNlmpatchsize != null ? mTxtNlmpatchsize : (TextView) mViewArray.get(i).findViewById(R.id.label_nlm_patch_size);
+			mTxtNlmh = mTxtNlmh != null ? mTxtNlmh : (TextView) mViewArray.get(i).findViewById(R.id.label_nlm_h);
+			mTxtWaveletthreshold = mTxtWaveletthreshold != null ? mTxtWaveletthreshold : (TextView) mViewArray.get(i).findViewById(R.id.label_wavelet_threshold);
+			mTxtScurvegain = mTxtScurvegain != null ? mTxtScurvegain : (TextView) mViewArray.get(i).findViewById(R.id.label_scurve_gain);
+			mTxtScurvecutoff = mTxtScurvecutoff != null ? mTxtScurvecutoff : (TextView) mViewArray.get(i).findViewById(R.id.label_scurve_cutoff);
+			mTxtAdaptivewindowsize = mTxtAdaptivewindowsize != null ? mTxtAdaptivewindowsize : (TextView) mViewArray.get(i).findViewById(R.id.label_adaptive_window_size);
+			mTxtAdaptivec = mTxtAdaptivec != null ? mTxtAdaptivec : (TextView) mViewArray.get(i).findViewById(R.id.label_adaptive_c);
 
 			mSkbSharpen = mSkbSharpen != null ? mSkbSharpen : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_sharpen);
 			mSkbBright = mSkbBright != null ? mSkbBright : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bright);
@@ -332,6 +449,22 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mSkbGreenLevel = mSkbGreenLevel != null ? mSkbGreenLevel : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_greenlevel);
 			mSkbBlueLevel = mSkbBlueLevel != null ? mSkbBlueLevel : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bluelevel);
 			mSkbBkLight = mSkbBkLight != null ? mSkbBkLight : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_bklight);
+			mSkbRadius = mSkbRadius != null ? mSkbRadius : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_radius);
+			mSkbSigmaspatial = mSkbSigmaspatial != null ? mSkbSigmaspatial : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_sigma_spatial);
+			mSkbSigmarange = mSkbSigmarange != null ? mSkbSigmarange : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_sigma_range);
+			mSkbGuidedr = mSkbGuidedr != null ? mSkbGuidedr : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_guided_r);
+			mSkbGuidedeps = mSkbGuidedeps != null ? mSkbGuidedeps : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_guided_eps);
+			mSkbAditerations = mSkbAditerations != null ? mSkbAditerations : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_ad_iterations);
+			mSkbAdk = mSkbAdk != null ? mSkbAdk : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_ad_k);
+			mSkbAdlambda = mSkbAdlambda != null ? mSkbAdlambda : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_ad_lambda);
+			mSkbNlmsearchwindow = mSkbNlmsearchwindow != null ? mSkbNlmsearchwindow : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_nlm_search_window);
+			mSkbNlmpatchsize = mSkbNlmpatchsize != null ? mSkbNlmpatchsize : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_nlm_patch_size);
+			mSkbNlmh = mSkbNlmh != null ? mSkbNlmh : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_nlm_h);
+			mSkbWaveletthreshold = mSkbWaveletthreshold != null ? mSkbWaveletthreshold : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_wavelet_threshold);
+			mSkbScurvegain = mSkbScurvegain != null ? mSkbScurvegain : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_scurve_gain);
+			mSkbScurvecutoff = mSkbScurvecutoff != null ? mSkbScurvecutoff : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_scurve_cutoff);
+			mSkbAdaptivewindowsize = mSkbAdaptivewindowsize != null ? mSkbAdaptivewindowsize : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_adaptive_window_size);
+			mSkbAdaptivec = mSkbAdaptivec != null ? mSkbAdaptivec : (SeekBar) mViewArray.get(i).findViewById(R.id.seek_adaptive_c);
 
 			mTxtAlgoMode = mTxtAlgoMode != null ? mTxtAlgoMode : (TextView) mViewArray.get(i).findViewById(R.id.label_algomode);
 			mTxtDispMode = mTxtDispMode != null ? mTxtDispMode : (TextView) mViewArray.get(i).findViewById(R.id.label_spread);
@@ -340,6 +473,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mTxtMgncutColor = mTxtMgncutColor != null ? mTxtMgncutColor : (TextView) mViewArray.get(i).findViewById(R.id.label_mgncutcolor);
 			mTxtDisplayPosition = mTxtDisplayPosition != null ? mTxtDisplayPosition : (TextView) mViewArray.get(i).findViewById(R.id.label_displayposition);
 			mTxtScrollDirection = mTxtScrollDirection != null ? mTxtScrollDirection : (TextView) mViewArray.get(i).findViewById(R.id.label_scrolldirection);
+			mTxtInit1 = mTxtInit1 != null ? mTxtInit1 : (TextView) mViewArray.get(i).findViewById(R.id.label_init1);
+			mTxtInit2 = mTxtInit2 != null ? mTxtInit2 : (TextView) mViewArray.get(i).findViewById(R.id.label_init2);
 
 			mBtnAlgoMode = mBtnAlgoMode != null ? mBtnAlgoMode : (Button) mViewArray.get(i).findViewById(R.id.btn_algomode);
 			mBtnDispMode = mBtnDispMode != null ? mBtnDispMode : (Button) mViewArray.get(i).findViewById(R.id.btn_spread);
@@ -348,6 +483,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mBtnMgncutColor = mBtnMgncutColor != null ? mBtnMgncutColor : (Button) mViewArray.get(i).findViewById(R.id.btn_mgncutcolor);
 			mBtnDisplayPosition = mBtnDisplayPosition != null ? mBtnDisplayPosition : (Button) mViewArray.get(i).findViewById(R.id.btn_displayposition);
 			mBtnScrollDirection = mBtnScrollDirection != null ? mBtnScrollDirection : (Button) mViewArray.get(i).findViewById(R.id.btn_scrolldirection);
+			mRadioGroup = mRadioGroup != null ? mRadioGroup : (RadioGroup) mViewArray.get(i).findViewById(R.id.radioGroupFilter);
+			mRadioButtonPre = mRadioButtonPre != null ? mRadioButtonPre : (RadioButton) mViewArray.get(i).findViewById(R.id.radio_extprefilter);
+			mRadioButtonPost = mRadioButtonPost != null ? mRadioButtonPost : (RadioButton) mViewArray.get(i).findViewById(R.id.radio_extpostfilter);
+			mBtnInit1 = mBtnInit1 != null ? mBtnInit1 : (Button) mViewArray.get(i).findViewById(R.id.button_init1);
+			mBtnInit2 = mBtnInit2 != null ? mBtnInit2 : (Button) mViewArray.get(i).findViewById(R.id.button_init2);
 		}
 
 		mKelvinRgb = ImageManager.getRGBFromKelvin(mKelvin);
@@ -393,6 +533,42 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			}
 		});
 
+		if (mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) {
+			if (mChkExtFilter != null) mChkExtFilter.setChecked(mexternalfilterdata.mCheckExtFilter);
+			if (mRadioButtonPre != null) mRadioButtonPre.setChecked((mexternalfilterdata.mRadioFilter == SELECT_FILTER_PRE) ? true : false);
+			if (mRadioButtonPost != null) mRadioButtonPost.setChecked((mexternalfilterdata.mRadioFilter == SELECT_FILTER_POST) ? true : false);
+		}
+
+		mChkExtFilter.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (isChecked) {
+					// チェックされた時の処理
+					mexternalfilterdata.mCheckExtFilter = true;
+				}
+				else {
+					// チェックが外れた時の処理
+					mexternalfilterdata.mCheckExtFilter = false;
+				}
+				// 拡張フィルターの表示更新
+				setFilterView();
+			}
+		});
+
+		mRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(RadioGroup group, int checkedId) {
+				if (checkedId == R.id.radio_extprefilter) {
+					// 画像補間前が選択されたときの処理
+					mexternalfilterdata.mRadioFilter = SELECT_FILTER_PRE;
+				}
+				else if (checkedId == R.id.radio_extpostfilter) {
+					// 画像補間後が選択されたときの処理
+					mexternalfilterdata.mRadioFilter = SELECT_FILTER_POST;
+				}
+			}
+		});
+
 		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF) {
 			mChkGray.setVisibility(View.GONE);
 			mChkColoring.setVisibility(View.GONE);
@@ -421,6 +597,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mChkMoire.setVisibility(View.GONE);
 			mChkTopSingle.setVisibility(View.GONE);
 
+			mChkExtFilter.setVisibility(View.GONE);
 			mTxtAlgoMode.setVisibility(View.GONE);
 			mTxtDispMode.setVisibility(View.GONE);
 			mTxtScaleMode.setVisibility(View.GONE);
@@ -436,6 +613,11 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mBtnMgncutColor.setVisibility(View.GONE);
 			mBtnDisplayPosition.setVisibility(View.GONE);
 			mBtnScrollDirection.setVisibility(View.GONE);
+		}
+		if (mCommandId == DEF.MENU_SHARPEN || mCommandId == DEF.MENU_BRIGHT || mCommandId == DEF.MENU_GAMMA || mCommandId == DEF.MENU_BKLIGHT || mCommandId == DEF.MENU_CONTRAST || mCommandId == DEF.MENU_HUE || mCommandId == DEF.MENU_SATURATION || mCommandId == DEF.MENU_KELVIN) {
+			// 拡張フィルター以外の場合は表示させない
+			mChkExtFilter.setVisibility(View.GONE);
+			setFilterView();
 		}
 		if (mCommandId != DEF.MENU_IMGCONF && mCommandId != DEF.MENU_WEBIMGCONF && mCommandId != DEF.MENU_SHARPEN) {
 			mTxtSharpen.setVisibility(View.GONE);
@@ -477,6 +659,9 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mSkbBlueLevel.setVisibility(View.GONE);
 		}
 
+		// 拡張フィルターの表示更新
+		setFilterView();
+
 		if (mChkGray != null) mChkGray.setChecked(mGray);
 		if (mChkColoring != null) mChkColoring.setChecked(mColoring);
 		if (mChkInvert != null) mChkInvert.setChecked(mInvert);
@@ -493,14 +678,36 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mTxtHue != null) mHueStr = mTxtHue.getText().toString();
 		if (mTxtSaturation != null) mSaturationStr = mTxtSaturation.getText().toString();
 		if (mTxtKelvin != null) mKelvinStr = mTxtKelvin.getText().toString();
-		if (mTxtSharpen != null && mTxtSharpen != null) mTxtSharpen.setText(mSharpenStr.replaceAll("%", getSharpenStr(getContext(), mSharpen)));
-		if (mTxtBright != null && mTxtBright != null) mTxtBright.setText(mBrightStr.replaceAll("%", getBrightGammaStr(getContext(), mBright)));
-		if (mTxtGamma != null && mTxtGamma != null) mTxtGamma.setText(mGammaStr.replaceAll("%", getBrightGammaStr(getContext(), mGamma)));
-		if (mTxtBkLight != null && mTxtBkLight != null) mTxtBkLight.setText(mBkLightStr.replaceAll("%", getBkLight(mBkLight)));
-		if (mTxtContrast != null && mTxtContrast != null) mTxtContrast.setText(mContrastStr.replaceAll("%", getBrightGammaStr(getContext(), mContrast)));
-		if (mTxtHue != null && mTxtHue != null) mTxtHue.setText(mHueStr.replaceAll("%", getBrightGammaStr(getContext(), mHue)));
-		if (mTxtSaturation != null && mTxtSaturation != null) mTxtSaturation.setText(mSaturationStr.replaceAll("%", getBrightGammaStr(getContext(), mSaturation)));
-		if (mTxtKelvin != null && mTxtKelvin != null) mTxtKelvin.setText(mKelvinStr.replaceAll("%", getBrightGammaStr(getContext(), mKelvin)));
+		if (mTxtSharpen != null) mTxtSharpen.setText(mSharpenStr.replaceAll("%", getSharpenStr(getContext(), mSharpen)));
+		if (mTxtBright != null) mTxtBright.setText(mBrightStr.replaceAll("%", getBrightGammaStr(getContext(), mBright)));
+		if (mTxtGamma != null) mTxtGamma.setText(mGammaStr.replaceAll("%", getBrightGammaStr(getContext(), mGamma)));
+		if (mTxtBkLight != null) mTxtBkLight.setText(mBkLightStr.replaceAll("%", getBkLight(mBkLight)));
+		if (mTxtContrast != null) mTxtContrast.setText(mContrastStr.replaceAll("%", getBrightGammaStr(getContext(), mContrast)));
+		if (mTxtHue != null) mTxtHue.setText(mHueStr.replaceAll("%", getBrightGammaStr(getContext(), mHue)));
+		if (mTxtSaturation != null) mTxtSaturation.setText(mSaturationStr.replaceAll("%", getBrightGammaStr(getContext(), mSaturation)));
+		if (mTxtKelvin != null) mTxtKelvin.setText(mKelvinStr.replaceAll("%", getBrightGammaStr(getContext(), mKelvin)));
+
+		if (mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) {
+			if (mTxtRadius != null) mRadiusStr = mTxtRadius.getText().toString();
+			if (mTxtRadius != null) mTxtRadius.setText(mRadiusStr.replaceAll("%",getRadiusStr(mexternalfilterdata.mRadius)));
+			if (mTxtSigmaspatial != null) mSigmaspatialStr = mTxtSigmaspatial.getText().toString();
+			if (mTxtSigmaspatial != null) mTxtSigmaspatial.setText(mSigmaspatialStr.replaceAll("%",getSigmaspatialStr((int)(mexternalfilterdata.mSigma_spatial * 10))));
+			if (mTxtSigmarange != null) mSigmarangeStr = mTxtSigmarange.getText().toString();
+			if (mTxtSigmarange != null) mTxtSigmarange.setText(mSigmarangeStr.replaceAll("%",getSigmarangeStr((int)(mexternalfilterdata.mSigma_range))));
+			if (mTxtGuidedr != null) mGuidedrStr = mTxtGuidedr.getText().toString();
+			if (mTxtGuidedeps != null) mGuidedepsStr = mTxtGuidedeps.getText().toString();
+			if (mTxtAditerations != null) mAditerationsStr = mTxtAditerations.getText().toString();
+			if (mTxtAdk != null) mAdkStr = mTxtAdk.getText().toString();
+			if (mTxtAdlambda != null) mAdlambdaStr = mTxtAdlambda.getText().toString();
+			if (mTxtNlmsearchwindow != null) mNlmsearchwindowStr = mTxtNlmsearchwindow.getText().toString();
+			if (mTxtNlmpatchsize != null) mNlmpatchsizeStr = mTxtNlmpatchsize.getText().toString();
+			if (mTxtNlmh != null) mNlmhStr = mTxtNlmh.getText().toString();
+			if (mTxtWaveletthreshold != null) mWaveletthresholdStr = mTxtWaveletthreshold.getText().toString();
+			if (mTxtScurvegain != null) mScurvegainStr = mTxtScurvegain.getText().toString();
+			if (mTxtScurvecutoff != null) mScurvecutoffStr = mTxtScurvecutoff.getText().toString();
+			if (mTxtAdaptivewindowsize != null) mAdaptivewindowsizeStr = mTxtAdaptivewindowsize.getText().toString();
+			if (mTxtAdaptivec != null) mAdaptivecStr = mTxtAdaptivec.getText().toString();
+		}
 
 		if (mSkbSharpen != null) mSkbSharpen.setMax(32);
 		if (mSkbSharpen != null) mSkbSharpen.setOnSeekBarChangeListener(this);
@@ -525,6 +732,45 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbBlueLevel != null) mSkbBlueLevel.setMax(100);
 		if (mSkbBlueLevel != null) mSkbBlueLevel.setOnSeekBarChangeListener(this);
 
+		if (mSkbRadius != null) mSkbRadius.setMax(9);
+		if (mSkbRadius != null) mSkbRadius.setOnSeekBarChangeListener(this);
+		if (mSkbSigmaspatial != null) mSkbSigmaspatial.setMax(95);
+		if (mSkbSigmaspatial != null) mSkbSigmaspatial.setOnSeekBarChangeListener(this);
+		if (mSkbSigmarange != null) mSkbSigmarange.setMax(99);
+		if (mSkbSigmarange != null) mSkbSigmarange.setOnSeekBarChangeListener(this);
+
+		if (mSkbGuidedr != null) mSkbGuidedr.setMax(19);
+		if (mSkbGuidedr != null) mSkbGuidedr.setOnSeekBarChangeListener(this);
+		if (mSkbGuidedeps != null) mSkbGuidedeps.setMax(mGuided_eps_data.length - 1);
+		if (mSkbGuidedeps != null) mSkbGuidedeps.setOnSeekBarChangeListener(this);
+
+		if (mSkbAditerations != null) mSkbAditerations.setMax(19);
+		if (mSkbAditerations != null) mSkbAditerations.setOnSeekBarChangeListener(this);
+		if (mSkbAdk != null) mSkbAdk.setMax(98);
+		if (mSkbAdk != null) mSkbAdk.setOnSeekBarChangeListener(this);
+		if (mSkbAdlambda != null) mSkbAdlambda.setMax(24);
+		if (mSkbAdlambda != null) mSkbAdlambda.setOnSeekBarChangeListener(this);
+
+		if (mSkbNlmsearchwindow != null) mSkbNlmsearchwindow.setMax(10);
+		if (mSkbNlmsearchwindow != null) mSkbNlmsearchwindow.setOnSeekBarChangeListener(this);
+		if (mSkbNlmpatchsize != null) mSkbNlmpatchsize.setMax(3);
+		if (mSkbNlmpatchsize != null) mSkbNlmpatchsize.setOnSeekBarChangeListener(this);
+		if (mSkbNlmh != null) mSkbNlmh.setMax(58);
+		if (mSkbNlmh != null) mSkbNlmh.setOnSeekBarChangeListener(this);
+
+		if (mSkbWaveletthreshold != null) mSkbWaveletthreshold.setMax(100);
+		if (mSkbWaveletthreshold != null) mSkbWaveletthreshold.setOnSeekBarChangeListener(this);
+
+		if (mSkbScurvegain != null) mSkbScurvegain.setMax(58);
+		if (mSkbScurvegain != null) mSkbScurvegain.setOnSeekBarChangeListener(this);
+		if (mSkbScurvecutoff != null) mSkbScurvecutoff.setMax(100);
+		if (mSkbScurvecutoff != null) mSkbScurvecutoff.setOnSeekBarChangeListener(this);
+
+		if (mSkbAdaptivewindowsize != null) mSkbAdaptivewindowsize.setMax(48);
+		if (mSkbAdaptivewindowsize != null) mSkbAdaptivewindowsize.setOnSeekBarChangeListener(this);
+		if (mSkbAdaptivec != null) mSkbAdaptivec.setMax(100);
+		if (mSkbAdaptivec != null) mSkbAdaptivec.setOnSeekBarChangeListener(this);
+
 		// 初期値が0だと表示が更新されないので故意にずらした値で設定を入れる
 		if (mSkbSharpen != null) mSkbSharpen.setProgress(32 - mSharpen);
 		if (mSkbSharpen != null) mSkbSharpen.setProgress(mSharpen);
@@ -541,6 +787,75 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mSkbSaturation != null) mSkbSaturation.setProgress(mSaturation / 5);
 		if (mSkbKelvin != null) mSkbKelvin.setProgress(70 - mKelvin);
 		if (mSkbKelvin != null) mSkbKelvin.setProgress(mKelvin);
+
+		if (mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) {
+			// 1から始まるので-1する
+			if (mSkbRadius != null) mSkbRadius.setProgress(9);
+			if (mSkbRadius != null) mSkbRadius.setProgress(mexternalfilterdata.mRadius - 1);
+			// 0.5から0.1ステップで始まるので10倍して-5する
+			if (mSkbSigmaspatial != null) mSkbSigmaspatial.setProgress(95);
+			if (mSkbSigmaspatial != null) mSkbSigmaspatial.setProgress((int)(mexternalfilterdata.mSigma_spatial * 10 - 5));
+			// 1から始まるので-1する
+			if (mSkbSigmarange != null) mSkbSigmarange.setProgress(99);
+			if (mSkbSigmarange != null) mSkbSigmarange.setProgress((int)(mexternalfilterdata.mSigma_range - 1));
+
+			// 1から始まるので-1する
+			if (mSkbGuidedr != null) mSkbGuidedr.setProgress(19);
+			if (mSkbGuidedr != null) mSkbGuidedr.setProgress(mexternalfilterdata.mGuided_r - 1);
+			if (mSkbGuidedeps != null) {
+				// 目的のパラメータを探す
+				int count = -1;
+				for (int i = 0 ; i < mGuided_eps_data.length; i++) {
+					if (mGuided_eps_data[i] == mexternalfilterdata.mGuided_eps) {
+						count = i;
+						break;
+					}
+				}
+				if (count == -1) {
+					// 一覧になかった場合は0.01に初期化
+					count = SELECT_GUIDED_INIT;
+				}
+				mSkbGuidedeps.setProgress(mGuided_eps_data.length - 1);
+				mSkbGuidedeps.setProgress(count);
+			}
+
+			// 1から始まるので-1する
+			if (mSkbAditerations != null) mSkbAditerations.setProgress(19);
+			if (mSkbAditerations != null) mSkbAditerations.setProgress(mexternalfilterdata.mAd_iterations - 1);
+			// 1.0から0.5ステップで始まるので2倍して-2する
+			if (mSkbAdk != null) mSkbAdk.setProgress(98);
+			if (mSkbAdk != null) mSkbAdk.setProgress((int)(mexternalfilterdata.mAd_k * 2 - 2));
+			// 0.01から0.01ステップで始まるので100倍して-1する
+			if (mSkbAdlambda != null) mSkbAdlambda.setProgress(24);
+			if (mSkbAdlambda != null) mSkbAdlambda.setProgress((int)(mexternalfilterdata.mAd_lambda * 100 - 1));
+
+			// 5から2ステップで始まるので-5して2で割り算する
+			if (mSkbNlmsearchwindow != null) mSkbNlmsearchwindow.setProgress(10);
+			if (mSkbNlmsearchwindow != null) mSkbNlmsearchwindow.setProgress((mexternalfilterdata.mNlm_search_window - 5) / 2);
+			// 3から2ステップで始まるので-3して2で割り算する
+			if (mSkbNlmpatchsize != null) mSkbNlmpatchsize.setProgress(3);
+			if (mSkbNlmpatchsize != null) mSkbNlmpatchsize.setProgress((mexternalfilterdata.mNlm_patch_size - 3) / 2);
+			// 1.0から0.5ステップで始まるので2倍して-2する
+			if (mSkbNlmh != null) mSkbNlmh.setProgress(58);
+			if (mSkbNlmh != null) mSkbNlmh.setProgress((int)(mexternalfilterdata.mNlm_h * 2 - 2));
+
+			if (mSkbWaveletthreshold != null) mSkbWaveletthreshold.setProgress(100);
+			if (mSkbWaveletthreshold != null) mSkbWaveletthreshold.setProgress(mexternalfilterdata.mWavelet_threshold);
+
+			// 0から0.01ステップで始まるので100倍する
+			if (mSkbScurvecutoff != null) mSkbScurvecutoff.setProgress(100);
+			if (mSkbScurvecutoff != null) mSkbScurvecutoff.setProgress((int)(mexternalfilterdata.mScurve_cutoff * 100));
+			// 1.0から0.5ステップで始まるので2倍して-2する
+			if (mSkbScurvegain != null) mSkbScurvegain.setProgress(58);
+			if (mSkbScurvegain != null) mSkbScurvegain.setProgress((int)(mexternalfilterdata.mScurve_gain * 2 - 2));
+
+			// 3から2ステップで始まるので-3して2で割り算する
+			if (mSkbAdaptivewindowsize != null) mSkbAdaptivewindowsize.setProgress(48);
+			if (mSkbAdaptivewindowsize != null) mSkbAdaptivewindowsize.setProgress((mexternalfilterdata.mAdaptive_window_size - 3) / 2);
+			// -50から始まるので+50する
+			if (mSkbAdaptivec != null) mSkbAdaptivec.setProgress(mexternalfilterdata.mAdaptive_c + 50);
+		}
+
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setText(mAlgoModeItems[mAlgoMode]);
 		// ボタンの文字を小文字対応にする(Lanczos3を表示させるため)
 		if (mBtnAlgoMode != null) mBtnAlgoMode.setAllCaps(false);
@@ -560,6 +875,13 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		if (mBtnDisplayPosition != null) mBtnDisplayPosition.setOnClickListener(this);
 		if (mBtnScrollDirection != null) mBtnScrollDirection.setOnClickListener(this);
 
+		if (mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) {
+			if (mSpinnerExtFilter1 != null) mSpinnerExtFilter1.setSelection(mexternalfilterdata.mFilterStage1);
+			if (mSpinnerExtFilter2 != null) mSpinnerExtFilter2.setSelection(mexternalfilterdata.mFilterStage2);
+			if (mSpinnerExtFilter3 != null) mSpinnerExtFilter3.setSelection(mexternalfilterdata.mFilterStage3);
+			if (mSpinnerExtFilter4 != null) mSpinnerExtFilter4.setSelection(mexternalfilterdata.mFilterStage4);
+		}
+
 		mBtnOK = (Button) mView.findViewById(R.id.btn_ok);
 		mBtnApply = (Button) mView.findViewById(R.id.btn_apply);
 		mBtnRevert = (Button) mView.findViewById(R.id.btn_revert);
@@ -567,8 +889,314 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mBtnOK.setOnClickListener(this);
 		mBtnApply.setOnClickListener(this);
 		mBtnRevert.setOnClickListener(this);
+		mBtnInit1.setOnClickListener(this);
+		mBtnInit2.setOnClickListener(this);
+
+		// ドロップダウンUI
+		mSpinnerExtFilter1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+				// position が現在選択されたアイテムの位置(0始まり)
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// 何も選択されていない場合の処理
+			}
+		});
+		mSpinnerExtFilter2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+				// position が現在選択されたアイテムの位置(0始まり)
+				if (position == SELECT_FILTER_BILATERAL) {
+					mSkbRadius.setVisibility(View.VISIBLE);
+					mSkbSigmaspatial.setVisibility(View.VISIBLE);
+					mSkbSigmarange.setVisibility(View.VISIBLE);
+					mTxtRadius.setVisibility(View.VISIBLE);
+					mTxtSigmaspatial.setVisibility(View.VISIBLE);
+					mTxtSigmarange.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbRadius.setVisibility(View.GONE);
+					mSkbSigmaspatial.setVisibility(View.GONE);
+					mSkbSigmarange.setVisibility(View.GONE);
+					mTxtRadius.setVisibility(View.GONE);
+					mTxtSigmaspatial.setVisibility(View.GONE);
+					mTxtSigmarange.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_GUIDED) {
+					mSkbGuidedr.setVisibility(View.VISIBLE);
+					mSkbGuidedeps.setVisibility(View.VISIBLE);
+					mTxtGuidedr.setVisibility(View.VISIBLE);
+					mTxtGuidedeps.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbGuidedr.setVisibility(View.GONE);
+					mSkbGuidedeps.setVisibility(View.GONE);
+					mTxtGuidedr.setVisibility(View.GONE);
+					mTxtGuidedeps.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_ANISOTROPIC_DIFFUSION) {
+					mSkbAditerations.setVisibility(View.VISIBLE);
+					mSkbAdk.setVisibility(View.VISIBLE);
+					mSkbAdlambda.setVisibility(View.VISIBLE);
+					mTxtAditerations.setVisibility(View.VISIBLE);
+					mTxtAdk.setVisibility(View.VISIBLE);
+					mTxtAdlambda.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbAditerations.setVisibility(View.GONE);
+					mSkbAdk.setVisibility(View.GONE);
+					mSkbAdlambda.setVisibility(View.GONE);
+					mTxtAditerations.setVisibility(View.GONE);
+					mTxtAdk.setVisibility(View.GONE);
+					mTxtAdlambda.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_NL_MEANS) {
+					mSkbNlmsearchwindow.setVisibility(View.VISIBLE);
+					mSkbNlmpatchsize.setVisibility(View.VISIBLE);
+					mSkbNlmh.setVisibility(View.VISIBLE);
+					mTxtNlmsearchwindow.setVisibility(View.VISIBLE);
+					mTxtNlmpatchsize.setVisibility(View.VISIBLE);
+					mTxtNlmh.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbNlmsearchwindow.setVisibility(View.GONE);
+					mSkbNlmpatchsize.setVisibility(View.GONE);
+					mSkbNlmh.setVisibility(View.GONE);
+					mTxtNlmsearchwindow.setVisibility(View.GONE);
+					mTxtNlmpatchsize.setVisibility(View.GONE);
+					mTxtNlmh.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_WAVELET_THRESHOLD) {
+					mSkbWaveletthreshold.setVisibility(View.VISIBLE);
+					mTxtWaveletthreshold.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbWaveletthreshold.setVisibility(View.GONE);
+					mTxtWaveletthreshold.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_BILATERAL || position == SELECT_FILTER_GUIDED || position == SELECT_FILTER_ANISOTROPIC_DIFFUSION || position == SELECT_FILTER_NL_MEANS || position == SELECT_FILTER_WAVELET_THRESHOLD) {
+					mTxtInit1.setVisibility(View.VISIBLE);
+					mBtnInit1.setVisibility(View.VISIBLE);
+				}
+				else {
+					mTxtInit1.setVisibility(View.GONE);
+					mBtnInit1.setVisibility(View.GONE);
+				}
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// 何も選択されていない場合の処理
+			}
+		});
+		mSpinnerExtFilter3.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+				// position が現在選択されたアイテムの位置(0始まり)
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// 何も選択されていない場合の処理
+			}
+		});
+		mSpinnerExtFilter4.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+				// position が現在選択されたアイテムの位置(0始まり)
+				if (position == SELECT_FILTER_S_CURVE) {
+					mSkbScurvegain.setVisibility(View.VISIBLE);
+					mSkbScurvecutoff.setVisibility(View.VISIBLE);
+					mTxtScurvegain.setVisibility(View.VISIBLE);
+					mTxtScurvecutoff.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbScurvegain.setVisibility(View.GONE);
+					mSkbScurvecutoff.setVisibility(View.GONE);
+					mTxtScurvegain.setVisibility(View.GONE);
+					mTxtScurvecutoff.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_ADAPTIVE_THRESHOLD) {
+					mSkbAdaptivewindowsize.setVisibility(View.VISIBLE);
+					mSkbAdaptivec.setVisibility(View.VISIBLE);
+					mTxtAdaptivewindowsize.setVisibility(View.VISIBLE);
+					mTxtAdaptivec.setVisibility(View.VISIBLE);
+				}
+				else {
+					mSkbAdaptivewindowsize.setVisibility(View.GONE);
+					mSkbAdaptivec.setVisibility(View.GONE);
+					mTxtAdaptivewindowsize.setVisibility(View.GONE);
+					mTxtAdaptivec.setVisibility(View.GONE);
+				}
+				if (position == SELECT_FILTER_S_CURVE || position == SELECT_FILTER_ADAPTIVE_THRESHOLD) {
+					mTxtInit2.setVisibility(View.VISIBLE);
+					mBtnInit2.setVisibility(View.VISIBLE);
+				}
+				else {
+					mTxtInit2.setVisibility(View.GONE);
+					mBtnInit2.setVisibility(View.GONE);
+				}
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// 何も選択されていない場合の処理
+			}
+		});
 
 		return mView;
+	}
+
+	// 拡張フィルターの表示更新
+	private void setFilterView() {
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSpinnerExtFilter1.setVisibility(View.GONE);
+			mSpinnerExtFilter2.setVisibility(View.GONE);
+			mSpinnerExtFilter3.setVisibility(View.GONE);
+			mSpinnerExtFilter4.setVisibility(View.GONE);
+			mTxtExtFilter1.setVisibility(View.GONE);
+			mTxtExtFilter2.setVisibility(View.GONE);
+			mTxtExtFilter3.setVisibility(View.GONE);
+			mTxtExtFilter4.setVisibility(View.GONE);
+			mRadioButtonPre.setVisibility(View.GONE);
+			mRadioButtonPost.setVisibility(View.GONE);
+			mTxtInit1.setVisibility(View.GONE);
+			mBtnInit1.setVisibility(View.GONE);
+			mTxtInit2.setVisibility(View.GONE);
+			mBtnInit2.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mCheckExtFilter) {
+			// チェックされた時の処理
+			mSpinnerExtFilter1.setVisibility(View.VISIBLE);
+			mSpinnerExtFilter2.setVisibility(View.VISIBLE);
+			mSpinnerExtFilter3.setVisibility(View.VISIBLE);
+			mSpinnerExtFilter4.setVisibility(View.VISIBLE);
+			mTxtExtFilter1.setVisibility(View.VISIBLE);
+			mTxtExtFilter2.setVisibility(View.VISIBLE);
+			mTxtExtFilter3.setVisibility(View.VISIBLE);
+			mTxtExtFilter4.setVisibility(View.VISIBLE);
+			mRadioButtonPre.setVisibility(View.VISIBLE);
+			mRadioButtonPost.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbRadius.setVisibility(View.GONE);
+			mSkbSigmaspatial.setVisibility(View.GONE);
+			mSkbSigmarange.setVisibility(View.GONE);
+			mTxtRadius.setVisibility(View.GONE);
+			mTxtSigmaspatial.setVisibility(View.GONE);
+			mTxtSigmarange.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage2 == SELECT_FILTER_BILATERAL) {
+			// チェックされた時の処理
+			mSkbRadius.setVisibility(View.VISIBLE);
+			mSkbSigmaspatial.setVisibility(View.VISIBLE);
+			mSkbSigmarange.setVisibility(View.VISIBLE);
+			mTxtRadius.setVisibility(View.VISIBLE);
+			mTxtSigmaspatial.setVisibility(View.VISIBLE);
+			mTxtSigmarange.setVisibility(View.VISIBLE);
+			mTxtInit1.setVisibility(View.VISIBLE);
+			mBtnInit1.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbGuidedr.setVisibility(View.GONE);
+			mSkbGuidedeps.setVisibility(View.GONE);
+			mTxtGuidedr.setVisibility(View.GONE);
+			mTxtGuidedeps.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage2 == SELECT_FILTER_GUIDED) {
+			// チェックされた時の処理
+			mSkbGuidedr.setVisibility(View.VISIBLE);
+			mSkbGuidedeps.setVisibility(View.VISIBLE);
+			mTxtGuidedr.setVisibility(View.VISIBLE);
+			mTxtGuidedeps.setVisibility(View.VISIBLE);
+			mTxtInit1.setVisibility(View.VISIBLE);
+			mBtnInit1.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbAditerations.setVisibility(View.GONE);
+			mSkbAdk.setVisibility(View.GONE);
+			mSkbAdlambda.setVisibility(View.GONE);
+			mTxtAditerations.setVisibility(View.GONE);
+			mTxtAdk.setVisibility(View.GONE);
+			mTxtAdlambda.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage2 == SELECT_FILTER_ANISOTROPIC_DIFFUSION) {
+			// チェックされた時の処理
+			mSkbAditerations.setVisibility(View.VISIBLE);
+			mSkbAdk.setVisibility(View.VISIBLE);
+			mSkbAdlambda.setVisibility(View.VISIBLE);
+			mTxtAditerations.setVisibility(View.VISIBLE);
+			mTxtAdk.setVisibility(View.VISIBLE);
+			mTxtAdlambda.setVisibility(View.VISIBLE);
+			mTxtInit1.setVisibility(View.VISIBLE);
+			mBtnInit1.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbNlmsearchwindow.setVisibility(View.GONE);
+			mSkbNlmpatchsize.setVisibility(View.GONE);
+			mSkbNlmh.setVisibility(View.GONE);
+			mTxtNlmsearchwindow.setVisibility(View.GONE);
+			mTxtNlmpatchsize.setVisibility(View.GONE);
+			mTxtNlmh.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage2 == SELECT_FILTER_NL_MEANS) {
+			// チェックされた時の処理
+			mSkbNlmsearchwindow.setVisibility(View.VISIBLE);
+			mSkbNlmpatchsize.setVisibility(View.VISIBLE);
+			mSkbNlmh.setVisibility(View.VISIBLE);
+			mTxtNlmsearchwindow.setVisibility(View.VISIBLE);
+			mTxtNlmpatchsize.setVisibility(View.VISIBLE);
+			mTxtNlmh.setVisibility(View.VISIBLE);
+			mTxtInit1.setVisibility(View.VISIBLE);
+			mBtnInit1.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbWaveletthreshold.setVisibility(View.GONE);
+			mTxtWaveletthreshold.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage2 == SELECT_FILTER_WAVELET_THRESHOLD) {
+			// チェックされた時の処理
+			mSkbWaveletthreshold.setVisibility(View.VISIBLE);
+			mTxtWaveletthreshold.setVisibility(View.VISIBLE);
+			mTxtInit1.setVisibility(View.VISIBLE);
+			mBtnInit1.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbScurvegain.setVisibility(View.GONE);
+			mSkbScurvecutoff.setVisibility(View.GONE);
+			mTxtScurvegain.setVisibility(View.GONE);
+			mTxtScurvecutoff.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage4 == SELECT_FILTER_S_CURVE) {
+			// チェックされた時の処理
+			mSkbScurvegain.setVisibility(View.VISIBLE);
+			mSkbScurvecutoff.setVisibility(View.VISIBLE);
+			mTxtScurvegain.setVisibility(View.VISIBLE);
+			mTxtScurvecutoff.setVisibility(View.VISIBLE);
+			mTxtInit2.setVisibility(View.VISIBLE);
+			mBtnInit2.setVisibility(View.VISIBLE);
+		}
+		if (mexternalfilterdata == null || !mexternalfilterdata.mCheckExtFilter) {
+			// チェックが外れた時の処理
+			mSkbAdaptivewindowsize.setVisibility(View.GONE);
+			mSkbAdaptivec.setVisibility(View.GONE);
+			mTxtAdaptivewindowsize.setVisibility(View.GONE);
+			mTxtAdaptivec.setVisibility(View.GONE);
+		}
+		else if ((mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) && mexternalfilterdata.mFilterStage4 == SELECT_FILTER_ADAPTIVE_THRESHOLD) {
+			// チェックされた時の処理
+			mSkbAdaptivewindowsize.setVisibility(View.VISIBLE);
+			mSkbAdaptivec.setVisibility(View.VISIBLE);
+			mTxtAdaptivewindowsize.setVisibility(View.VISIBLE);
+			mTxtAdaptivec.setVisibility(View.VISIBLE);
+			mTxtInit2.setVisibility(View.VISIBLE);
+			mBtnInit2.setVisibility(View.VISIBLE);
+		}
 	}
 
 	public void setImageConfigListner(ImageConfigListenerInterface listener) {
@@ -578,7 +1206,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public interface ImageConfigListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel);
+	    public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrolldirection, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel, ExternalFilterData externalfilterdata);
 	    public void onClose();
 	}
 
@@ -740,10 +1368,80 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		else if (mBtnApply == v) {
 			select = CLICK_APPLY;
 		}
+		else if (mBtnInit1 == v) {
+			// 初期値をセット
+			switch (mSpinnerExtFilter2.getSelectedItemPosition()) {
+				case SELECT_FILTER_BILATERAL:
+					mexternalfilterdata.mRadius = DEF.RADIUS;
+					mSkbRadius.setProgress(mexternalfilterdata.mRadius - 1);
+					mexternalfilterdata.mSigma_spatial = DEF.SIGMA_SPARTIAL;
+					mSkbSigmaspatial.setProgress((int)(mexternalfilterdata.mSigma_spatial * 10 - 5));
+					mexternalfilterdata.mSigma_range = DEF.SIGMA_RANGE;
+					mSkbSigmarange.setProgress((int)(mexternalfilterdata.mSigma_range - 1));
+					break;
+				case SELECT_FILTER_GUIDED:
+					mexternalfilterdata.mGuided_r = DEF.GUIDED_R;
+					mSkbGuidedr.setProgress(mexternalfilterdata.mGuided_r - 1);
+					mexternalfilterdata.mGuided_eps = DEF.GUIDED_EQS;
+					// 目的のパラメータを探す
+					int count = -1;
+					for (int i = 0 ; i < mGuided_eps_data.length; i++) {
+						if (mGuided_eps_data[i] == mexternalfilterdata.mGuided_eps) {
+							count = i;
+							break;
+						}
+					}
+					if (count == -1) {
+						// 一覧になかった場合は0.01に初期化
+						count = SELECT_GUIDED_INIT;
+					}
+					mSkbGuidedeps.setProgress(count);
+					break;
+				case SELECT_FILTER_ANISOTROPIC_DIFFUSION:
+					mexternalfilterdata.mAd_iterations = DEF.AD_ITERATIONS;
+					mSkbAditerations.setProgress(mexternalfilterdata.mAd_iterations - 1);
+					mexternalfilterdata.mAd_k = DEF.AD_K;
+					mSkbAdk.setProgress((int)(mexternalfilterdata.mAd_k * 2 - 2));
+					mexternalfilterdata.mAd_lambda = DEF.AD_LAMBDA;
+					mSkbAdlambda.setProgress((int)(mexternalfilterdata.mAd_lambda * 100 - 1));
+					break;
+				case SELECT_FILTER_NL_MEANS:
+					mexternalfilterdata.mNlm_search_window = DEF.NLM_SEARCH_WINDOW;
+					mSkbNlmsearchwindow.setProgress((mexternalfilterdata.mNlm_search_window - 5) / 2);
+					mexternalfilterdata.mNlm_patch_size = DEF.NLM_PATCH_SIZE;
+					mSkbNlmpatchsize.setProgress((mexternalfilterdata.mNlm_patch_size - 3) / 2);
+					mexternalfilterdata.mNlm_h = DEF.NLM_H;
+					mSkbNlmh.setProgress((int)(mexternalfilterdata.mNlm_h * 2 - 2));
+					break;
+				case SELECT_FILTER_WAVELET_THRESHOLD:
+					mexternalfilterdata.mWavelet_threshold = DEF.WAVELET_THRESHOLD;
+					mSkbWaveletthreshold.setProgress(mexternalfilterdata.mWavelet_threshold);
+					break;
+			}
+			return;
+		}
+		else if (mBtnInit2 == v) {
+			// 初期値をセット
+			switch (mSpinnerExtFilter4.getSelectedItemPosition()) {
+				case SELECT_FILTER_S_CURVE:
+					mexternalfilterdata.mScurve_cutoff = DEF.SCURVE_CUTOFF;
+					mSkbScurvecutoff.setProgress((int)(mexternalfilterdata.mScurve_cutoff * 100));
+					mexternalfilterdata.mScurve_gain = DEF.SCURVE_GAIN;
+					mSkbScurvegain.setProgress((int)(mexternalfilterdata.mScurve_gain * 2 - 2));
+					break;
+				case SELECT_FILTER_ADAPTIVE_THRESHOLD:
+					mexternalfilterdata.mAdaptive_window_size = DEF.ADAPTIVE_WINDOW_SIZE;
+					mSkbAdaptivewindowsize.setProgress((mexternalfilterdata.mAdaptive_window_size - 3) / 2);
+					mexternalfilterdata.mAdaptive_c = DEF.ADAPTIVE_C;
+					mSkbAdaptivec.setProgress(mexternalfilterdata.mAdaptive_c + 50);
+					break;
+			}
+			return;
+		}
 
 		if (select == CLICK_REVERT) {
 			// 戻すは元の値を通知
-			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollDirection, mKelvin, mCheckRgbLevel, mRedLevelBackup, mGreenLevelBackup, mBlueLevelBackup);
+			mListener.onButtonSelect(select, mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, mScaleMode, mMgnCut, mMgnCutColor, mIsSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollDirection, mKelvin, mCheckRgbLevel, mRedLevelBackup, mGreenLevelBackup, mBlueLevelBackup, mExternalFilterData);
 		}
 		else {
 			// OK/適用は設定された値を通知
@@ -770,8 +1468,48 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 				mGreenLevel = greenlevel;
 				mBlueLevel = bluerevel;
 			}
+			if (mCommandId == DEF.MENU_IMGCONF || mCommandId == DEF.MENU_EXT_FILTER) {
+				// 拡張フィルターの値を通知
+				mexternalfilterdatacopy.mFilterStage1 = mSpinnerExtFilter1.getSelectedItemPosition();
+				mexternalfilterdatacopy.mFilterStage2 = mSpinnerExtFilter2.getSelectedItemPosition();
+				mexternalfilterdatacopy.mFilterStage3 = mSpinnerExtFilter3.getSelectedItemPosition();
+				mexternalfilterdatacopy.mFilterStage4 = mSpinnerExtFilter4.getSelectedItemPosition();
+				mexternalfilterdatacopy.mCheckExtFilter = mChkExtFilter.isChecked();
+				mexternalfilterdatacopy.mRadioFilter = (mRadioButtonPost.isChecked()) ? SELECT_FILTER_POST : SELECT_FILTER_PRE;
+				// 1から始まるので+1する
+				mexternalfilterdatacopy.mRadius = mSkbRadius.getProgress() + 1;
+				// 0.5から0.1ステップで始まるので10で割り算して0.5を加算する
+				mexternalfilterdatacopy.mSigma_spatial = ((float)mSkbSigmaspatial.getProgress()) / 10 + 0.5f;
+				// 1から始まるので+1する
+				mexternalfilterdatacopy.mSigma_range = (float)(mSkbSigmarange.getProgress() + 1);
+				// 1から始まるので+1する
+				mexternalfilterdatacopy.mGuided_r = mSkbGuidedr.getProgress() + 1;
+				// テーブルからデータを取り出す
+				mexternalfilterdatacopy.mGuided_eps = (float)(mGuided_eps_data[mSkbGuidedeps.getProgress()]);
+				// 1から始まるので+1する
+				mexternalfilterdatacopy.mAd_iterations = mSkbAditerations.getProgress() + 1;
+				// 1.0から0.5ステップで始まるので2で割り算して1.0を加算する
+				mexternalfilterdatacopy.mAd_k = ((float)mSkbAdk.getProgress()) / 2 + 1.0f;
+				// 0.01から0.01ステップで始まるので100で割り算して0.01を加算する
+				mexternalfilterdatacopy.mAd_lambda = ((float)mSkbAdlambda.getProgress()) / 100 + 0.01f;
+				// 5から2ステップで始まるので2倍して5を加算する
+				mexternalfilterdatacopy.mNlm_search_window = mSkbNlmsearchwindow.getProgress() * 2 + 5;
+				// 3から2ステップで始まるので2倍して3を加算する
+				mexternalfilterdatacopy.mNlm_patch_size = mSkbNlmpatchsize.getProgress() * 2 + 3;
+				// 1.0から0.5ステップで始まるので2で割り算して1.0を加算する
+				mexternalfilterdatacopy.mNlm_h = ((float)mSkbNlmh.getProgress()) / 2 + 1.0f;
+				mexternalfilterdatacopy.mWavelet_threshold = mSkbWaveletthreshold.getProgress();
+				// 0から0.01ステップで始まるので100で割り算する
+				mexternalfilterdatacopy.mScurve_cutoff = ((float)mSkbScurvecutoff.getProgress()) / 100;
+				// 1.0から0.5ステップで始まるので2で割り算して1.0を加算する
+				mexternalfilterdatacopy.mScurve_gain = ((float)mSkbScurvegain.getProgress()) / 2 + 1.0f;
+				// 3から2ステップで始まるので2倍して3を加算する
+				mexternalfilterdatacopy.mAdaptive_window_size = mSkbAdaptivewindowsize.getProgress() * 2 + 3;
+				// -50から始まるので-50する
+				mexternalfilterdatacopy.mAdaptive_c = mSkbAdaptivec.getProgress() - 50;
+			}
 
-			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation, coloring, mScrollDirectionTemp, kelvin, chkrgblevel, redrevel, greenlevel, bluerevel);
+			mListener.onButtonSelect(select, gray, invert, moire, topsingle, sharpen, bright, gamma, bklight, mAlgoModeTemp, mDispModeTemp, mScaleModeTemp, mMgnCutTemp, mMgnCutColorTemp, issave, mDisplayPositionTemp, contrast, hue, saturation, coloring, mScrollDirectionTemp, kelvin, chkrgblevel, redrevel, greenlevel, bluerevel, mexternalfilterdatacopy);
 		}
 
 		if (select != CLICK_APPLY) {
@@ -844,6 +1582,70 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		else if (seekBar == mSkbBlueLevel) {
 			String str = getRgbLevelStr(progress);
 			mTxtBlueLevel.setText(mBlueLevelStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbRadius) {
+			String str = getRadiusStr(progress);
+			mTxtRadius.setText(mRadiusStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbSigmaspatial) {
+			String str = getSigmaspatialStr(progress);
+			mTxtSigmaspatial.setText(mSigmaspatialStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbSigmarange) {
+			String str = getSigmarangeStr(progress);
+			mTxtSigmarange.setText(mSigmarangeStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbGuidedr) {
+			String str = getGuidedrStr(progress);
+			mTxtGuidedr.setText(mGuidedrStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbGuidedeps) {
+			String str = getGuidedepsStr(progress);
+			mTxtGuidedeps.setText(mGuidedepsStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbAditerations) {
+			String str = getAditerationsStr(progress);
+			mTxtAditerations.setText(mAditerationsStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbAdk) {
+			String str = getAdkStr(progress);
+			mTxtAdk.setText(mAdkStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbAdlambda) {
+			String str = getAdlambdaStr(progress);
+			mTxtAdlambda.setText(mAdlambdaStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbNlmsearchwindow) {
+			String str = getNlmsearchwindowStr(progress);
+			mTxtNlmsearchwindow.setText(mNlmsearchwindowStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbNlmpatchsize) {
+			String str = getNlmpatchsizeStr(progress);
+			mTxtNlmpatchsize.setText(mNlmpatchsizeStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbNlmh) {
+			String str = getNlmhStr(progress);
+			mTxtNlmh.setText(mNlmhStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbWaveletthreshold) {
+			String str = getWaveletthresholdStr(progress);
+			mTxtWaveletthreshold.setText(mWaveletthresholdStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbScurvegain) {
+			String str = getScurvegainStr(progress);
+			mTxtScurvegain.setText(mScurvegainStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbScurvecutoff) {
+			String str = getScurvecutoffStr(progress);
+			mTxtScurvecutoff.setText(mScurvecutoffStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbAdaptivewindowsize) {
+			String str = getAdaptivewindowsizeStr(progress);
+			mTxtAdaptivewindowsize.setText(mAdaptivewindowsizeStr.replaceAll("%", str));
+		}
+		else if (seekBar == mSkbAdaptivec) {
+			String str = getAdaptivecStr(progress);
+			mTxtAdaptivec.setText(mAdaptivecStr.replaceAll("%", str));
 		}
 		else {
 		}
@@ -943,6 +1745,101 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	public static String getRgbLevelStr(int progress) {
 		String str;
 		str = String.valueOf(progress) + "%";
+		return str;
+	}
+
+	public static String getRadiusStr(int progress) {
+		String str;
+		// 1から始まるので+1する
+		str = String.valueOf(progress + 1);
+		return str;
+	}
+	public static String getSigmaspatialStr(int progress) {
+		String str;
+		// 0.5から0.1ステップ
+		str = String.valueOf(((float)progress + 5) / 10);
+		return str;
+	}
+	public static String getSigmarangeStr(int progress) {
+		String str;
+		// 1から始まるので+1する
+		str = String.valueOf(progress + 1);
+		return str;
+	}
+	public static String getGuidedrStr(int progress) {
+		String str;
+		// 1から始まるので+1する
+		str = String.valueOf(progress + 1);
+		return str;
+	}
+	public static String getGuidedepsStr(int progress) {
+		String str;
+		str = String.valueOf(mGuided_eps_data[progress]);
+		return str;
+	}
+	public static String getAditerationsStr(int progress) {
+		String str;
+		// 1から始まるので+1する
+		str = String.valueOf(progress + 1);
+		return str;
+	}
+	public static String getAdkStr(int progress) {
+		String str;
+		// 1.0から0.5ステップ
+		str = String.valueOf(((float)progress + 2) / 2);
+		return str;
+	}
+	public static String getAdlambdaStr(int progress) {
+		String str;
+		// 0.01から0.01ステップ
+		str = String.valueOf(((float)progress + 1) / 100);
+		return str;
+	}
+	public static String getNlmsearchwindowStr(int progress) {
+		String str;
+		// 5から2ステップ
+		str = String.valueOf(progress * 2 + 5);
+		return str;
+	}
+	public static String getNlmpatchsizeStr(int progress) {
+		String str;
+		// 3から2ステップ
+		str = String.valueOf(progress * 2 + 3);
+		return str;
+	}
+	public static String getNlmhStr(int progress) {
+		String str;
+		// 1.0から0.5ステップ
+		str = String.valueOf(((float)progress) / 2 + 1.0f);
+		return str;
+	}
+	public static String getWaveletthresholdStr(int progress) {
+		String str;
+		str = String.valueOf(progress);
+		return str;
+	}
+	public static String getScurvegainStr(int progress) {
+		String str;
+		// 1.0から0.5ステップ
+		str = String.valueOf(((float)progress) / 2 + 1.0f);
+		return str;
+	}
+	public static String getScurvecutoffStr(int progress) {
+		String str;
+		// 0.01ステップ
+		str = String.valueOf(((float)progress) / 100);
+		return str;
+	}
+	public static String getAdaptivewindowsizeStr(int progress) {
+		String str;
+		// 3から2ステップ
+		str = String.valueOf(progress * 2 + 3);
+		return str;
+	}
+	public static String getAdaptivecStr(int progress) {
+		String str;
+		// -50から1ステップ
+		str = String.valueOf(progress - 50);
 		return str;
 	}
 
