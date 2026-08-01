@@ -30,6 +30,7 @@ set(
   comitton/ImageGray.cpp
   comitton/ImageHalf.cpp
   comitton/ImageColorMatrix.cpp
+  comitton/ImageExternalFilter.cpp
   comitton/callImage.cpp
   comitton/TextCommon.cpp
   comitton/callText.cpp
