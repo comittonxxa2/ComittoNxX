@@ -45,6 +45,7 @@ import java.net.URLDecoder;
 import java.util.Base64;
 
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.ExternalFilterData;
 import src.comitton.common.Logcat;
 import src.comitton.common.DEF;
 import src.comitton.config.SetWebViewActivity;
@@ -120,6 +121,7 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 	private int mGreenLevel;
 	private int mBlueLevel;
 	private OnBackPressedCallback backCallback;
+	private ExternalFilterData mExternalFilterData;
 
 	// RenderScriptの再利用に用いる
 	private RenderScript mRS;
@@ -439,10 +441,10 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		}
 		mImageConfigDialog = new ImageConfigDialog(this, R.style.MyDialog, command_id, false, this);
 
-		mImageConfigDialog.setConfig(mGray, mInvert, false, false, mSharpen, mBright, mGamma, 0, 0, 0, 0, 0, 0, mIsConfSave, 0, mContrast, mHue, mSaturation, mColoring, 0, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel);
+		mImageConfigDialog.setConfig(mGray, mInvert, false, false, mSharpen, mBright, mGamma, 0, 0, 0, 0, 0, 0, mIsConfSave, 0, mContrast, mHue, mSaturation, mColoring, 0, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel, mExternalFilterData);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigDialog.ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel, ExternalFilterData externalfilterdata) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
