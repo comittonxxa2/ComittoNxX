@@ -9,6 +9,7 @@ import android.widget.Toast;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.common.ExternalFilterData;
 
 public class CallImgLibrary {
 	private static int logLevel = Logcat.LOG_LEVEL_DEBUG;
@@ -35,7 +36,7 @@ public class CallImgLibrary {
 	private static native int ImageGetBitmap(int index, int type, int scale, Bitmap bitmap);
 
 	private static native int GetMarginSize(int index, int Page, int Half, int Index, int Margin, int MarginColor, int[] size, int MarginMode, int MarginLimit, int MarginSpace, int MagrinRange, int MarginStart, int MarginLevel);
-	private static native int ImageScale(int index, int page, int half, int width, int height, int left, int right, int top, int bottom, int algorithm, int rotate, int margin, int margincolor, int sharpen, int bright, int gamma, int param, int size[], float colormatrix[]);
+	private static native int ImageScale(int index, int page, int half, int width, int height, int left, int right, int top, int bottom, int algorithm, int rotate, int margin, int margincolor, int sharpen, int bright, int gamma, int param, int size[], float colormatrix[], ExternalFilterData externalfilterdata);
 	private static native int ImageDraw(int index, int page, int half, int x, int y, Bitmap bitmap);
 	private static native int ImageScaleDraw(int index, int page, int rotate, int sx, int sy, int scx, int scy, int dx, int dy, int dcx, int dcy, int psel, Bitmap bm, int cutLeft, int cutRight, int cutTop, int cutBottom);
 	private static native int ImageCancel(int index, int flag);
@@ -161,9 +162,9 @@ public class CallImgLibrary {
 		return ret;
 	}
 
-	public static int ImageScale(Context context, Handler handler, int index, int page, int half, int width, int height, int left, int right, int top, int bottom, int algorithm, int rotate, int margin, int margincolor, int sharpen, int bright, int gamma, int param, int[] size, float[] colormatrix) {
+	public static int ImageScale(Context context, Handler handler, int index, int page, int half, int width, int height, int left, int right, int top, int bottom, int algorithm, int rotate, int margin, int margincolor, int sharpen, int bright, int gamma, int param, int[] size, float[] colormatrix, ExternalFilterData externalfilterdata) {
 		Logcat.v(logLevel, "index=" + index);
-		int ret = ImageScale(index, page, half, width, height, left, right, top, bottom, algorithm, rotate, margin, margincolor, sharpen, bright, gamma, param, size, colormatrix);
+		int ret = ImageScale(index, page, half, width, height, left, right, top, bottom, algorithm, rotate, margin, margincolor, sharpen, bright, gamma, param, size, colormatrix, externalfilterdata);
 		checkResult(context, handler, ret, "ImageScale: index=" + index + ", page=" + page);
 		return ret;
 	}
