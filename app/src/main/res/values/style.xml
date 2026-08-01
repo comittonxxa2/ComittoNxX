@@ -64,6 +64,10 @@
         <item name="android:gravity">center</item>
         <item name="android:textSize">20sp</item>  
     </style>
+    <style name="spinnerExtFilterItemStyle" parent="Widget.AppCompat.DropDownItem.Spinner">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">16sp</item>  
+    </style>
 
     <!-- Dialogのスタイル -->
     <style name="MyAlertDialogStyle" parent="Theme.AppCompat.Dialog">

@@ -147,9 +147,33 @@
     <string name="rotateMenu">Screen direction</string>
     <string name="pageselMenu">Select page</string>
     <string name="sharpenMenu">Sharpen image</string>
+    <string name="initMenu">Reset settings to default</string>
     <string name="invertMenu">Invert color</string>
     <string name="grayMenu">Gray scale</string>
     <string name="coloringMenu">Auto Coloring</string>
+    <string name="extfiltergMenu">Extended filter</string>
+    <string name="extprefiltergMenu">Before image interpolation</string>
+    <string name="extpostfiltergMenu">After image interpolation</string>
+    <string name="spinnerextfilter1">Statistics and Sorting</string>
+    <string name="spinnerextfilter2">Edge-preserving smoothing system</string>
+    <string name="spinnerextfilter3">Morphological operation system</string>
+    <string name="spinnerextfilter4"></string>
+    <string name="radiusMenu">Search range (radius) for neighboring pixels(%)</string>
+    <string name="sigmaspatialMenu">Spread (standard deviation) of the Gaussian distribution in the spatial direction(%)</string>
+    <string name="sigmarangeMenu">Spread (standard deviation) of the Gaussian distribution regarding the difference in values ​​(luminance/color)(%)</string>
+    <string name="guidedrMenu">Filter radius(%)</string>
+    <string name="guidedepsMenu">Regularization parameter(%)</string>
+    <string name="aditerationsMenu">Number of processing repetitions (number of iterations)(%)</string>
+    <string name="adkMenu">Threshold sensitivity for edge preservation(%)</string>
+    <string name="adlambdaMenu">Diffusion strength per step (step size/time step)(%)</string>
+    <string name="nlmsearchwindowMenu">Search window size(%)</string>
+    <string name="nlmpatchsizeMenu">Similarity comparison patch size(%)</string>
+    <string name="nlmhMenu">Filter strength parameter(%)</string>
+    <string name="waveletthresholdMenu">Threshold for removing or suppressing high-frequency components (detail/noise components)(%)</string>
+    <string name="scurvecutoffMenu">Cutoff/Center Point(%)</string>
+    <string name="scurvegainMenu">Gain/Slope and Contrast Strength(%)</string>
+    <string name="adaptivewindowsizeMenu">Size (width and height) of the neighborhood region (block) surrounding the pixel of interest.(%)</string>
+    <string name="adaptivecMenu">A constant used to adjust the amount subtracted from the average luminance of the neighborhood region (i.e., how much to lower the threshold).(%)</string>
     <string name="moireMenu">Moire mitigation</string>
     <string name="topsingleMenu">Single show the first page</string>
     <string name="brightMenu">Brightness(%)</string>
@@ -246,6 +270,7 @@
     <string name="btnRevert">Revert</string>
     <string name="btnClear">Clear</string>
     <string name="btnCancel">Cancel</string>
+    <string name="btnInit">Init</string>
     <string name="opLabel">Please select a location pattern tap page turning.</string>
     <string name="opReverse">Reversing the direction by tapping</string>
     <string name="opCheck">Check</string>
@@ -1019,6 +1044,41 @@
     <string name="themepreset06">Theme 6</string>
     <string name="themepreset07">Theme 7</string>
     <string name="themepreset08">Theme 8</string>
+
+    <string-array name="extfilterlist1">
+        <item>None</item>
+        <item>3x3 Gaussian filter</item>
+        <item>5x5 Gaussian filter</item>
+        <item>7x7 Gaussian filter</item>
+        <item>3x3 Median filter</item>
+        <item>5x5 Median filter</item>
+        <item>7x7 Median filter</item>
+        <item>3x3 Maximum value filter</item>
+        <item>5x5 Maximum value filter</item>
+        <item>3x3 Minimum value filter</item>
+        <item>5x5 Minimum value filter</item>
+    </string-array>
+    <string-array name="extfilterlist2">
+        <item>None</item>
+        <item>Bilateral filter</item>
+        <item>Guided filter</item>
+        <item>Anisotropic diffusion filter</item>
+        <item>NL-Means filter</item>
+        <item>Wavelet filter</item>
+    </string-array>
+    <string-array name="extfilterlist3">
+        <item>None</item>
+        <item>Opening filter</item>
+        <item>Closing filter</item>
+        <item>Top-hat filter</item>
+        <item>Black-hat filter</item>
+    </string-array>
+    <string-array name="extfilterlist4">
+        <item>None</item>
+        <item>S-curve filter</item>
+        <item>Adaptive binarization filter</item>
+        <item>Otsus binarization filter</item>
+    </string-array>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
