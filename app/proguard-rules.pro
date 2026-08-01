@@ -44,3 +44,8 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# ExternalFilterData だけを対象にする
+-keep class src.comitton.common.ExternalFilterData {
+    *;
+}
