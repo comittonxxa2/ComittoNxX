@@ -243,6 +243,7 @@ public class DEF {
 	public static final int MENU_SEARCHJUMPTEST = Menu.FIRST + 80;
 	public static final int MENU_ZOOMLEVEL_SETTING = Menu.FIRST + 81;
 	public static final int MENU_HORIZONTIALWRITING = Menu.FIRST + 82;
+	public static final int MENU_EXT_FILTER = Menu.FIRST + 83;
 	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
 	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
@@ -832,6 +833,8 @@ public class DEF {
 	public static final String KEY_BOOKSHELFTEXTSPLITON = "BookShelfTextSplitOn";
 	public static final String KEY_EXPANDTEXTENABLE = "ExpandTextEnable";
 
+	public static final String KEY_EXTERNALFILTERDATA = "ExternalFilterData";
+
 	public static final String KEY_CORNERENDIENABLE = "CornerEndIEnable";
 	public static final String KEY_CORNERENDIWIDTHLEVEL = "CornerEndIWidthLevel";
 	public static final String KEY_CORNERENDIHEIGHTLEVEL = "CornerEndIHeightLevel";
@@ -1274,6 +1277,17 @@ public class DEF {
 	public static final String KEY_PROFILE_BLUELEVEL_08 = "ProfileBlueLevel8";
 	public static final String KEY_PROFILE_BLUELEVEL_09 = "ProfileBlueLevel9";
 	public static final String KEY_PROFILE_BLUELEVEL_10 = "ProfileBlueLevel10";
+
+	public static final String KEY_PROFILE_EXTFILTER_01 = "ProfileExtFilter1";
+	public static final String KEY_PROFILE_EXTFILTER_02 = "ProfileExtFilter2";
+	public static final String KEY_PROFILE_EXTFILTER_03 = "ProfileExtFilter3";
+	public static final String KEY_PROFILE_EXTFILTER_04 = "ProfileExtFilter4";
+	public static final String KEY_PROFILE_EXTFILTER_05 = "ProfileExtFilter5";
+	public static final String KEY_PROFILE_EXTFILTER_06 = "ProfileExtFilter6";
+	public static final String KEY_PROFILE_EXTFILTER_07 = "ProfileExtFilter7";
+	public static final String KEY_PROFILE_EXTFILTER_08 = "ProfileExtFilter8";
+	public static final String KEY_PROFILE_EXTFILTER_09 = "ProfileExtFilter9";
+	public static final String KEY_PROFILE_EXTFILTER_10 = "ProfileExtFilter10";
 
 	// テーマの切り替えの保存用
 	public static final String KEY_ENABLE_THEME = "EnableTheme";
@@ -1913,6 +1927,29 @@ public class DEF {
 	public static final int READTEXTNONE = 1;
 	public static final int READTEXTAFTERDATESIZE = 2;
 
+	public static final int RADIUS = 3;
+	public static final float SIGMA_SPARTIAL = 3.0f;
+	public static final float SIGMA_RANGE = 30.0f;
+
+	public static final int GUIDED_R = 4;
+	public static final float GUIDED_EQS = 0.01f;
+
+	public static final int AD_ITERATIONS = 3;
+	public static final float AD_K = 15.0f;
+	public static final float AD_LAMBDA = 0.15f;
+
+	public static final int NLM_SEARCH_WINDOW = 7;
+	public static final int NLM_PATCH_SIZE = 3;
+	public static final float NLM_H = 15.0f;
+
+	public static final int WAVELET_THRESHOLD = 15;
+
+	public static final float SCURVE_GAIN = 10.0f;
+	public static final float SCURVE_CUTOFF = 0.5f;
+
+	public static final int ADAPTIVE_WINDOW_SIZE = 15;
+	public static final int ADAPTIVE_C = 10;
+
 	public static final String KEY_TAP_I_PATTERN_NUMBER = "TapPatINum";
 	public static final String KEY_TAP_T_PATTERN_NUMBER = "TapPatTNum";
 	public static final String KEY_TAP_E_PATTERN_NUMBER = "TapPatENum";
@@ -2242,7 +2279,8 @@ public class DEF {
 	public static final int TAP_ANIMEPAUSE = 114;	//アニメーションの一時停止
 	public static final int TAP_SELECTCONTENTSMENU = 115;	// 目次の選択
 	public static final int TAP_KELVINMENU = 116;	// 色温度
-	public static final int TAP_ZOOMRESET = 117;	// 色温度
+	public static final int TAP_ZOOMRESET = 117;	// ズームリセット
+	public static final int TAP_EXT_FILTER = 118;	// 拡張フィルター
 
 	// イメージビューア用のタップ操作の初期値
 	public static final int TAP_PATTERN_I01_DEFAULT_01 = TAP_TOOLBARLEFT1;
