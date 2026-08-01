@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Date;
 
 import jp.dip.muracoro.comittonx.R;
+import src.comitton.common.ExternalFilterData;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetFileColorActivity;
 import src.comitton.cropimageview.CropImageActivity;
@@ -122,6 +123,8 @@ import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.google.gson.Gson;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -177,6 +180,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 
+	// 拡張フィルターのバージョン(今後classの変更があった場合はバージョンを増やしてマイグレーションのチェックに用いる)
+	private final int mFilterVersion = 1;
+
 	// 古い設定ファイルとの互換性維持のための番号
 	// ここに追加や削除する場合は番号を変更しないこと
 	private final int[] COMMAND_INDEX =
@@ -199,6 +205,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			33,	// 色相
 			34,	// 彩度
 			43,	// 色温度
+			44,	// 拡張フィルター
 			25,	// バックライト
 			9,	// 白黒反転
 			10,	// グレースケール
@@ -247,6 +254,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		DEF.MENU_HUE,		// 色相
 		DEF.MENU_SATURATION,	// 彩度
 		DEF.MENU_KELVIN,	// 色温度
+		DEF.MENU_EXT_FILTER,	// 拡張フィルター
 		DEF.MENU_BKLIGHT,	// バックライト
 		DEF.MENU_INVERT,	// 白黒反転
 		DEF.MENU_GRAY,		// グレースケール
@@ -294,6 +302,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.hueMenu,		// 色相
 		R.string.saturationMenu,	// 彩度
 		R.string.kelvinMenu,	// 色温度
+		R.string.extfiltergMenu,	// 拡張フィルター
 		R.string.bklightMenu,	// バックライト
 		R.string.invertMenu,	// 白黒反転
 		R.string.grayMenu,		// グレースケール
@@ -443,6 +452,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private int mPinchScaleBackup;
 	private int mDisplayPositionBackup;
 	private int mScrollModeBackup;
+	private ExternalFilterData mExternalFilterData;
 
 	private boolean mHidden;
 	private boolean mDelShare;
@@ -713,6 +723,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mSetUnRarlib;
 	private boolean mMakeZoomSameAsPinch;
 	private boolean mAdjustZoomSameAsPinch;
+	private Gson gson;
+	private String jsonString;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -838,6 +850,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		SharedPreferences.Editor ed = mSharedPreferences.edit();
 		ed.putInt(DEF.KEY_INITIALIZE, 0);
 		ed.apply();
+		gson = new Gson();
 
 		// 回転
 		mInitFlg = 0;
@@ -2809,7 +2822,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (mImageMgr != null) {
 			mImageMgr.setConfig(mScaleMode, mCenter, mFitDual, mDispMode, mNoExpand, mAlgoMode, mRotate, mWAdjust
-					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation, mColoring, mMgnBlkMsk, mMarginLevel, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginAspectMask, mMarginForceIgnoreAspect, mEnableContentsFile, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel);
+					, mWidthScale, mImgScale, mPageWay, mMgnCut, mMgnCutColor, 0, mBright, mGamma, mSharpen, mInvert, mGray, mPseLand, mMoire, mTopSingle, scaleinit, mEpubOrder, mZoomType, mContrast, mHue, mSaturation, mColoring, mMgnBlkMsk, mMarginLevel, mMarginLimit, mMarginSpace, mMarginRange, mMarginStart, mMarginAspectMask, mMarginForceIgnoreAspect, mEnableContentsFile, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel, mExternalFilterData);
 		}
 		// モードが変わればスケールは初期化
 		if (scaleinit) {
@@ -4419,6 +4432,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 彩度
 				execCommand(DEF.MENU_KELVIN);
 				break;
+			case DEF.TAP_EXT_FILTER:
+				// 拡張フィルター
+				execCommand(DEF.MENU_EXT_FILTER);
+				break;
 			case DEF.TAP_BKLIGHTMENU:
 				// バックライト
 				execCommand(DEF.MENU_BKLIGHT);
@@ -4930,14 +4947,27 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			}
 		}
-		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollMode, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel);
+		mImageConfigDialog.setConfig(mGray, mInvert, mMoire, mTopSingle, mSharpen, mBright, mGamma, mBkLight, mAlgoMode, mDispMode, selIndex, mMgnCut, mMgnCutColor, mIsConfSave, mDisplayPosition, mContrast, mHue, mSaturation, mColoring, mScrollMode, mKelvin, mCheckRgbLevel, mRedLevel, mGreenLevel, mBlueLevel, mExternalFilterData);
 		mImageConfigDialog.setImageConfigListner(new ImageConfigListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
+			public void onButtonSelect(int select, boolean gray, boolean invert, boolean moire, boolean topsingle, int sharpen, int bright, int gamma, int bklight, int algomode, int dispmode, int scalemode, int mgncut, int mgncutcolor, boolean issave, int displayposition, int contrast, int hue, int saturation, boolean coloring, int scrollmode, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel, ExternalFilterData externalfilterdata) {
 				// 選択状態を通知
 				boolean ischange = false;
+				boolean isextchange = false;
+				try {
+					if (!externalfilterdata.equals(mExternalFilterData)) {
+						isextchange = true;
+					}
+				}
+				catch (Exception e) {
+					// 上部メニューの拡張フィルター以外の場合はここへ飛んでくる
+					// エラーになるので拡張フィルターの設定を読み込ませる
+					LoadExtFilter(mSharedPreferences, DEF.KEY_EXTERNALFILTERDATA);
+					// 複製を作成
+					externalfilterdata = mExternalFilterData.clone();
+				}
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring || mScrollMode != scrollmode || mKelvin != kelvin || mCheckRgbLevel != chkrgblevel || mRedLevel != redrevel || mGreenLevel != greenlevel || mBlueLevel != bluerevel) {
+				if (mGray != gray || mInvert != invert || mMoire != moire || mTopSingle != topsingle || mSharpen != sharpen || mBright != bright || mGamma != gamma || mAlgoMode != algomode || mDispMode != dispmode || mMgnCut != mgncut || mMgnCutColor != mgncutcolor || mDisplayPosition != displayposition || mContrast != contrast || mHue != hue || mSaturation != saturation || mColoring != coloring || mScrollMode != scrollmode || mKelvin != kelvin || mCheckRgbLevel != chkrgblevel || mRedLevel != redrevel || mGreenLevel != greenlevel || mBlueLevel != bluerevel || !externalfilterdata.equals(mExternalFilterData)) {
 					ischange = true;
 				}
 				mGray = gray;
@@ -4960,6 +4990,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mMgnCut = mgncut;
 				mMgnCutColor = mgncutcolor;
 				mIsConfSave = issave;
+				mExternalFilterData = externalfilterdata.clone();
 				if (mDisplayPosition != displayposition) {
 					mDisplayPosition = displayposition;
 					// 画面の表示位置
@@ -5004,7 +5035,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// 操作ガイドの設定
 					mGuideView.setGuideMode(isDualView() == true, mBottomFile, mPageWay == DEF.PAGEWAY_RIGHT, mPageSelect, mImmEnable | mImmForce, mDisablePageButton);
 				}
-				else if (ischange) {
+				else if (ischange || isextchange) {
 					// 表示を更新
 					mImageView.lockDraw();
 					setImageConfig();
@@ -5041,7 +5072,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					ed.putString(DEF.KEY_INISCALE, Integer.toString(mScaleMode));
 					ed.putString(DEF.KEY_DISPLAYPOSITION, Integer.toString(mDisplayPosition));
 					ed.putString(DEF.KEY_SCROLLMODE, Integer.toString(mScrollMode));
-					
+					if (isextchange) {
+						// バージョンを書き込む(今後classの変更があった場合はバージョンを増やしてマイグレーションのチェックに用いる)
+						externalfilterdata.mVersion = mFilterVersion;
+						// JSON文字列に変換して保存
+						jsonString = gson.toJson(mExternalFilterData);
+						ed.putString(DEF.KEY_EXTERNALFILTERDATA, jsonString);
+					}
+
 					ed.apply();
 				}
 			}
@@ -5888,6 +5926,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.MENU_KELVIN: {
 				// 色温度
 				showImageConfigDialog(DEF.MENU_KELVIN);
+				break;
+			}
+			case DEF.MENU_EXT_FILTER: {
+				// 拡張フィルター
+				showImageConfigDialog(DEF.MENU_EXT_FILTER);
 				break;
 			}
 			case DEF.MENU_BKLIGHT: {
@@ -6859,11 +6902,60 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			mEpubOrder = SetEpubActivity.getEpubOrder(sharedPreferences);
 			mChgPageNext = SetImageActivity.getChgPageNext(sharedPreferences);
+			LoadExtFilter(sharedPreferences, DEF.KEY_EXTERNALFILTERDATA);
 		}
 		catch (Exception e) {
 			Logcat.e(logLevel, "error.");
 		}
 		return;
+	}
+
+	private void LoadExtFilter(SharedPreferences sharedPreferences, String keyfile) {
+		jsonString = sharedPreferences.getString(keyfile, null);
+		if (jsonString != null) {
+			try {
+				// JSONからクラスへの変換
+				mExternalFilterData = gson.fromJson(jsonString, ExternalFilterData.class);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				// 失敗したら初期化する
+				initExternalFilterData();
+			}
+		}
+		else {
+			// 初期化する
+			initExternalFilterData();
+		}
+	}
+
+	private void initExternalFilterData() {
+		// 初期値をセット
+		mExternalFilterData = new ExternalFilterData();
+		mExternalFilterData.mCheckExtFilter = false;
+		mExternalFilterData.mRadioFilter = 0;
+		mExternalFilterData.mFilterStage1 = 0;
+		mExternalFilterData.mFilterStage2 = 0;
+		mExternalFilterData.mFilterStage3 = 0;
+		mExternalFilterData.mFilterStage4 = 0;
+		mExternalFilterData.mRadius = DEF.RADIUS;
+		mExternalFilterData.mSigma_spatial = DEF.SIGMA_SPARTIAL;
+		mExternalFilterData.mSigma_range = DEF.SIGMA_RANGE;
+		mExternalFilterData.mGuided_r = DEF.GUIDED_R;
+		mExternalFilterData.mGuided_eps = DEF.GUIDED_EQS;
+		mExternalFilterData.mAd_iterations = DEF.AD_ITERATIONS;
+		mExternalFilterData.mAd_k = DEF.AD_K;
+		mExternalFilterData.mAd_lambda = DEF.AD_LAMBDA;
+		mExternalFilterData.mNlm_search_window = DEF.NLM_SEARCH_WINDOW;
+		mExternalFilterData.mNlm_patch_size = DEF.NLM_PATCH_SIZE;
+		mExternalFilterData.mNlm_h = DEF.NLM_H;
+		mExternalFilterData.mWavelet_threshold = DEF.WAVELET_THRESHOLD;
+		mExternalFilterData.mScurve_gain = DEF.SCURVE_GAIN;
+		mExternalFilterData.mScurve_cutoff = DEF.SCURVE_CUTOFF;
+		mExternalFilterData.mAdaptive_window_size = DEF.ADAPTIVE_WINDOW_SIZE;
+		mExternalFilterData.mAdaptive_c = DEF.ADAPTIVE_C;
+		// 初期バージョン(今後classの変更があった場合はバージョンを増やす)
+		mExternalFilterData.mVersion = mFilterVersion;
 	}
 
 	// 拡大位置の座標補正 & 設定
@@ -7628,6 +7720,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_01, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_01, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_01, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_01, jsonString);
 				break;
 			case 1:
 				ed.putString(DEF.KEY_PROFILE_WORD_02, mProfileWord[1]);
@@ -7661,6 +7755,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_02, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_02, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_02, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_02, jsonString);
 				break;
 			case 2:
 				ed.putString(DEF.KEY_PROFILE_WORD_03, mProfileWord[2]);
@@ -7694,6 +7790,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_03, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_03, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_03, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_03, jsonString);
 				break;
 			case 3:
 				ed.putString(DEF.KEY_PROFILE_WORD_04, mProfileWord[3]);
@@ -7727,6 +7825,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_04, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_04, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_04, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_04, jsonString);
 				break;
 			case 4:
 				ed.putString(DEF.KEY_PROFILE_WORD_05, mProfileWord[4]);
@@ -7760,6 +7860,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_05, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_05, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_05, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_05, jsonString);
 				break;
 			case 5:
 				ed.putString(DEF.KEY_PROFILE_WORD_06, mProfileWord[5]);
@@ -7793,6 +7895,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_06, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_06, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_06, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_06, jsonString);
 				break;
 			case 6:
 				ed.putString(DEF.KEY_PROFILE_WORD_07, mProfileWord[6]);
@@ -7826,6 +7930,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_07, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_07, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_07, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_07, jsonString);
 				break;
 			case 7:
 				ed.putString(DEF.KEY_PROFILE_WORD_08, mProfileWord[7]);
@@ -7859,6 +7965,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_08, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_08, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_08, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_08, jsonString);
 				break;
 			case 8:
 				ed.putString(DEF.KEY_PROFILE_WORD_09, mProfileWord[8]);
@@ -7892,6 +8000,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_09, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_09, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_09, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_09, jsonString);
 				break;
 			case 9:
 				ed.putString(DEF.KEY_PROFILE_WORD_10, mProfileWord[9]);
@@ -7925,6 +8035,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.putInt(DEF.KEY_PROFILE_REDLEVEL_10, mRedLevel);
 				ed.putInt(DEF.KEY_PROFILE_GREENLEVEL_10, mGreenLevel);
 				ed.putInt(DEF.KEY_PROFILE_BLUELEVEL_10, mBlueLevel);
+				jsonString = gson.toJson(mExternalFilterData);
+				ed.putString(DEF.KEY_PROFILE_EXTFILTER_10, jsonString);
 				break;
 		}
 		ed.apply();
@@ -7969,6 +8081,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_01, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_01, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_01, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_01);
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -8006,6 +8119,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_02, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_02, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_02, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_02);
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -8043,6 +8157,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_03, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_03, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_03, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_03);
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -8080,6 +8195,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_04, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_04, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_04, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_04);
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -8117,6 +8233,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_05, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_05, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_05, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_05);
 				break;
 			case 5:
 				if (mProfileWord[5].equals("")) {
@@ -8154,6 +8271,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_06, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_06, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_06, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_06);
 				break;
 			case 6:
 				if (mProfileWord[6].equals("")) {
@@ -8191,6 +8309,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_07, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_07, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_07, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_07);
 				break;
 			case 7:
 				if (mProfileWord[7].equals("")) {
@@ -8228,6 +8347,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_08, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_08, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_08, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_08);
 				break;
 			case 8:
 				if (mProfileWord[8].equals("")) {
@@ -8265,6 +8385,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_09, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_09, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_09, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_09);
 				break;
 			case 9:
 				if (mProfileWord[9].equals("")) {
@@ -8302,6 +8423,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mRedLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_REDLEVEL_10, SetImageActivity.getRedLevel(mSharedPreferences));
 				mGreenLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_GREENLEVEL_10, SetImageActivity.getGreenLevel(mSharedPreferences));
 				mBlueLevel = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_BLUELEVEL_10, SetImageActivity.getBlueLevel(mSharedPreferences));
+				LoadExtFilter(mSharedPreferences, DEF.KEY_PROFILE_EXTFILTER_10);
 				break;
 		}
 		if (mReverseOrder != mReverseOrderProfile) {
@@ -8390,6 +8512,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_01);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_01);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_01);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_01);
 				break;
 			case 1:
 				if (mProfileWord[1].equals("")) {
@@ -8428,6 +8551,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_02);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_02);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_02);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_02);
 				break;
 			case 2:
 				if (mProfileWord[2].equals("")) {
@@ -8466,6 +8590,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_03);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_03);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_03);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_03);
 				break;
 			case 3:
 				if (mProfileWord[3].equals("")) {
@@ -8504,6 +8629,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_04);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_04);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_04);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_04);
 				break;
 			case 4:
 				if (mProfileWord[4].equals("")) {
@@ -8542,6 +8668,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_05);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_05);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_05);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_05);
 				break;
 			case 5:
 				if (mProfileWord[5].equals("")) {
@@ -8580,6 +8707,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_06);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_06);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_06);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_06);
 				break;
 			case 6:
 				if (mProfileWord[6].equals("")) {
@@ -8618,6 +8746,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_07);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_07);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_07);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_07);
 				break;
 			case 7:
 				if (mProfileWord[7].equals("")) {
@@ -8656,6 +8785,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_08);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_08);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_08);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_08);
 				break;
 			case 8:
 				if (mProfileWord[8].equals("")) {
@@ -8694,6 +8824,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_09);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_09);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_09);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_09);
 				break;
 			case 9:
 				if (mProfileWord[9].equals("")) {
@@ -8732,6 +8863,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				ed.remove(DEF.KEY_PROFILE_REDLEVEL_10);
 				ed.remove(DEF.KEY_PROFILE_GREENLEVEL_10);
 				ed.remove(DEF.KEY_PROFILE_BLUELEVEL_10);
+				ed.remove(DEF.KEY_PROFILE_EXTFILTER_10);
 				break;
 		}
 		ed.apply();

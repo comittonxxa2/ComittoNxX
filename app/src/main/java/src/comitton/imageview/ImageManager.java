@@ -81,6 +81,7 @@ import android.system.Os;
 import android.system.OsConstants;
 
 import src.comitton.common.DEF;
+import src.comitton.common.ExternalFilterData;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
@@ -327,6 +328,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mArchiveAnimationEnable;
 	private boolean mSmbRetryMode;
 	private File mAnimefile;
+	private ExternalFilterData mExternalFilterData;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -6144,7 +6146,7 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	// 設定変更
-	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation, boolean coloring, boolean marginblackmask, int marginlevel, int marginlimit, int marginspace, int marginrange, int marginstart, boolean marginaspectmask, boolean marginforceignoreaspect, boolean enablecontentsfile, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel) {
+	public void setConfig(int mode, int center, boolean fFitDual, int dispMode, boolean noExpand, int algoMode, int rotate, int wadjust, int wscale, int scale, int pageway, int mgncut, int mgncutcolor, int quality, int bright, int gamma, int sharpen, boolean invert, boolean gray, boolean pseland, boolean moire, boolean topsingle, boolean scaleinit, boolean epubOrder, int zoomtype, int contrast, int hue, int saturation, boolean coloring, boolean marginblackmask, int marginlevel, int marginlimit, int marginspace, int marginrange, int marginstart, boolean marginaspectmask, boolean marginforceignoreaspect, boolean enablecontentsfile, int kelvin, boolean chkrgblevel, int redrevel, int greenlevel, int bluerevel, ExternalFilterData externalfilterdata) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "wscale=" + wscale + ", scale=" + scale);
 		mScrScaleMode = mode;
@@ -6192,6 +6194,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mRedLevel = redrevel;
 		mGreenLevel = greenlevel;
 		mBlueLevel = bluerevel;
+		mExternalFilterData = externalfilterdata;
 
 		// フィルター設定
 		SetColorEffect();
@@ -6799,7 +6802,7 @@ public class ImageManager extends InputStream implements Runnable {
 					sendMessage(mHandler, DEF.HMSG_CACHE, 0, 2, null);
 //					long sttime = SystemClock.uptimeMillis();
 					int param = CallImgLibrary.ImageScaleParam(mInvert, mGray, mColoring, mMoire, pseland);
-					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page1, half1, width[0], height[0], left[0], right[0], top[0], bottom[0], mScrAlgoMode, mScrRotate, mMarginCutCopy1, mMarginCutColor, mSharpen, mBright, mGamma, param, size, mColorMatrix) >= 0) {
+					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page1, half1, width[0], height[0], left[0], right[0], top[0], bottom[0], mScrAlgoMode, mScrRotate, mMarginCutCopy1, mMarginCutColor, mSharpen, mBright, mGamma, param, size, mColorMatrix, mExternalFilterData) >= 0) {
 						Logcat.v(logLevel, "Page=" + page1 + ", Half=" + half1 + ", 完成サイズP1 size_w=" + size[0] + ", size_h=" + size[1]);
 						mMemCacheFlag[page1].fScale[half1] = true;
 						if (img1 != null) {
@@ -6843,7 +6846,7 @@ public class ImageManager extends InputStream implements Runnable {
 					sendMessage(mHandler, DEF.HMSG_CACHE, 0, 2, null);
 //					long sttime = SystemClock.uptimeMillis();
 					int param = CallImgLibrary.ImageScaleParam(mInvert, mGray, mColoring, mMoire, pseland);
-					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page2, half2, width[1], height[1], left[1], right[1], top[1], bottom[1], mScrAlgoMode, mScrRotate, mMarginCutCopy2, mMarginCutColor, mSharpen, mBright, mGamma, param, size, mColorMatrix) >= 0) {
+					if (CallImgLibrary.ImageScale(mActivity, mHandler, mCacheIndex, page2, half2, width[1], height[1], left[1], right[1], top[1], bottom[1], mScrAlgoMode, mScrRotate, mMarginCutCopy2, mMarginCutColor, mSharpen, mBright, mGamma, param, size, mColorMatrix, mExternalFilterData) >= 0) {
 						Logcat.d(logLevel, "Page=" + page2 + ", Half=" + half2 + ", 完成サイズP2 size_w=" + size[0] + ", size_h=" + size[1]);
 						mMemCacheFlag[page2].fScale[half2] = true;
 						if (img2 != null) {

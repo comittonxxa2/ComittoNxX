@@ -266,6 +266,7 @@ public class TouchPanelView extends View {
 		true,
 		true,
 		true,
+		true,
 	};
 
 	// タッチパネル設定に有効な項目をtrueにする(テキストビューア)
@@ -389,6 +390,7 @@ public class TouchPanelView extends View {
 		false,
 		false,
 		false,
+		false,
 	};
 
 	// タッチパネル設定に有効な項目をtrueにする(EPUBビューア)
@@ -505,6 +507,7 @@ public class TouchPanelView extends View {
 		false,
 		false,
 		false,	//	110
+		false,
 		false,
 		false,
 		false,
@@ -636,6 +639,7 @@ public class TouchPanelView extends View {
 		R.string.selContentsMenu,
 		R.string.kelvinMenu,	// 色温度
 		R.string.ZoomReset,
+		R.string.extfiltergMenu,	// 拡張フィルター
 	};
 
 	// ラジオボタンのアラートダイアログに表示するリストの文字列のテーブル
