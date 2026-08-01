@@ -28,7 +28,7 @@ extern int			gCancel[];
 // RetSize 返却用ポインタ
 // RetSize[0] 完成サイズ(幅)
 // RetSize[1] 完成サイズ(高さ)
-int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int left, int right, int top, int bottom, int algorithm, int Rotate, int Margin, int MarginColor, int Sharpen, int Bright, int Gamma, int Param, jint *RetSize, jfloat *colormatrix)
+int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int left, int right, int top, int bottom, int algorithm, int Rotate, int Margin, int MarginColor, int Sharpen, int Bright, int Gamma, int Param, jint *RetSize, jfloat *colormatrix, jobject paramsObj, JNIEnv *env)
 {
 //#define DEBUG_CREATESCALE
     int Invert   = (Param & PARAM_INVERT) != 0 ? 1 : 0;
@@ -54,6 +54,16 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
 
 	// 拡大縮小用メモリ初期化
 	ScaleMemInit(index);
+
+	int temp_data = 0;
+	jclass clazz = env->GetObjectClass(paramsObj);
+	// パラメータを取り出して値がセットされているかを調べる
+	temp_data = env->GetIntField(paramsObj, env->GetFieldID(clazz, "mFilterStage1", "I"));
+	temp_data |= env->GetIntField(paramsObj, env->GetFieldID(clazz, "mFilterStage2", "I"));
+	temp_data |= env->GetIntField(paramsObj, env->GetFieldID(clazz, "mFilterStage3", "I"));
+	temp_data |= env->GetIntField(paramsObj, env->GetFieldID(clazz, "mFilterStage4", "I"));
+	int prepost = 0;
+	prepost = env->GetIntField(paramsObj, env->GetFieldID(clazz, "mRadioFilter", "I"));
 
     if (Margin > 0) {
 #ifdef DEBUG_CREATESCALE
@@ -198,6 +208,29 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
     LOGD("ImageScale : Scale - BEFORE: page=%d, half=%d / ow=%d, oh=%d, nw=%d, nh=%d, alg=%d", Page, Half, OrgWidth, OrgHeight, NowWidth, NowHeight, algorithm);
 #endif
 
+	if (temp_data != 0 && prepost == 0) {
+		// 値がセットされていれば拡張フィルターを有効にする
+#ifdef DEBUG_CREATESCALE
+		LOGD("CreateScale: ExternalFilter START: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
+#endif
+		// 元データ配列化
+		ret = SetLinesPtr(index, Page, Half, Count, OrgWidth, OrgHeight);
+		if (ret < 0) {
+			return ret;
+		}
+		// 拡張フィルター
+		ret = ImageExternalFilter(index, Page, Half, Count, OrgWidth, OrgHeight, paramsObj, env);
+		if (ret < 0) {
+			return ret;
+		}
+		// 古いワークデータは削除
+		EraseSclBuffMng(index, Count);
+		Count ++;
+#ifdef DEBUG_CREATESCALE
+		LOGD("CreateScale: ExternalFilter   END: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
+#endif
+	}
+
     // 拡大縮小
 	int loopMax;
 
@@ -322,6 +355,29 @@ int CreateScale(int index, int Page, int Half, int SclWidth, int SclHeight, int 
         Count ++;
 #ifdef DEBUG_CREATESCALE
         LOGD("CreateScale: Sharpen   END: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
+#endif
+	}
+
+	if (temp_data != 0 && prepost == 1) {
+		// 値がセットされていれば拡張フィルターを有効にする
+#ifdef DEBUG_CREATESCALE
+		LOGD("CreateScale: ExternalFilter START: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
+#endif
+		// 元データ配列化
+		ret = SetLinesPtr(index, Page, Half, Count, scl_w, scl_h);
+		if (ret < 0) {
+			return ret;
+		}
+		// 拡張フィルター
+		ret = ImageExternalFilter(index, Page, Half, Count, scl_w, scl_h, paramsObj, env);
+		if (ret < 0) {
+			return ret;
+		}
+		// 古いワークデータは削除
+		EraseSclBuffMng(index, Count);
+		Count ++;
+#ifdef DEBUG_CREATESCALE
+		LOGD("CreateScale: ExternalFilter   END: Page=%d, Half=%d, Count=%d, OrgWidth=%d, OrgHeight=%d", Page, Half, Count, OrgWidth, OrgHeight);
 #endif
 	}
 

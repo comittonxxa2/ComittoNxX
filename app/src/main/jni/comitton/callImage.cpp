@@ -810,7 +810,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_GetMarginSize (JNIEn
  * Method:    ImageScale
  * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_ImageScale (JNIEnv *env, jclass obj, jint index, jint page, jint half, jint width, jint height, jint left, jint right, jint top, jint bottom, jint algorithm, jint rotate, jint margin, jint margincolor, jint sharpen, jint bright, jint gamma, jint param, jintArray size, jfloatArray colormatrix)
+JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_ImageScale (JNIEnv *env, jclass obj, jint index, jint page, jint half, jint width, jint height, jint left, jint right, jint top, jint bottom, jint algorithm, jint rotate, jint margin, jint margincolor, jint sharpen, jint bright, jint gamma, jint param, jintArray size, jfloatArray colormatrix, jobject paramsObj)
 {
 
     if (index < 0 || MAX_BUFFER_INDEX <= index) {
@@ -831,7 +831,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallImgLibrary_ImageScale (JNIEnv *
 
     jint *retsize = env->GetIntArrayElements(size, nullptr);
     jfloat *recolormatrix = env->GetFloatArrayElements(colormatrix, nullptr);
-	int ret = CreateScale(index, page, half, width, height, left, right, top, bottom, algorithm, rotate, margin, margincolor, sharpen, bright, gamma, param, retsize, recolormatrix);
+	int ret = CreateScale(index, page, half, width, height, left, right, top, bottom, algorithm, rotate, margin, margincolor, sharpen, bright, gamma, param, retsize, recolormatrix, paramsObj, env);
     env->ReleaseIntArrayElements(size, retsize, 0);
     env->ReleaseFloatArrayElements(colormatrix, recolormatrix, 0);
 	return ret;
