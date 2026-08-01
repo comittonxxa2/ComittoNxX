@@ -48,6 +48,455 @@
 				android:textSize="17sp"
 				android:text= "@string/coloringMenu" />
 
+	        <CheckBox
+	            android:id="@+id/chk_extfilter"
+				android:layout_width="match_parent"
+	            android:layout_height="wrap_content"
+				android:gravity="left|center"
+				android:textSize="17sp"
+	            android:text="@string/extfiltergMenu" />
+
+			<RadioGroup
+				android:id="@+id/radioGroupFilter"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+
+				<RadioButton
+					android:id="@+id/radio_extprefilter"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:text="@string/extprefiltergMenu" />
+
+				<RadioButton
+					android:id="@+id/radio_extpostfilter"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:text="@string/extpostfiltergMenu" />
+
+			</RadioGroup>
+
+			<TextView
+				android:id="@+id/label_textextfilter1"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/spinnerextfilter1" />
+
+		    <Spinner
+		        android:id="@+id/spinner_extfilter1"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:entries="@array/extfilterlist1"
+		        android:theme="@style/spinnerExtFilterItemStyle"
+		        android:paddingBottom="5dip"
+		        android:spinnerMode="dropdown" />
+
+			<TextView
+				android:id="@+id/label_textextfilter2"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/spinnerextfilter2" />
+
+		    <Spinner
+		        android:id="@+id/spinner_extfilter2"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:entries="@array/extfilterlist2"
+		        android:theme="@style/spinnerExtFilterItemStyle"
+		        android:paddingBottom="5dip"
+		        android:spinnerMode="dropdown" />
+
+			<TextView
+				android:id="@+id/label_radius"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/radiusMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_radius"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_sigma_spatial"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/sigmaspatialMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_sigma_spatial"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_sigma_range"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/sigmarangeMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_sigma_range"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_guided_r"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/guidedrMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_guided_r"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_guided_eps"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/guidedepsMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_guided_eps"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_ad_iterations"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/aditerationsMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_ad_iterations"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+			<TextView
+				android:id="@+id/label_ad_k"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/adkMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_ad_k"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_ad_lambda"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/adlambdaMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_ad_lambda"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_nlm_search_window"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/nlmsearchwindowMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_nlm_search_window"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_nlm_patch_size"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/nlmpatchsizeMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_nlm_patch_size"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_nlm_h"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/nlmhMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_nlm_h"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_wavelet_threshold"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/waveletthresholdMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_wavelet_threshold"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<LinearLayout
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+				android:padding="0dip"
+		        android:orientation="horizontal"
+		        android:gravity="center_vertical">
+
+		        <TextView
+					android:id="@+id/label_init1"
+		            android:layout_width="10dp"
+		            android:layout_height="wrap_content"
+		            android:layout_weight="1"
+					android:layout_marginLeft="10sp"
+					android:layout_marginRight="10sp"
+    		        android:text="@string/initMenu"
+    		        android:textSize="14sp" />
+
+		        <Button
+		            android:id="@+id/button_init1"
+					style="@style/MyButton"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+					android:layout_marginLeft="10sp"
+					android:layout_marginRight="10sp"
+		            android:text="@string/btnInit" />
+
+		    </LinearLayout>
+
+			<TextView
+				android:id="@+id/label_textextfilter3"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/spinnerextfilter3" />
+
+		    <Spinner
+		        android:id="@+id/spinner_extfilter3"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:entries="@array/extfilterlist3"
+		        android:theme="@style/spinnerExtFilterItemStyle"
+		        android:paddingBottom="5dip"
+		        android:spinnerMode="dropdown" />
+
+			<TextView
+				android:id="@+id/label_textextfilter4"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/spinnerextfilter4" />
+
+		    <Spinner
+		        android:id="@+id/spinner_extfilter4"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:entries="@array/extfilterlist4"
+		        android:theme="@style/spinnerExtFilterItemStyle"
+		        android:paddingBottom="5dip"
+		        android:spinnerMode="dropdown" />
+
+			<TextView
+				android:id="@+id/label_scurve_gain"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/scurvegainMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_scurve_gain"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_scurve_cutoff"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/scurvecutoffMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_scurve_cutoff"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_adaptive_window_size"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/adaptivewindowsizeMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_adaptive_window_size"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<TextView
+				android:id="@+id/label_adaptive_c"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingTop="2sp"
+				android:layout_marginLeft="10sp"
+				android:layout_marginRight="10sp"
+				android:layout_gravity="left"
+				android:text="@string/adaptivecMenu" />
+
+			<SeekBar
+				android:id="@+id/seek_adaptive_c"
+				style="@style/PageSeekBar"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="4sp"
+				android:paddingRight="4sp" />
+
+			<LinearLayout
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+				android:padding="0dip"
+		        android:orientation="horizontal"
+		        android:gravity="center_vertical">
+
+		        <TextView
+					android:id="@+id/label_init2"
+		            android:layout_width="0dp"
+		            android:layout_height="wrap_content"
+		            android:layout_weight="1"
+					android:layout_marginLeft="10sp"
+					android:layout_marginRight="10sp"
+    		        android:text="@string/initMenu"
+    		        android:textSize="14sp" />
+
+		        <Button
+		            android:id="@+id/button_init2"
+					style="@style/MyButton"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+					android:layout_marginLeft="10sp"
+					android:layout_marginRight="10sp"
+		            android:text="@string/btnInit" />
+
+		    </LinearLayout>
+
 			<TextView
 				android:id="@+id/label_sharpen"
 				android:layout_width="match_parent"
@@ -235,9 +684,6 @@
 				android:layout_height="wrap_content"
 				android:paddingLeft="4sp"
 				android:paddingRight="4sp" />
-
-
-
 
 		</LinearLayout>
 	</ScrollView>
