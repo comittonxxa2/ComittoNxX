@@ -147,9 +147,33 @@
     <string name="rotateMenu">画面方向切替</string>
     <string name="pageselMenu">ページ選択</string>
     <string name="sharpenMenu">画像シャープ化(%)</string>
+    <string name="initMenu">設定を初期状態に戻す</string>
     <string name="invertMenu">色反転</string>
     <string name="grayMenu">グレースケール化</string>
     <string name="coloringMenu">自動着色</string>
+    <string name="extfiltergMenu">拡張フィルタ</string>
+    <string name="extprefiltergMenu">画像補間前</string>
+    <string name="extpostfiltergMenu">画像補間後</string>
+    <string name="spinnerextfilter1">統計・ソート系</string>
+    <string name="spinnerextfilter2">エッジ保存平滑化系</string>
+    <string name="spinnerextfilter3">モルフォロジー演算系</string>
+    <string name="spinnerextfilter4">階調変換系</string>
+    <string name="radiusMenu">近傍ピクセルの探索範囲(半径)(%)</string>
+    <string name="sigmaspatialMenu">空間方向のガウス分布の広がり(標準偏差)(%)</string>
+    <string name="sigmarangeMenu">値(輝度・色)の差に関するガウス分布の広がり(標準偏差)(%)</string>
+    <string name="guidedrMenu">フィルターの半径(%)</string>
+    <string name="guidedepsMenu">正則化パラメータ(%)</string>
+    <string name="aditerationsMenu">処理の繰り返し回数(反復回数)(%)</string>
+    <string name="adkMenu">エッジ(境界)を保存するためのしきい値感度(%)</string>
+    <string name="adlambdaMenu">1回あたりの拡散の強さ(ステップサイズ/タイムステップ)(%)</string>
+    <string name="nlmsearchwindowMenu">探索窓サイズ(%)</string>
+    <string name="nlmpatchsizeMenu">類似度比較パッチサイズ(%)</string>
+    <string name="nlmhMenu">フィルター強度パラメータ(%)</string>
+    <string name="waveletthresholdMenu">高周波成分(ディテール・ノイズ成分)を除去・抑制するためのしきい値(%)</string>
+    <string name="scurvecutoffMenu">カットオフ/中心点(%)</string>
+    <string name="scurvegainMenu">ゲイン/傾き・コントラストの強さ(%)</string>
+    <string name="adaptivewindowsizeMenu">注目画素の周囲にある近傍領域(ブロック)のサイズ(幅・高さ)(%)</string>
+    <string name="adaptivecMenu">近傍領域の平均輝度からどれだけ値を引くか(閾値をどれだけ下げるか)の調整用定数(%)</string>
     <string name="moireMenu">モアレ軽減</string>
     <string name="topsingleMenu">先頭ページを単独表示</string>
     <string name="brightMenu">明るさ補正(%)</string>
@@ -246,6 +270,7 @@
     <string name="btnRevert">戻す</string>
     <string name="btnClear">クリア</string>
     <string name="btnCancel">キャンセル</string>
+    <string name="btnInit">初期化</string>
     <string name="opLabel">タップのパターンを選択してください。\nメニューの「操作確認」で確認できます。</string>
     <string name="opReverse">反転する</string>
     <string name="opCheck">確認</string>
@@ -1019,5 +1044,40 @@
     <string name="themepreset06">テーマ6</string>
     <string name="themepreset07">テーマ7</string>
     <string name="themepreset08">テーマ8</string>
+
+    <string-array name="extfilterlist1">
+        <item>無し</item>
+        <item>3×3ガウシアンフィルター</item>
+        <item>5×5ガウシアンフィルター</item>
+        <item>7×7ガウシアンフィルター</item>
+        <item>3×3メディアンフィルター</item>
+        <item>5×5メディアンフィルター</item>
+        <item>7×7メディアンフィルター</item>
+        <item>3×3最大値フィルター</item>
+        <item>5×5最大値フィルター</item>
+        <item>3×3最小値フィルター</item>
+        <item>5×5最小値フィルター</item>
+    </string-array>
+    <string-array name="extfilterlist2">
+        <item>無し</item>
+        <item>バイラテラルフィルター</item>
+        <item>ガイデッドフィルター</item>
+        <item>異方性拡散フィルター</item>
+        <item>NL-Meansフィルター</item>
+        <item>ウェーブレットフィルター</item>
+    </string-array>
+    <string-array name="extfilterlist3">
+        <item>無し</item>
+        <item>オープニングフィルター</item>
+        <item>クロージングフィルター</item>
+        <item>Top-Hatフィルター</item>
+        <item>Black-Hatフィルター</item>
+    </string-array>
+    <string-array name="extfilterlist4">
+        <item>無し</item>
+        <item>S字カーブフィルター</item>
+        <item>適応的二値化フィルター</item>
+        <item>大津の二値化フィルター</item>
+    </string-array>
 
 </resources>
