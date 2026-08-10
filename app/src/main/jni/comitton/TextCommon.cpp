@@ -6,9 +6,10 @@
 #include <android/log.h>
 #endif
 
+#include <memory>
 #include "text.h"
 
-extern BYTE		*gTextImages[MAX_TEXTPAGE];
+extern std::unique_ptr<BYTE[]> gTextImages[MAX_TEXTPAGE];
 extern int		gTextImagePages[MAX_TEXTPAGE];
 extern int		gTextImageSize;
 
@@ -18,7 +19,7 @@ int TextImagesAlloc(int size) {
 
 	// イメージバッファ獲得
 	for (int i = 0 ; i < MAX_TEXTPAGE ; i ++) {
-		gTextImages[i] = (BYTE*)malloc(size);
+	    gTextImages[i] = std::unique_ptr<BYTE[]>(new (std::nothrow) BYTE[size]);
 		if (gTextImages[i] == nullptr) {
 			TextImagesFree();
 			return ERROR_CODE_MALLOC_FAILURE;
@@ -55,7 +56,7 @@ void TextImagesFree()
 	for (int i = 0 ; i < MAX_TEXTPAGE ; i ++) {
 		if (gTextImages[i] != NULL) {
 			// 解放
-			free(gTextImages[i]);
+			gTextImages[i].reset();
 			gTextImages[i] = NULL;
 		}
 		gTextImagePages[i] = -1;

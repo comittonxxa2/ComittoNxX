@@ -32,7 +32,7 @@ typedef struct {
 	// 参照する画素数
 	int count;     
 	// スケールに応じた重み配列
-	float *weights;
+	std::unique_ptr<float[]> weights;
 } WeightInfo;
 
 // 画質優先のため中間データを保持する構造体
@@ -75,7 +75,7 @@ static float lanczosWeight(float x)
 }
 
 // 重みテーブルの事前計算
-void PrecomputeWeights(WeightInfo* table, int dstSize, int srcSize)
+bool PrecomputeWeights(WeightInfo* table, int dstSize, int srcSize)
 {
 	float scale = (float)dstSize / srcSize;
 	float rscale = 1.0f / scale;
@@ -91,7 +91,11 @@ void PrecomputeWeights(WeightInfo* table, int dstSize, int srcSize)
 		int stop  = (int)floorf(center + support - 0.5f);
 		table[i].start = start;
 		table[i].count = stop - start + 1;
-		table[i].weights = (float*)malloc(sizeof(float) * table[i].count);
+		table[i].weights = std::unique_ptr<float[]>(new (std::nothrow) float[table[i].count]);
+		if (table[i].weights == nullptr && table[i].count > 0) {
+			LOGE("PrecomputeWeights: malloc error.(weights / index=%d)", i);
+			return false;
+		}
 
 		float sum = 0;
 		for (int j = 0; j < table[i].count; j++) {
@@ -109,6 +113,7 @@ void PrecomputeWeights(WeightInfo* table, int dstSize, int srcSize)
 			}
 		}
 	}
+	return true;
 }
 
 // 水平リサイズ実行
@@ -211,16 +216,49 @@ int CreateScaleLanczos3(int index, int Page, int Half, int Count, int SclWidth, 
 
 	// 処理を軽くするため、重みテーブルを事前に計算を行い、水平と垂直のリサイズ処理を別々にした
 
+	std::unique_ptr<WeightInfo[]> hWeights = std::unique_ptr<WeightInfo[]>(new (std::nothrow) WeightInfo[SclWidth]);
+	std::unique_ptr<WeightInfo[]> vWeights = std::unique_ptr<WeightInfo[]>(new (std::nothrow) WeightInfo[SclHeight]);
+
+	if (!hWeights || !vWeights) {
+	    LOGE("MemAlloc: malloc error.(Weights)");
+	    ret = ERROR_CODE_MALLOC_FAILURE;
+	    return ret;
+	}
+
 	// 重みテーブル事前計算
-	WeightInfo *hWeights = (WeightInfo*)malloc(sizeof(WeightInfo) * SclWidth);
-	WeightInfo *vWeights = (WeightInfo*)malloc(sizeof(WeightInfo) * SclHeight);
-	PrecomputeWeights(hWeights, SclWidth, OrgWidth);
-	PrecomputeWeights(vWeights, SclHeight, OrgHeight);
+	if (!PrecomputeWeights(hWeights.get(), SclWidth, OrgWidth)) {
+		LOGE("MemAlloc: malloc error.(tempBuffer outer)");
+		ret = ERROR_CODE_MALLOC_FAILURE;
+		return ret;
+	}
+	if (!PrecomputeWeights(vWeights.get(), SclHeight, OrgHeight)) {
+		LOGE("MemAlloc: malloc error.(tempBuffer outer)");
+		ret = ERROR_CODE_MALLOC_FAILURE;
+		return ret;
+	}
+
+	std::unique_ptr<std::unique_ptr<FloatPixel[]>[]> tempBuffer = std::unique_ptr<std::unique_ptr<FloatPixel[]>[]>(new (std::nothrow) std::unique_ptr<FloatPixel[]>[OrgHeight]);
+
+	if (!tempBuffer) {
+		LOGE("MemAlloc: malloc error.(tempBuffer outer)");
+		ret = ERROR_CODE_MALLOC_FAILURE;
+		return ret;
+	}
+
+	// 各行のバッファを確保
+	for (int i = 0; i < OrgHeight; i++) {
+		tempBuffer[i] = std::unique_ptr<FloatPixel[]>(new (std::nothrow) FloatPixel[SclWidth]);
+		if (!tempBuffer[i]) {
+			LOGE("MemAlloc: malloc error.(tempBuffer inner / index=%d)", i);
+			ret = ERROR_CODE_MALLOC_FAILURE;
+			return ret;
+		}
+	}
 
 	// 中間バッファ領域確保(画質維持のためFloatPixelを使用)
-	FloatPixel **tempBuffer = (FloatPixel**)malloc(sizeof(FloatPixel*) * OrgHeight);
+	std::unique_ptr<FloatPixel*[]> rawTempBuffer(new (std::nothrow) FloatPixel*[OrgHeight]);
 	for (int i = 0; i < OrgHeight; i++) {
-		tempBuffer[i] = (FloatPixel*)malloc(sizeof(FloatPixel) * SclWidth);
+		rawTempBuffer[i] = tempBuffer[i].get();
 	}
 
 	pthread_t thread[gMaxThreadNum];
@@ -238,9 +276,9 @@ int CreateScaleLanczos3(int index, int Page, int Half, int Count, int SclWidth, 
 		params[i].OrgWidth = OrgWidth;
 		params[i].OrgHeight = OrgHeight;
 		params[i].index = index;
-		params[i].hWeights = hWeights;
-		params[i].vWeights = vWeights;
-		params[i].tempBuffer = tempBuffer;
+		params[i].hWeights = hWeights.get();
+		params[i].vWeights = vWeights.get();
+		params[i].tempBuffer = rawTempBuffer.get();
 
 		if (i < gMaxThreadNum - 1) {
 			/* スレッド起動 */
@@ -261,6 +299,7 @@ int CreateScaleLanczos3(int index, int Page, int Half, int Count, int SclWidth, 
 		/*VerticalPass_ThreadFunc()スレッドが終了するのを待機する。VerticalPass_ThreadFunc()スレッドが終了していたら、この関数はすぐに戻る*/
 		params[i].stindex = start;
 		params[i].edindex = start = SclHeight * (i + 1) / gMaxThreadNum;
+		params[i].tempBuffer = rawTempBuffer.get();
 
 		if (i < gMaxThreadNum - 1) {
 			/* スレッド起動 */
@@ -277,17 +316,17 @@ int CreateScaleLanczos3(int index, int Page, int Half, int Count, int SclWidth, 
 
 	// リソース解放
 	for (int i = 0; i < SclWidth; i++) {
-		free(hWeights[i].weights);
+		hWeights[i].weights.reset();
 	}
 	for (int i = 0; i < SclHeight; i++) {
-		free(vWeights[i].weights);
+		vWeights[i].weights.reset();
 	}
 	for (int i = 0; i < OrgHeight; i++) {
-		free(tempBuffer[i]);
+		tempBuffer[i].reset();
 	}
-	free(tempBuffer);
-	free(hWeights);
-	free(vWeights);
+	tempBuffer.reset();
+	hWeights.reset();
+	vWeights.reset();
 
 	for (int i = 0; i < gMaxThreadNum; i++) {
 		if (status[i] != nullptr) ret = (long)status[i];

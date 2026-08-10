@@ -4,14 +4,14 @@
 #include <string.h>
 #include <android/log.h>
 #include <stdio.h>
+#include <memory>
 #include <unrar/rar.hpp>
 #include "common.h"
 
 #define ERROR_CODE_MALLOC_FAILURE -1001
 
-byte *ToBuff = nullptr;
-byte *FromBuff = nullptr;
-byte *Window = nullptr;
+std::unique_ptr<byte[]> ToBuff = nullptr;
+std::unique_ptr<byte[]> FromBuff = nullptr;
 int		FromPos = 0;
 int		ToPos = 0;
 
@@ -23,7 +23,7 @@ int		RarVersion = 0;
 bool	NoCompress = false;
 
 ComprDataIO	DataIO;
-Unpack		*Unp = nullptr;
+std::unique_ptr<Unpack> Unp = nullptr;
 
 extern "C" {
 /*
@@ -33,64 +33,32 @@ extern "C" {
  */
 JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarAlloc(JNIEnv *env, jclass obj, jint cmplen, jint orglen)
 {
-	if (FromBuff != nullptr) {
-		free(FromBuff);
+	std::unique_ptr<byte[]> newFromBuff;
+	std::unique_ptr<byte[]> newToBuff;
+
+	try {
+		newFromBuff = std::make_unique<byte[]>(cmplen);
+		newToBuff = std::make_unique<byte[]>(orglen);
 	}
-	if (ToBuff != nullptr) {
-		free(ToBuff);
+	catch (const std::bad_alloc&) {
+		return ERROR_CODE_MALLOC_FAILURE;
 	}
-#if 0	// COMITTONxT_MOD
-	if (Window != NULL) {
-		free(Window);
+
+	if (newFromBuff == nullptr || newToBuff == nullptr) {
+		return ERROR_CODE_MALLOC_FAILURE;
 	}
-#endif
-	FromBuff = (byte*)malloc(cmplen);
-	ToBuff = (byte*)malloc(orglen);
-#if 0	// COMITTONxT_MOD
-	Window = (byte*)malloc(MAXWINSIZE);
-#endif
+
+	FromBuff = std::move(newFromBuff);
+	ToBuff = std::move(newToBuff);
 
 	MaxCompLen = cmplen;
 	MaxOrigLen = orglen;
 
-#if 0	// COMITTONxT_MOD
-	if (FromBuff == NULL || ToBuff == NULL || Window == NULL) {
-		if (FromBuff != NULL) {
-			free(FromBuff);
-			FromBuff = NULL;
-		}
-		if (ToBuff != NULL) {
-			free(ToBuff);
-			ToBuff = NULL;
-		}
-		if (Window != NULL) {
-			free(Window);
-			Window = NULL;
-		}
-		return -1;
+	if (Unp == nullptr) {
+		Unp = std::make_unique<Unpack>(&DataIO);
 	}
-#else
-	if (FromBuff == nullptr || ToBuff == nullptr) {
-		if (FromBuff != nullptr) {
-			free(FromBuff);
-			FromBuff = nullptr;
-		}
-		if (ToBuff != nullptr) {
-			free(ToBuff);
-			ToBuff = nullptr;
-		}
-		return ERROR_CODE_MALLOC_FAILURE;
-	}
-#endif
-	if (Unp == NULL) {
-		Unp = new Unpack(&DataIO);
-	}
-#if 0	// COMITTONxT_MOD
-	Unp->Init(Window);
-#else
-    // 外部確保したバッファを利用出来なくなった
-	Unp->Init(UNPACK_MAX_WRITE,false);
-#endif
+	
+	Unp->Init(UNPACK_MAX_WRITE, false);
 	return 0;
 }
 
@@ -104,7 +72,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarInit(JNIEnv *env,
 #ifdef DEBUG
 	LOGD("rarInit : cl=%d, ol=%d, rv=%d, nc=%d", cmplen, orglen, rarver, (int)nocomp);
 #endif
-	if (FromBuff == NULL || ToBuff == NULL) {
+	if (FromBuff == nullptr || ToBuff == nullptr) {
 		return -1;
 	}
 	if (MaxCompLen < cmplen || MaxOrigLen < orglen) {
@@ -131,7 +99,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarInit(JNIEnv *env,
  */
 JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarWrite(JNIEnv *env, jclass obj, jbyteArray cmpArray, jint offset, jint size)
 {
-	if (FromBuff == NULL) {
+	if (FromBuff == nullptr) {
 		return -1;
 	}
 
@@ -161,26 +129,17 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarDecomp(JNIEnv *en
 #endif
 	if (NoCompress) {
 		// 無圧縮の場合はそのままコピー
-		memcpy(ToBuff, FromBuff, OrigLen);
+		memcpy(ToBuff.get(), FromBuff.get(), OrigLen);
 	}
 	else {
-	    DataIO.CurUnpRead=0;
-	    DataIO.CurUnpWrite=0;
-#if 0	// COMITTONxT_MOD
-	    DataIO.UnpFileCRC=0xffffffff;
-	    DataIO.PackedCRC=0xffffffff;
-#else
-        // Hashに変わっている
-        // 何もしなくてもOK？
-#endif
-	    DataIO.UnpVolume = 0;
-	    DataIO.NextVolumeMissing=false;
-	//    DataIO.TotalArcSize = cmplen;
-	//    DataIO.UnpArcSize = cmplen;
+		DataIO.CurUnpRead = 0;
+		DataIO.CurUnpWrite = 0;
+		DataIO.UnpVolume = 0;
+		DataIO.NextVolumeMissing = false;
 		DataIO.SetPackedSizeToRead(CompLen);
 	
-		DataIO.SetUnpackFromMemory(FromBuff, CompLen);
-		DataIO.SetUnpackToMemory(ToBuff, OrigLen);
+		DataIO.SetUnpackFromMemory(FromBuff.get(), CompLen);
+		DataIO.SetUnpackToMemory(ToBuff.get(), OrigLen);
 
 #if 0	// COMITTONxT_MOD
 		memset(Window, 0, MAXWINSIZE);
@@ -200,7 +159,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarDecomp(JNIEnv *en
  */
 JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarRead(JNIEnv *env, jclass obj, jbyteArray orgArray, jint offset, jint size)
 {
-	if (ToBuff == NULL) {
+	if (ToBuff == nullptr) {
 		return -1;
 	}
 
@@ -225,7 +184,7 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarRead(JNIEnv *env,
  */
 JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarInitSeek(JNIEnv *env, jclass obj)
 {
-	if (ToBuff == NULL) {
+	if (ToBuff == nullptr) {
 		return -1;
 	}
 
@@ -240,28 +199,8 @@ JNIEXPORT jint JNICALL Java_src_comitton_jni_CallJniLibrary_rarInitSeek(JNIEnv *
  */
 JNIEXPORT void JNICALL Java_src_comitton_jni_CallJniLibrary_rarClose(JNIEnv *env, jclass obj)
 {
-	if (ToBuff != NULL) {
-		free(ToBuff);
-		ToBuff = NULL;
-//		LOGD("Close : ToBuff");
-	}
-	if (FromBuff != NULL) {
-		free(FromBuff);
-		FromBuff = NULL;
-//		LOGD("Close : FromBuff");
-	}
-#if 0	// COMITTONxT_MOD
-	if (Window != NULL) {
-		free(Window);
-		Window = NULL;
-//		LOGD("Close : Window");
-	}
-#endif
-//	Unp = NULL;
-//	if (Unp != NULL) {
-//		delete Unp;
-//		LOGD("Close : Delete Unp");
-//	}
+	ToBuff.reset();
+	FromBuff.reset();
 
 	CompLen = 0;
 	OrigLen = 0;

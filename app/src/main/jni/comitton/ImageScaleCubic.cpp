@@ -36,7 +36,7 @@ typedef struct _cubic_spline {
 
 #define MAX_CUBIC_SPLINE	256
 
-CUBIC_SPLINE	*gCubicSplines = NULL;
+std::unique_ptr<CUBIC_SPLINE[]> gCubicSplines;
 
 float bicubic_spline(float t)
 {
@@ -167,7 +167,7 @@ int CreateScaleCubic(int index, int Page, int Half, int Count, int SclWidth, int
 	int		by;
 
 	if (gCubicSplines == nullptr) {
-		gCubicSplines = (CUBIC_SPLINE*)malloc(MAX_CUBIC_SPLINE * sizeof(CUBIC_SPLINE));
+	    gCubicSplines = std::unique_ptr<CUBIC_SPLINE[]>(new (std::nothrow) CUBIC_SPLINE[MAX_CUBIC_SPLINE]);
         if (gCubicSplines == nullptr) {
             LOGE("Initialize: malloc error. (gCubicSplines)");
             return ERROR_CODE_MALLOC_FAILURE;

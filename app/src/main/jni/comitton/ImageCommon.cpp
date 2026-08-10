@@ -16,20 +16,20 @@
 std::mutex monitor_;
 
 extern bool         gIsInit[];
-extern IMAGEDATA	*gImageData[];
-extern char			*gLoadBuffer[];
-extern LONG			**gLinesPtr[];
+extern std::unique_ptr<IMAGEDATA[]> gImageData[];
+extern std::unique_ptr<char[]> gLoadBuffer[];
+extern std::unique_ptr<LONG*[]> gLinesPtr[];
 /** 行のポインタ保持 */
-extern LONG			**gDsLinesPtr[];
-extern LONG			**gSclLinesPtr[];
+extern std::unique_ptr<LONG*[]> gDsLinesPtr[];
+extern std::unique_ptr<LONG*[]>   gSclLinesPtr[];
 
 extern long			gTotalPages[];
 extern long			gLoadBuffSize[];
 
-extern BUFFMNG		*gBuffMng[];
+extern std::unique_ptr<BUFFMNG[]> gBuffMng[];
 extern long			gBuffNum[];
 
-extern BUFFMNG		*gSclBuffMng[];
+extern std::unique_ptr<BUFFMNG[]> gSclBuffMng[];
 extern long			gSclBuffNum[];
 
 extern int			gCancel[];
@@ -40,13 +40,13 @@ extern char gDitherY_3bit[8];
 extern char gDitherY_2bit[4];
 
 /** サイズ変更時の画像補間計算に利用する領域 */
-long long	*gSclLLongParam[MAX_BUFFER_INDEX] = {nullptr};
+std::unique_ptr<long long[]> gSclLLongParam[MAX_BUFFER_INDEX];
 /** サイズ変更時の画像補間計算に利用する領域 */
-int			*gSclIntParam1[MAX_BUFFER_INDEX] = {nullptr};
+std::unique_ptr<int[]> gSclIntParam1[MAX_BUFFER_INDEX];
 /** サイズ変更時の画像補間計算に利用する領域 */
-int			*gSclIntParam2[MAX_BUFFER_INDEX] = {nullptr};
+std::unique_ptr<int[]> gSclIntParam2[MAX_BUFFER_INDEX];
 /** サイズ変更時の画像補間計算に利用する領域 */
-int			*gSclIntParam3[MAX_BUFFER_INDEX] = {nullptr};
+std::unique_ptr<int[]> gSclIntParam3[MAX_BUFFER_INDEX];
 int			gMaxColumn[MAX_BUFFER_INDEX] = {0};
 int			gMaxLine[MAX_BUFFER_INDEX] = {0};
 
@@ -238,7 +238,7 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 		}
 //		LOGD("DrawScaleBitmap : lineindex=%d, buffindex=%d, buffpos=%d", lineindex, buffindex, buffpos);
         if (lineindex - cut_top >= 0) {
-    		gDsLinesPtr[index][lineindex - cut_top] = gBuffMng[index][buffindex].Buff + buffpos + cut_left + HOKAN_DOTS / 2;
+    		gDsLinesPtr[index][lineindex - cut_top] = gBuffMng[index][buffindex].Buff.get() + buffpos + cut_left + HOKAN_DOTS / 2;
 		}
 		buffpos += linesize;
 	}
@@ -259,9 +259,7 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 
 	if (psel == 0) {
 		int		ypos;
-		int		*xpos;
-
-		xpos = (int*)malloc(sizeof(int) * d_cx);
+		std::unique_ptr<int[]> xpos = std::make_unique<int[]>(d_cx);
         if (xpos == nullptr) {
             LOGE("DrawScaleBitMap : malloc error. (xpos)");
             return ERROR_CODE_MALLOC_FAILURE;
@@ -304,15 +302,14 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 			// 描画先バッファの1行目から順に描く
 			pixels = (WORD*)(((char*)pixels) + stride);
 		}
-		free (xpos);
+		xpos.reset();
 	}
 	else {
 		// 横固定90回転あり
 		// 描画先のサイズは横長が指定されているが、実体は縦長
-		int		*ypos;
 		int		xpos;
 
-		ypos = (int*)malloc(sizeof(int) * d_cy);
+		std::unique_ptr<int[]> ypos = std::make_unique<int[]>(d_cx);
         if (ypos == nullptr) {
             LOGE("DrawScaleBitMap : malloc error. (ypos)");
             return ERROR_CODE_MALLOC_FAILURE;
@@ -352,7 +349,7 @@ int DrawScaleBitmap(int index, int page, int rotate, int s_x, int s_y, int s_cx,
 			}
 			pixels = (WORD*)(((char*)pixels) + stride);
 		}
-		free (ypos);
+		ypos.reset();
 	}
 #ifdef DEBUG_DRAW_SCALE_BITMAP
     LOGD("DrawScaleBitmap: end:");
@@ -370,22 +367,23 @@ int MemAlloc(int index, int buffsize)
     gIsInit[index] = true;
 
     synchronized (monitor_) {
-        gLoadBuffer[index] = (char *) malloc(gLoadBuffSize[index]);
+        gLoadBuffer[index] = std::unique_ptr<char[]>(new (std::nothrow) char[gLoadBuffSize[index]]);
         if (gLoadBuffer[index] == nullptr) {
             LOGE("MemAlloc: malloc error.(LoadBuff)");
             ret = ERROR_CODE_MALLOC_FAILURE;
             goto ERROREND;
         }
 
-        gImageData[index] = (IMAGEDATA *) malloc(sizeof(IMAGEDATA) * gTotalPages[index]);
-        if (gImageData[index] == nullptr) {
+		try {
+			gImageData[index] = std::make_unique<IMAGEDATA[]>(gTotalPages[index]);
+		}
+		catch (const std::bad_alloc& e) {
             LOGE("MemAlloc: malloc error.(ImageData)");
             ret = ERROR_CODE_MALLOC_FAILURE;
             goto ERROREND;
         }
-        memset(gImageData[index], 0, sizeof(IMAGEDATA) * gTotalPages[index]);
 
-        gBuffMng[index] = (BUFFMNG *) malloc(sizeof(BUFFMNG) * buffnum);
+        gBuffMng[index] = std::unique_ptr<BUFFMNG[]>(new (std::nothrow) BUFFMNG[buffnum]);
         if (gBuffMng[index] == nullptr) {
             LOGE("MemAlloc: malloc error.(BuffMng)");
             ret = ERROR_CODE_MALLOC_FAILURE;
@@ -395,19 +393,18 @@ int MemAlloc(int index, int buffsize)
         int i;
         for (i = 0; i < buffnum; i++) {
             gBuffMng[index][i].Page = -1;    // 未使用状態に初期化
-            gBuffMng[index][i].Buff = (LONG *) malloc(GetBlockSize() * sizeof(LONG));
+            gBuffMng[index][i].Buff = std::unique_ptr<LONG[]>(new (std::nothrow) LONG[GetBlockSize()]);
             if (gBuffMng[index][i].Buff == nullptr) {
                 LOGE("MemAlloc: malloc error.(Buff / index=%d)", i);
                 // 確保に失敗した場合は戻らずに途中でループ終了させる
                 break;
             }
-            gBuffMng[index][i].Page = -1;
         }
         // 確保した数だけ保存
         gBuffNum[index] = i;
 
         // 拡大縮小画像領域確保
-        gSclBuffMng[index] = (BUFFMNG *) malloc(sizeof(BUFFMNG) * SCLBUFFNUM);
+        gSclBuffMng[index] = std::unique_ptr<BUFFMNG[]>(new (std::nothrow) BUFFMNG[SCLBUFFNUM]);
         if (gSclBuffMng[index] == nullptr) {
             LOGE("MemAlloc: malloc error.(SclBuffMng)");
             ret = ERROR_CODE_MALLOC_FAILURE;
@@ -416,7 +413,7 @@ int MemAlloc(int index, int buffsize)
         gSclBuffNum[index] = 0;
 
         // 保存先ラインポインタ確保
-        gSclLinesPtr[index] = (LONG **) malloc(sizeof(LONG *) * MAX_LINES);
+        gSclLinesPtr[index] = std::unique_ptr<LONG*[]>(new (std::nothrow) LONG*[MAX_LINES]);
         if (gSclLinesPtr[index] == nullptr) {
             LOGE("MemAlloc: malloc error.(SclLineBuffPtr)");
             ret = ERROR_CODE_MALLOC_FAILURE;
@@ -438,7 +435,7 @@ void MemFree(int index)
     synchronized (monitor_) {
         // 読み込みバッファの解放
         if (gLoadBuffer[index] != nullptr) {
-            free(gLoadBuffer[index]);
+            gLoadBuffer[index].reset();
             gLoadBuffer[index] = nullptr;
         }
 
@@ -446,11 +443,11 @@ void MemFree(int index)
         if (gBuffMng[index] != nullptr) {
             for (int i = 0; i < gBuffNum[index]; i++) {
                 if (gBuffMng[index][i].Buff != nullptr) {
-                    free(gBuffMng[index][i].Buff);
+                    gBuffMng[index][i].Buff.reset();
                     gBuffMng[index][i].Buff = nullptr;
                 }
             }
-            free(gBuffMng[index]);
+            gBuffMng[index].reset();
             gBuffMng[index] = nullptr;
         }
         gBuffNum[index] = 0;
@@ -459,18 +456,18 @@ void MemFree(int index)
         if (gSclBuffMng[index] != nullptr) {
             for (int i = 0; i < gSclBuffNum[index]; i++) {
                 if (gSclBuffMng[index][i].Buff != nullptr) {
-                    free(gSclBuffMng[index][i].Buff);
+                    gSclBuffMng[index][i].Buff.reset();
                     gSclBuffMng[index][i].Buff = nullptr;
                 }
             }
-            free(gSclBuffMng[index]);
+            gSclBuffMng[index].reset();
             gSclBuffMng[index] = nullptr;
         }
         gSclBuffNum[index] = 0;
 
         // 保存先ラインポインタ
         if (gSclLinesPtr[index] != nullptr) {
-            free(gSclLinesPtr[index]);
+            gSclLinesPtr[index].reset();
             gSclLinesPtr[index] = nullptr;
         }
 
@@ -551,8 +548,10 @@ int ScaleMemAlloc(int index, int linesize, int linenum)
 
 	// 不足分を確保
 	for (i = gSclBuffNum[index] ; i < SCLBUFFNUM && i < gSclBuffNum[index] + (buffnum - count) ; i ++) {
-		gSclBuffMng[index][i].Buff = (LONG*)malloc(GetBlockSize() * sizeof(LONG));
-		if (gSclBuffMng[index][i].Buff == nullptr) {
+		try {
+			gSclBuffMng[index][i].Buff = std::make_unique<LONG[]>(GetBlockSize());
+		}
+		catch (const std::bad_alloc& e) {
 			LOGE("Initialize: malloc error.(SclBuffMng / index=%d)", i);
 			gSclBuffNum[index] = i;
 			return ERROR_CODE_MALLOC_FAILURE;
@@ -584,14 +583,18 @@ int ScaleMemColumn(int index, int SclWidth)
 		// 幅が今まで使っていた物よりも大きければ再確保
 		ScaleMemColumnFree(index);
 
-		gSclLLongParam[index] = (long long*)malloc(sizeof(long long) * SclWidth);
-		gSclIntParam1[index]  = (int*)malloc(sizeof(int) * SclWidth);
-		gSclIntParam2[index]  = (int*)malloc(sizeof(int) * SclWidth);
-		gSclIntParam3[index]  = (int*)malloc(sizeof(int) * SclWidth);
+		gSclLLongParam[index] = std::unique_ptr<long long[]>(new (std::nothrow) long long[SclWidth]);
+		gSclIntParam1[index]  = std::unique_ptr<int[]>(new (std::nothrow) int[SclWidth]);
+		gSclIntParam2[index]  = std::unique_ptr<int[]>(new (std::nothrow) int[SclWidth]);
+		gSclIntParam3[index]  = std::unique_ptr<int[]>(new (std::nothrow) int[SclWidth]);
 
-		if (gSclLLongParam[index] == nullptr || gSclIntParam1[index] == nullptr || gSclIntParam2[index] == nullptr || gSclIntParam3[index] == nullptr) {
+		if (!gSclLLongParam[index] || !gSclIntParam1[index] || !gSclIntParam2[index] || !gSclIntParam3[index]) {
 			LOGE("ScaleMemColumn: MAlloc Error.");
 			gMaxColumn[index] = 0;
+		    gSclLLongParam[index].reset();
+		    gSclIntParam1[index].reset();
+		    gSclIntParam2[index].reset();
+		    gSclIntParam3[index].reset();
 			ScaleMemColumnFree(index);
 			return ERROR_CODE_MALLOC_FAILURE;
 		}
@@ -607,12 +610,14 @@ int ScaleMemLine(int index, int SclHeight)
 		// 高さが今まで使っていた物よりも大きければ再確保
 		ScaleMemLineFree(index);
 
-		gLinesPtr[index] = (LONG**)malloc(sizeof(LONG*) * (SclHeight + HOKAN_DOTS));
-		gDsLinesPtr[index] = (LONG**)malloc(sizeof(LONG*) * SclHeight);
+		gLinesPtr[index]   = std::unique_ptr<LONG*[]>(new (std::nothrow) LONG*[SclHeight + HOKAN_DOTS]);
+		gDsLinesPtr[index] = std::unique_ptr<LONG*[]>(new (std::nothrow) LONG*[SclHeight]);
 
-		if (gLinesPtr[index] == nullptr || gDsLinesPtr[index] == nullptr) {
+		if (!gLinesPtr[index] || !gDsLinesPtr[index]) {
 			LOGE("ScaleMemLine: MAlloc Error.");
 			gMaxLine[index] = 0;
+		    gLinesPtr[index].reset();
+		    gDsLinesPtr[index].reset();
 			ScaleMemLineFree(index);
 			return ERROR_CODE_MALLOC_FAILURE;
 		}
@@ -625,19 +630,19 @@ void ScaleMemColumnFree(int index)
 {
 	gMaxColumn[index] = 0;
 	if (gSclLLongParam[index] != nullptr) {
-		free(gSclLLongParam[index]);
+		gSclLLongParam[index].reset();
 		gSclLLongParam[index] = nullptr;
 	}
 	if (gSclIntParam1[index] != nullptr) {
-		free(gSclIntParam1[index]);
+		gSclIntParam1[index].reset();
 		gSclIntParam1[index] = nullptr;
 	}
 	if (gSclIntParam2[index] != nullptr) {
-		free(gSclIntParam2[index]);
+		gSclIntParam2[index].reset();
 		gSclIntParam2[index] = nullptr;
 	}
 	if (gSclIntParam3[index] != nullptr) {
-		free(gSclIntParam3[index]);
+		gSclIntParam3[index].reset();
 		gSclIntParam3[index] = nullptr;
 	}
 }
@@ -646,48 +651,48 @@ void ScaleMemLineFree(int index)
 {
 	gMaxLine[index] = 0;
 	if (gLinesPtr[index] != nullptr) {
-		free (gLinesPtr[index]);
+		gLinesPtr[index].reset();
 		gLinesPtr[index] = nullptr;
 	}
 
 	if (gDsLinesPtr[index] != nullptr) {
-		free (gDsLinesPtr[index]);
+		gDsLinesPtr[index].reset();
 		gDsLinesPtr[index] = nullptr;
 	}
 }
 
 void CheckImageType(int index, int *type)
 {
-    if (strncmp(gLoadBuffer[index]+6, "JFIF", 4)==0) {
+    if (strncmp(gLoadBuffer[index].get()+6, "JFIF", 4)==0) {
         *type = IMAGETYPE_JPEG;
     }
-    else if (strncmp(gLoadBuffer[index]+1,"PNG",3)==0) {
+    else if (strncmp(gLoadBuffer[index].get()+1,"PNG",3)==0) {
         *type = IMAGETYPE_PNG;
     }
-    else if (strncmp(gLoadBuffer[index],"GIF87a",6)==0 || strncmp(gLoadBuffer[index],"GIF89a",6)==0) {
+    else if (strncmp(gLoadBuffer[index].get(),"GIF87a",6)==0 || strncmp(gLoadBuffer[index].get(),"GIF89a",6)==0) {
         *type = IMAGETYPE_GIF;
     }
-    else if (strncmp(gLoadBuffer[index],"RIFF",4)==0 && strncmp(gLoadBuffer[index]+8,"WEBP",4)==0) {
+    else if (strncmp(gLoadBuffer[index].get(),"RIFF",4)==0 && strncmp(gLoadBuffer[index].get()+8,"WEBP",4)==0) {
         *type = IMAGETYPE_WEBP;
     }
-    else if (strncmp(gLoadBuffer[index]+4,"ftypavif",8)==0) {
+    else if (strncmp(gLoadBuffer[index].get()+4,"ftypavif",8)==0) {
         *type = IMAGETYPE_AVIF;
     }
     else if (
-        strncmp(gLoadBuffer[index]+4,"ftypheic",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftypheix",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftyphevc",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftypheim",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftypheis",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftyphevm",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftypmif1",8)==0 ||
-        strncmp(gLoadBuffer[index]+4,"ftypmsf1",8)==0
+        strncmp(gLoadBuffer[index].get()+4,"ftypheic",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftypheix",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftyphevc",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftypheim",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftypheis",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftyphevm",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftypmif1",8)==0 ||
+        strncmp(gLoadBuffer[index].get()+4,"ftypmsf1",8)==0
     ) {
         *type = IMAGETYPE_HEIF;
     }
     else if (
-        ((uint8_t)*gLoadBuffer[index] == 0xFF && (uint8_t)*gLoadBuffer[index] == 0x0A) ||
-        strncmp(gLoadBuffer[index]+4,"JXL",3)==0
+        ((uint8_t)*gLoadBuffer[index].get() == 0xFF && (uint8_t)*gLoadBuffer[index].get() == 0x0A) ||
+        strncmp(gLoadBuffer[index].get()+4,"JXL",3)==0
     ) {
         *type = IMAGETYPE_JXL;
     }
@@ -742,7 +747,7 @@ int SetBuff(int index, int page, uint32_t width, uint32_t height, uint8_t *data,
             gBuffMng[index][buffindex].Count = 0;
         }
 
-        buffptr = gBuffMng[index][buffindex].Buff + buffpos + HOKAN_DOTS / 2;
+        buffptr = gBuffMng[index][buffindex].Buff.get() + buffpos + HOKAN_DOTS / 2;
 
         // データセット
         yd3 = gDitherY_3bit[yy & 0x07];

@@ -78,7 +78,7 @@ int ImageHalf(int index, int Page, int Half, int Count, int OrgWidth, int OrgHei
 		}
 
 		// バッファ位置
-		buffptr = gSclBuffMng[index][buffindex].Buff + buffpos + HOKAN_DOTS / 2;
+		buffptr = gSclBuffMng[index][buffindex].Buff.get() + buffpos + HOKAN_DOTS / 2;
 //		LOGD("ImageHalf : buffindex=%d, buffpos=%d, linesize=%d", buffindex, buffpos, linesize);
 
 		for (xx = 0 ; xx < HalfWidth ; xx ++) {

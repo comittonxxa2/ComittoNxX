@@ -531,7 +531,7 @@ int SetLinesPtr(int index, int Page, int Half, int Count, int OrgWidth, int OrgH
 		}
 //		LOGD("SetLinesPtr: lineindex=%d, buffindex=%d, buffpos=%d", lineindex + HOKAN_DOTS / 2, buffindex, buffpos);
 //		gLinesPtr[index][lineindex + HOKAN_DOTS / 2] = pMngptr[buffindex].Buff + buffpos + HOKAN_DOTS / 2;
-		gLinesPtr[index][lineindex + HOKAN_DOTS / 2] = pMngptr[buffindex].Buff + buffpos;
+		gLinesPtr[index][lineindex + HOKAN_DOTS / 2] = pMngptr[buffindex].Buff.get() + buffpos;
 		buffpos += linesize;
 	}
 
@@ -632,7 +632,7 @@ int CopySclBuffMngToBuffMng(int index)
 			gBuffMng[index][buffindex].Half = gSclBuffMng[index][i].Half;
 			gBuffMng[index][buffindex].Size = gSclBuffMng[index][i].Size;
 			gBuffMng[index][buffindex].Count = 0;
-			memcpy(gBuffMng[index][buffindex].Buff, gSclBuffMng[index][i].Buff, GetBlockSize() * sizeof(LONG));
+			memcpy(gBuffMng[index][buffindex].Buff.get(), gSclBuffMng[index][i].Buff.get(), GetBlockSize() * sizeof(LONG));
 //			LOGD("CopySclBuffMngToBuffMng Ed : %d/%d -> %d/%d", i, gSclBuffNum[index], buffindex, gBuffNum[index]);
 		}
 	}
@@ -657,7 +657,7 @@ int RefreshSclLinesPtr(int index, int Page, int Half, int Count, int Height, int
 			return ret;
 		}
 
-		gSclLinesPtr[index][yy] = gSclBuffMng[index][buffindex].Buff + buffpos + HOKAN_DOTS / 2;
+		gSclLinesPtr[index][yy] = gSclBuffMng[index][buffindex].Buff.get() + buffpos + HOKAN_DOTS / 2;
 		gSclBuffMng[index][buffindex].Size += LineSize;
 		buffpos += LineSize;
 	}

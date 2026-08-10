@@ -1,6 +1,7 @@
 //#define DEBUG
 #include <jni.h>
 #include "common.h"
+#include <memory>
 
 #define  LOG_TAG    "comitton_img"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
@@ -102,7 +103,7 @@ typedef struct buff_manage {
 	long		Size;
     /** Scale変更をした回数 */
 	long		Count;
-	LONG		*Buff;
+	std::unique_ptr<LONG[]> Buff;
 } BUFFMNG;
 
 #define TYPE_ORIGINAL	1

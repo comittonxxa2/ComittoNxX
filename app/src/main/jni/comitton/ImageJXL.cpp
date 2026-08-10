@@ -1,6 +1,7 @@
 #include <android/log.h>
 #include <cstring>
 #include <vector>
+#include <memory>
 
 #include <jxl/decode.h>
 #include <jxl/decode_cxx.h>
@@ -21,7 +22,7 @@ int LoadImageJxl(int index, int loadCommand, IMAGEDATA *pData, int page, int sca
     int returnCode = 0;         // この関数のリターンコード
     uint32_t width;             // 画像の幅
     uint32_t height;            // 画像の高さ
-    uint8_t *buffer = nullptr;
+    std::unique_ptr<uint8_t[]> buffer = nullptr;
 
     JxlDecoderStatus status;
     JxlBasicInfo jxl_info;
@@ -93,15 +94,22 @@ int LoadImageJxl(int index, int loadCommand, IMAGEDATA *pData, int page, int sca
 #ifdef DEBUG
             LOGD("LoadImageJxl: buffer_size=%d", buffer_size);
 #endif
-            buffer = (uint8_t *)malloc(buffer_size);
-            if (buffer == (unsigned char *) nullptr)
+			try {
+				buffer = std::make_unique<uint8_t[]>(buffer_size);
+			}
+			catch (const std::bad_alloc&) {
+				returnCode = ERROR_CODE_MALLOC_FAILURE;
+				goto cleanup;
+			}
+
+            if (buffer == nullptr)
             {
                 returnCode = ERROR_CODE_MALLOC_FAILURE;
                 goto cleanup;
             }
 
             if (JXL_DEC_SUCCESS != JxlDecoderSetImageOutBuffer(decoder.get(), &format,
-                                                               buffer,
+                                                               buffer.get(),
                                                                buffer_size)) {
                 LOGE("LoadImageJxl: JxlDecoderSetImageOutBuffer failed");
                 returnCode = -9;
@@ -114,7 +122,7 @@ int LoadImageJxl(int index, int loadCommand, IMAGEDATA *pData, int page, int sca
 #ifdef DEBUG
             LOGD("LoadImageJxl: status == JXL_DEC_FULL_IMAGE");
 #endif
-            if (buffer == (unsigned char *) nullptr)
+            if (buffer == nullptr)
             {
                 LOGE("LoadImageJxl: UnableToReadImageData");
                 returnCode = -10;
@@ -125,7 +133,7 @@ int LoadImageJxl(int index, int loadCommand, IMAGEDATA *pData, int page, int sca
 #ifdef DEBUG
                 LOGD("LoadImageJxl: SetBuff() Start. page=%d, width=%d, height=%d", page, width, height);
 #endif
-                returnCode = SetBuff(index, page, width, height, buffer, COLOR_FORMAT_RGB);
+                returnCode = SetBuff(index, page, width, height, buffer.get(), COLOR_FORMAT_RGB);
                 if (returnCode < 0) {
                     LOGE("LoadImageJxl: SetBuff() failed. return=%d", returnCode);
                     returnCode = -10;
@@ -139,7 +147,7 @@ int LoadImageJxl(int index, int loadCommand, IMAGEDATA *pData, int page, int sca
 #ifdef DEBUG
                 LOGD("LoadImageJxl: SetBitmap() Start. page=%d, width=%d, height=%d", page, width, height);
 #endif
-                returnCode = SetBitmap(index, page, width, height, buffer, COLOR_FORMAT_RGB, canvas);
+                returnCode = SetBitmap(index, page, width, height, buffer.get(), COLOR_FORMAT_RGB, canvas);
                 if (returnCode < 0) {
                     LOGE("LoadImageJxl: SetBitmap() failed. return=%d", returnCode);
                     goto cleanup;
@@ -152,10 +160,6 @@ int LoadImageJxl(int index, int loadCommand, IMAGEDATA *pData, int page, int sca
 cleanup:
     // cleanup
     JxlDecoderReleaseInput(decoder.get());
-    if (buffer == (unsigned char *) nullptr)
-    {
-        free(buffer);
-    }
 
 #ifdef DEBUG
     LOGD("LoadImageJxl: End. return=%d, width=%d, height=%d", returnCode, width, height);
@@ -227,7 +231,7 @@ int ImageGetSizeJxl(int index, int type, jint *width, jint *height)
 cleanup:
     // cleanup
 #ifdef DEBUG
-    LOGD("ImageGetSizeJxl: End. return=%d, width=%d, height=%d", returnCode, *width, *height);
+    LOGD("ImageGetSizeJxl: End. return=%d", returnCode);
 #endif
     return returnCode;
 }

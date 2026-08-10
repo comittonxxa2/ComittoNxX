@@ -21,7 +21,7 @@ extern int	gCancel[];
 extern int	gMaxThreadNum;
 
 // 2層分のポインタを確保
-LONG** gWorkLinesPtr = nullptr;
+std::unique_ptr<std::unique_ptr<LONG[]>[]> gWorkLinesPtr;
 
 // ============================================================================
 // パイプライン設定構造体 & 定義
@@ -962,36 +962,30 @@ static void ApplyStage4(LONG** src, LONG** dst, int stY, int edY, int width, int
 // ----------------------------------------------------------------------------
 // フィルターの作業用のメモリーを確保
 // ----------------------------------------------------------------------------
-void InitWorkBuffers(int height, int width) {
+bool InitWorkBuffers(int height, int width) {
 	int pad = HOKAN_DOTS / 2;
 	// 1行あたりに必要な全体のサイズ(本体幅 + 左右の補間用余白)
 	int rowAllocSize = width + HOKAN_DOTS;
 	// 第1層 高さ(行数)分のポインタ配列を確保
-	gWorkLinesPtr = new LONG*[height];
+	gWorkLinesPtr = std::unique_ptr<std::unique_ptr<LONG[]>[]>(new (std::nothrow) std::unique_ptr<LONG[]>[height]);
+	if (!gWorkLinesPtr) return false;
 	for (int y = 0; y < height; y++) {
 		// 第2層 1行分の実際の画素データ領域を確保
-		LONG* rawBuffer = new LONG[rowAllocSize];
-		// 負のインデックスアクセス(buffptr[-2]等)への対応
-		gWorkLinesPtr[y] = rawBuffer + pad;
+		gWorkLinesPtr[y] = std::unique_ptr<LONG[]>(new (std::nothrow) LONG[rowAllocSize]);
+		if (!gWorkLinesPtr[y]) {
+			// 確保に失敗した場合、gWorkLinesPtr 自体をリセットしてこれまでに確保した分を自動解放
+			gWorkLinesPtr.reset();
+			return false;
+		}
 	}
+	return true;
 }
 
 // ----------------------------------------------------------------------------
 // フィルターの作業用のメモリーを開放
 // ----------------------------------------------------------------------------
-void FreeWorkBuffers(int height) {
-	if (gWorkLinesPtr == nullptr) return;
-	int pad = HOKAN_DOTS / 2;
-	for (int y = 0; y < height; y++) {
-		if (gWorkLinesPtr[y] != nullptr) {
-			// オフセットした分を引き戻して元の先頭アドレスをdeleteする
-			LONG* rawBuffer = gWorkLinesPtr[y] - pad;
-			delete[] rawBuffer;
-		}
-	}
-	// 第1層のポインタ配列を解放
-	delete[] gWorkLinesPtr;
-	gWorkLinesPtr = nullptr;
+void FreeWorkBuffers() {
+	gWorkLinesPtr.reset();
 }
 
 // ============================================================================
@@ -1017,8 +1011,13 @@ void *ImageFilterPipeline_ThreadFunc(void *param) {
 	pthread_barrier_wait(p->pBarrier);
 	// 直前の結果が入っているバッファ
 	LONG** currentSrc = gSclLinesPtr[index];
-	// 次の出力先バッファ
-	LONG** currentDst = gWorkLinesPtr;
+	// 次の出力先バッファの先頭アドレス配列を作成
+	std::vector<LONG*> workRawPtrs(OrgHeight + HOKAN_DOTS);
+	int pad = HOKAN_DOTS / 2;
+	for (int y = 0; y < OrgHeight + HOKAN_DOTS; y++) {
+		workRawPtrs[y] = gWorkLinesPtr[y].get() + pad;
+	}
+	LONG** currentDst = workRawPtrs.data();
 	// 2回目のフィルター処理
 	// gSclLinesPtr→gWorkLinesPtr
 	ApplyStage2(currentSrc, currentDst, stindex, edindex, OrgWidth, OrgHeight, p->config.stage2, p->config);
@@ -1040,7 +1039,6 @@ void *ImageFilterPipeline_ThreadFunc(void *param) {
 	// gWorkLinesPtr→latestData
 	LONG** latestData = currentDst;
 
-	int pad = HOKAN_DOTS / 2;
 	// latestData→gSclLinesPtr(右下のズレを補正して書き込む)
 	for (int yy = stindex; yy < edindex; yy++) {
 		LONG *buffptr = gSclLinesPtr[index][yy];
@@ -1083,7 +1081,10 @@ int ImageFilterPipeline(int index, int Page, int Half, int Count, int OrgWidth, 
 		return -7;
 	}
 	// フィルターの作業用のメモリーを確保
-	InitWorkBuffers(OrgHeight + HOKAN_DOTS, linesize);
+	if (!InitWorkBuffers(OrgHeight + HOKAN_DOTS, linesize)) {
+		// メモリ不足エラーとして安全に抜ける
+		return -6;
+	}
 
 	PrecomputeLUTs(config, gLinesPtr[index], OrgWidth, OrgHeight);
 
@@ -1126,7 +1127,7 @@ int ImageFilterPipeline(int index, int Page, int Half, int Count, int OrgWidth, 
 	pthread_barrier_destroy(&barrier);
 
 	// フィルターの作業用のメモリーを開放
-	FreeWorkBuffers(OrgHeight + HOKAN_DOTS);
+	FreeWorkBuffers();
 
 	return ret;
 }

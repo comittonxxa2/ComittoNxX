@@ -25,9 +25,8 @@ typedef short THUMBBLOCK;
 // サムネイル管理
 long long	gThumbnailId = 0;
 
-THUMBBLOCK	*gThBlockMng = nullptr;
-
-BYTE		**gThPageBuff = nullptr;	// 領域のアドレス
+std::unique_ptr<THUMBBLOCK[]>  gThBlockMng;
+std::unique_ptr<std::unique_ptr<BYTE[]>[]> gThPageBuff;	// 領域のアドレス
 
 int			gThPageNum = 0;	// ページ数
 int			gThPageBlockNum = 0;	// ページあたりのブロック数
@@ -37,7 +36,7 @@ int			gThUseBlockNum = 0;	// 使用中ブロック数
 int			gThPageSize = 0;	// ページのメモリサイズ
 int			gThImageNum = 0;	// 表示するイメージの数
 
-THUMBINFO	*gThImageMng = nullptr;	// イメージ管理(最大イメージ数分)
+std::unique_ptr<THUMBINFO[]> gThImageMng;	// イメージ管理(最大イメージ数分)
 
 bool gThMutexInit = false;
 pthread_mutex_t gThMutex;  // Mutex
@@ -91,18 +90,17 @@ int ThumbnailAlloc(long long id, int pagesize, int pagenum, int imagenum)
 		gThBlockNum = gThPageBlockNum * pagenum;	// 全ブロック数
 
 		// 保存領域確保(1ページ4MBでページ数分取得)
-		gThPageBuff = (BYTE**)malloc(sizeof(BYTE**) * gThPageNum);
+		gThPageBuff = std::unique_ptr<std::unique_ptr<BYTE[]>[]>(
+			new (std::nothrow) std::unique_ptr<BYTE[]>[gThPageNum]
+		);
 		if (gThPageBuff == nullptr) {
 			LOGE("ThumbnailInitialize : pages array alloc = null");
 			ret = ERROR_CODE_MALLOC_FAILURE;
 			goto ERROREND;
 		}
-		// ポインタ配列初期化
-		memset(gThPageBuff, 0, sizeof(BYTE**) * gThPageNum);
-	
 		// ページごとの領域獲得
 		for (int i = 0 ; i < gThPageNum ; i ++) {
-			gThPageBuff[i] = (BYTE*)malloc(gThPageSize);
+			gThPageBuff[i] = std::unique_ptr<BYTE[]>(new (std::nothrow) BYTE[gThPageSize]);
 			if (gThPageBuff[i] == nullptr) {
 				LOGE("ThumbnailInitialize : page alloc = null");
 				ret = ERROR_CODE_MALLOC_FAILURE;
@@ -110,7 +108,7 @@ int ThumbnailAlloc(long long id, int pagesize, int pagenum, int imagenum)
 			}
 		}	
 
-		gThBlockMng = (THUMBBLOCK*)malloc(sizeof(THUMBBLOCK) * gThBlockNum);
+		gThBlockMng = std::unique_ptr<THUMBBLOCK[]>(new (std::nothrow) THUMBBLOCK[gThBlockNum]);
 		if (gThBlockMng == nullptr) {
 			LOGE("ThumbnailInitialize : blocks alloc = null");
 			ret = ERROR_CODE_MALLOC_FAILURE;
@@ -119,7 +117,7 @@ int ThumbnailAlloc(long long id, int pagesize, int pagenum, int imagenum)
 	}
 
 	// ポインタ配列初期化
-	memset(gThBlockMng, 0xFF, sizeof(THUMBBLOCK) * gThBlockNum);
+	memset(gThBlockMng.get(), 0xFF, sizeof(THUMBBLOCK) * gThBlockNum);
 #ifdef DEBUG
 	LOGD("ThumbnailInitialize : pagenum=%d, pagesize=%d, blocknum=%d", pagenum, pagesize, gThBlockNum);
 #endif
@@ -129,12 +127,9 @@ int ThumbnailAlloc(long long id, int pagesize, int pagenum, int imagenum)
 	if (gThImageNum != imagenum) {
 		// 新しい個数
 		gThImageNum = imagenum;
-		// 管理領域獲得
-		if (gThImageMng != nullptr) {
-			// 既存領域は開放
-			free(gThImageMng);
-		}
-		gThImageMng = (THUMBINFO*)malloc(sizeof(THUMBINFO) * gThImageNum);
+		// 既存領域の解放 & 新規確保
+		// スマートポインタなら新しい配列を代入するだけで古い領域は自動的に解放される
+		gThImageMng = std::unique_ptr<THUMBINFO[]>(new (std::nothrow) THUMBINFO[gThImageNum]);
 		if (gThImageMng == nullptr) {
 			LOGE("ThumbnailInitialize : manage alloc = null");
 			ret = ERROR_CODE_MALLOC_FAILURE;
@@ -142,7 +137,7 @@ int ThumbnailAlloc(long long id, int pagesize, int pagenum, int imagenum)
 		}
 	}
 
-	memset(gThImageMng, 0xFF, sizeof(THUMBINFO) * gThImageNum);
+	memset(gThImageMng.get(), 0xFF, sizeof(THUMBINFO) * gThImageNum);
 #ifdef DEBUG
 	LOGD("ThumbnailInitialize : imagenum=%d", imagenum);
 #endif
@@ -436,7 +431,7 @@ int ThumbnailSave(long long id, int index, int bmp_width, int bmp_height, int bm
 			}
 			int pageindex = nextindex / gThPageBlockNum;
 			int blockptr = (nextindex % gThPageBlockNum) * THUMB_BLOCKSIZE;
-			buff = gThPageBuff[pageindex] + blockptr;
+			buff = gThPageBuff[pageindex].get() + blockptr;
 			nextindex = gThBlockMng[nextindex];
 			linecount = 0;
 		}
@@ -579,7 +574,7 @@ int ThumbnailDraw(long long id, int index, int bmp_width, int bmp_height, int bm
 			}
 			int pageindex = nextindex / gThPageBlockNum;
 			int blockptr = (nextindex % gThPageBlockNum) * THUMB_BLOCKSIZE;
-			buff = gThPageBuff[pageindex] + blockptr;
+			buff = gThPageBuff[pageindex].get() + blockptr;
 			nextindex = gThBlockMng[nextindex];
 			linecount = 0;
 		}
@@ -621,7 +616,7 @@ void ThumbnailFree(long long id)
 #ifdef DEBUG
 				LOGD("ThumbnailFree : gThPageBuff[%d] free", i);
 #endif
-				free (gThPageBuff[i]);
+				gThPageBuff[i].reset();
 			}
 		}	
 
@@ -629,7 +624,7 @@ void ThumbnailFree(long long id)
 #ifdef DEBUG
 		LOGD("ThumbnailFree : gThumbnailPages free");
 #endif
-		free (gThPageBuff);
+		gThPageBuff.reset();
 		gThPageBuff = NULL;
 	}
 
@@ -638,7 +633,7 @@ void ThumbnailFree(long long id)
 #ifdef DEBUG
         LOGD("ThumbnailFree : gThBlockMng free");
 #endif
-		free (gThBlockMng);
+		gThBlockMng.reset();
 		gThBlockMng = NULL;
 	}
 
@@ -654,7 +649,7 @@ void ThumbnailFree(long long id)
 		LOGD("ThumbnailFree : gThumbnailMng != NULL");
 #endif
 		// 解放
-		free (gThImageMng);
+		gThImageMng.reset();
 		gThImageMng = NULL;
 	}
 	gThImageNum = 0;
