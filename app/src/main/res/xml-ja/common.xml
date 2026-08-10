@@ -46,7 +46,7 @@
             android:summary="ビューアからの設定呼び出しで表示方向を呼び出し元の画面に固定する場合にチェックを入れる(再起動で反映)"
             android:title="ビューアからの設定呼び出しで元の画面に固定" />
         <ListPreference
-            android:defaultValue="1"
+            android:defaultValue="0"
             android:dialogTitle="表示方向(ビューア以外全て)"
             android:entries="@array/rotateall_name_list"
             android:entryValues="@array/rotateall_value_list"
