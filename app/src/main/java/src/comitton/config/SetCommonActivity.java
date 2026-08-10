@@ -220,6 +220,10 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	public static void SetOrientationEventListener(Activity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		int viewrota = getViewRotaAll(sharedPreferences);
+		// タブレット端末を検出
+		boolean isTablet = activity.getResources().getConfiguration().smallestScreenWidthDp >= 600;
+		// タブレット端末で縦画面は回転表示に切り替える
+		if (isTablet && (viewrota == 1 || viewrota == 6)) viewrota = 0;
 		if (getFalseDisplayViewRotate(sharedPreferences)) {
 			return;
 		}
@@ -243,10 +247,11 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 				RotateMain(activity, 90, viewrota);
 				break;
 		}
+		int finalViewrota = viewrota;
 		orientationEventListener = new OrientationEventListener(activity) {
 			// 傾きセンサーの角度を得る
 			public void onOrientationChanged(int orientation) {
-				RotateMain(activity, orientation, viewrota);
+				RotateMain(activity, orientation, finalViewrota);
 			}
 		};
 	}
@@ -366,7 +371,7 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	}
 
 	public static int getViewRotaAll(SharedPreferences sharedPreferences){
-		int val = DEF.getInt(sharedPreferences, DEF.KEY_VIEWROTAALL, "1");
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_VIEWROTAALL, "0");
 		if( val < 0 || val > RotateName.length ){
 			val = 0;
 		}
