@@ -11,5 +11,13 @@
             android:key="SmbRetryMode"
             android:summary="Check this box to increase the wait time between retries and reduce the retry frequency when access to the compressed file extraction library fails."
             android:title="Relaxed retry logic for compressed file extraction libraries." />
+       <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="SMB Library Selection"
+            android:entries="@array/selectsmblib_name_list"
+            android:entryValues="@array/selectsmblib_value_list"
+            android:key="SelectSmbLib"
+            android:summary="dummy"
+            android:title="SMB Library Selection" />
     </PreferenceCategory>
 </PreferenceScreen>
