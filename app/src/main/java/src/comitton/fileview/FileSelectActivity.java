@@ -38,6 +38,7 @@ import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.expandview.ExpandActivity;
+import src.comitton.fileaccess.SmbFileAccess;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.TouchPanelView;
@@ -1892,6 +1893,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mAozoraTextFile = SetFileListActivity.getAozoraTextFile(mSharedPreferences);
 		mThumbnailGrid = SetFileListActivity.getThumbnailGrid(mSharedPreferences);
 		mSkipUpdateFileList = SetFileListActivity.getSkipUpdateFileList(mSharedPreferences);
+		SmbFileAccess.setSmbMode(SetServerMessageBlockActivity.getSelectSmbLib(mSharedPreferences));
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
