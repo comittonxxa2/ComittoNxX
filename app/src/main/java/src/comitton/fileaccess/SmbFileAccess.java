@@ -39,10 +39,15 @@ import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.FileSelectActivity;
+import src.comitton.fileaccess.StorageManagerCompat;
 
 public class SmbFileAccess {
 	private static final String TAG = "SmbFileAccess";
 
+	private static int sSmbMode = DEF.SMB_MODE_AUTO;
+	public static void setSmbMode(int mode) {
+		sSmbMode = mode;
+    }
 	private static String[] parseUri(@NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. uri=" + uri);
@@ -291,7 +296,7 @@ public class SmbFileAccess {
 			parcelFileDescriptor =
 					storageManager.openProxyFileDescriptor(
 							ParcelFileDescriptor.MODE_READ_ONLY,
-							new SambaProxyFileCallback(activity, uri, user, pass),
+							new SambaProxyFileCallback(activity, uri, user, pass, "r"),
 							handler);
 		} catch (IOException e) {
 			throw new FileAccessException(TAG + ": openProxyFileDescriptor: SMB File not found.");
@@ -301,48 +306,49 @@ public class SmbFileAccess {
 	}
 
 	// ユーザ認証付きSambaストリーム
-	public static SmbRandomAccessFile openRandomAccessFile(@NonNull final String uri, @NonNull final String user, @NonNull final String pass, @NonNull final String mode) throws FileAccessException {
+	public static SmbRandomAccessFileCompat openRandomAccessFile(@NonNull final String uri, @NonNull final String user, @NonNull final String pass, @NonNull final String mode) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + pass);
 		//if (debug) {DEF.StackTrace(TAG, "smbAccessFile: ");}
-		SmbRandomAccessFile stream;
 		try {
-			if (!exists(uri, user, pass)) {
-				throw new FileAccessException(TAG + ": smbAccessFile: File not found.");
-			}
-		} catch (FileAccessException e) {
-			throw new FileAccessException(TAG + ": smbAccessFile: File not found.");
-		}
-
-		if (!DEF.isUiThread()) {
-			// UIスレッドではない時はそのまま実行
-			SmbFile sfile = smbFile(uri, user, pass);
-            try {
-                stream = new SmbRandomAccessFile(sfile, mode);
-            } catch (SmbException e) {
-				throw new FileAccessException(TAG + ": smbAccessFile: Can not get SmbRandomAccessFile.");
-            }
-        } else {
-			// UIスレッドの時は新しいスレッド内で実行
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			Future<SmbRandomAccessFile> future = executor.submit(new Callable<SmbRandomAccessFile>() {
-
-				@Override
-				public SmbRandomAccessFile call() throws SmbException, MalformedURLException, FileAccessException {
-					SmbFile sfile = smbFile(uri, user, pass);
-					return new SmbRandomAccessFile(sfile, "r");
-				}
-			});
-
-			try {
-				stream = future.get();
-			} catch (Exception e) {
-				Logcat.e(logLevel, "Can not get SmbRandomAccessFile.", e);
-				throw new FileAccessException(TAG + ": smbAccessFile: Can not get SmbRandomAccessFile.");
+			switch (sSmbMode) {
+				case DEF.SMB_MODE_JCIFS_ONLY:
+					// JCIFS-NGのみを使用
+					return openWithJcifs(uri, user, pass, mode);
+				case DEF.SMB_MODE_SMBJ_ONLY:
+					// SMBJのみを使用
+					return openWithSmbj(uri, user, pass, mode);
+				case DEF.SMB_MODE_AUTO:
+				default:
+					// 自動(SMBJを試して失敗したらJCIFS-NG にフォールバック)
+					try {
+						return openWithSmbj(uri, user, pass, mode);
+					}
+					catch (Exception e) {
+						return openWithJcifs(uri, user, pass, mode);
+					}
 			}
 		}
+		catch (FileAccessException e) {
+			throw e;
+		}
+		catch (Exception e) {
+			throw new FileAccessException("The SMB access attempt failed to open: " + e.getMessage());
+		}
+	}
 
-		return stream;
+	// JCIFS-NGのコンテキスト生成とファイルのオープン
+	private static SmbRandomAccessFileCompat openWithJcifs(String uri, String user, String pass, String mode) throws IOException {
+		SmbFile file = smbFile(uri, user, pass);
+		SmbRandomAccessFile raf = new SmbRandomAccessFile(file, mode);
+		return new JcifsNgRandomAccessFile(raf);
+	}
+
+
+
+	// SMBJのクライアント生成とファイルのオープン
+	private static SmbRandomAccessFileCompat openWithSmbj(String uri, String user, String pass, String mode) throws IOException {
+		return new SmbjRandomAccessFile(uri, user, pass, mode);
 	}
 
 	public static SmbFileInputStream getInputStream(@NonNull final String uri, @NonNull final String user, @NonNull final String pass) throws FileAccessException {

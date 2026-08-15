@@ -33,6 +33,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
@@ -55,7 +56,7 @@ public class FileAccess {
 	private OutputStream mOutputStream;
 
 	private RandomAccessFile mRandomAccessFile;
-	private SmbRandomAccessFile mSmbRandomAccessFile;
+	private SmbRandomAccessFileCompat mSmbRandomAccessFile;
 	private SafRandomAccessFile mSafRandomAccessFile;
 	private static Object mLock1 = new Object();
 	private static Object mLock2 = new Object();
@@ -309,12 +310,34 @@ public class FileAccess {
 					// UIスレッドの時は新しいスレッド内で実行
 					Logcat.d(logLevel, "UIスレッドです.");
 					ExecutorService executor = Executors.newSingleThreadExecutor();
-					executor.submit(new Runnable() {
+					Future<Void> future = executor.submit(new Callable<Void>() {
 						@Override
-						public void run() {
+						public Void call() throws Exception {
 							mSmbRandomAccessFile.seek(pos);
+							return null;
 						}
 					});
+					try {
+						// スレッドの処理完了を待つ
+						future.get();
+					}
+					catch (ExecutionException e) {
+						// バックグラウンドスレッドで発生した例外を取り出す
+						Throwable cause = e.getCause();
+						if (cause instanceof IOException) {
+							throw (IOException) cause; // IOException ならそのまま再スロー
+						}
+						else {
+							throw new IOException("Failed to seek on SMB", cause);
+						}
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						throw new IOException("Seek operation interrupted", e);
+					}
+					finally {
+						executor.shutdown();
+					}
 				}
 				break;
 			}
@@ -349,16 +372,31 @@ public class FileAccess {
 					Future<Long> future = executor.submit(new Callable<Long>() {
 
 						@Override
-						public Long call() {
+						public Long call() throws Exception { // throws Exception を追加
 							return mSmbRandomAccessFile.getFilePointer();
 						}
 					});
 
 					try {
 						result = future.get();
-					} catch (Exception e) {
+					}
+					catch (ExecutionException e) {
 						Logcat.e(logLevel, "File read error.", e);
-						result = 0l;
+						Throwable cause = e.getCause();
+						if (cause instanceof IOException) {
+							throw (IOException) cause;
+						}
+						else {
+							throw new IOException("getFilePointer error", cause);
+						}
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						throw new IOException("getFilePointer interrupted", e);
+					}
+					finally {
+						 // スレッドのリーク防止
+						executor.shutdown();
 					}
 				}
 				break;
@@ -395,16 +433,31 @@ public class FileAccess {
 					Future<Integer> future = executor.submit(new Callable<Integer>() {
 
 						@Override
-						public Integer call() throws SmbException {
+						public Integer call() throws Exception { // throws Exception (または IOException) に変更
 							return mSmbRandomAccessFile.read(buf, off, size);
 						}
 					});
 
 					try {
 						result = future.get();
-					} catch (Exception e) {
+					}
+					catch (ExecutionException e) {
 						Logcat.e(logLevel, "read: File read error.", e);
-						result = 0;
+						Throwable cause = e.getCause();
+						if (cause instanceof IOException) {
+							throw (IOException) cause;
+						}
+						else {
+							throw new IOException("SMB read failed", cause);
+						}
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						throw new IOException("SMB read interrupted", e);
+					}
+					finally {
+						// スレッドのリーク防止
+						executor.shutdown();
 					}
 				}
 				break;
@@ -438,19 +491,35 @@ public class FileAccess {
 					// UIスレッドの時は新しいスレッド内で実行
 					Logcat.d(logLevel, "UIスレッドです.");
 					ExecutorService executor = Executors.newSingleThreadExecutor();
-					Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+					Future<Void> future = executor.submit(new Callable<Void>() {
 
 						@Override
-						public Boolean call() throws SmbException {
+						public Void call() throws Exception { // throws Exception に変更
 							mSmbRandomAccessFile.write(buf, off, size);
-							return true;
+							return null;
 						}
 					});
 
 					try {
 						future.get();
-					} catch (Exception e) {
-						Logcat.e(logLevel, "File read error.", e);
+					}
+					catch (ExecutionException e) {
+						Logcat.e(logLevel, "write: File write error.", e);
+						Throwable cause = e.getCause();
+						if (cause instanceof IOException) {
+							throw (IOException) cause;
+						}
+						else {
+							throw new IOException("SMB write failed", cause);
+						}
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						throw new IOException("SMB write interrupted", e);
+					}
+					finally {
+						// スレッドのリーク防止
+						executor.shutdown();
 					}
 				}
 				break;
