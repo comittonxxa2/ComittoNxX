@@ -1080,4 +1080,8 @@
         <item>大津の二値化フィルター</item>
     </string-array>
 
+    <string name="selectsmblib00">自動(SMBJ→JCIFS-NG)</string>
+    <string name="selectsmblib01">JCIFS-NGのみ</string>
+    <string name="selectsmblib02">SMBJのみ</string>
+
 </resources>

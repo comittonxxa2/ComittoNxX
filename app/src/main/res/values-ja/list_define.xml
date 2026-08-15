@@ -976,5 +976,15 @@
         <item>7</item>
         <item>8</item>
     </string-array>
+    <string-array name="selectsmblib_name_list">
+        <item>自動(SMBJ→JCIFS-NG)</item>
+        <item>JCIFS-NGのみ</item>
+        <item>SMBJのみ</item>
+    </string-array>
+    <string-array name="selectsmblib_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
 </resources>
