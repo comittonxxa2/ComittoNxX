@@ -919,6 +919,7 @@ public class DEF {
 	public static final String KEY_AOZORATEXTFILE = "AozoraTextFile";
 	public static final String KEY_LISTEXTENSION = "ListExtension";
 	public static final String KEY_PDFEXPAND = "PdfExpand";
+	public static final String KEY_SELECTSMBLIB = "SelectSmbLib";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -3277,6 +3278,12 @@ public class DEF {
 	public static final int PAGENUMBER_READ = -2;
 	/** 未定 */
 	public static final int PAGENUMBER_NONE = -3;
+	// SMBJ -> JCIFS-NG(フォールバック)
+	public static final int SMB_MODE_AUTO = 0;
+	// JCIFS-NG のみ
+	public static final int SMB_MODE_JCIFS_ONLY = 1;
+	// SMBJ のみ
+	public static final int SMB_MODE_SMBJ_ONLY = 2;
 
 	// 縦長チェック
 	static public boolean checkPortrait(int cx, int cy) {
