@@ -49,3 +49,20 @@
 -keep class src.comitton.common.ExternalFilterData {
     *;
 }
+
+# SMBJ のメインパッケージを難読化から保護
+-keep class com.hierynomus.** { *; }
+-keep interface com.hierynomus.** { *; }
+
+# BouncyCastle (SMB2/3の暗号化・認証処理でリフレクションが使われるため保持)
+-keep class org.bouncycastle.** { *; }
+-keep interface org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
+
+# ASN.1 / Spnego 関連 (SMBJのNTLM/Kerberos認証で使用)
+-keep class com.hierynomus.protocol.commons.** { *; }
+-keep class com.hierynomus.asn1.** { *; }
+
+# SMBJがオプションで参照している未読み込みクラスの警告を抑制
+-dontwarn com.hierynomus.smbj.**
+-dontwarn net.engio.mbassy.**
