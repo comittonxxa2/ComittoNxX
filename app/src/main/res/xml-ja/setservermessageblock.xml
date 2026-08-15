@@ -11,5 +11,13 @@
             android:key="SmbRetryMode"
             android:summary="圧縮ファイルの展開ライブラリのアクセス失敗による再試行の時間待ちを長くして再試行の頻度を減らす場合にチェックを入れる"
             android:title="圧縮ファイルの展開ライブラリの再試行を緩和" />
+       <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="SMBのライブラリの選択"
+            android:entries="@array/selectsmblib_name_list"
+            android:entryValues="@array/selectsmblib_value_list"
+            android:key="SelectSmbLib"
+            android:summary="dummy"
+            android:title="SMBのライブラリの選択" />
     </PreferenceCategory>
 </PreferenceScreen>
