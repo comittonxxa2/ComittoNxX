@@ -1080,6 +1080,10 @@
         <item>Otsus binarization filter</item>
     </string-array>
 
+    <string name="selectsmblib00">Auto(SMBJ->JCIFS-NG)</string>
+    <string name="selectsmblib01">JCIFS-NG only</string>
+    <string name="selectsmblib02">SMBJ only</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
