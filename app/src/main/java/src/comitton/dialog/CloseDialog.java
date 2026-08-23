@@ -55,6 +55,7 @@ public class CloseDialog extends ImmersiveDialog implements OnClickListener, OnD
 
 	String mTitle;
 	int mLayoutId;
+	boolean mMask = false;
 
 	public CloseDialog(AppCompatActivity activity, @StyleRes int themeResId) {
 		super(activity, themeResId);
@@ -79,6 +80,10 @@ public class CloseDialog extends ImmersiveDialog implements OnClickListener, OnD
 		}
 	}
 
+	public void setPrevNextMask(boolean mask) {
+		mMask = mask;
+	}
+
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 
@@ -91,6 +96,23 @@ public class CloseDialog extends ImmersiveDialog implements OnClickListener, OnD
 		mBtnPrev2  = (Button) this.findViewById(R.id.btn_prev);
 		mChkResume = (CheckBox) this.findViewById(R.id.chk_resume);
 		mChkMark   = (CheckBox) this.findViewById(R.id.chk_mark);
+
+		if (mMask) {
+			if (mBtnNext1 != null) {
+				mBtnNext1.setVisibility(View.GONE);
+			}
+			if (mBtnNext2 != null) {
+				mBtnNext2.setVisibility(View.GONE);
+			}
+			if (mBtnPrev1 != null) {
+				mBtnPrev1.setVisibility(View.GONE);
+			}
+			if (mBtnPrev2 != null) {
+				mBtnPrev2.setVisibility(View.GONE);
+			}
+			mChkResume.setVisibility(View.GONE);
+			mChkMark.setVisibility(View.GONE);
+		}
 
 		if (mChkResume != null) {
 			// デフォルトは最終ファイルを記録する

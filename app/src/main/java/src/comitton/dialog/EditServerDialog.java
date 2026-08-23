@@ -364,6 +364,11 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			mBtnCancel.setVisibility(View.GONE);
 			mBtnOK.setVisibility(View.GONE);
 		}
+		else {
+			mBtnClear.setVisibility(View.VISIBLE);
+			mBtnCancel.setVisibility(View.VISIBLE);
+			mBtnOK.setVisibility(View.VISIBLE);
+		}
 	}
 
 	@Override
