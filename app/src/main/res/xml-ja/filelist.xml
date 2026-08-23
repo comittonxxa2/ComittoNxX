@@ -386,6 +386,16 @@
             android:key="AozoraTextFile"
             android:summary="青空文庫のテキストファイルの識別を行う場合はチェックを入れる(WebベースのEPUBビューアを用いて表示を行う)"
             android:title="青空文庫のテキストファイルの読み込みを行う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="OpenImageHtmlFile"
+            android:summary="HTMLのリンク先の画像をイメージビューアで開く場合はチェックを入れる"
+            android:title="HTMLのリンク先の画像をイメージビューアで開く" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="OpenImageTextFile"
+            android:summary="テキストのリンク先の画像をイメージビューアで開く場合はチェックを入れる"
+            android:title="テキストのリンク先の画像をイメージビューアで開く" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
