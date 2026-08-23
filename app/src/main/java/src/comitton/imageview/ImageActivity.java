@@ -527,6 +527,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private String mFilePath = "";
 	/** ファイルのタイムスタンプ */
 	private long mTimestamp = 0L;
+	private String mLastpath = "";
+	private boolean mPrevNextMask = false;
 
 	private ImageManager mImageMgr = null;
 
@@ -974,6 +976,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mPass = intent.getStringExtra("Pass");				// SMB認証用
 		mFileName = intent.getStringExtra("File");			// ZIP指定時
 		mImageName = intent.getStringExtra("Image"); 			// 画像直接指定時はファイル/ExpandActivityから開いた時はZIP内部のファイル
+		mLastpath = intent.getStringExtra("Lastpath");
+		// HTML/テキストの展開中は前後のしおり及びファイル移動を行わせない
+		if (mLastpath != null) mPrevNextMask = true;
 
 		// intentからページ番号を取り出すとバグが発生するため保存しない
 		// 画像ファイル名からページ番号を決めることもしない
@@ -7370,6 +7375,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		mCloseDialog = new CloseDialog(this, R.style.MyDialog);
 		mCloseDialog.setTitleText(layout);
+		mCloseDialog.setPrevNextMask(mPrevNextMask);
 		mCloseDialog.setCloseListear(new CloseListenerInterface() {
 			@Override
 			public void onCloseSelect(int select, boolean resume, boolean mark) {
@@ -7418,6 +7424,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 
+		if (mPrevNextMask) {
+			select = CloseDialog.CLICK_CLOSE;
+			resume = false;
+		}
+
 		// 続きから読み込みの設定
 		if (!resume) {
 			removeLastFile();
@@ -7444,6 +7455,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// クローズかつイメージファイル直接オープンのとき
 				lastfile = mImageName;
 				lastpath = mPath;
+				// 元のフォルダが指定されていれば特別に処理
+				if (mLastpath != null) lastpath = mLastpath;
 			}
 			else {
 				// ディレクトリオープンのとき
@@ -7666,7 +7679,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
 				+ ", mFileName=" + mFileName + ", mImageName=" + mImageName + ", mCurrentPage=" + mCurrentPage);
 		// 履歴追加
-		if (!mReadBreak && mImageMgr != null && mImageMgr.length() > 0) {
+		if (!mReadBreak && mImageMgr != null && mImageMgr.length() > 0 && !mPrevNextMask) {
 			if ((mFileName == null || mFileName.isEmpty()) && (mImageName != null && !mImageName.isEmpty())) {
 				Logcat.d(logLevel, "画像ファイル指定.");
 				// 画像ファイル直接指定

@@ -325,6 +325,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mSmbRetryMode;
 	private File mAnimefile;
 	private ExternalFilterData mExternalFilterData;
+	private static boolean mBlank;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -2530,6 +2531,7 @@ public class ImageManager extends InputStream implements Runnable {
 			}
 			*/
 		}
+		mBlank = false;
 
 		sort(list);
 		if (mImageSort) {
@@ -4342,6 +4344,11 @@ public class ImageManager extends InputStream implements Runnable {
 
 	private int mDirIndex;
 	private int mDirOrgPos;
+	private String mBaseUri = null;
+
+	public static void setBlank() {
+ 		mBlank = true;
+	}
 
 	public void dirListFiles(String uri, String user, String pass) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -4350,6 +4357,7 @@ public class ImageManager extends InputStream implements Runnable {
 		mDirOrgPos = 0;
 		try {
 			mFiles = FileAccess.listFiles(mActivity, uri, user, pass, mHandler);
+			mBaseUri = uri;
 		}
 		catch (FileAccessException e) {
 			throw new IOException(TAG + ": dirListFiles: " + e.getLocalizedMessage());
@@ -4390,12 +4398,30 @@ public class ImageManager extends InputStream implements Runnable {
 				else if (type == FileData.FILETYPE_EPUB_SUB && mOpenMode != OPENMODE_TEXTVIEW) {
 					use = false;
 				}
-				else if (type == FileData.FILETYPE_ARC || type == FileData.FILETYPE_EPUB || type == FileData.FILETYPE_PDF || type == FileData.FILETYPE_NONE) {
+				else if (type == FileData.FILETYPE_ARC || type == FileData.FILETYPE_EPUB || type == FileData.FILETYPE_PDF || type == FileData.FILETYPE_WEB || type == FileData.FILETYPE_NONE) {
 					use = false;
 				}
 
 				if (use) {
 					Logcat.d(logLevel, "mDirIndex=" + mDirIndex + ", name=" + name);
+					if (mBlank) {
+						// 画像の縦と横のサイズを得る
+						// 念のためtry～catchで囲む
+						try {
+							BitmapFactory.Options option = new BitmapFactory.Options();
+							option.inJustDecodeBounds = true;
+							File localFile = new File(mBaseUri, name);
+							// ヘッダー情報のみ取得
+							BitmapFactory.decodeFile(localFile.getAbsolutePath(), option);
+							int width = option.outWidth;
+							int height = option.outHeight;
+							Logcat.d(logLevel, "mDirIndex=" + mDirIndex + ", name=" + name + ", width=" + width + ", height=" + height);
+							// サイズが小さい場合はスキップさせる
+							if (width <= 1 || height <= 1) continue;
+						}
+						catch (Exception e) {
+						}
+					}
 					FileListItem file = new FileListItem();
 					file.name = name;
 					file.type = type;
