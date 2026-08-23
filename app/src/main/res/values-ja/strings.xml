@@ -606,6 +606,7 @@
     <string name="updatingfilelist">更新中...</string>
     <string name="cancelupdatefilelist">ファイルリストの更新がキャンセルされました.</string>
     <string name="cancelloadfilelist">ファイルリストの読み込みがキャンセルされました.</string>
+    <string name="canceldownload">ダウンロードがキャンセルされました.</string>
     <string name="deletesiori">しおりの削除</string>
     <string name="deletingsiori">削除中...</string>
     <string name="selectFile">ファイルを選択してください.</string>
