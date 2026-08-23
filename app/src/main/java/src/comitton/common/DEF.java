@@ -920,6 +920,8 @@ public class DEF {
 	public static final String KEY_LISTEXTENSION = "ListExtension";
 	public static final String KEY_PDFEXPAND = "PdfExpand";
 	public static final String KEY_SELECTSMBLIB = "SelectSmbLib";
+	public static final String KEY_OPENIMAGEHTMLFILE = "OpenImageHtmlFile";
+	public static final String KEY_OPENIMAGETEXTFILE = "OpenImageTextFile";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
