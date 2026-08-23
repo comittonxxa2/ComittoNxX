@@ -384,6 +384,16 @@
             android:key="AozoraTextFile"
             android:summary="Check this box to identify Aozora Bunko text files (for display using a web-based EPUB viewer)."
             android:title="Load a text file from Aozora Bunko." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="OpenImageHtmlFile"
+            android:summary="Check this box to open images linked in HTML using the image viewer."
+            android:title="Open the image linked in the HTML in an image viewer." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="OpenImageTextFile"
+            android:summary="Check this box to open images linked in Text using the image viewer."
+            android:title="Open the image linked in the Text in an image viewer." />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
