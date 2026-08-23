@@ -606,6 +606,7 @@
     <string name="updatingfilelist">Updating...</string>
     <string name="cancelupdatefilelist">The file list update has been canceled.</string>
     <string name="cancelloadfilelist">The file list loading has been canceled.</string>
+    <string name="canceldownload">The download has been canceled.</string>
     <string name="deletesiori">Delete Bookmark</string>
     <string name="deletingsiori">Delating...</string>
     <string name="selectFile">Select File.</string>
