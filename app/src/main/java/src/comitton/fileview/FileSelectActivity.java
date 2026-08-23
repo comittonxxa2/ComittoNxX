@@ -5,22 +5,30 @@ import static android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMI
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.text.MessageFormat;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
@@ -49,7 +57,6 @@ import src.comitton.common.DEF;
 import src.comitton.cropimageview.CropImageActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.common.ImageAccess;
-import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetConfigActivity;
 import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetFileColorActivity;
@@ -102,6 +109,7 @@ import androidx.appcompat.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -135,7 +143,6 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -152,6 +159,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 @SuppressLint("DefaultLocale")
 public class FileSelectActivity extends AppCompatActivity implements OnTouchListener, ListNoticeListener, BookmarkListenerInterface, Handler.Callback {
@@ -212,6 +223,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static boolean threadstartcheck = false;
 	private static boolean threadstartcheck2 = false;
 	private static boolean threadstartcheck3 = false;
+	private static boolean threadstartcheck4 = false;
 
 	// ダイアログ表示中に選択項目を記憶しておくのに使用
 	private FileData mFileData = null;
@@ -333,6 +345,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static final int REQUEST_CODE = 1;
 	private static boolean mThumbnail_Skip = false;
 	private static boolean mUpdateListViewSkip = false;
+	private static boolean mHtmlFileDownloadSkip = false;
 
 	private static Thread mMultiThread = null;
 	private static Thread mMultiThread2 = null;
@@ -340,6 +353,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static Thread mMultiThread4 = null;
 	private static Thread mMultiThread5 = null;
 	private static Thread mMultiThread6 = null;
+	private static Thread mMultiThread7 = null;
+	private static Thread mMultiThread8 = null;
 
 	private boolean mImmForce = false;
 	private boolean mForceNotice = false;
@@ -358,6 +373,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int currentOrientation;
 	private boolean mThumbnailGrid;
 	private boolean mSkipUpdateFileList;
+	private boolean mOpenImageHtmlFile;
+	private boolean mOpenImageTextFile;
 	private FrameLayout rootLayout;
 	private FrameLayout autoLoadingOverlay = null;
 	// 画面ロックのタイムアウト処理(timeoutRunnable)を登録
@@ -369,6 +386,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static String jsonDialogString;
 	private static String jsonTappatternString;
 	private static String jsonCustomkeyString;
+	// バックグラウンド処理用の単一スレッドプールを作成
+	private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+	private String mHtmlfile;
+	private String mHtmlname;
+	private boolean mHtmlnameType;
+	private int rawPathsLength;
+	private int rawPathsCount;
+	private int rawPathsCountTotal;
+	private boolean msetImageHtmlTextfileResult;
+	public static final int FILESORT_NONE = 0;
+	public static final int FILESORT_NAME_UP = 1;
+	public static final int FILESORT_NAME_DOWN = 2;
 
 	public static void applyAppTheme(SharedPreferences sharedPreferences) {
 		int themeValue = SetCommonActivity.getSelectTheme(sharedPreferences);
@@ -1406,7 +1435,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				if (mChangeTheme) {
 					mChangeTheme = false;
 					// 現在のActivityを再生成する
-					this.recreate();
+					Intent intent = getIntent();
+					finish();
+					startActivity(intent);
 				}
 				// 履歴の内容を更新する
 				mListScreenView.updateRecordList();
@@ -1894,6 +1925,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mThumbnailGrid = SetFileListActivity.getThumbnailGrid(mSharedPreferences);
 		mSkipUpdateFileList = SetFileListActivity.getSkipUpdateFileList(mSharedPreferences);
 		SmbFileAccess.setSmbMode(SetServerMessageBlockActivity.getSelectSmbLib(mSharedPreferences));
+		mOpenImageHtmlFile = SetFileListActivity.getOpenImageHtmlFile(mSharedPreferences);
+		mOpenImageTextFile = SetFileListActivity.getOpenImageTextFile(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -2608,6 +2641,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		threadstartcheck = true;
 		threadstartcheck2 = true;
 		threadstartcheck3 = true;
+		threadstartcheck4 = true;
 		return;
 	}
 
@@ -5399,7 +5433,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			intent.putExtra("Tappattern_Data", jsonTappatternString);
 			intent.putExtra("Customkey_Data", jsonCustomkeyString);
 			startActivityForResult(intent, DEF.REQUEST_EPUB);
-		} else {
+		}
+		else if (mOpenImageTextFile) {
+			// 平文テキストのリンク先の画像をイメージビューアで開く場合
+			setImageHtmlTextfile(file, name, false);
+		}
+		else {
 			// テキストビューアの場合
 			intent = new Intent(FileSelectActivity.this, TextActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -5465,6 +5504,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+
+		if (mOpenImageHtmlFile) {
+			// HTMLのリンク先の画像をイメージビューアで開く場合
+			setImageHtmlTextfile(file, name, true);
+			return;
+		}
 
 		Intent intent;
 		intent = new Intent(FileSelectActivity.this, WebViewActivity.class);
@@ -5724,6 +5769,986 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		InputStream get() throws IOException;
 	}
 
+	// HTML又は平文テキストのリンク先の画像をイメージビューアで開く
+	private void setImageHtmlTextfile(String file, String name, boolean type) {
+		mHtmlfile = file;
+		mHtmlname = name;
+		mHtmlnameType = type;
+		msetImageHtmlTextfileResult = false;
+		// 別スレッドで動作させる
+		if (mMultiThread7 == null) {
+			mMultiThread7 = new MultiThread7();
+			mMultiThread7.start();
+		}
+		// ダウンロードの完了のフラグをクリア
+		threadstartcheck4 = false;
+		// ダウンロードの表示スレッド開始
+		if (mMultiThread8 == null) {
+			mMultiThread8 = new MultiThread8();
+			mMultiThread8.start();
+		}
+	}
+
+	private class MultiThread7 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			try {
+				if (mHtmlnameType) {
+					// HTMLのリンク先の画像をイメージビューアで開く
+					msetImageHtmlTextfileResult = setImageHtmlfileMain(mHtmlfile, mHtmlname);
+				}
+				else {
+					// 平文テキストのリンク先画像をイメージビューアで開く
+					msetImageHtmlTextfileResult = setImageTextfileMain(mHtmlfile, mHtmlname);
+				}
+				threadstartcheck4 = true;
+			}
+			catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			if (!msetImageHtmlTextfileResult) {
+				Logcat.v(logLevel, "失敗");
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					Toast.makeText(mActivity, R.string.canceldownload, Toast.LENGTH_SHORT).show();
+				});
+				// イメージビューアの起動に失敗した場合はダミーのonActivityResultを呼び出す
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						// ダミーのIntentを作成
+						Intent dummyIntent = new Intent();
+						dummyIntent.putExtra("NextOpen", CloseDialog.CLICK_CLOSE);
+						dummyIntent.putExtra("LastFile", "");
+						dummyIntent.putExtra("LastPath", mPath);
+						// 現在のActivityを再生成させる
+						mChangeTheme = true;
+						// 直接onActivityResultを呼び出す
+						onActivityResult(DEF.REQUEST_IMAGE, mActivity.RESULT_OK, dummyIntent);
+					}
+				});
+			}
+			mMultiThread7 = null;
+		}
+	}
+
+	private class MultiThread8 extends Thread {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		public void run() {
+			try {
+				try {
+					// 頻繁に表示が行われるのを防ぐため500ミリ秒間待機
+					for (int i = 0 ; i < 50 ; i++) {
+						if (threadstartcheck4) {
+							// 500ミリ秒の間に読み込み完了すれば戻る
+							// スレッドを終了させて最初から始める
+							mMultiThread8 = null;
+							return;
+						}
+						mMultiThread8.sleep(10);
+					}
+				}
+				catch (Exception e) {
+					Logcat.e(logLevel, "", e);
+				}
+				// ダウンロードのダイアログの表示を準備
+				Resources res = mActivity.getResources();
+				// ダウンロード中はダイアログの表示をキャンセルさせないようにする
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.dlTitle), res.getString(R.string.download),false, mHandler, mProgressbarMode);
+				supportFragmentManager = mActivity.getSupportFragmentManager();
+				// メイン画面で表示させるためハンドラを得る
+				mainHandler = new Handler(Looper.getMainLooper());
+				// メイン画面で表示
+				mainHandler.post(() -> {
+					// ダイアログの表示
+					mProgressDialog.show(supportFragmentManager, TAG);
+					// プログレスバーをリセット
+					mProgressDialog.setProgress(0, 0, 0);
+				});
+				// ダウンロードの位置の変化量をクリア
+				old_progress = progress;
+				boolean stop = true;
+				while (stop) {
+					progress = rawPathsCountTotal;
+					numerator = rawPathsCount;
+					denominator = rawPathsLength;
+					if (threadstartcheck4) {
+						// ダウンロードが完了していれば終了させる
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.dismiss();
+						});
+						// ループ終了
+						stop = false;
+					}
+					else if (old_progress != progress) {
+						// ダウンロードの位置が変化したらプログレスバーを更新
+						int finalProgress = progress;
+						// メイン画面で表示
+						mainHandler.post(() -> {
+							mProgressDialog.setProgress(finalProgress, numerator, denominator);
+						});
+						// 次の位置と比較するため値を保存
+						old_progress = progress;
+					}
+				}
+			}
+			catch (Exception e) {
+				Logcat.e(logLevel, "", e);
+			}
+			mMultiThread8 = null;
+		}
+	}
+
+	// HTMLのリンク先の画像をイメージビューアで開く
+	private boolean setImageHtmlfileMain(String file, String name) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
+		String mFilePath = DEF.relativePath(mActivity, mUriPath, name);
+
+		Logcat.v(logLevel, "mURI=" + mURI + ", mPath=" + mPath + ", mFilePath=" + mFilePath);
+		File htmlFile = new File(mFilePath);
+		// HTMLから画像パスリストを抽出
+		List<String> rawPaths = extractImagePathsFromHtml(htmlFile, mFilePath);
+		if (rawPaths == null || rawPaths.isEmpty()) {
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "HTMLから画像パスが抽出できませんでした: " + htmlFile.getAbsolutePath());
+			// エラーを返す
+			return false;
+		}
+		// ローカルストレージに実際に存在する有効な画像ファイルを優先して抽出
+		List<File> localFiles = new ArrayList<>();
+		File parentDir = htmlFile.getParentFile();
+		rawPathsLength = rawPaths.size();
+		int count = 0;
+		// 重複防止用のパス管理セット(CanonicalPathで統一)
+		java.util.Set<String> existingPaths = new java.util.HashSet<>();
+		for (String rawPath : rawPaths) {
+			// プログレスバーを更新
+			rawPathsCount = count;
+			rawPathsCountTotal = (int)((float)(rawPathsCount * 100) / (float)rawPathsLength);
+			count++;
+			if (rawPath == null || rawPath.trim().isEmpty()) continue;
+			String cleanPath = rawPath.trim();
+			// http://, https://, // で始まるWeb用URLはローカル実ファイルチェックからはスキップ
+			if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://") || cleanPath.startsWith("//")) {
+				continue;
+			}
+			try {
+				cleanPath = java.net.URLDecoder.decode(cleanPath, "UTF-8");
+			}
+			catch (Exception e) {
+			}
+			if (cleanPath.startsWith("file://")) {
+				cleanPath = cleanPath.substring(7);
+			}
+			// 拡張子チェック(画像ファイル以外を除外する)
+			if (!checklowerExtPathendsWith(cleanPath)) {
+				continue;
+			}
+			File rawFile = cleanPath.startsWith("/") ? new File(cleanPath) : new File(parentDir, cleanPath);
+			// 画像サイズチェック処理
+			if (rawFile.exists() && rawFile.isFile()) {
+				// 画像の縦と横のサイズを得る
+				// 念のためtry～catchで囲む
+				try {
+					// クリーンなパスに変換
+					File canonicalFile = rawFile.getCanonicalFile();
+					String canonicalPath = canonicalFile.getCanonicalPath();
+					if (existingPaths.contains(canonicalPath)) {
+						// 重複スキップ
+						continue;
+					}
+					// 画像サイズの有効性をチェック
+					BitmapFactory.Options option = new BitmapFactory.Options();
+					option.inJustDecodeBounds = true;
+					// ヘッダー情報のみ取得
+					BitmapFactory.decodeFile(canonicalPath, option);
+					// 横幅および縦幅が1ピクセルより大きい画像のみを有効な画像としてカウント
+					if (option.outWidth > 1 && option.outHeight > 1) {
+						localFiles.add(canonicalFile);
+						existingPaths.add(canonicalPath);
+
+						Logcat.v(logLevel, "count=" + count + ", path=" + canonicalPath);
+					}
+					else {
+						Logcat.v(logLevel, "画像サイズ無効のためスキップ (幅/高さ <= 1px): " + canonicalPath);
+					}
+				}
+				catch (Exception e) {
+				}
+			}
+		}
+		// プログレスバーを更新
+		rawPathsCount = count;
+		rawPathsCountTotal = (int)((float)(rawPathsCount * 100) / (float)rawPathsLength);
+		if (parentDir != null && parentDir.exists()) {
+			// HTMLファイルに関連付けられた保存フォルダ内のみを探索し画像を補填する(これを入れないと読みかけのページが不一致になる場合がある)
+			scanAssociatedFilesDir(htmlFile, localFiles);
+		}
+		// ローカル画像が1つでも存在する場合
+		if (!localFiles.isEmpty()) {
+			Logcat.v(logLevel, "ローカル画像を検出したため、ローカル優先で処理します(通信なし / 有効画像数: " + localFiles.size() + ")");
+			// ファイルをソート
+			sort(localFiles);
+			// メインの保存フォルダ(dirPath)を抽出
+			String dirPath = extractMainDirPath(htmlFile, localFiles);
+			// 読みかけのページを取得
+			int state = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, dirPath), mServer.getUser(), mServer.getPass()) + "/", DEF.PAGENUMBER_UNREAD);
+			if (state < 0 || state >= localFiles.size()) state = 0;
+			// 読みかけのページからファイル名を取得
+			String topname = localFiles.get(state).getName();
+			// 読みかけのページからディレクトリパスを取得
+			String path = localFiles.get(state).getAbsolutePath();
+			// 画像サイズチェック処理を有効にする
+			ImageManager.setBlank();
+			// イメージビューアを起動
+			Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+			setupCommonPutExtras(intent, dirPath, path, topname);
+			startActivityForResult(intent, DEF.REQUEST_IMAGE);
+			// 正常終了にする
+			return true;
+		}
+		// ローカル画像が0件でWeb(https://)画像のみの場合(非同期取得)
+		Logcat.v(logLevel, "ローカル画像がないため、Web画像のバックグラウンド取得を行います");
+		AtomicBoolean result = new AtomicBoolean(false);
+		HybridImageLoader loader = new HybridImageLoader(mActivity);
+		// 混在するパス/URLリストをローカルのFileリストに統一して返す
+		List<File> finalFiles = loader.processMixedPaths(rawPaths, htmlFile, mFilePath);
+		if (finalFiles != null && !finalFiles.isEmpty()) {
+			// ファイルをソート
+			sort(finalFiles);
+			// メインの保存フォルダ(dirPath)を抽出
+			String dirPath = extractMainDirPath(htmlFile, finalFiles);
+			// 読みかけのページを取得
+			int state = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, dirPath), mServer.getUser(), mServer.getPass()) + "/", DEF.PAGENUMBER_UNREAD);
+			if (state < 0 || state >= finalFiles.size()) state = 0;
+			// 読みかけのページからファイル名を取得
+			String topname = finalFiles.get(state).getName();
+			// 読みかけのページからディレクトリパスを取得
+			String path = finalFiles.get(state).getAbsolutePath();
+			// 画像サイズチェック処理を有効にする
+			ImageManager.setBlank();
+			// イメージビューアを起動
+			Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+			setupCommonPutExtras(intent, dirPath, path, topname);
+			startActivityForResult(intent, DEF.REQUEST_IMAGE);
+			// 正常終了にする
+			result.set(true);
+		}
+		else {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "Web画像の取得・ダウンロードに失敗しました");
+		}
+		// エラーを返す
+		Logcat.v(logLevel, "エラーを返す: " + result.get());
+		return result.get();
+	}
+
+	// 画像の実パス群から、メインとなる保存フォルダのパスを正確に算出する
+	private String extractMainDirPath(File htmlFile, List<File> localFiles) {
+		if (localFiles == null || localFiles.isEmpty()) {
+			return (htmlFile != null && htmlFile.getParent() != null) ? htmlFile.getParent() : "";
+		}
+		File htmlParent = (htmlFile != null) ? htmlFile.getParentFile() : null;
+		// 各画像がhtmlParentの直下のどのフォルダに所属しているかをカウント
+		java.util.Map<String, Integer> dirCountMap = new java.util.HashMap<>();
+
+		for (File file : localFiles) {
+			File current = file.getParentFile();
+			if (current == null) continue;
+			if (htmlParent != null) {
+				// htmlParent の直下にあるフォルダに到達するまで親ディレクトリを遡る
+				while (current != null && current.getParentFile() != null) {
+					if (current.getParentFile().equals(htmlParent)) {
+						String targetPath = current.getAbsolutePath();
+						dirCountMap.put(targetPath, dirCountMap.getOrDefault(targetPath, 0) + 1);
+						break;
+					}
+					current = current.getParentFile();
+				}
+			}
+			else {
+				// htmlParent が無い場合は単純な親フォルダをカウント
+				String targetPath = current.getAbsolutePath();
+				dirCountMap.put(targetPath, dirCountMap.getOrDefault(targetPath, 0) + 1);
+			}
+		}
+		// 最も多くの画像が含まれているフォルダをメインディレクトリとして採択
+		String bestDirPath = null;
+		int maxCount = -1;
+		for (java.util.Map.Entry<String, Integer> entry : dirCountMap.entrySet()) {
+			if (entry.getValue() > maxCount) {
+				maxCount = entry.getValue();
+				bestDirPath = entry.getKey();
+			}
+		}
+		// 見つかった場合はそれを返し、万が一見つからなければ最初の画像の親フォルダを返す
+		if (bestDirPath != null) {
+			return bestDirPath;
+		}
+		return localFiles.get(0).getParent();
+	}
+	// HTMLから画像パスリストを抽出
+	public List<String> extractImagePathsFromHtml(File htmlFile, String baseUrl) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		List<String> rawPaths = new ArrayList<>();
+		if (htmlFile == null || !htmlFile.exists()) {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "HTMLファイルが存在しません");
+			return rawPaths;
+		}
+		try {
+			Document doc;
+			if (baseUrl != null && !baseUrl.isEmpty()) {
+				doc = Jsoup.parse(htmlFile, "UTF-8", baseUrl);
+			}
+			else {
+				doc = Jsoup.parse(htmlFile, "UTF-8");
+			}
+			String htmlText = doc.html();
+			Logcat.v(logLevel, "HTML文字数: " + htmlText.length());
+			// <img>タグ
+			for (Element img : doc.select("img")) {
+				addPathIfValid(rawPaths, img.attr("src"));
+				addPathIfValid(rawPaths, img.attr("data-src"));
+				addPathIfValid(rawPaths, img.attr("data-original"));
+				addPathIfValid(rawPaths, img.attr("data-lazy-src"));
+				if (baseUrl != null && !baseUrl.isEmpty()) {
+					addPathIfValid(rawPaths, img.absUrl("src"));
+				}
+			}
+			// <a>タグのhref(画像へ直リンクしているケースに対応)
+			for (Element a : doc.select("a[href]")) {
+				String href = a.attr("href");
+				addPathIfValid(rawPaths, href);
+				if (baseUrl != null && !baseUrl.isEmpty()) {
+					addPathIfValid(rawPaths, a.absUrl("href"));
+				}
+			}
+			// background属性
+			for (Element el : doc.select("[background], [BACKGROUND]")) {
+				String bg = el.attr("background");
+				if (bg.isEmpty()) bg = el.attr("BACKGROUND");
+				addPathIfValid(rawPaths, bg);
+			}
+			// style属性(background-image等)
+			Pattern urlPattern = Pattern.compile("url\\s*\\(\\s*['\"]?(.*?)['\"]?\\s*\\)", Pattern.CASE_INSENSITIVE);
+			for (Element el : doc.select("[style]")) {
+				String style = el.attr("style");
+				Matcher matcher = urlPattern.matcher(style);
+				while (matcher.find()) {
+					String url = matcher.group(1);
+					if (url != null) {
+						url = org.jsoup.parser.Parser.unescapeEntities(url, true).trim();
+						addPathIfValid(rawPaths, url);
+					}
+				}
+			}
+			// 生テキストからhttp(s)://で始まり画像拡張子を含むURLを強制抽出
+			if (rawPaths.isEmpty()) {
+				Logcat.v(logLevel, "セレクタで取得できなかったため、生HTMLからの正規表現抽出を試みます");
+				Pattern globalImgPattern = Pattern.compile("(?:https?:)?//[^\"'\\s<>]+\\.(?:jpg|jpeg|png|webp|gif|avif)(?:\\?[^\"'\\s<>]*)?", Pattern.CASE_INSENSITIVE);
+				Matcher matcher = globalImgPattern.matcher(htmlText);
+				while (matcher.find()) {
+					addPathIfValid(rawPaths, matcher.group(0));
+				}
+			}
+		}
+		catch (Exception e) {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "HTMLのパース中に例外が発生しました", e);
+		}
+		Logcat.v(logLevel, "抽出された rawPaths: " + rawPaths);
+		return rawPaths;
+	}
+	// ファイルパスを追加
+	private void addPathIfValid(List<String> list, String path) {
+		if (path != null) {
+			String trimmed = path.trim();
+			if (!trimmed.isEmpty() && !trimmed.startsWith("javascript:") && !list.contains(trimmed)) {
+				list.add(trimmed);
+			}
+		}
+	}
+	// HTMLファイルに関連付けられた保存フォルダ内のみを探索し画像を補填する
+	private void scanAssociatedFilesDir(File htmlFile, List<File> localFiles) {
+		if (htmlFile == null || !htmlFile.exists()) return;
+		File parentDir = htmlFile.getParentFile();
+		if (parentDir == null || !parentDir.exists()) return;
+		// HTMLの拡張子を除いたベースファイル名を取得
+		String htmlName = htmlFile.getName();
+		int extIdx = htmlName.lastIndexOf('.');
+		String baseName = (extIdx > 0) ? htmlName.substring(0, extIdx) : htmlName;
+		// 親フォルダ内からHTML名で始まるサブフォルダを抽出
+		File[] subDirs = parentDir.listFiles(file -> file.isDirectory() && file.getName().startsWith(baseName));
+		if (subDirs == null || subDirs.length == 0) return;
+		// 重複チェック用に既存のlocalFilesの正規化絶対パスのセットを作成
+		java.util.Set<String> existingPaths = new java.util.HashSet<>();
+		for (File f : localFiles) {
+			try {
+				existingPaths.add(f.getCanonicalPath());
+			}
+			catch (Exception e) {
+				existingPaths.add(f.getAbsolutePath());
+			}
+		}
+		// 該当する保存用フォルダの中だけをスキャン
+		for (File subDir : subDirs) {
+			scanDirectoryImagesOnly(subDir, localFiles, existingPaths);
+		}
+	}
+	// 指定されたフォルダ配下の画像を全探索してリストへ補填する
+	private void scanDirectoryImagesOnly(File dir, List<File> localFiles, java.util.Set<String> existingPaths) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		if (dir == null || !dir.exists() || !dir.isDirectory()) return;
+		File[] files = dir.listFiles();
+		if (files == null) return;
+		for (File file : files) {
+			if (file.isDirectory()) {
+				// 保存フォルダ内のサブフォルダは検索しない
+			}
+			else if (file.isFile()) {
+				try {
+					File canonicalFile = file.getCanonicalFile();
+					String canonicalPath = canonicalFile.getCanonicalPath();
+					// すでにリスト内に存在するパス(相対パスの表記表記揺れ含む)ならスキップ
+					if (existingPaths.contains(canonicalPath)) {
+						continue;
+					}
+					// 画像サイズの有効性をチェック
+					BitmapFactory.Options option = new BitmapFactory.Options();
+					option.inJustDecodeBounds = true;
+					// ヘッダー情報のみ取得
+					BitmapFactory.decodeFile(canonicalPath, option);
+					if (option.outWidth > 1 && option.outHeight > 1) {
+						Logcat.v(logLevel, "保存フォルダからHTML未記載画像を自動補填: " + canonicalPath);
+						localFiles.add(file);
+						// 追加したパスも記録
+						existingPaths.add(canonicalPath);
+					}
+				}
+				catch (Exception e) {
+					// 読み込みエラーは無視
+				}
+			}
+		}
+	}
+
+	// 平文テキストのリンク先画像をイメージビューアで開く
+	private boolean setImageTextfileMain(String file, String name) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
+		String mFilePath = DEF.relativePath(mActivity, mUriPath, name);
+		Logcat.v(logLevel, "mURI=" + mURI + ", mPath=" + mPath + ", mFilePath=" + mFilePath);
+		File textFile = new File(mFilePath);
+		// 平文テキストファイルから画像パスリストを抽出
+		List<String> rawPaths = extractImagePathsFromTextFile(textFile);
+		if (rawPaths == null || rawPaths.isEmpty()) {
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "テキストファイルから画像パスが抽出できませんでした: " + textFile.getAbsolutePath());
+			return false;
+		}
+		// ローカルストレージに実際に存在する有効な画像ファイルを優先して抽出
+		List<File> localFiles = new ArrayList<>();
+		File parentDir = textFile.getParentFile();
+		for (String rawPath : rawPaths) {
+			if (rawPath == null || rawPath.trim().isEmpty()) continue;
+			String cleanPath = rawPath.trim();
+			// Web用URLはローカル実ファイルチェックからはスキップ
+			if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://") || cleanPath.startsWith("//")) {
+				continue;
+			}
+			try {
+				cleanPath = java.net.URLDecoder.decode(cleanPath, "UTF-8");
+			}
+			catch (Exception e) {
+			}
+			if (cleanPath.startsWith("file://")) {
+				cleanPath = cleanPath.substring(7);
+			}
+			// 拡張子チェック(画像ファイル以外を除外する)
+			if (!checklowerExtPathendsWith(cleanPath)) {
+				continue;
+			}
+			File localFile = cleanPath.startsWith("/") ? new File(cleanPath) : new File(parentDir, cleanPath);
+			// 画像サイズチェック処理
+			if (localFile.exists() && localFile.isFile()) {
+				try {
+					BitmapFactory.Options option = new BitmapFactory.Options();
+					option.inJustDecodeBounds = true;
+					BitmapFactory.decodeFile(localFile.getAbsolutePath(), option);
+					if (option.outWidth > 1 && option.outHeight > 1) {
+						if (!localFiles.contains(localFile)) {
+							localFiles.add(localFile);
+						}
+					}
+					else {
+						Logcat.v(logLevel, "画像サイズ無効のためスキップ (幅/高さ <= 1px): " + localFile.getAbsolutePath());
+					}
+				}
+				catch (Exception e) {
+				}
+			}
+		}
+		// ローカル画像が1つでも存在する場合
+		if (!localFiles.isEmpty()) {
+			Logcat.v(logLevel, "ローカル画像を検出したため、ローカル優先で処理します(通信なし / 有効画像数: " + localFiles.size() + ")");
+			// ファイルをソート
+			sort(localFiles);
+			// ファイルパスからディレクトリパスを取得
+			String path = localFiles.get(0).getAbsolutePath();
+			File dirfiles = new File(path);
+			String dirPath = dirfiles.getParent();
+			// 読みかけのページを取得
+			int state = mSharedPreferences.getInt(
+				DEF.createUrl(DEF.relativePath(mActivity, dirPath), mServer.getUser(), mServer.getPass()) + "/", 
+				DEF.PAGENUMBER_UNREAD
+			);
+			if (state < 0 || state >= localFiles.size()) state = 0;
+			// 読みかけのページからファイル名を取得
+			String topname = localFiles.get(state).getName();
+			// 読みかけのページからディレクトリパスを取得
+			path = localFiles.get(state).getAbsolutePath();
+			// 画像サイズチェック処理を有効にする
+			ImageManager.setBlank();
+			// イメージビューアを起動
+			Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+			setupCommonPutExtras(intent, dirPath, path, topname);
+			startActivityForResult(intent, DEF.REQUEST_IMAGE);
+			return true;
+		}
+		// ローカル画像が0件でWeb(https://)画像のみの場合(バックグラウンド取得)
+		Logcat.v(logLevel, "ローカル画像がないため、Web画像のバックグラウンド取得を行います");
+		AtomicBoolean result = new AtomicBoolean(false);
+		HybridImageLoader loader = new HybridImageLoader(mActivity);
+		// 混在するパス/URLリストをローカルのFileリストに統一して返す
+		List<File> finalFiles = loader.processMixedPaths(rawPaths, textFile, mFilePath);
+		if (finalFiles != null && !finalFiles.isEmpty()) {
+			// ファイルをソート
+			sort(finalFiles);
+			// ファイルパスからディレクトリパスを取得
+			String path = finalFiles.get(0).getAbsolutePath();
+			File dirfiles = new File(path);
+			String dirPath = dirfiles.getParent();
+			// 読みかけのページを取得
+			int state = mSharedPreferences.getInt(DEF.createUrl(DEF.relativePath(mActivity, dirPath), mServer.getUser(), mServer.getPass()) + "/", DEF.PAGENUMBER_UNREAD);
+			if (state < 0 || state >= finalFiles.size()) state = 0;
+			// 読みかけのページからファイル名を取得
+			String topname = finalFiles.get(state).getName();
+			// 読みかけのページからディレクトリパスを取得
+			path = finalFiles.get(state).getAbsolutePath();
+			// 画像サイズチェック処理を有効にする
+			ImageManager.setBlank();
+			// イメージビューアを起動
+			Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
+			setupCommonPutExtras(intent, dirPath, path, topname);
+			startActivityForResult(intent, DEF.REQUEST_IMAGE);
+			result.set(true);
+		}
+		else {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "Web画像の取得・ダウンロードに失敗しました");
+		}
+		Logcat.v(logLevel, "処理結果: " + result.get());
+		return result.get();
+	}
+	// 平文テキストファイルから画像URLおよびローカルファイルパスを抽出するメソッド
+	public List<String> extractImagePathsFromTextFile(File textFile) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		List<String> rawPaths = new ArrayList<>();
+		if (textFile == null || !textFile.exists()) {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "テキストファイルが存在しません");
+			return rawPaths;
+		}
+		try {
+			// テキストファイルを文字列として読み込み
+			String textContent = readTextFileToString(textFile);
+			Logcat.v(logLevel, "テキスト文字数: " + textContent.length());
+			// Web上の絶対・相対URLパターン
+			Pattern webImgPattern = Pattern.compile(
+				"(?:https?:)?//[^\"'\\s<>]+\\.(?:jpg|jpeg|png|webp|gif|avif)(?:\\?[^\"'\\s<>]*)?", 
+				Pattern.CASE_INSENSITIVE
+			);
+			Matcher webMatcher = webImgPattern.matcher(textContent);
+			while (webMatcher.find()) {
+				addPathIfValid(rawPaths, webMatcher.group(0));
+			}
+			// ローカル絶対パス・相対パスパターン
+			Pattern localImgPattern = Pattern.compile(
+				"(?:file://|[a-zA-Z]:[\\\\/]|/|[\\w\\.-]+[\\\\/])?[^\"'\\s<>]+\\.(?:jpg|jpeg|png|webp|gif|avif)(?:\\?[^\"'\\s<>]*)?", 
+				Pattern.CASE_INSENSITIVE
+			);
+			Matcher localMatcher = localImgPattern.matcher(textContent);
+			while (localMatcher.find()) {
+				addPathIfValid(rawPaths, localMatcher.group(0));
+			}
+		}
+		catch (Exception e) {
+			Logcat.e(Logcat.LOG_LEVEL_ERROR, "テキストファイルの読み込み・パース中に例外が発生しました", e);
+		}
+		Logcat.v(logLevel, "抽出された rawPaths: " + rawPaths);
+		return rawPaths;
+	}
+	// ヘルパー: テキストファイルをUTF-8で読込む
+	private String readTextFileToString(File file) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append("\n");
+			}
+		}
+		return sb.toString();
+	}
+
+	// 拡張子チェック(画像ファイル以外を除外する)
+	private boolean checklowerExtPathendsWith(String cleanPath) {
+		String checkPathForExt = cleanPath;
+		int queryIndex = checkPathForExt.indexOf('?');
+		if (queryIndex != -1) checkPathForExt = checkPathForExt.substring(0, queryIndex);
+		int fragmentIndex = checkPathForExt.indexOf('#');
+		if (fragmentIndex != -1) checkPathForExt = checkPathForExt.substring(0, fragmentIndex);
+		String lowerExtPath = checkPathForExt.toLowerCase();
+		boolean isImageExtension = lowerExtPath.endsWith(".jpg") || lowerExtPath.endsWith(".jpeg") || lowerExtPath.endsWith(".png") || lowerExtPath.endsWith(".webp") || lowerExtPath.endsWith(".gif") || lowerExtPath.endsWith(".avif");
+		return isImageExtension;
+	}
+	// コード重複を避けるためのヘルパーメソッド
+	private void setupCommonPutExtras(Intent intent, String dirPath, String path, String topname) {
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		intent.putExtra("Server", mServer.getSelect());
+		intent.putExtra("Uri", dirPath);
+		intent.putExtra("Path", path);
+		intent.putExtra("User", mServer.getUser());
+		intent.putExtra("Pass", mServer.getPass());
+		intent.putExtra("File", "");
+		intent.putExtra("Image", topname);
+		intent.putExtra("Lastpath", mPath);
+	}
+	// 画像ファイルをダウンロード
+	public class HybridImageLoader {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		private final Context context;
+		public HybridImageLoader(Context context) {
+			this.context = context;
+		}
+		// 混在するパス/URLリストをローカルのFileリストに統一して返す
+		public List<File> processMixedPaths(List<String> rawPaths, File htmlFile, String baseUrl) {
+			Logcat.v(logLevel, "processMixedPaths start.");
+			List<File> finalFileList = new ArrayList<>();
+			// ファイル名をMD5のハッシュ値へ変換
+			String mCacheDirName = DEF.makeCode(baseUrl, 0, 0);
+			File cacheDir = new File(context.getCacheDir(), mCacheDirName);
+			if (!cacheDir.exists()) {
+				cacheDir.mkdirs();
+			}
+			File parentDir = (htmlFile != null) ? htmlFile.getParentFile() : null;
+			Logcat.v(logLevel, "rawPaths=" + rawPaths);
+			// リスト全体のハッシュ(Prefix)を算出
+			String currentListHash = generateListHash(rawPaths);
+			// 古いリストハッシュのファイルを自動削除
+			cleanOldCacheFiles(cacheDir, currentListHash);
+			rawPathsLength = rawPaths.size();
+			int count = 0;
+			for (String rawPath : rawPaths) {
+				if (mHtmlFileDownloadSkip) {
+					mHtmlFileDownloadSkip = false;
+					// 中断
+					finalFileList = null;
+					break;
+				}
+				// プログレスバーを更新
+				rawPathsCount = count;
+				rawPathsCountTotal = (int)((float)(rawPathsCount * 100) / (float)rawPathsLength);
+				// 現在のダウンロード順インデックス
+				int orderIndex = count;
+				count++;
+				if (rawPath == null || rawPath.trim().isEmpty()) continue;
+				String decodedPath = rawPath;
+				try {
+					decodedPath = java.net.URLDecoder.decode(rawPath, "UTF-8");
+				}
+				catch (Exception e) {
+					// デコード失敗時はそのまま利用
+				}
+				// file:// スキーム除去
+				if (decodedPath.startsWith("file://")) {
+					decodedPath = decodedPath.substring(7);
+				}
+				// 先頭の "./" または "." の表記表記ゆれを正規化(除去)
+				String path = decodedPath;
+				if (path.startsWith("./")) {
+					path = path.substring(2);
+				}
+				else if (path.startsWith(".")) {
+					path = path.substring(1);
+				}
+				// ローカルストレージ上のファイルを最優先で確認
+				File localFile = null;
+				if (path.startsWith("/")) {
+					// 絶対パス
+					localFile = new File(path);
+				}
+				else if (parentDir != null && !path.startsWith("http://") && !path.startsWith("https://") && !path.startsWith("//")) {
+					// 相対パス
+					localFile = new File(parentDir, path);
+					// もし見つからず、元の rawPath に ./ が含まれていた場合のセーフティチェック
+					if (!localFile.exists()) {
+						File altFile = new File(parentDir, decodedPath);
+						if (altFile.exists()) {
+							localFile = altFile;
+						}
+					}
+				}
+				// ローカルにファイルが存在する場合はハッシュ化せず元のファイルをそのまま採用
+				if (localFile != null && localFile.exists()) {
+					// 画像の縦と横のサイズを得る
+					// 念のためtry～catchで囲む
+					try {
+						BitmapFactory.Options option = new BitmapFactory.Options();
+						option.inJustDecodeBounds = true;
+						BitmapFactory.decodeFile(localFile.getAbsolutePath(), option);
+						if (option.outWidth > 1 && option.outHeight > 1) {
+							if (!finalFileList.contains(localFile)) {
+								Logcat.v(logLevel, "ローカルストレージのファイルをそのまま使用: " + localFile.getAbsolutePath());
+								finalFileList.add(localFile);
+							}
+						}
+					}
+					catch (Exception e) {
+					}
+					// ローカルで処理完了したため次のパスへ
+					continue;
+				}
+				// Web上の絶対URLの場合
+				if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("//")) {
+					if (path.startsWith("//")) {
+						path = "https:" + path;
+					}
+					// URLを正規化してインデックスを割り当て
+					String normalizedUrl = normalizeUrl(path);
+					String cacheFileName = generateCacheFileName(currentListHash, orderIndex, normalizedUrl);
+					File cachedFile = new File(cacheDir, cacheFileName);
+					if (cachedFile.exists() && cachedFile.length() > 0) {
+						Logcat.v(logLevel, "キャッシュから読み込み: " + path);
+						if (!finalFileList.contains(cachedFile)) {
+							finalFileList.add(cachedFile);
+						}
+					}
+					else {
+						Logcat.v(logLevel, "Webから新規ダウンロード: " + path);
+						File downloadedFile = downloadWebImageToDestination(path, cachedFile);
+						if (downloadedFile != null && downloadedFile.exists()) {
+							if (!finalFileList.contains(downloadedFile)) {
+								finalFileList.add(downloadedFile);
+							}
+						}
+					}
+				} 
+				// ローカルに存在せずbaseUrlが指定されている場合のフォールバック
+				else if (baseUrl != null && !baseUrl.isEmpty()) {
+					try {
+						// baseUrl がローカルの絶対パスの場合、file:// を補う
+						String formattedBaseUrl = baseUrl;
+						if (formattedBaseUrl.startsWith("/")) {
+							formattedBaseUrl = "file://" + formattedBaseUrl;
+						}
+
+						URL base = new URL(formattedBaseUrl);
+						URL absoluteWebUrl = new URL(base, path);
+						String absolutePathStr = absoluteWebUrl.toString();
+						// file://スキームで合成された(ローカルファイル)場合の処理
+						if (absolutePathStr.startsWith("file://")) {
+							String localFilePath = absolutePathStr.substring(7);
+							// URLエンコードされている場合のデコード処理
+							try {
+								localFilePath = java.net.URLDecoder.decode(localFilePath, "UTF-8");
+							}
+							catch (Exception e) {
+							}
+							File fallbackLocalFile = new File(localFilePath);
+							if (fallbackLocalFile.exists() && fallbackLocalFile.length() > 0) {
+								if (!finalFileList.contains(fallbackLocalFile)) {
+									Logcat.v(logLevel, "相対パスからローカルファイルを発見: " + fallbackLocalFile.getAbsolutePath());
+									finalFileList.add(fallbackLocalFile);
+								}
+							}
+							else {
+								Logcat.w(logLevel, "ローカルファイルが見つかりません: " + localFilePath);
+							}
+							// Webダウンロード処理へ行かずに次へ
+							continue;
+						}
+						// http:// や https:// のWeb URLの場合のみダウンロード処理へ
+						String normalizedUrl = normalizeUrl(absolutePathStr);
+						String cacheFileName = generateCacheFileName(currentListHash, orderIndex, normalizedUrl);
+						File cachedFile = new File(cacheDir, cacheFileName);
+
+						if (cachedFile.exists() && cachedFile.length() > 0) {
+							if (!finalFileList.contains(cachedFile)) {
+								finalFileList.add(cachedFile);
+							}
+						} else {
+							File downloadedFile = downloadWebImageToDestination(absolutePathStr, cachedFile);
+							if (downloadedFile != null && downloadedFile.exists()) {
+								if (!finalFileList.contains(downloadedFile)) {
+									finalFileList.add(downloadedFile);
+								}
+							}
+						}
+					}
+					catch (Exception e) {
+						Logcat.e(Logcat.LOG_LEVEL_ERROR, "Web URLの合成に失敗: " + path, e);
+					}
+				}
+			}
+			// プログレスバーを更新
+			rawPathsCount = count;
+			rawPathsCountTotal = (int)((float)(rawPathsCount * 100) / (float)rawPathsLength);
+			return finalFileList;
+		}
+		// 画像ファイル判定用ヘルパー関数
+		private boolean isImageFile(File file) {
+			String name = file.getName().toLowerCase(Locale.US);
+			return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif") || name.endsWith(".webp") || name.endsWith(".bmp");
+		}
+		// 指定された保存先ファイルへWeb画像をダウンロードする
+		private File downloadWebImageToDestination(String urlStr, File destFile) {
+			HttpURLConnection conn = null;
+			try {
+				String currentUrl = urlStr;
+				for (int redirectCount = 0; redirectCount < 5; redirectCount++) {
+					URL url = new URL(currentUrl);
+					conn = (HttpURLConnection) url.openConnection();
+					conn.setConnectTimeout(8000);
+					conn.setReadTimeout(8000);
+					conn.setInstanceFollowRedirects(true);
+					// WebView側のPC版のUser-Agentを設定する
+					conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+					int responseCode = conn.getResponseCode();
+					// リダイレクト追跡
+					if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == 307) {
+						String location = conn.getHeaderField("Location");
+						if (location != null && !location.isEmpty()) {
+							currentUrl = location;
+							conn.disconnect();
+							continue;
+						}
+					}
+					if (responseCode == HttpURLConnection.HTTP_OK) {
+						try (InputStream in = conn.getInputStream();
+							 FileOutputStream out = new FileOutputStream(destFile)) {
+							byte[] buffer = new byte[8192];
+							int bytesRead;
+							while ((bytesRead = in.read(buffer)) != -1) {
+								out.write(buffer, 0, bytesRead);
+							}
+						}
+						return destFile;
+					}
+					else {
+						break;
+					}
+				}
+			}
+			catch (Exception e) {
+				Logcat.e(Logcat.LOG_LEVEL_ERROR, "ダウンロード例外: " + urlStr, e);
+			}
+			finally {
+				if (conn != null) {
+					conn.disconnect();
+				}
+			}
+			return null;
+		}
+		// URLの表記ゆれを解消・統一する関数
+		private String normalizeUrl(String url) {
+			if (url == null) return "";
+			String normalized = url.trim();
+			try {
+				normalized = java.net.URLDecoder.decode(normalized, "UTF-8");
+			}
+			catch (Exception e) {
+			}
+			if (normalized.startsWith("http://")) {
+				normalized = "https://" + normalized.substring(7);
+			}
+			else if (normalized.startsWith("//")) {
+				normalized = "https:" + normalized;
+			}
+			return normalized;
+		}
+		// 現在のリストハッシュ(Prefix)以外の古いファイルをクリーンアップする処理
+		private void cleanOldCacheFiles(File cacheDir, String currentListHash) {			try {
+				File[] files = cacheDir.listFiles();
+				if (files == null) return;
+				for (File file : files) {
+					if (file.isFile()) {
+						String name = file.getName();
+						// 先頭のPrefixが現在のリストハッシュと異なる場合は削除
+						if (!name.startsWith(currentListHash + "_")) {
+							boolean deleted = file.delete();
+							if (deleted) {
+								Logcat.v(logLevel, "古いキャッシュを削除しました: " + name);
+							}
+						}
+					}
+				}
+			}
+			catch (Exception e) {
+				Logcat.e(Logcat.LOG_LEVEL_ERROR, "キャッシュクリーンアップ中にエラーが発生しました", e);
+			}
+		}
+		// 全体のURLリストから一意な短縮Hashを生成する関数
+		private String generateListHash(List<String> rawPaths) {
+			if (rawPaths == null || rawPaths.isEmpty()) return "00000000";
+			StringBuilder sb = new StringBuilder();
+			for (String p : rawPaths) {
+				sb.append(p).append(";");
+			}
+			return getMd5Short(sb.toString());
+		}
+		// URLからキャッシュファイル名を生成する(MD5ハッシュを利用)
+		private String generateCacheFileName(String listHash, int orderIndex, String normalizedUrl) {
+			String urlHash = getMd5Short(normalizedUrl);
+			return String.format(Locale.US, "%s_%05d_%s.jpg", listHash, orderIndex, urlHash);
+		}
+		// MD5の先頭8桁を取得する共通ヘルパー
+		private String getMd5Short(String input) {
+			try {
+				MessageDigest digest = MessageDigest.getInstance("MD5");
+				digest.update(input.getBytes("UTF-8"));
+				byte[] messageDigest = digest.digest();
+				StringBuilder hexString = new StringBuilder();
+				for (byte b : messageDigest) {
+					String hex = Integer.toHexString(0xFF & b);
+					if (hex.length() == 1) hexString.append('0');
+					hexString.append(hex);
+				}
+				return hexString.toString().substring(0, 8);
+			}
+			catch (Exception e) {
+				return String.valueOf(Math.abs(input.hashCode()));
+			}
+		}
+	}
+	// ソート実行
+	public void sort(List<File> list) {
+		int filesort = SetImageActivity.getFileSort(mSharedPreferences);
+		if (filesort != FILESORT_NONE) {
+			Collections.sort(list, new ZipComparator());
+		}
+	}
+
+	// ソート用比較関数
+	public class ZipComparator implements Comparator<File> {
+		public int compare(File file1, File file2) {
+			int result;
+			int filesort = SetImageActivity.getFileSort(mSharedPreferences);
+			result = DEF.compareFileName(file1.getName(), file2.getName(), DEF.SORT_BY_FILE_TYPE);
+			if (filesort == FILESORT_NAME_DOWN) {
+				result *= -1;
+			}
+			return result;
+		}
+	}
+
 	private void setDrawEnable() {
 		mListScreenView.setDrawEnable(false);
 		// Message msg = mHandler.obtainMessage(DEF.HMSG_DRAWENABLE);
@@ -5804,20 +6829,34 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// 処理中断
 				if (mMultiThread2 != null) {
 					mMultiThread2.interrupt();
+					// ファイルリストの更新を中断させる
+					mUpdateListViewSkip = true;
+					// ファイルリストの更新の完了のフラグをクリア
+					threadstartcheck = false;
+					// スレッド実行の項目の値をクリアして処理を中断させる
+					mNowItem = -1;
+					// メイン画面で表示させるためハンドラを得る
+					mainHandler = new Handler(Looper.getMainLooper());
+					// メイン画面で表示
+					mainHandler.post(() -> {
+						// 中断をトースト表示させる
+						Toast.makeText(this, R.string.cancelupdatefilelist, Toast.LENGTH_SHORT).show();
+					});
 				}
-				// ファイルリストの更新を中断させる
-				mUpdateListViewSkip = true;
-				// ファイルリストの更新の完了のフラグをクリア
-				threadstartcheck = false;
-				// スレッド実行の項目の値をクリアして処理を中断させる
-				mNowItem = -1;
-				// メイン画面で表示させるためハンドラを得る
-				mainHandler = new Handler(Looper.getMainLooper());
-				// メイン画面で表示
-				mainHandler.post(() -> {
-					// 中断をトースト表示させる
-					Toast.makeText(this, R.string.cancelupdatefilelist, Toast.LENGTH_SHORT).show();
-				});
+				
+				if (mMultiThread8 != null) {
+					mMultiThread8.interrupt();
+					mHtmlFileDownloadSkip = true;
+					threadstartcheck4 = false;
+					// メイン画面で表示させるためハンドラを得る
+					mainHandler = new Handler(Looper.getMainLooper());
+					// メイン画面で表示
+					mainHandler.post(() -> {
+						// 中断をトースト表示させる
+						Toast.makeText(this, R.string.Cancel, Toast.LENGTH_SHORT).show();
+					});
+				}
+				
 				return true;
 		}
 		return false;
