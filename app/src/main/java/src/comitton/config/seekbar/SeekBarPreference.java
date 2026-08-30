@@ -202,6 +202,10 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = "";
 			mSummary2 = "";
 		}
+		else if (mKey.equals(DEF.KEY_TABSEEK)) {
+			mSummary1 = mContext.getString(R.string.unitSumm1);
+			mSummary2 = "";
+		}
 		else {
 			mSummary1 = mContext.getString(R.string.pixSumm1);
 			mSummary2 = mContext.getString(R.string.pixSumm2);
@@ -350,6 +354,9 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		}
 		else if (mKey.equals(DEF.KEY_TILETHUMBRATIO)) {
 			strSummary = DEF.getTileThumbRatioStr(num);
+		}
+		else if (mKey.equals(DEF.KEY_TABSEEK)) {
+			strSummary = DEF.getTabSeekStr(num, mSummary1);
 		}
 		else {
 			strSummary = DEF.getSizeStr(num, mSummary1, mSummary2);
