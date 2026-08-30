@@ -14,6 +14,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -98,6 +99,8 @@ import static src.comitton.dialog.ToolbarEditDialog.DEFAULT_VALUES;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.gson.Gson;
 
 import androidx.activity.result.ActivityResult;
@@ -105,6 +108,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
@@ -124,7 +128,9 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
@@ -136,22 +142,32 @@ import android.os.Parcelable;
 import android.os.storage.StorageManager;
 
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.preference.PreferenceManager;
 import androidx.activity.OnBackPressedCallback;
 
 import android.text.InputType;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.OrientationEventListener;
+import android.view.ViewTreeObserver;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.os.Looper;
 
@@ -159,6 +175,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -233,7 +251,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 	private String mURI = "";
 	private String mPath = "";
-	private ServerSelect mServer;
+	private static ServerSelect mServer;
 	private int mSortMode;
 	private int mFontTitle;
 	private int mFontMain;
@@ -262,6 +280,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int mBseColor;
 	private int mFifColor;
 	private int mFibColor;
+	private int mTabColor;
 
 	private boolean mTapExpand; // タップで展開
 
@@ -316,6 +335,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mFilter;
 	private boolean mApplyDir;
 	private boolean mSkipGetThumbnail;
+	private int mTabSize;
 
 	private static short mSortType;
 	private int mHistCount;
@@ -395,6 +415,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int rawPathsCount;
 	private int rawPathsCountTotal;
 	private boolean msetImageHtmlTextfileResult;
+	private boolean mTabMode;
+	private ViewPager2 viewPager;
+	private ListScreenStateAdapter adapter;
+	private HorizontalScrollView tabScrollView;
+	private TextView leftArrow;
+	private TextView rightArrow;
+	private TabLayout tabLayout;
+	private static final String ARG_INITIAL_PATH = "arg_initial_path";
+	private int tabCounter = 1;
+	private boolean isWebStyle;
+	private static final String TabButtonBackColor = "#E0E0E0";
+	private static final String TabButtonDeleteColor = "#20ffffff";
+
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
 	public static final int FILESORT_NAME_DOWN = 2;
@@ -431,15 +464,20 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 			// 薄い黒
 			autoLoadingOverlay.setBackgroundColor(0x40000000);
-			// 中央のぐるぐる(インジケータ)
-			ProgressBar progressBar = new ProgressBar(this);
-			FrameLayout.LayoutParams progressParams = new FrameLayout.LayoutParams(
-				FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-			progressParams.gravity = Gravity.CENTER;
-			progressBar.setLayoutParams(progressParams);
-			autoLoadingOverlay.addView(progressBar);
-			// 最前面に追加して表示する
-			rootLayout.addView(autoLoadingOverlay);
+			// タブの表示でバッティングする可能性があるため念のためtry～catchで囲む
+			try {
+				// 中央のぐるぐる(インジケータ)
+				ProgressBar progressBar = new ProgressBar(this);
+				FrameLayout.LayoutParams progressParams = new FrameLayout.LayoutParams(
+					FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+				progressParams.gravity = Gravity.CENTER;
+				progressBar.setLayoutParams(progressParams);
+				autoLoadingOverlay.addView(progressBar);
+				// 最前面に追加して表示する
+				rootLayout.addView(autoLoadingOverlay);
+			}
+			catch (Exception e) {
+			}
 		}
 	}
 
@@ -775,33 +813,43 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 
 		rootLayout = new FrameLayout(this);
-		mListScreenView = new ListScreenView(this, mHandler, mDuration);
-		rootLayout.addView(mListScreenView);
-		setContentView(rootLayout);
+		if (!mTabMode) {
+			// タブを表示しない
+			mListScreenView = new ListScreenView(this, mHandler, mDuration);
+			rootLayout.addView(mListScreenView);
+			setContentView(rootLayout);
+		}
+		else {
+			// タブを表示
+			setTabLayout();
+		}
 
 		// リストモードの設定
 		mListMode = (short) mSharedPreferences.getInt(DEF.KEY_LISTMODE, FileListArea.LISTMODE_LIST);
 		mThumbnail = mSharedPreferences.getBoolean(DEF.KEY_THUMBNAIL, false);
 		saveListMode(false);
 
-		mListScreenView.setOnTouchListener(this);
+		if (!mTabMode) {
+			// タブを表示しない
+			mListScreenView.setOnTouchListener(this);
 
-		mListScreenView.mTitleArea.setTextSize(mFontTitle, mTitColor, mTibColor);
+			mListScreenView.mTitleArea.setTextSize(mFontTitle, mTitColor, mTibColor);
 
-		mListScreenView.mToolbarArea.setDisplay(mToolbarShow, mToolbarSize, mToolbarLabel, mTldColor, mTlbColor);
+			mListScreenView.mToolbarArea.setDisplay(mToolbarShow, mToolbarSize, mToolbarLabel, mTldColor, mTlbColor);
 
-		mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor, mBsfColor, mBseColor, mFifColor, mFibColor);
-		mListScreenView.setDrawInfo(mFontTile, mFontMain, mFontSub, mItemMargin, mShowExt, mSplitFilename, mMaxLines);
-		mListScreenView.setListType(mListType);
-		mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode); // ソート状態を設定
-		mListScreenView.mFileListArea.setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
-		mListScreenView.mFileListArea.setListMode(mListMode); // タイル/リストの設定
-		// mListScreenView.mFileListArea.update(true);
-		mListScreenView.setListNoticeListener(this);
+			mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor, mBsfColor, mBseColor, mFifColor, mFibColor);
+			mListScreenView.setDrawInfo(mFontTile, mFontMain, mFontSub, mItemMargin, mShowExt, mSplitFilename, mMaxLines);
+			mListScreenView.setListType(mListType);
+			mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode); // ソート状態を設定
+			mListScreenView.mFileListArea.setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
+			mListScreenView.mFileListArea.setListMode(mListMode); // タイル/リストの設定
+			// mListScreenView.mFileListArea.update(true);
+			mListScreenView.setListNoticeListener(this);
 
-		mListScreenView.mSelectorArea.setConfig(mSelectorShow, mToolbarSize, mToolbarLabel, mListType, mTldColor, mTlbColor);
-		mListScreenView.mSelectorArea.setSelect(0);
 
+			mListScreenView.mSelectorArea.setConfig(mSelectorShow, mToolbarSize, mToolbarLabel, mListType, mTldColor, mTlbColor);
+			mListScreenView.mSelectorArea.setSelect(0);
+		}
 		// 回転時など保存しておいた情報
 		mServer = new ServerSelect(mSharedPreferences, this);
 		mServer.select(DEF.INDEX_LOCAL);
@@ -1144,6 +1192,648 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mInformation.checkRecentRelease(mHandler, false);
 	}
 
+	// タブを表示
+	private void setTabLayout() {
+		rootLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+		// TabLayoutとViewPager2を縦に並べるためのLinearLayoutを作成
+		LinearLayout containerLayout = new LinearLayout(this);
+		containerLayout.setOrientation(LinearLayout.VERTICAL);
+		containerLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+		// タブとボタンを横並びにするヘッダーレイアウト
+		LinearLayout headerLayout = new LinearLayout(this);
+		headerLayout.setOrientation(LinearLayout.HORIZONTAL);
+		headerLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+		headerLayout.setGravity(Gravity.CENTER_VERTICAL);
+		// タブの高さ
+		int tabHeightPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mTabSize, getResources().getDisplayMetrics());
+		int arrowWidthPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mTabSize - 2, getResources().getDisplayMetrics());
+		int mTabFontSize = (mTabSize - 16 > 8) ? mTabSize - 16 : 8;
+
+		FrameLayout tabWrapperLayout = new FrameLayout(this);
+		// 横幅はweight(1.0f)で広げ、高さは WRAP_CONTENT(文字が消えない高さ)にする
+		LinearLayout.LayoutParams wrapperParams = new LinearLayout.LayoutParams(0, tabHeightPx, 1.0f);
+		wrapperParams.gravity = Gravity.CENTER_VERTICAL;
+		tabWrapperLayout.setLayoutParams(wrapperParams);
+		// TabLayoutの生成
+		tabLayout = new TabLayout(this);
+		tabLayout.setTabMode(TabLayout.MODE_SCROLLABLE);
+		if (isWebStyle) {
+			// Webスタイル時
+			tabScrollView = new HorizontalScrollView(this);
+			tabScrollView.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+			tabScrollView.setHorizontalScrollBarEnabled(false);
+			tabScrollView.setFillViewport(true);
+			LinearLayout tabAndAddContainer = new LinearLayout(this);
+			tabAndAddContainer.setOrientation(LinearLayout.HORIZONTAL);
+			tabAndAddContainer.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+			tabLayout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+			// 後で定義するupdateArrowsを使えるよう一旦nullを渡し下で更新イベントを設定
+			TextView addButton = createAddButton(mTabFontSize, null, tabScrollView, tabLayout);
+			tabAndAddContainer.addView(tabLayout);
+			tabAndAddContainer.addView(addButton);
+			tabScrollView.addView(tabAndAddContainer);
+			tabWrapperLayout.addView(tabScrollView);
+		}
+		else {
+			tabScrollView = null;
+			tabLayout.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+			tabWrapperLayout.addView(tabLayout);
+		}
+		// 左右矢印の生成
+		leftArrow = createArrow("‹", mTabFontSize, arrowWidthPx, Gravity.START);
+		rightArrow = createArrow("›", mTabFontSize, arrowWidthPx, Gravity.END);
+		tabWrapperLayout.addView(leftArrow);
+		tabWrapperLayout.addView(rightArrow);
+		Runnable updateArrows = () -> {
+			// 左右矢印を表示更新
+			if (isWebStyle && tabScrollView != null) {
+				updateWebStyleArrows(tabScrollView, leftArrow, rightArrow);
+			}
+			else {
+				updateTabArrows(tabLayout, leftArrow, rightArrow);
+			}
+		};
+		// 矢印クリック時のスクロール動作
+		leftArrow.setOnClickListener(v -> {
+			if (isWebStyle && tabScrollView != null) {
+				// Webスタイル(HorizontalScrollViewをスクロール)
+				int scrollDistance = tabScrollView.getWidth() / 2;
+				tabScrollView.smoothScrollBy(-scrollDistance, 0);
+			}
+			else if (tabLayout != null) {
+				// TabLayoutを左へスクロール
+				scrollTabLayout(tabLayout, false);
+			}
+		});
+		rightArrow.setOnClickListener(v -> {
+			if (isWebStyle && tabScrollView != null) {
+				// Webスタイル(HorizontalScrollViewをスクロール)
+				int scrollDistance = tabScrollView.getWidth() / 2;
+				tabScrollView.smoothScrollBy(scrollDistance, 0);
+			}
+			else if (tabLayout != null) {
+				// TabLayoutを右へスクロール
+				scrollTabLayout(tabLayout, true);
+			}
+		});
+		// Webスタイル時のスクロール監視設定
+		if (isWebStyle && tabScrollView != null) {
+			tabScrollView.getViewTreeObserver().addOnScrollChangedListener(updateArrows::run);
+			tabScrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+				@Override
+				public void onGlobalLayout() {
+					updateArrows.run();
+					tabScrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+				}
+			});
+		}
+		// ヘッダーレイアウトにパーツを組み込む
+		headerLayout.addView(tabWrapperLayout);
+		if (!isWebStyle) {
+			// タブ追加ボタンの作成
+			TextView addButton = createAddButton(mTabFontSize, updateArrows, null, tabLayout);
+			// タブ削除ボタンの作成
+			TextView removeButton = createRemoveButton(mTabFontSize, updateArrows);
+			headerLayout.addView(addButton);
+			headerLayout.addView(removeButton);
+		}
+		// タブを切り替えた時にも矢印を更新
+		tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+			@Override
+			public void onTabSelected(TabLayout.Tab tab) {
+				tabLayout.post(updateArrows);
+			}
+			@Override
+			public void onTabUnselected(TabLayout.Tab tab) {}
+			@Override
+			public void onTabReselected(TabLayout.Tab tab) {}
+		});
+		// ViewPager2の初期化
+		viewPager = new ViewPager2(this);
+		viewPager.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+		viewPager.setId(View.generateViewId());
+		// 横スワイプを止める
+		viewPager.setUserInputEnabled(false);
+		// ビュー階層の組み立て
+		containerLayout.addView(headerLayout);
+		containerLayout.addView(viewPager);
+		rootLayout.addView(containerLayout);
+		// 画面にセット
+		setContentView(rootLayout);
+		Resources res = getResources();
+		List<String> initialTitles = new ArrayList<>(Arrays.asList(res.getString(R.string.tab) + tabCounter));
+		List<String> initialPaths = new ArrayList<>(Arrays.asList(""));
+		List<String> initialUris = new ArrayList<>(Arrays.asList(""));
+		adapter = new ListScreenStateAdapter(this, mHandler, mDuration, initialTitles, initialUris, initialPaths);
+		viewPager.setAdapter(adapter);
+		// TabLayoutとViewPager2を同期
+		new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+			String title = adapter.getTabTitle(position);
+			tab.setText(title);
+			if (isWebStyle) {
+				// Webスタイル時
+				LinearLayout customTab = new LinearLayout(this);
+				customTab.setOrientation(LinearLayout.HORIZONTAL);
+				customTab.setGravity(Gravity.CENTER_VERTICAL);
+				// タブ全体のパディング調整
+				customTab.setPadding(16, 0, 8, 0);
+				// タイトル部分
+				TextView customTextView = new TextView(this);
+				customTextView.setText(title);
+				customTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, mTabFontSize);
+				customTextView.setTextColor(mTabColor);
+				customTextView.setGravity(Gravity.CENTER);
+				customTextView.setIncludeFontPadding(false);
+				// 削除(×)ボタン部分
+				TextView closeBtn = new TextView(this);
+				closeBtn.setText("✕");
+				closeBtn.setGravity(Gravity.CENTER);
+				closeBtn.setIncludeFontPadding(false);
+				// タブの高さ(tabHeightPx)に連動して×ボタンのサイズを決める
+				int btnSizePx = (int) (tabHeightPx * 0.6f);
+				// 文字サイズもボタンの高さに合わせて可変にする
+				float closeFontSizeSp = (btnSizePx / getResources().getDisplayMetrics().scaledDensity) * 0.5f;
+				closeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, closeFontSizeSp);
+				closeBtn.setTextColor(mTabColor);
+				// 見た目は小さい円のまま透明なタップ領域を周囲に広げる
+				// タッチ判定全体のサイズ
+				int touchSizePx = (int) (btnSizePx * 1.5f);
+				// 周囲の透明な余白
+				int paddingPx = (touchSizePx - btnSizePx) / 2;
+				// ボタンの正方形領域と余白(マージンもタブ高さに合わせて調整)
+				LinearLayout.LayoutParams closeParams = new LinearLayout.LayoutParams(touchSizePx, touchSizePx);
+				// タブ高さの約15%のマージン
+				int marginPx = (int) (tabHeightPx * 0.15f); 
+				closeParams.setMargins(marginPx, 0, 0, 0);
+				closeBtn.setLayoutParams(closeParams);
+				// 内側にパディングを設定して文字(✕)と背景の位置を調整
+				closeBtn.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
+				// タップ可能フラグ
+				closeBtn.setClickable(true);
+				closeBtn.setFocusable(true);
+				// タブの高さに合わせて綺麗な真円になる背景
+				GradientDrawable circleBg = new GradientDrawable();
+				circleBg.setShape(GradientDrawable.OVAL);
+				// 背景色
+				circleBg.setColor(Color.parseColor(TabButtonDeleteColor));
+				closeBtn.setBackground(circleBg);
+				// タップリスナー設定
+				// ×ボタンが押されたら該当のタブ位置を取得して削除処理を実行
+				closeBtn.setOnClickListener(v -> {
+					int currentPos = tab.getPosition();
+					if (currentPos != TabLayout.Tab.INVALID_POSITION) {
+						viewPager.setCurrentItem(currentPos, false);
+						removeCurrentTab();
+						tabLayout.post(updateArrows);
+					}
+				});
+				customTab.addView(customTextView);
+				customTab.addView(closeBtn);
+				tab.setCustomView(customTab);
+			}
+			else {
+				TextView customTextView = new TextView(this);
+				customTextView.setText(title);
+				// フォントサイズを指定
+				customTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, mTabFontSize);
+				// テキストの色を設定
+				customTextView.setTextColor(mTabColor);
+				customTextView.setGravity(Gravity.CENTER);
+				customTextView.setIncludeFontPadding(false);
+				// カスタム View としてタブにセット
+				tab.setCustomView(customTextView);
+			}
+		}).attach();
+		// タブに移動
+		viewPager.setCurrentItem(adapter.getItemCount() - 1, true);
+		// Fragmentの生成完了タイミングを待って安全に代入
+		viewPager.post(() -> {
+			if (mListScreenView != null) {
+				// タイトルを表示
+				mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", mPath);
+				// ソート状態を設定
+				mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode);
+				int currentPosition = viewPager.getCurrentItem();
+				adapter.setTabUri(currentPosition, mURI);
+				adapter.setTabPath(currentPosition, mPath);
+			}
+		});
+	}
+	// 左右矢印を表示更新(Webスタイル時)
+	private void updateWebStyleArrows(HorizontalScrollView tabScrollView, TextView leftArrow, TextView rightArrow) {
+		if (tabScrollView.getChildCount() == 0) return;
+		View contentView = tabScrollView.getChildAt(0);
+		// 中身全体の幅
+		int contentWidth = contentView.getWidth();
+		// ScrollView 自体の表示領域の幅
+		int scrollViewWidth = tabScrollView.getWidth();
+		// 現在のスクロール量 (左端からの距離)
+		int scrollX = tabScrollView.getScrollX();
+		// 中身が画面幅より大きい(はみ出している)場合のみ矢印を制御
+		if (contentWidth > scrollViewWidth) {
+			// 左端にいなければ左矢印を表示
+			if (scrollX > 0) {
+				leftArrow.setVisibility(View.VISIBLE);
+			}
+			else {
+				leftArrow.setVisibility(View.GONE);
+			}
+			// 右端にいなければ右矢印を表示
+			// (contentWidth - scrollViewWidth)が最大スクロール量
+			// 5pxの遊びを持たせて誤差を吸収
+			if (scrollX < (contentWidth - scrollViewWidth - 5)) {
+				rightArrow.setVisibility(View.VISIBLE);
+			}
+			else {
+				rightArrow.setVisibility(View.GONE);
+			}
+		}
+		else {
+			// 画面に収まっている場合は両方隠す
+			leftArrow.setVisibility(View.GONE);
+			rightArrow.setVisibility(View.GONE);
+		}
+	}
+	// 左右矢印を表示更新
+	private void updateTabArrows(TabLayout tabLayout, View leftArrow, View rightArrow) {
+		if (tabLayout == null || tabLayout.getChildCount() == 0) return;
+		View tabStrip = tabLayout.getChildAt(0);
+		if (tabStrip == null) return;
+		// 描画が完了して横幅が確定したタイミングで計算する
+		tabStrip.post(() -> {
+			int maxScrollX = tabStrip.getWidth() - tabLayout.getWidth();
+			int currentScrollX = tabLayout.getScrollX();
+			if (maxScrollX <= 0) {
+				leftArrow.setVisibility(View.GONE);
+				rightArrow.setVisibility(View.GONE);
+			}
+			else {
+				// 左端より右にスクロールしていれば左矢印を表示
+				leftArrow.setVisibility(currentScrollX > 0 ? View.VISIBLE : View.GONE);
+				// 右端に到達していなければ右矢印を表示
+				rightArrow.setVisibility(currentScrollX < maxScrollX ? View.VISIBLE : View.GONE);
+			}
+		});
+	}
+	// 左右矢印の生成
+	private TextView createArrow(String text, int fontSize, int widthPx, int gravity) {
+		TextView arrow = new TextView(this);
+		arrow.setText(text);
+		arrow.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize + 4);
+		arrow.setTextColor(mTabColor);
+		arrow.setGravity(Gravity.CENTER);
+		arrow.setIncludeFontPadding(false);
+		// 重なった文字を見やすくする半透明黒背景
+		arrow.setBackgroundColor(0xCC000000);
+		// 初期状態は非表示
+		arrow.setVisibility(View.GONE);
+		FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(widthPx, ViewGroup.LayoutParams.MATCH_PARENT, gravity);
+		arrow.setLayoutParams(params);
+		return arrow;
+	}
+	// タブ追加ボタンの作成
+	private TextView createAddButton(int fontSize, Runnable updateArrows, HorizontalScrollView tabScrollView, TabLayout tabLayout) {
+		int paddingH = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+		int heightInPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mTabSize - 2, getResources().getDisplayMetrics());
+		// 角丸の背景オブジェクトを作成する
+		GradientDrawable bgDrawable = new GradientDrawable();
+		// 背景色
+		bgDrawable.setColor(Color.parseColor(TabButtonBackColor));
+		// 角の丸み(px単位)
+		bgDrawable.setCornerRadius(16);
+		LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, heightInPx);
+		btnParams.setMargins(8, 0, 8, 0);
+		btnParams.gravity = Gravity.CENTER_VERTICAL;
+		// タブ追加ボタン(＋)
+		TextView addButton = new TextView(this);
+		addButton.setText("+");
+		addButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize + 4);
+		addButton.setIncludeFontPadding(false);
+		addButton.setGravity(Gravity.CENTER);
+		// パディングを詰めてボタンを小さくする
+		addButton.setPadding(paddingH, 0, paddingH, 0);
+		addButton.setLayoutParams(btnParams);
+		addButton.setMinimumWidth(0);
+		addButton.setMinimumHeight(0);
+		addButton.setBackground(bgDrawable);
+		addButton.setTextColor(Color.BLACK);
+		addButton.setOnClickListener(v -> {
+			// タブ追加の処理
+			tabCounter++;
+			Resources res = getResources();
+			adapter.addTab(res.getString(R.string.tab) + String.valueOf(tabCounter), mURI, mPath);
+			int newTabPosition = adapter.getItemCount() - 1;
+			// ViewPager2 の選択ページを最新にする
+			viewPager.setCurrentItem(newTabPosition, true);
+			// レイアウトの再計測・描画を確実に待ってから右端へスクロール
+			v.post(() -> {
+				if (isWebStyle && tabScrollView != null) {
+					// Webスタイル(外側のHorizontalScrollViewを一番右端までスクロール)
+					tabScrollView.fullScroll(View.FOCUS_RIGHT);
+				}
+				else if (tabLayout != null) {
+					// TabLayoutの内部スクロール位置を指定
+					tabLayout.setScrollPosition(newTabPosition, 0f, true);
+					TabLayout.Tab tab = tabLayout.getTabAt(newTabPosition);
+					if (tab != null) {
+						tab.select();
+					}
+				}
+				if (updateArrows != null) {
+					updateArrows.run();
+				}
+			});
+		});
+		return addButton;
+	}
+	// タブ削除ボタンの作成
+	private TextView createRemoveButton(int fontSize, Runnable updateArrows) {
+		int paddingH = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+		int heightInPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mTabSize - 2, getResources().getDisplayMetrics());
+		// 角丸の背景オブジェクトを作成する
+		GradientDrawable bgDrawable = new GradientDrawable();
+		// 背景色
+		bgDrawable.setColor(Color.parseColor(TabButtonBackColor));
+		bgDrawable.setCornerRadius(16);
+		// 角の丸み(px単位)
+		LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, heightInPx);
+		btnParams.setMargins(8, 0, 8, 0);
+		btnParams.gravity = Gravity.CENTER_VERTICAL;
+		// タブ削除ボタン(×)
+		TextView removeButton = new TextView(this);
+		removeButton.setText("×");
+		removeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize + 4);
+		removeButton.setIncludeFontPadding(false);
+		removeButton.setGravity(Gravity.CENTER);
+		removeButton.setPadding(paddingH, 0, paddingH, 0);
+		removeButton.setLayoutParams(btnParams);
+		removeButton.setMinimumWidth(0);
+		removeButton.setMinimumHeight(0);
+		removeButton.setBackground(bgDrawable);
+		removeButton.setTextColor(Color.BLACK);
+		removeButton.setOnClickListener(v -> {
+			// 現在選択されているタブを削除
+			removeCurrentTab();
+			if (updateArrows != null) v.post(updateArrows);
+		});
+		return removeButton;
+	}
+	// TabLayout単体での左右スクロール処理
+	private void scrollTabLayout(TabLayout tabLayout, boolean scrollRight) {
+		if (tabLayout == null || tabLayout.getChildCount() == 0) return;
+		// TabLayout の内部でスクロールを担っている子Viewを取得
+		View scrollContainer = tabLayout.getChildAt(0);
+		// スクロール量(画面幅の半分程度)
+		int scrollDistance = tabLayout.getWidth() / 2;
+		if (!scrollRight) {
+			scrollDistance = -scrollDistance;
+		}
+		// 選択状態を変えずにTabLayout自身を直接スムーズスクロールさせる
+		tabLayout.smoothScrollBy(scrollDistance, 0);
+	}
+
+	// Fragmentから呼ばれる受け渡し用のメソッド
+	public void setCurrentFragment(ListScreenFragment fragment) {
+		if (fragment != null) {
+			// mListScreenView を取得して更新する
+			mListScreenView = fragment.getListScreenView();
+			// 現在選ばれているタブのインデックスを取得
+			int currentPosition = viewPager.getCurrentItem();
+			mServer.select(adapter.getTabServerSelect(currentPosition));
+			String user = mServer.getUser();
+			String pass = mServer.getPass();
+			String uri = adapter.getTabUri(currentPosition);
+			String file = DEF.createUrl(uri, user, pass);
+			String path = adapter.getTabPath(currentPosition);
+			if (path != "") {
+				// パスの移動
+				moveFileSelectProc(uri, path, false);
+			}
+			if (mListScreenView != null) {
+				// タイトルを表示
+				mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", path);
+				// ソート状態を設定
+				mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode);
+			}
+			// ロード処理
+			int topindex = mListScreenView.mFileListArea.getTopIndex();
+			if (topindex < 0) {
+				loadListView();
+			}
+			else {
+				loadListView(topindex);
+			}
+		}
+	}
+	// 複数画面(タブ)を管理するAdapter
+	private static class ListScreenStateAdapter extends FragmentStateAdapter {
+		private final Handler handler;
+		private final int duration;
+		private final List<String> tabTitles = new ArrayList<>();
+		private final List<String> tabPaths = new ArrayList<>();
+		private final List<String> tabUris = new ArrayList<>();
+		private final List<Long> tabIds = new ArrayList<>();
+		private final List<Long> tabServerSelect = new ArrayList<>();
+		private long nextId = 0;
+
+		public ListScreenStateAdapter(@NonNull FragmentActivity fragmentActivity, Handler handler, int duration, List<String> initialTitles, List<String> initialUris, List<String> initialPaths) {
+			super(fragmentActivity);
+			this.handler = handler;
+			this.duration = duration;
+			for (int i = 0; i < initialTitles.size(); i++) {
+				tabTitles.add(initialTitles.get(i));
+				tabPaths.add(i < initialPaths.size() ? initialPaths.get(i) : "");
+				tabUris.add(i < initialUris.size() ? initialUris.get(i) : "");
+				tabServerSelect.add((long)DEF.INDEX_LOCAL);
+				tabIds.add(nextId++);
+			}
+		}
+		// 新しいタブを追加するメソッド
+		public void addTab(String title, String initialUri, String initialPath) {
+			tabTitles.add(title);
+			tabUris.add(initialUri);
+			tabPaths.add(initialPath);
+			long serverselect = mServer.getSelect();
+			tabServerSelect.add(serverselect);
+			tabIds.add(nextId++);
+			notifyItemInserted(tabTitles.size() - 1);
+		}
+		// 指定したタブを削除するメソッド
+		public void removeTab(int position) {
+			if (position >= 0 && position < tabTitles.size() && tabTitles.size() > 1) {
+				// 最低1つは残す場合
+				tabTitles.remove(position);
+				tabUris.remove(position);
+				tabPaths.remove(position);
+				tabServerSelect.remove(position);
+				tabIds.remove(position);
+				notifyItemRemoved(position);
+				// 削除された位置以降のインデックス変更を通知する
+				notifyItemRangeChanged(position, tabTitles.size() - position);
+				// 削除位置以降の変更を通知
+				notifyDataSetChanged();
+			}
+		}
+		// 指定したタブのパスを更新・保存するメソッド
+		public void setTabPath(int position, String newPath) {
+			if (position >= 0 && position < tabPaths.size()) {
+				tabPaths.set(position, newPath);
+			}
+		}
+		public void setTabUri(int position, String newUri) {
+			if (position >= 0 && position < tabUris.size()) {
+				tabUris.set(position, newUri);
+			}
+		}
+		public void setTabServerSelect(int position, int serverselect) {
+			if (position >= 0 && position < tabServerSelect.size()) {
+				tabServerSelect.set(position, (long)serverselect);
+			}
+		}
+		// 指定したタブのパスを取得するメソッド
+		public String getTabPath(int position) {
+			if (position >= 0 && position < tabPaths.size()) {
+				return tabPaths.get(position);
+			}
+			return "";
+		}
+		public String getTabUri(int position) {
+			if (position >= 0 && position < tabUris.size()) {
+				return tabUris.get(position);
+			}
+			return "";
+		}
+		public int getTabServerSelect(int position) {
+			if (position >= 0 && position < tabServerSelect.size()) {
+				int serveselect = tabServerSelect.get(position).intValue();
+				return serveselect;
+			}
+			return DEF.INDEX_LOCAL;
+		}
+		public String getTabTitle(int position) {
+			if (position >= 0 && position < tabTitles.size()) {
+				return tabTitles.get(position);
+			}
+			return "";
+		}
+
+		@NonNull
+		@Override
+		public Fragment createFragment(int position) {
+			// タブごとにListScreenViewを内包したFragmentを返す
+			// その position(タブ)が保持しているパスを取得
+			String initialPath = tabPaths.get(position); 
+			// パスも一緒に渡して Fragment を生成
+			return ListScreenFragment.newInstance(handler, duration, initialPath);
+		}
+		@Override
+		public int getItemCount() {
+			// 動的に変更する
+			return tabTitles.size();
+		}
+		// FragmentStateAdapterで動的追加・削除を行うために必須のオーバーライド
+		@Override
+		public long getItemId(int position) {
+			return tabIds.get(position);
+		}
+
+		@Override
+		public boolean containsItem(long itemId) {
+			return tabIds.contains(itemId);
+		}
+	}
+	// ListScreenViewを保持するFragment
+	public static class ListScreenFragment extends Fragment {
+		private ListScreenView listScreenView;
+		private boolean mIsInitialized = false;
+		public static ListScreenFragment newInstance(Handler handler, int duration, String initialPath) {
+			ListScreenFragment fragment = new ListScreenFragment();
+			// インスタンスごとの個別保持にする
+			Bundle args = new Bundle();
+			args.putString(ARG_INITIAL_PATH, initialPath);
+			fragment.setArguments(args);
+			return fragment;
+		}
+
+		@Override
+		public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			if (listScreenView != null) {
+				return listScreenView;
+			}
+			// Viewの生成(requireActivity()を使用)
+			FileSelectActivity activity = (FileSelectActivity) requireActivity();
+			listScreenView = new ListScreenView(activity, activity.mHandler, activity.mDuration);
+			// イベントリスナーの設定
+			listScreenView.setOnTouchListener(activity);
+			listScreenView.mTitleArea.setTextSize(activity.mFontTitle, activity.mTitColor, activity.mTibColor);
+			listScreenView.mToolbarArea.setDisplay(activity.mToolbarShow, activity.mToolbarSize, activity.mToolbarLabel, activity.mTldColor, activity.mTlbColor);
+			listScreenView.setDrawColor(activity.mDirColor, activity.mImgColor, activity.mBefColor, activity.mNowColor, activity.mAftColor, activity.mBakColor, activity.mCurColor, activity.mMrkColor, activity.mTlbColor, activity.mTxtColor, activity.mInfColor, activity.mRrbColor, activity.mBsfColor, activity.mBseColor, activity.mFifColor, activity.mFibColor);
+			listScreenView.setDrawInfo(activity.mFontTile, activity.mFontMain, activity.mFontSub, activity.mItemMargin, activity.mShowExt, activity.mSplitFilename,	activity.mMaxLines);
+			listScreenView.setListType(activity.mListType);
+			listScreenView.mFileListArea.setThumbnail(activity.mThumbnail, activity.mThumbSizeW, activity.mThumbSizeH, activity.mListThumbSizeH);
+			listScreenView.mFileListArea.setListMode(activity.mListMode);
+			listScreenView.setListNoticeListener(activity);
+			listScreenView.mSelectorArea.setConfig(activity.mSelectorShow, activity.mToolbarSize, activity.mToolbarLabel, activity.mListType, activity.mTldColor, activity.mTlbColor);
+			listScreenView.mSelectorArea.setSelect(0);
+			return listScreenView;
+		}
+		@Override
+		public void onResume() {
+			super.onResume();
+			if (getActivity() instanceof FileSelectActivity) {
+				// ロード処理
+				((FileSelectActivity) getActivity()).setCurrentFragment(this);
+			}
+		}
+		// 外部から ListScreenView を取得するための getter
+		public ListScreenView getListScreenView() {
+			return listScreenView;
+		}
+	}
+	// 現在選択されているタブを削除
+	public void removeCurrentTab() {
+		int currentPosition = viewPager.getCurrentItem();
+		if (adapter.getItemCount() <= 1) {
+			// タブが1つ以下の場合は削除しない
+			return;
+		}
+		// Adapter から該当のタブを削除
+		adapter.removeTab(currentPosition);
+	}
+
+	private void checkTabScrollPosition(TabLayout tabLayout, View leftShadow, View rightShadow) {
+		// スクロール可能な全体の横幅
+		int maxScrollX = tabLayout.getChildAt(0).getWidth() - tabLayout.getWidth();
+		// 現在のスクロール位置
+		int currentScrollX = tabLayout.getScrollX();
+		// 全体の横幅が画面幅以下の場合はスクロール不要
+		if (maxScrollX <= 0) {
+			leftShadow.setVisibility(View.GONE);
+			rightShadow.setVisibility(View.GONE);
+			return;
+		}
+		// 左側に隠れたタブがあるか判定(スクロール位置が0より大きいか)
+		if (currentScrollX > 0) {
+			// 左の影または矢印を表示
+			leftShadow.setVisibility(View.VISIBLE);
+		}
+		else {
+			// 左端に到達したため非表示
+			leftShadow.setVisibility(View.GONE);
+		}
+		// 右側に隠れたタブがあるか判定(スクロール位置が最大値未満か)
+		if (currentScrollX < maxScrollX) {
+			// 右の影または矢印を表示
+			rightShadow.setVisibility(View.VISIBLE);
+		}
+		else {
+			// 右端に到達したため非表示
+			rightShadow.setVisibility(View.GONE);
+		}
+	}
+
 	static boolean CheckCustomUrlScheme(Intent intent) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.v(logLevel, "カスタムURLスキームのチェック.");
@@ -1326,6 +2016,19 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
+		if (rootLayout != null) {
+			rootLayout.post(() -> {
+				if (mTabMode) {
+					// 矢印の表示/非表示状態を新しい画面幅に合わせて再更新
+					if (isWebStyle && tabScrollView != null) {
+						updateWebStyleArrows(tabScrollView, leftArrow, rightArrow);
+					}
+					else if (tabLayout != null) {
+						updateTabArrows(tabLayout, leftArrow, rightArrow);
+					}
+				}
+			});
+		}
 	}
 
 	public ActivityResultLauncher<Intent> startForResult = registerForActivityResult(
@@ -1438,6 +2141,15 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					Intent intent = getIntent();
 					finish();
 					startActivity(intent);
+					if (mTabMode) {
+						// 矢印の表示/非表示状態を新しい画面幅に合わせて再更新
+						if (isWebStyle && tabScrollView != null) {
+							updateWebStyleArrows(tabScrollView, leftArrow, rightArrow);
+						}
+						else if (tabLayout != null) {
+							updateTabArrows(tabLayout, leftArrow, rightArrow);
+						}
+					}
 				}
 				// 履歴の内容を更新する
 				mListScreenView.updateRecordList();
@@ -1584,6 +2296,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							if (!mKeepFilelistCursor) {
 								// カーソル位置を保持しない
 								moveFileSelect(mURI, path, file, true);
+							}
+							else {
+								// 移動(これを入れないとカスタムURLスキームでフォルダを見失う)
+								moveFileSelect(mURI, path, true);
 							}
 						}
 					}
@@ -1838,6 +2554,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mBseColor = SetFileColorActivity.getBseColor(mSharedPreferences);
 		mFifColor = SetFileColorActivity.getFifColor(mSharedPreferences);
 		mFibColor = SetFileColorActivity.getFibColor(mSharedPreferences);
+		mTabColor = SetFileColorActivity.getTabColor(mSharedPreferences);
 
 		mTitColor = SetFileColorActivity.getTitColor(mSharedPreferences);
 		mTibColor = SetFileColorActivity.getTibColor(mSharedPreferences);
@@ -1927,6 +2644,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		SmbFileAccess.setSmbMode(SetServerMessageBlockActivity.getSelectSmbLib(mSharedPreferences));
 		mOpenImageHtmlFile = SetFileListActivity.getOpenImageHtmlFile(mSharedPreferences);
 		mOpenImageTextFile = SetFileListActivity.getOpenImageTextFile(mSharedPreferences);
+		mTabMode = SetFileListActivity.getTabMode(mSharedPreferences);
+		mTabSize = SetFileListActivity.getTabSize(mSharedPreferences) + DEF.MIN_TABSEEK;
+		isWebStyle = (SetFileListActivity.getTabStyle(mSharedPreferences) == 0) ? true : false;
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -1993,6 +2713,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			return true;
 		}
 		if (mTlbColor != SetFileColorActivity.getTlbColor(mSharedPreferences)) {
+			return true;
+		}
+		if (mTabColor != SetFileColorActivity.getTabColor(mSharedPreferences)) {
 			return true;
 		}
 		if (mSortMode != SetFileListActivity.getListSort(mSharedPreferences)) {
@@ -3434,7 +4157,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mFileList.setPath(mURI, mPath, user, pass);
 		mFileList.setParams(mHidden, mMarker, mFilter, mApplyDir, mParentMove, mEpubViewer, mEpubWebView, mAozoraZipFile, mAozoraTextFile);
 
-		mListScreenView.mFileListArea.setThumbnailId(0);
+		if (mListScreenView != null) {
+			mListScreenView.mFileListArea.setThumbnailId(0);
+		}
 
 		// ファイルリスト取得(非同期)
 		mFileList.loadFileList();
@@ -3444,7 +4169,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 
 		// タイトル設定
-		mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", mPath);
+		if (mListScreenView != null) {
+			mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", mPath);
+		}
 
 		mIsLoading = true;
 	}
@@ -5134,6 +5861,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mServer = server;
 		mServer.select(serverindex);
 
+		if (mTabMode) {
+			int currentPosition = viewPager.getCurrentItem();
+			adapter.setTabServerSelect(currentPosition, serverindex);
+		}
 		// リスト再ロード
 		loadListView();
 	}
@@ -5147,6 +5878,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		ServerSelect server = new ServerSelect(mSharedPreferences, this);
 		if (svrindex != DEF.INDEX_LOCAL) {
 			server.select(svrindex);
+		}
+		if (mTabMode) {
+			int currentPosition = viewPager.getCurrentItem();
+			adapter.setTabServerSelect(currentPosition, svrindex);
 		}
 		String uri = server.getURI();
 		Logcat.v(logLevel, "uri=" + uri);
@@ -5187,6 +5922,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			mFileList.FlushFileList();
 		}
 
+		if (mTabMode) {
+			int currentPosition = viewPager.getCurrentItem();
+			adapter.setTabUri(currentPosition, uri);
+			adapter.setTabPath(currentPosition, path);
+		}
 		// 新しいパスを設定
 		mURI = uri;
 		mPath = path;
