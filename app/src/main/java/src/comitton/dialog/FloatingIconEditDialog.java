@@ -113,6 +113,11 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.drawable.profile10,
 			};
 
+	// 先頭からのプロファイル1へのオフセット
+	private static final int FLOATING_OFFSET_PROFILE1 = 25;
+	// 先頭からのプロファイル10へのオフセット
+	private static final int FLOATING_OFFSET_PROFILE10 = 35;
+
 	public static final int[] COMMAND_ID =
 		{
 			DEF.FLOATING_LEFTMOST,
@@ -294,15 +299,15 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			mIndex[i] = sharedPreference.getInt(DEF.KEY_FLOATINGICON_TOOLBAR_INDEX + COMMAND_ID[i], i);
 		}
 		for (int i = 0; i < COMMAND_RES.length; i++) {
-			if (COMMAND_ID[i] >= DEF.TOOLBAR_PROFILE1 && COMMAND_ID[i] <= DEF.TOOLBAR_PROFILE10) {
+			if (mIndex[i] >= FLOATING_OFFSET_PROFILE1 && mIndex[i] <= FLOATING_OFFSET_PROFILE10) {
 				// プロファイル
-				if (mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1].equals("")) {
+				if (mProfileWord[mIndex[i] - FLOATING_OFFSET_PROFILE1].equals("")) {
 					// 中身が未定義なら
 					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]);
 				}
 				else {
 					// 後半に中身を追加
-					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]) + " : " + mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1];
+					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]) + " : " + mProfileWord[mIndex[i] - FLOATING_OFFSET_PROFILE1];
 				}
 			}
 			else {
