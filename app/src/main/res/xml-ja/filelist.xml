@@ -396,6 +396,26 @@
             android:key="OpenImageTextFile"
             android:summary="テキストのリンク先の画像をイメージビューアで開く場合はチェックを入れる"
             android:title="テキストのリンク先の画像をイメージビューアで開く" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="TabMode"
+            android:summary="ファイル選択画面のタブ表示を有効にする場合はチェックを入れる"
+            android:title="ファイル選択画面のタブ表示を有効にする" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="タブ表示のスタイル選択"
+            android:entries="@array/tabstyle_name_list"
+            android:entryValues="@array/tabstyle_value_list"
+            android:key="TabSytle"
+            android:summary="dummy"
+            android:title="タブ表示のスタイル選択" />
+        <src.comitton.config.seekbar.TabSeekbar
+            android:dialogMessage="タブのサイズを設定"
+            android:dialogTitle="タブのサイズ"
+            android:key="TabSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="タブのサイズ" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

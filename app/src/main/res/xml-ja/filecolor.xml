@@ -184,6 +184,14 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatorevbrgb"
             android:title="WebベースのEPUBファイルの背景色" />
+        <src.comitton.config.color.ColorTabSetting
+            android:dialogMessage="色を設定してください。"
+            android:dialogTitle="タブのテキストの色"
+            android:key="TabRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:widgetLayout="@layout/indicatortabrgb"
+            android:title="タブのテキストの色" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
