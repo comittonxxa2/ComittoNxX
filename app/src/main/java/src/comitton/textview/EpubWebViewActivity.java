@@ -1,6 +1,13 @@
 package src.comitton.textview;
 
 import io.documentnode.epub4j.domain.Spine;
+import jcifs.CIFSContext;
+import jcifs.config.PropertyConfiguration;
+import jcifs.context.BaseContext;
+import jcifs.context.SingletonContext;
+import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbRandomAccessFile;
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 
@@ -88,10 +95,6 @@ import androidx.activity.OnBackPressedCallback;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.codelibs.jcifs.smb.CIFSContext;
-import org.codelibs.jcifs.smb.context.SingletonContext;
-import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
-import org.codelibs.jcifs.smb.impl.SmbFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
