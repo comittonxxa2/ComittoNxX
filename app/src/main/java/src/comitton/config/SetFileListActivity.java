@@ -7,6 +7,7 @@ import src.comitton.config.seekbar.FontTitleSeekbar;
 import src.comitton.config.seekbar.ItemMarginSeekbar;
 import src.comitton.config.seekbar.ListThumbSeekbar;
 import src.comitton.config.seekbar.MenuLongTapSeekbar;
+import src.comitton.config.seekbar.TabSeekbar;
 import src.comitton.config.seekbar.ToolbarSeekbar;
 import src.comitton.config.seekbar.ListThumbRatioSeekbar;
 import src.comitton.config.seekbar.TileThumbRatioSeekbar;
@@ -56,6 +57,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ListPreference mThumbMargin;
 
 	private ToolbarSeekbar mToolbarSeek;
+	private TabSeekbar mTabSeek;
 	private ListThumbSeekbar mListThumbSeek;
 	private ListThumbRatioSeekbar mListThumbRatioSeek;
 	private TileThumbRatioSeekbar mTileThumbRatioSeek;
@@ -70,6 +72,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ListPreference mThumbnailGridVertical;
 	private ListPreference mThumbnailGridHorizontal;
 	private CheckBoxPreference mThumbnailGrid;
+	private CheckBoxPreference mTabEnable;
+	private ListPreference mTabStyle;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -157,6 +161,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static final int[] ReadProgressbarWidth =
 			{ R.string.readprogressbarwidth00		// サムネイル画像に合わせる
 			, R.string.readprogressbarwidth01 };	// サムネイル表示エリアに合わせる
+	public static final int[] TabStyleList =
+			{ R.string.tabstyle00		// Webブラウザスタイル
+			, R.string.tabstyle01 };	// ＋×ボタン配置スタイル
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -209,12 +216,20 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mThumbnailGridVertical = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_THUMBGRIDV);
 		mThumbnailGridHorizontal = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_THUMBGRIDH);
 		mThumbnailGrid = (CheckBoxPreference) findPreference(DEF.KEY_THUMBGRID);
+		mTabSeek = (TabSeekbar)getPreferenceScreen().findPreference(DEF.KEY_TABSEEK);
+		mTabEnable = (CheckBoxPreference) findPreference(DEF.KEY_TABMODE);
+		mTabStyle = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_TABSTYLE);
 
 		if (!getThumbnailGrid(sharedPreferences)) {
 			mListThumbRatioSeek.setEnabled(false);
 			mTileThumbRatioSeek.setEnabled(false);
 			mThumbnailGridVertical.setEnabled(false);
 			mThumbnailGridHorizontal.setEnabled(false);
+		}
+
+		if (!getTabMode(sharedPreferences)) {
+			mTabSeek.setEnabled(false);
+			mTabStyle.setEnabled(false);
 		}
 
 		mThumbnailGrid.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
@@ -226,6 +241,20 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				mTileThumbRatioSeek.setEnabled(isChecked);
 				mThumbnailGridVertical.setEnabled(isChecked);
 				mThumbnailGridHorizontal.setEnabled(isChecked);
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
+
+		mTabEnable.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// newValue には新しいチェック状態(Boolean)が入ってくる
+				boolean isChecked = (Boolean) newValue;
+				mTabSeek.setEnabled(isChecked);
+				mTabStyle.setEnabled(isChecked);
+				// 親のActivityを再生成させる
+				FileSelectActivity.setChangeTheme();
 				// trueを返すと設定値が保存される
 				return true;
 			}
@@ -284,6 +313,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mTileThumbRatioSeek.setSummary(getTileThumbRatioSeekSummary(sharedPreferences));
 		mThumbnailGridVertical.setSummary(getThumbnailGridVerticalSummary(sharedPreferences));
 		mThumbnailGridHorizontal.setSummary(getThumbnailGridHorizontalSummary(sharedPreferences));
+		mTabSeek.setSummary(getTabSeekSummary(sharedPreferences));
+		mTabStyle.setSummary(getTabStyleSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 }
 
@@ -422,6 +453,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 			mThumbnailGridHorizontal.setSummary(getThumbnailGridHorizontalSummary(sharedPreferences));
 			change = true;
 		}
+		else if(key.equals(DEF.KEY_TABSEEK)){
+			mTabSeek.setSummary(getTabSeekSummary(sharedPreferences));
+			change = true;
+		}
+		else if(key.equals(DEF.KEY_TABSTYLE)){
+			mTabStyle.setSummary(getTabStyleSummary(sharedPreferences));
+			change = true;
+		}
 		if (change) {
 			// 親のActivityを再生成させる
 			FileSelectActivity.setChangeTheme();
@@ -523,6 +562,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return val;
 	}
 
+	public static int getTabSize(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_TABSEEK, DEF.DEFAULT_TABSEEK);
+		return val;
+	}
+
+	public static int getTabStyle(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_TABSTYLE, "0");
+		if(val < 0 || val >= TabStyleList.length){
+			val = 0;
+		}
+		return val;
+	}
 
 //	public static int getFontSize(SharedPreferences sharedPreferences){
 //		int val = DEF.getInt(sharedPreferences, DEF.KEY_FONTSIZE, "2"));
@@ -897,6 +948,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static boolean getTabMode(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_TABMODE, false);
+		return flag;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
@@ -1081,5 +1138,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private String getThumbnailGridHorizontalSummary(SharedPreferences sharedPreferences){
 		int val = getThumbnailGridHorizontal(sharedPreferences);
 		return String.valueOf(val);
+	}
+
+	private String getTabSeekSummary(SharedPreferences sharedPreferences){
+		int size = getTabSize(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.unitSumm1);
+		return DEF.getTabSeekStr(size, summ1);
+	}
+
+	private String getTabStyleSummary(SharedPreferences sharedPreferences){
+		int val = getTabStyle(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(TabStyleList[val]);
 	}
 }

@@ -1,6 +1,7 @@
 package src.comitton.config;
 
 import src.comitton.common.Logcat;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import jp.dip.muracoro.comittonx.R;
@@ -220,6 +221,8 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 	public static void SetOrientationEventListener(Activity activity, SharedPreferences sharedPreferences) {
 		// 起動時は回転動作にならないので固定値の場合は個別で設定する
 		int viewrota = getViewRotaAll(sharedPreferences);
+		// 回転時にモードによって文字が消えるのを防ぐ(モード設定よりも文字表示が優先)
+		FileSelectActivity.applyAppTheme(sharedPreferences);
 		// タブレット端末を検出
 		boolean isTablet = activity.getResources().getConfiguration().smallestScreenWidthDp >= 600;
 		// タブレット端末で縦画面は回転表示に切り替える
