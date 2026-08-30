@@ -1084,6 +1084,9 @@
     <string name="selectsmblib00">Auto(SMBJ->JCIFS-NG)</string>
     <string name="selectsmblib01">JCIFS-NG only</string>
     <string name="selectsmblib02">SMBJ only</string>
+    <string name="tab">Tab </string>
+    <string name="tabstyle00">Web browser style</string>
+    <string name="tabstyle01">+X button layout style</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
