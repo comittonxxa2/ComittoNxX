@@ -1,6 +1,6 @@
 package src.comitton.fileaccess;
 
-import org.codelibs.jcifs.smb.impl.SmbRandomAccessFile;
+import jcifs.smb.SmbRandomAccessFile;
 import java.io.IOException;
 import java.io.InputStream;
 

@@ -13,10 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
-import org.codelibs.jcifs.smb.impl.SmbException;
-import org.codelibs.jcifs.smb.impl.SmbFile;
-import org.codelibs.jcifs.smb.impl.SmbRandomAccessFile;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +30,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbRandomAccessFile;
 
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
