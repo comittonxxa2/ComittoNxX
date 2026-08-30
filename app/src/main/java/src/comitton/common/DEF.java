@@ -534,6 +534,7 @@ public class DEF {
 	public static final String KEY_FIBCOLOR = "FibColor";
 	public static final String KEY_EVTCOLOR = "EvtColor";
 	public static final String KEY_EVBCOLOR = "EvbColor";
+	public static final String KEY_TABCOLOR = "TabColor";
 
 	public static final String KEY_TXTRGB = "TxtRGB";
 	public static final String KEY_DIRRGB = "DirRGB";
@@ -556,6 +557,7 @@ public class DEF {
 	public static final String KEY_FIBRGB = "FibRGB";
 	public static final String KEY_EVTRGB = "EvtRGB";
 	public static final String KEY_EVBRGB = "EvbRGB";
+	public static final String KEY_TABRGB = "TabRGB";
 
 	// public static final String KEY_TITLECLR = "TitleColor";
 	// public static final String KEY_TOOLBCLR = "ToolbarColor";
@@ -767,6 +769,7 @@ public class DEF {
 	public static final String KEY_SHOWSELECTOR = "ShowSelector";
 	public static final String KEY_TOOLBARNAME = "ToolbarName";
 	public static final String KEY_TOOLBARSEEK = "ToolbarSeek";
+	public static final String KEY_TABSEEK = "TabSeek";
 	public static final String KEY_LISTTHUMBSEEK = "ListThumbSeek";
 	public static final String KEY_THUMBSEEK = "ThumbSeek";
 	public static final String KEY_THUMBSIZEW = "ThumbSizeW";
@@ -922,6 +925,8 @@ public class DEF {
 	public static final String KEY_SELECTSMBLIB = "SelectSmbLib";
 	public static final String KEY_OPENIMAGEHTMLFILE = "OpenImageHtmlFile";
 	public static final String KEY_OPENIMAGETEXTFILE = "OpenImageTextFile";
+	public static final String KEY_TABMODE = "TabMode";
+	public static final String KEY_TABSTYLE = "TabSytle";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -1517,6 +1522,16 @@ public class DEF {
 	public static final String KEY_THEME7_EVBRGB = "Theme7EvbRGB";
 	public static final String KEY_THEME8_EVBRGB = "Theme8EvbRGB";
 
+	public static final String KEY_THEMES_TABRGB = "ThemeSTabRGB";
+	public static final String KEY_THEME1_TABRGB = "Theme1TabRGB";
+	public static final String KEY_THEME2_TABRGB = "Theme2TabRGB";
+	public static final String KEY_THEME3_TABRGB = "Theme3TabRGB";
+	public static final String KEY_THEME4_TABRGB = "Theme4TabRGB";
+	public static final String KEY_THEME5_TABRGB = "Theme5TabRGB";
+	public static final String KEY_THEME6_TABRGB = "Theme6TabRGB";
+	public static final String KEY_THEME7_TABRGB = "Theme7TabRGB";
+	public static final String KEY_THEME8_TABRGB = "Theme8TabRGB";
+
 	public static final String KEY_THEMES_FONTTITLE = "ThemeSFontTitleSp";
 	public static final String KEY_THEME1_FONTTITLE = "Theme1FontTitleSp";
 	public static final String KEY_THEME2_FONTTITLE = "Theme2FontTitleSp";
@@ -1760,6 +1775,10 @@ public class DEF {
 	public static final int MAX_PNUMSIZE = 54; // 6 + 24 = 60px
 
 	public static final int MAX_TOOLBAR_SIZE = 6; // 200%
+
+	public static final int MIN_TABSEEK = 16; // 12
+	public static final int MAX_TABSEEK = 44; // 60 (44+16)
+	public static final int DEFAULT_TABSEEK = 16; // 32 (16+16)
 
 	// テキストビュワー設定
 	public static final String KEY_TX_INISCALE = "txIniScale";
@@ -3602,6 +3621,16 @@ public class DEF {
 		return (int) (calcToolbarSize(val) * density); // 最小値:12sp
 	}
 
+	// タブサイズの計算
+	static public int calcTabSize(int val) {
+		return (val + MIN_TABSEEK); // 最小値:12sp
+	}
+
+	// タブバーサイズの計算
+	static public int calcTabPix(int val, float density) {
+		return (int) (calcTabSize(val) * density); // 最小値:12sp
+	}
+
 	// サムネイルサイズの計算
 	static public int calcThumbnailSize(int val) {
 		return (val * 10 + 40); // 最小値:40px
@@ -3811,6 +3840,12 @@ public class DEF {
 	static public String getToolbarSeekStr(int val, String summ1) {
 		// ドット単位
 		return calcToolbarSize(val) + " " + summ1;
+	}
+
+	// タブサイズ文字列作成(xx sp)
+	static public String getTabSeekStr(int val, String summ1) {
+		// ドット単位
+		return calcTabSize(val) + " " + summ1;
 	}
 
 	// リストサムネイルサイズ文字列作成(xx sp)
