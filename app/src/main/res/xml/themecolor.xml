@@ -243,5 +243,13 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatorevbrgb"
             android:title="Background color of web-based EPUB files" />
+        <src.comitton.config.color.ColorTabSetting
+            android:dialogMessage="Please Select Color."
+            android:dialogTitle="Tab Text Color"
+            android:key="TabRGB"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:widgetLayout="@layout/indicatortabrgb" />
+            android:title="Tab Text Color" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -394,6 +394,26 @@
             android:key="OpenImageTextFile"
             android:summary="Check this box to open images linked in Text using the image viewer."
             android:title="Open the image linked in the Text in an image viewer." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="TabMode"
+            android:summary="Check this box to enable tabbed display on the file selection screen."
+            android:title="Enable tab display on the file selection screen." />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Tab display style selection"
+            android:entries="@array/tabstyle_name_list"
+            android:entryValues="@array/tabstyle_value_list"
+            android:key="TabSytle"
+            android:summary="dummy"
+            android:title="Tab display style selection" />
+        <src.comitton.config.seekbar.TabSeekbar
+            android:dialogMessage="Set tab size"
+            android:dialogTitle="Tab size"
+            android:key="TabSeek"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Tab size" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
