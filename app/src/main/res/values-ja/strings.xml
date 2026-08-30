@@ -1084,5 +1084,8 @@
     <string name="selectsmblib00">自動(SMBJ→JCIFS-NG)</string>
     <string name="selectsmblib01">JCIFS-NGのみ</string>
     <string name="selectsmblib02">SMBJのみ</string>
+    <string name="tab">タブ </string>
+    <string name="tabstyle00">Webブラウザスタイル</string>
+    <string name="tabstyle01">+×ボタン配置スタイル</string>
 
 </resources>
