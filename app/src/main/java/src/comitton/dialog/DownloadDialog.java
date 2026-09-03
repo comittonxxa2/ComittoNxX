@@ -2,6 +2,9 @@ package src.comitton.dialog;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
@@ -178,32 +181,92 @@ public class DownloadDialog extends ImmersiveDialog implements Runnable, Handler
 				sendMessage(MSG_MESSAGE, path + item, 0, 0);
 				sendMessage(MSG_SETMAX, null, 0, (int)fileSize);
 
-				byte[] buff = new byte[1024 * 1024 * 8];
+				// 読み込み(ネットワーク)と書き込み(ローカルディスク)を別スレッドで重ね合わせ、
+				// 片方の待ち時間中にもう片方を進めることで転送を高速化する。
+				// 読み込み自体はこれまで通りこのスレッド(mThread)で行うため、mBreakでの中断挙動は変わらない。
+				final int CHUNK_SIZE = 1024 * 1024;
+				final byte[] EOF_MARKER = new byte[0];
+				final BlockingQueue<byte[]> writeQueue = new ArrayBlockingQueue<byte[]>(3);
+				final Exception[] writeError = new Exception[1];
+				final OutputStream writeTarget = localFile;
+
+				Thread writerThread = new Thread(new Runnable() {
+					public void run() {
+						try {
+							while (true) {
+								byte[] chunk = writeQueue.take();
+								if (chunk == EOF_MARKER) {
+									break;
+								}
+								writeTarget.write(chunk, 0, chunk.length);
+							}
+						}
+						catch (Exception e) {
+							writeError[0] = e;
+						}
+					}
+				});
+				writerThread.start();
+
+				byte[] buff = new byte[CHUNK_SIZE];
 				int size;
 				long total = 0;
-				while (true) {
-					// 読み込み
-					size = workStream.read(buff, 0, buff.length);
-					if (mBreak) {
-						// 中断
-						localFile = null;
-						FileAccess.delete(mActivity, tmpFileUri, mUser, mPass);
-						return false;
+				boolean broken = false;
+				try {
+					while (true) {
+						// 読み込み
+						size = workStream.read(buff, 0, buff.length);
+						if (mBreak) {
+							// 中断
+							broken = true;
+							break;
+						}
+						if (size <= 0) {
+							break;
+						}
+						if (writeError[0] != null) {
+							// 書き込みスレッドで既にエラーが発生している
+							break;
+						}
+						byte[] chunk = (size == buff.length) ? buff : Arrays.copyOf(buff, size);
+						// 次の読み込み用に新しいバッファを用意する(書き込みスレッドが chunk を参照中のため使い回さない)
+						buff = new byte[CHUNK_SIZE];
+						try {
+							writeQueue.put(chunk);
+						}
+						catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							break;
+						}
+						total += size;
+						sendMessage(MSG_PROGRESS, null, (int)total, (int)fileSize);
 					}
-					if (size <= 0) {
-						break;
+				}
+				finally {
+					try {
+						writeQueue.put(EOF_MARKER);
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
 					}
 					try {
-						// 書き込み
-						localFile.write(buff, 0, size);
+						writerThread.join();
 					}
-					catch (Exception e) {
-						sendMessage(MSG_ERRMSG, mActivity.getString(R.string.downErrorMsg), 0, 0);
-						Logcat.e(logLevel, "Exception1: ", e);
-						return false;
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
 					}
-					total += size;
-					sendMessage(MSG_PROGRESS, null, (int)total, (int)fileSize);
+				}
+
+				if (broken) {
+					// 中断
+					localFile = null;
+					FileAccess.delete(mActivity, tmpFileUri, mUser, mPass);
+					return false;
+				}
+				if (writeError[0] != null) {
+					sendMessage(MSG_ERRMSG, mActivity.getString(R.string.downErrorMsg), 0, 0);
+					Logcat.e(logLevel, "Exception1: ", writeError[0]);
+					return false;
 				}
 				// クローズ
 				localFile.close();

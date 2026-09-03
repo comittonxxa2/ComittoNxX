@@ -412,7 +412,10 @@ public class FileAccess {
 
 	public int read(@NonNull byte[] buf, int off, int size) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, off={1}, size={2}, pos+off+size={3}, length={4}", new Object[]{getFilePointer(), off, size, getFilePointer()+off+size, length()}));
+		// 転送のホットパスなので、実際に出力されないログレベルのときは文字列生成コストをかけない
+		if (Logcat.global_log_level <= Logcat.LOG_LEVEL_DEBUG) {
+			Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, off={1}, size={2}, pos+off+size={3}, length={4}", new Object[]{getFilePointer(), off, size, getFilePointer()+off+size, length()}));
+		}
 		int result = 0;
 		switch (accessType(mURI)) {
 			case DEF.ACCESS_TYPE_LOCAL: {
@@ -467,7 +470,9 @@ public class FileAccess {
 				break;
 			}
 		}
-		Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{result, off, getFilePointer(), length()}));
+		if (Logcat.global_log_level <= Logcat.LOG_LEVEL_DEBUG) {
+			Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{result, off, getFilePointer(), length()}));
+		}
 		return result;
 	}
 
