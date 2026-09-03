@@ -36,6 +36,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2655,34 +2657,94 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 
 	// 共通のコピーメソッド(ParcelFileDescriptorを使うと不安定になるので作成した)
+	// 読み込み(ネットワーク)と書き込み(ローカルディスク)を別スレッドで重ね合わせることで、
+	// SMB上のPDF等をキャッシュへコピーする際の速度を改善する(DownloadDialogと同じ手法)。
 	private void copyToCache(InputStream is, long totalSize, File tempFile) throws IOException {
 		try (InputStream input = is;
 			OutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-			// 1MB
-			byte[] buffer = new byte[1024 * 1024];
+
+			final int CHUNK_SIZE = 1024 * 1024;
+			final byte[] EOF_MARKER = new byte[0];
+			final BlockingQueue<byte[]> writeQueue = new ArrayBlockingQueue<byte[]>(3);
+			final Exception[] writeError = new Exception[1];
+			final OutputStream writeTarget = os;
+
+			Thread writerThread = new Thread(new Runnable() {
+				public void run() {
+					try {
+						while (true) {
+							byte[] chunk = writeQueue.take();
+							if (chunk == EOF_MARKER) {
+								break;
+							}
+							writeTarget.write(chunk, 0, chunk.length);
+						}
+					}
+					catch (Exception e) {
+						writeError[0] = e;
+					}
+				}
+			});
+			writerThread.start();
+
+			byte[] buffer = new byte[CHUNK_SIZE];
 			int length;
 			long downloaded = 0;
 			boolean stop = false;
-			while ((length = input.read(buffer)) != -1) {
-				// スレッド中断チェック(ゾンビプロセス防止)
-				if (Thread.currentThread().isInterrupted()) {
-					stop = true;
-					break;
-				}
-				if (!mRunningFlag) {
-					stop = true;
-					break;
-				}
-				os.write(buffer, 0, length);
-				downloaded += length;
-				// 進捗通知
-				if (totalSize > 0) {
-					int nowPercent = (int) (downloaded * 100 / totalSize);
-					final int p = nowPercent;
-					final long d = downloaded;
-					mHandler.post(() -> sendProgress(0, p, d, totalSize));
+			try {
+				while ((length = input.read(buffer)) != -1) {
+					// スレッド中断チェック(ゾンビプロセス防止)
+					if (Thread.currentThread().isInterrupted()) {
+						stop = true;
+						break;
+					}
+					if (!mRunningFlag) {
+						stop = true;
+						break;
+					}
+					if (writeError[0] != null) {
+						// 書き込みスレッドで既にエラーが発生している
+						break;
+					}
+					byte[] chunk = (length == buffer.length) ? buffer : Arrays.copyOf(buffer, length);
+					// 次の読み込み用に新しいバッファを用意する(書き込みスレッドがchunkを参照中のため使い回さない)
+					buffer = new byte[CHUNK_SIZE];
+					try {
+						writeQueue.put(chunk);
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						break;
+					}
+					downloaded += length;
+					// 進捗通知
+					if (totalSize > 0) {
+						int nowPercent = (int) (downloaded * 100 / totalSize);
+						final int p = nowPercent;
+						final long d = downloaded;
+						mHandler.post(() -> sendProgress(0, p, d, totalSize));
+					}
 				}
 			}
+			finally {
+				try {
+					writeQueue.put(EOF_MARKER);
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+				try {
+					writerThread.join();
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+
+			if (writeError[0] != null) {
+				throw new IOException("copyToCache write failed", writeError[0]);
+			}
+
 			os.flush();
 			// 書き込みを確定させる
 			if (os instanceof FileOutputStream) {

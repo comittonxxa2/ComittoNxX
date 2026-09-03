@@ -129,14 +129,16 @@ public class SmbFileAccess {
 		Properties prop = new Properties();
 
 		// SMB1, SMB202, SMB210, SMB300, SMB302, SMB311
+		// 注意: このライブラリ(org.codelibs:jcifs)ではプロパティキーの接頭辞が
+		// "jcifs.smb.client." ではなく "jcifs.client." に変更されている(PropertyConfigurationの実装で確認済み)。
 		if (smb_mode) {
 			// ComittoN 互換モードはSMB1決め打ちなのでSMB1に特化する
-			prop.setProperty("jcifs.smb.client.minVersion", "SMB1");
-			prop.setProperty("jcifs.smb.client.maxVersion", "SMB1");
+			prop.setProperty("jcifs.client.minVersion", "SMB1");
+			prop.setProperty("jcifs.client.maxVersion", "SMB1");
 		}
 		else {
-			prop.setProperty("jcifs.smb.client.minVersion", "SMB1");
-			prop.setProperty("jcifs.smb.client.maxVersion", "SMB311");
+			prop.setProperty("jcifs.client.minVersion", "SMB1");
+			prop.setProperty("jcifs.client.maxVersion", "SMB311");
 		}
 
 		// https://github.com/AgNO3/jcifs-ng/issues/171
@@ -144,6 +146,16 @@ public class SmbFileAccess {
 
 		// JCIFSのログを出力しない
 		prop.setProperty("jcifs.util.loglevel", "0");
+
+		// SMBJ失敗時のフォールバック経路でも転送速度が落ちないよう、読み書きの最大チャンクサイズと
+		// ソケットのタイムアウトを調整する(SmbjRandomAccessFileのSMBJ側チューニングと揃える)
+		prop.setProperty("jcifs.client.useLargeReadWrite", "true");
+		prop.setProperty("jcifs.client.transaction_buf_size", String.valueOf(1024 * 1024));
+		prop.setProperty("jcifs.client.tcpNoDelay", "true");
+		prop.setProperty("jcifs.client.responseTimeout", String.valueOf(30 * 1000));
+		prop.setProperty("jcifs.client.soTimeout", String.valueOf(35 * 1000));
+		prop.setProperty("jcifs.client.connTimeout", String.valueOf(30 * 1000));
+		prop.setProperty("jcifs.client.sessionTimeout", String.valueOf(30 * 1000));
 
 		//prop.setProperty("jcifs.smb.lmCompatibility", "3");
 		//prop.setProperty("jcifs.smb.client.useExtendedSecuruty", "true");

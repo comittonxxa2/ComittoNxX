@@ -39,12 +39,14 @@ public class SmbjRandomAccessFile implements SmbRandomAccessFileCompat {
 		String username = (user != null && !user.isEmpty()) ? user : info.getUsername();
 		String password = (pass != null) ? pass : info.getPassword();
 		SmbConfig config = SmbConfig.builder()
-			// 1回のバッファサイズを64KBに制限してメモリ圧迫を防ぐ(これを入れないとメモリー不足でアプリが落ちる)
-			.withReadBufferSize(64 * 1024)
-			.withWriteBufferSize(64 * 1024)
-			.withReadTimeout(5, TimeUnit.SECONDS)
-			.withSoTimeout(3, TimeUnit.SECONDS)
-			.withTransactTimeout(5, TimeUnit.SECONDS)
+			// 1回のSMB2 READ/WRITEの最大サイズ。64KBだと8MBのローカルバッファを使っても
+			// 実際の転送は64KB単位のリクエストに分割されラウンドトリップが増えて低速化するため、
+			// メモリ圧迫が起きない範囲(1MB)まで引き上げる
+			.withReadBufferSize(1024 * 1024)
+			.withWriteBufferSize(1024 * 1024)
+			.withReadTimeout(30, TimeUnit.SECONDS)
+			.withSoTimeout(15, TimeUnit.SECONDS)
+			.withTransactTimeout(30, TimeUnit.SECONDS)
 			.withMultiProtocolNegotiate(true)
 			.build();
 		// クライアント作成とサーバーへの接続
