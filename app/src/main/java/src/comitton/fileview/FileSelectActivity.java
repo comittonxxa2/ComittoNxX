@@ -47,7 +47,6 @@ import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.expandview.ExpandActivity;
-import src.comitton.fileaccess.SmbFileAccess;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.TouchPanelView;
@@ -178,6 +177,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
+import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -416,15 +416,17 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int rawPathsCountTotal;
 	private boolean msetImageHtmlTextfileResult;
 	private boolean mTabMode;
+	private boolean mTabRestore;
 	private ViewPager2 viewPager;
 	private ListScreenStateAdapter adapter;
 	private HorizontalScrollView tabScrollView;
 	private TextView leftArrow;
 	private TextView rightArrow;
 	private TabLayout tabLayout;
-	private static final String ARG_INITIAL_PATH = "arg_initial_path";
+	private static final String ARG_POSITION = "arg_position";
 	private int tabCounter = 1;
 	private boolean isWebStyle;
+	private boolean isTabAtBottom;
 	private static final String TabButtonBackColor = "#E0E0E0";
 	private static final String TabButtonDeleteColor = "#20ffffff";
 
@@ -536,6 +538,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		ed.putInt("ResumeServerSelect", mServer.getSelect());
 		ed.putBoolean("Resume", true);
 		ed.apply();
+		if (mTabMode && mTabRestore) {
+			// アプリがバックグラウンドに回る際に保存
+			saveTabsToPreferences();
+		}
 	}
 
 	@Override
@@ -568,6 +574,23 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		savedInstanceState.putString("Server", mServer.getCode());
 		savedInstanceState.putInt("ServerSelect", mServer.getSelect());
 		super.onSaveInstanceState(savedInstanceState);
+		if (mTabMode) {
+			if (adapter != null && viewPager != null) {
+				// adapterからデータを取得してArrayListとして保存
+				savedInstanceState.putStringArrayList("tab_titles", new ArrayList<>(adapter.tabTitles));
+				savedInstanceState.putStringArrayList("tab_uris", new ArrayList<>(adapter.tabUris));
+				savedInstanceState.putStringArrayList("tab_paths", new ArrayList<>(adapter.tabPaths));
+				// Longのリストを保存するため変換
+				long[] serverSelects = new long[adapter.tabServerSelect.size()];
+				for (int i = 0; i < adapter.tabServerSelect.size(); i++) {
+					serverSelects[i] = adapter.tabServerSelect.get(i);
+				}
+				savedInstanceState.putLongArray("tab_server_selects", serverSelects);
+				// 現在選択中のタブ位置とカウンターを保存
+				savedInstanceState.putInt("current_tab_position", viewPager.getCurrentItem());
+				savedInstanceState.putInt("tab_counter", tabCounter);
+			}
+		}
 	}
 
 	// アプリがバックグラウンドに入ってからホーム画面から起動したりタスクキルしてActivityが破棄されなかった場合はonNewIntentが呼び出される
@@ -648,30 +671,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 設定の読込
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor ed = mSharedPreferences.edit();
-		// 起動失敗の回数をカウントしてしきい値に達したらリセットを入れるのは副作用が大きいのでコメントアウトにしてみた
-		/*
-		try {
-			mInitialize = mSharedPreferences.getInt(DEF.KEY_INITIALIZE, 0);
-			if (mInitialize >= 3) {
-				// 3回連続で起動処理中が最後まで実行されなかった
-				// ローカルはストレージルートにリセット
-				String path = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
-				ed.putString("path", path);
-				// 表示モードはリスト表示(サムネイルOFF)にセット
-				ed.putInt(DEF.KEY_LISTMODE, FileListArea.LISTMODE_LIST);
-				ed.putBoolean(DEF.KEY_THUMBNAIL, false);
-				ed.putInt(DEF.KEY_INITIALIZE, 1);
-			} else {
-				// 起動処理の実行回数を保存
-				// あとで起動処理が正常に終了したら回数をリセットする
-				ed.putInt(DEF.KEY_INITIALIZE, mInitialize + 1);
-			}
-			ed.apply();
-		}
-		catch (Exception e){
-			Logcat.d(logLevel, "", e);
-		}
-		*/
 
 		mActivity = this;
 		mDensity = getResources().getDisplayMetrics().scaledDensity;
@@ -806,50 +805,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			return androidx.core.view.WindowInsetsCompat.CONSUMED;
 		});
 
-		mHandler = new Handler(this);
-		if (mPathHistory == null) {
-			// パス遷移の記録
-			mPathHistory = new PathHistory();
-		}
-
-		rootLayout = new FrameLayout(this);
-		if (!mTabMode) {
-			// タブを表示しない
-			mListScreenView = new ListScreenView(this, mHandler, mDuration);
-			rootLayout.addView(mListScreenView);
-			setContentView(rootLayout);
-		}
-		else {
-			// タブを表示
-			setTabLayout();
-		}
-
-		// リストモードの設定
-		mListMode = (short) mSharedPreferences.getInt(DEF.KEY_LISTMODE, FileListArea.LISTMODE_LIST);
-		mThumbnail = mSharedPreferences.getBoolean(DEF.KEY_THUMBNAIL, false);
-		saveListMode(false);
-
-		if (!mTabMode) {
-			// タブを表示しない
-			mListScreenView.setOnTouchListener(this);
-
-			mListScreenView.mTitleArea.setTextSize(mFontTitle, mTitColor, mTibColor);
-
-			mListScreenView.mToolbarArea.setDisplay(mToolbarShow, mToolbarSize, mToolbarLabel, mTldColor, mTlbColor);
-
-			mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor, mBsfColor, mBseColor, mFifColor, mFibColor);
-			mListScreenView.setDrawInfo(mFontTile, mFontMain, mFontSub, mItemMargin, mShowExt, mSplitFilename, mMaxLines);
-			mListScreenView.setListType(mListType);
-			mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode); // ソート状態を設定
-			mListScreenView.mFileListArea.setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
-			mListScreenView.mFileListArea.setListMode(mListMode); // タイル/リストの設定
-			// mListScreenView.mFileListArea.update(true);
-			mListScreenView.setListNoticeListener(this);
-
-
-			mListScreenView.mSelectorArea.setConfig(mSelectorShow, mToolbarSize, mToolbarLabel, mListType, mTldColor, mTlbColor);
-			mListScreenView.mSelectorArea.setSelect(0);
-		}
 		// 回転時など保存しておいた情報
 		mServer = new ServerSelect(mSharedPreferences, this);
 		mServer.select(DEF.INDEX_LOCAL);
@@ -951,6 +906,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// サーバー選択あり
 					serverSelect = Integer.parseInt(serverselect);
 				}
+				// カスタムURLスキームから起動の場合はタブをクリアする
+				mTabMode = false;
+				ed = mSharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_TABMODE, false);
+				ed.apply();
 				Logcat.d(logLevel, "fileselect カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
 			}
 			// ファイルを開く場合
@@ -980,10 +940,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					Logcat.d(logLevel, "Intent解析中. mURI=" + mURI + ", mPath=" + mPath + ", name=" + fileData.getName());
 					openFile(fileData, "");
 				}
+				// カスタムURLスキームから起動の場合はタブをクリアする
+				mTabMode = false;
+				ed = mSharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_TABMODE, false);
+				ed.apply();
 			}
 			else {
 				// キーが一致しなかった場合はアクティビティを終了させる
 				finish();
+				return;
 			}
 		}
 		else if (mSavedInstanceState != null && initmode) {
@@ -1021,22 +987,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mInitialize = 0;
 			}
 		}
-
-		// レジューム起動チェック
-		if (path == null) {
-			// アイコンから起動(ショートカットや回転ではない)とき
-			if (mResumeOpenNoMessage && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
-				// 起動時の自動読み込み
-				ExecLastOpen();
-			}
-			if (mResumeOpen && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
-				// 初回起動のみ(回転時などは行わない)
-				int lastView = mSharedPreferences.getInt("LastOpen", -1);
-				if (lastView != DEF.LASTOPEN_NONE) {
-					showDialog(DEF.MESSAGE_RESUME);
-				}
-			}
-		}
+		// 起動パラメータをクリアする
+		intent.setData(null);
+		setIntent(intent);
 
 		if (path != null && !path.isEmpty()) {
 			mPath = path;
@@ -1070,6 +1023,42 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 		}
 
+		if (mTabMode && mSavedInstanceState != null && mSavedInstanceState.containsKey("tab_titles")) {
+			// タブが有効でonSaveInstanceStateのデータが有効の場合
+			List<String> restoreUris = new ArrayList<>();
+			List<String> restorePaths = new ArrayList<>();
+			restoreUris = mSavedInstanceState.getStringArrayList("tab_uris");
+			restorePaths = mSavedInstanceState.getStringArrayList("tab_paths");
+			long[] serverSelects = mSavedInstanceState.getLongArray("tab_server_selects");
+			int restoreCurrentItem = mSavedInstanceState.getInt("current_tab_position", 0);
+			// サーバー選択
+			mServer.select((int)serverSelects[restoreCurrentItem]);
+			// URIとパスを選択
+			mPath = restorePaths.get(restoreCurrentItem);
+			mURI = restoreUris.get(restoreCurrentItem);
+		}
+		else if (mTabMode && mTabRestore) {
+			// タブが有効で復元が有効の場合
+			// SharedPreferencesからの復元を試みる
+			String titlesJson = mSharedPreferences.getString(DEF.KEY_TABTITLES, null);
+			if (titlesJson != null) {
+				try {
+					JSONArray uris = new JSONArray(mSharedPreferences.getString(DEF.KEY_TABURIS, "[]"));
+					JSONArray paths = new JSONArray(mSharedPreferences.getString(DEF.KEY_TABPATHS, "[]"));
+					JSONArray servers = new JSONArray(mSharedPreferences.getString(DEF.KEY_TABSERVERS, "[]"));
+					// タブの位置を取得
+					int CurrentItem = mSharedPreferences.getInt(DEF.KEY_TABCURRENTPOSITION, 0);
+					// サーバー選択
+					mServer.select((int)servers.optLong(CurrentItem, DEF.INDEX_LOCAL));
+					// URIとパスを選択
+					mPath = paths.optString(CurrentItem, "");
+					mURI = uris.optString(CurrentItem, "");
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		// 画面リフレッシュ実施時
 		int topindex = 0;
 		if (mSavedInstanceState != null) {
@@ -1108,6 +1097,68 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// 読み取り権限がない
 				mPath = Environment.getExternalStorageDirectory().getAbsolutePath() + '/';
 			}
+		}
+
+		// レジューム起動チェック
+		if (path == null) {
+			// アイコンから起動(ショートカットや回転ではない)とき
+			if (mResumeOpenNoMessage && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
+				// 起動時の自動読み込み
+				ExecLastOpen();
+			}
+			if (mResumeOpen && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
+				// 初回起動のみ(回転時などは行わない)
+				int lastView = mSharedPreferences.getInt("LastOpen", -1);
+				if (lastView != DEF.LASTOPEN_NONE) {
+					showDialog(DEF.MESSAGE_RESUME);
+				}
+			}
+		}
+
+		mHandler = new Handler(this);
+		if (mPathHistory == null) {
+			// パス遷移の記録
+			mPathHistory = new PathHistory();
+		}
+
+		rootLayout = new FrameLayout(this);
+		if (!mTabMode) {
+			// タブを表示しない
+			mListScreenView = new ListScreenView(this, mHandler, mDuration);
+		}
+
+		// リストモードの設定
+		mListMode = (short) mSharedPreferences.getInt(DEF.KEY_LISTMODE, FileListArea.LISTMODE_LIST);
+		mThumbnail = mSharedPreferences.getBoolean(DEF.KEY_THUMBNAIL, false);
+		saveListMode(false);
+
+		if (!mTabMode) {
+			// タブを表示しない
+			mListScreenView.setOnTouchListener(this);
+
+			mListScreenView.mTitleArea.setTextSize(mFontTitle, mTitColor, mTibColor);
+
+			mListScreenView.mToolbarArea.setDisplay(mToolbarShow, mToolbarSize, mToolbarLabel, mTldColor, mTlbColor);
+
+			mListScreenView.setDrawColor(mDirColor, mImgColor, mBefColor, mNowColor, mAftColor, mBakColor, mCurColor, mMrkColor, mTlbColor, mTxtColor, mInfColor, mRrbColor, mBsfColor, mBseColor, mFifColor, mFibColor);
+			mListScreenView.setDrawInfo(mFontTile, mFontMain, mFontSub, mItemMargin, mShowExt, mSplitFilename, mMaxLines);
+			mListScreenView.setListType(mListType);
+			mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode); // ソート状態を設定
+			mListScreenView.mFileListArea.setThumbnail(mThumbnail, mThumbSizeW, mThumbSizeH, mListThumbSizeH);
+			mListScreenView.mFileListArea.setListMode(mListMode); // タイル/リストの設定
+			// mListScreenView.mFileListArea.update(true);
+			mListScreenView.setListNoticeListener(this);
+
+
+			mListScreenView.mSelectorArea.setConfig(mSelectorShow, mToolbarSize, mToolbarLabel, mListType, mTldColor, mTlbColor);
+			mListScreenView.mSelectorArea.setSelect(0);
+			// タブを表示しない
+			rootLayout.addView(mListScreenView);
+			setContentView(rootLayout);
+		}
+		else {
+			// タブを表示
+			setTabLayout(mSavedInstanceState);
 		}
 
 		// ファイルリスト
@@ -1193,7 +1244,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 
 	// タブを表示
-	private void setTabLayout() {
+	private void setTabLayout(Bundle savedInstanceState) {
 		rootLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 		// TabLayoutとViewPager2を縦に並べるためのLinearLayoutを作成
 		LinearLayout containerLayout = new LinearLayout(this);
@@ -1317,16 +1368,88 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 横スワイプを止める
 		viewPager.setUserInputEnabled(false);
 		// ビュー階層の組み立て
-		containerLayout.addView(headerLayout);
-		containerLayout.addView(viewPager);
+		// 再描画時などのためクリア
+		containerLayout.removeAllViews();
+		if (isTabAtBottom) {
+			// 下部にタブを表示する場合
+			// ViewPager2を上、ヘッダー(タブ)を下にする
+			containerLayout.addView(viewPager);
+			containerLayout.addView(headerLayout);
+		}
+		else {
+			// 上部にタブを表示する場合
+			// ヘッダー(タブ)を上、ViewPager2を下にする
+			containerLayout.addView(headerLayout);
+			containerLayout.addView(viewPager);
+		}
 		rootLayout.addView(containerLayout);
 		// 画面にセット
 		setContentView(rootLayout);
 		Resources res = getResources();
-		List<String> initialTitles = new ArrayList<>(Arrays.asList(res.getString(R.string.tab) + tabCounter));
-		List<String> initialPaths = new ArrayList<>(Arrays.asList(""));
-		List<String> initialUris = new ArrayList<>(Arrays.asList(""));
-		adapter = new ListScreenStateAdapter(this, mHandler, mDuration, initialTitles, initialUris, initialPaths);
+		List<String> restoreTitles = new ArrayList<>();
+		List<String> restoreUris = new ArrayList<>();
+		List<String> restorePaths = new ArrayList<>();
+		List<Long> restoreServerSelects = new ArrayList<>();
+		int restoreCurrentItem = 0;
+		boolean isLoaded = false;
+		// 以前の保存済みデータからの起動を試みる
+		if (savedInstanceState != null && savedInstanceState.containsKey("tab_titles")) {
+			restoreTitles = savedInstanceState.getStringArrayList("tab_titles");
+			restoreUris = savedInstanceState.getStringArrayList("tab_uris");
+			restorePaths = savedInstanceState.getStringArrayList("tab_paths");
+			long[] serverSelects = savedInstanceState.getLongArray("tab_server_selects");
+			if (serverSelects != null) {
+				for (long val : serverSelects) {
+					restoreServerSelects.add(val);
+				}
+			}
+			restoreCurrentItem = savedInstanceState.getInt("current_tab_position", 0);
+			tabCounter = savedInstanceState.getInt("tab_counter", tabCounter);
+		}
+		else if (mTabRestore) {
+			// SharedPreferencesからの復元を試みる
+			String titlesJson = mSharedPreferences.getString(DEF.KEY_TABTITLES, null);
+			if (titlesJson != null) {
+				try {
+					JSONArray titles = new JSONArray(titlesJson);
+					JSONArray uris = new JSONArray(mSharedPreferences.getString(DEF.KEY_TABURIS, "[]"));
+					JSONArray paths = new JSONArray(mSharedPreferences.getString(DEF.KEY_TABPATHS, "[]"));
+					JSONArray servers = new JSONArray(mSharedPreferences.getString(DEF.KEY_TABSERVERS, "[]"));
+					for (int i = 0; i < titles.length(); i++) {
+						restoreTitles.add(titles.optString(i, ""));
+						restoreUris.add(uris.optString(i, ""));
+						restorePaths.add(paths.optString(i, ""));
+						restoreServerSelects.add(servers.optLong(i, DEF.INDEX_LOCAL));
+					}
+					restoreCurrentItem = mSharedPreferences.getInt(DEF.KEY_TABCURRENTPOSITION, 0);
+					tabCounter = mSharedPreferences.getInt(DEF.KEY_TABCOUNTER, tabCounter);
+					isLoaded = true;
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		if (!isLoaded) {
+			// 保存データがない場合(初回の起動時)のデフォルト値
+			Resources mRes = getResources();
+			restoreTitles.add(mRes.getString(R.string.tab) + tabCounter);
+			restoreUris.add(mURI);
+			restorePaths.add(mPath);
+			restoreServerSelects.add((long) DEF.INDEX_LOCAL);
+		}
+		else {
+			Resources mRes = getResources();
+			String tabPrefix = res.getString(R.string.tab);
+			for (int i = 0; i < restoreTitles.size(); i++) {
+				// 背番号を強制的に先頭から振り直す(これを入れないとタブの背番号が繰り上がったまま戻らない)
+				restoreTitles.set(i, tabPrefix + (i + 1));
+			}
+			// 「＋」ボタンで追加されるときの番号を復元したタブの総数に合わせる
+			tabCounter = restoreTitles.size();
+		}
+		// 復元したデータを使ってアダプターを初期化
+		adapter = new ListScreenStateAdapter(this, mHandler, mDuration, restoreTitles, restoreUris, restorePaths, restoreServerSelects);
 		viewPager.setAdapter(adapter);
 		// TabLayoutとViewPager2を同期
 		new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
@@ -1406,18 +1529,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				tab.setCustomView(customTextView);
 			}
 		}).attach();
-		// タブに移動
-		viewPager.setCurrentItem(adapter.getItemCount() - 1, true);
+		// 保持していたタブの位置を選択
+		viewPager.setCurrentItem(Math.min(restoreCurrentItem, adapter.getItemCount() - 1), false);
 		// Fragmentの生成完了タイミングを待って安全に代入
 		viewPager.post(() -> {
 			if (mListScreenView != null) {
+				int currentPosition = viewPager.getCurrentItem();
+				mServer.select(adapter.getTabServerSelect(currentPosition));
+				String path = adapter.getTabPath(currentPosition);
+				String uri = adapter.getTabUri(currentPosition);
 				// タイトルを表示
 				mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", mPath);
 				// ソート状態を設定
 				mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode);
-				int currentPosition = viewPager.getCurrentItem();
-				adapter.setTabUri(currentPosition, mURI);
-				adapter.setTabPath(currentPosition, mPath);
+				adapter.setTabUri(currentPosition, uri);
+				adapter.setTabPath(currentPosition, path);
 			}
 		});
 	}
@@ -1595,35 +1721,34 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 
 	// Fragmentから呼ばれる受け渡し用のメソッド
-	public void setCurrentFragment(ListScreenFragment fragment) {
+	public void setCurrentFragment(ListScreenFragment fragment, int position) {
 		if (fragment != null) {
 			// mListScreenView を取得して更新する
 			mListScreenView = fragment.getListScreenView();
-			// 現在選ばれているタブのインデックスを取得
-			int currentPosition = viewPager.getCurrentItem();
-			mServer.select(adapter.getTabServerSelect(currentPosition));
-			String user = mServer.getUser();
-			String pass = mServer.getPass();
-			String uri = adapter.getTabUri(currentPosition);
-			String file = DEF.createUrl(uri, user, pass);
-			String path = adapter.getTabPath(currentPosition);
-			if (path != "") {
-				// パスの移動
-				moveFileSelectProc(uri, path, false);
-			}
-			if (mListScreenView != null) {
-				// タイトルを表示
-				mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", path);
-				// ソート状態を設定
-				mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode);
-			}
-			// ロード処理
-			int topindex = mListScreenView.mFileListArea.getTopIndex();
-			if (topindex < 0) {
-				loadListView();
-			}
-			else {
-				loadListView(topindex);
+			// 渡された position のデータを安全に取得
+			if (adapter != null && position < adapter.getItemCount()) {
+				// 現在選ばれているタブのインデックスを取得
+				mServer.select(adapter.getTabServerSelect(position));
+				String uri = adapter.getTabUri(position);
+				String path = adapter.getTabPath(position);
+				if (path != null && !path.isEmpty()) {
+					// パスの移動
+					moveFileSelectProc(uri, path, false);
+				}
+				if (mListScreenView != null) {
+					// タイトルを表示
+					mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", path);
+					// ソート状態を設定
+					mListScreenView.setListSortType(RecordList.TYPE_FILELIST, mSortMode);
+				}
+				// ロード処理
+				int topindex = mListScreenView.mFileListArea.getTopIndex();
+				if (topindex < 0) {
+					loadListView();
+				}
+				else {
+					loadListView(topindex);
+				}
 			}
 		}
 	}
@@ -1631,14 +1756,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static class ListScreenStateAdapter extends FragmentStateAdapter {
 		private final Handler handler;
 		private final int duration;
-		private final List<String> tabTitles = new ArrayList<>();
-		private final List<String> tabPaths = new ArrayList<>();
-		private final List<String> tabUris = new ArrayList<>();
+		public List<String> tabTitles = new ArrayList<>();
+		public List<String> tabPaths = new ArrayList<>();
+		public List<String> tabUris = new ArrayList<>();
+		public List<Long> tabServerSelect = new ArrayList<>();
 		private final List<Long> tabIds = new ArrayList<>();
-		private final List<Long> tabServerSelect = new ArrayList<>();
 		private long nextId = 0;
 
-		public ListScreenStateAdapter(@NonNull FragmentActivity fragmentActivity, Handler handler, int duration, List<String> initialTitles, List<String> initialUris, List<String> initialPaths) {
+		public ListScreenStateAdapter(@NonNull FragmentActivity fragmentActivity, Handler handler, int duration, List<String> initialTitles, List<String> initialUris, List<String> initialPaths, List<Long> initialServerSelects) {
 			super(fragmentActivity);
 			this.handler = handler;
 			this.duration = duration;
@@ -1646,7 +1771,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				tabTitles.add(initialTitles.get(i));
 				tabPaths.add(i < initialPaths.size() ? initialPaths.get(i) : "");
 				tabUris.add(i < initialUris.size() ? initialUris.get(i) : "");
-				tabServerSelect.add((long)DEF.INDEX_LOCAL);
+				tabServerSelect.add(i < initialServerSelects.size() ? initialServerSelects.get(i) : (long)DEF.INDEX_LOCAL);
 				tabIds.add(nextId++);
 			}
 		}
@@ -1726,7 +1851,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// その position(タブ)が保持しているパスを取得
 			String initialPath = tabPaths.get(position); 
 			// パスも一緒に渡して Fragment を生成
-			return ListScreenFragment.newInstance(handler, duration, initialPath);
+			return ListScreenFragment.newInstance(handler, duration, initialPath, position);
 		}
 		@Override
 		public int getItemCount() {
@@ -1747,16 +1872,26 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	// ListScreenViewを保持するFragment
 	public static class ListScreenFragment extends Fragment {
 		private ListScreenView listScreenView;
+		// 自身のタブ位置を保持
+		private int mPosition = -1;
 		private boolean mIsInitialized = false;
-		public static ListScreenFragment newInstance(Handler handler, int duration, String initialPath) {
+		public static ListScreenFragment newInstance(Handler handler, int duration, String initialPath, int position) {
 			ListScreenFragment fragment = new ListScreenFragment();
 			// インスタンスごとの個別保持にする
 			Bundle args = new Bundle();
-			args.putString(ARG_INITIAL_PATH, initialPath);
+			// positionを保存
+			args.putInt(ARG_POSITION, position);
 			fragment.setArguments(args);
 			return fragment;
 		}
 
+		@Override
+		public void onCreate(@Nullable Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			if (getArguments() != null) {
+				mPosition = getArguments().getInt(ARG_POSITION, -1);
+			}
+		}
 		@Override
 		public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 			if (listScreenView != null) {
@@ -1784,7 +1919,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			super.onResume();
 			if (getActivity() instanceof FileSelectActivity) {
 				// ロード処理
-				((FileSelectActivity) getActivity()).setCurrentFragment(this);
+				((FileSelectActivity) getActivity()).setCurrentFragment(this, mPosition);
 			}
 		}
 		// 外部から ListScreenView を取得するための getter
@@ -1832,6 +1967,31 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// 右端に到達したため非表示
 			rightShadow.setVisibility(View.GONE);
 		}
+	}
+	//	タブの状態をSharedPreferencesへ保存
+	private void saveTabsToPreferences() {
+		if (adapter == null || viewPager == null) return;
+		// JSONの保管場所を初期化
+		SharedPreferences.Editor editor = mSharedPreferences.edit();
+		JSONArray titles = new JSONArray();
+		JSONArray uris = new JSONArray();
+		JSONArray paths = new JSONArray();
+		JSONArray servers = new JSONArray();
+		// 値を書き込む
+		for (int i = 0; i < adapter.getItemCount(); i++) {
+			titles.put(adapter.getTabTitle(i));
+			uris.put(adapter.getTabUri(i));
+			paths.put(adapter.getTabPath(i));
+			servers.put(adapter.getTabServerSelect(i));
+		}
+		// SharedPreferencesへ保存
+		editor.putString(DEF.KEY_TABTITLES, titles.toString());
+		editor.putString(DEF.KEY_TABURIS, uris.toString());
+		editor.putString(DEF.KEY_TABPATHS, paths.toString());
+		editor.putString(DEF.KEY_TABSERVERS, servers.toString());
+		editor.putInt(DEF.KEY_TABCURRENTPOSITION, viewPager.getCurrentItem());
+		editor.putInt(DEF.KEY_TABCOUNTER, tabCounter);
+		editor.apply();
 	}
 
 	static boolean CheckCustomUrlScheme(Intent intent) {
@@ -2152,7 +2312,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 				}
 				// 履歴の内容を更新する
-				mListScreenView.updateRecordList();
+				if (mListScreenView != null) {
+					mListScreenView.updateRecordList();
+				}
 
 				// 新しいバージョンがリリースされているか確認する
 				mInformation.checkRecentRelease(mHandler, false);
@@ -2641,12 +2803,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mAozoraTextFile = SetFileListActivity.getAozoraTextFile(mSharedPreferences);
 		mThumbnailGrid = SetFileListActivity.getThumbnailGrid(mSharedPreferences);
 		mSkipUpdateFileList = SetFileListActivity.getSkipUpdateFileList(mSharedPreferences);
-		SmbFileAccess.setSmbMode(SetServerMessageBlockActivity.getSelectSmbLib(mSharedPreferences));
 		mOpenImageHtmlFile = SetFileListActivity.getOpenImageHtmlFile(mSharedPreferences);
 		mOpenImageTextFile = SetFileListActivity.getOpenImageTextFile(mSharedPreferences);
 		mTabMode = SetFileListActivity.getTabMode(mSharedPreferences);
 		mTabSize = SetFileListActivity.getTabSize(mSharedPreferences) + DEF.MIN_TABSEEK;
 		isWebStyle = (SetFileListActivity.getTabStyle(mSharedPreferences) == 0) ? true : false;
+		isTabAtBottom = (SetFileListActivity.getTabLayout(mSharedPreferences) == 0) ? false : true;
+		mTabRestore = SetFileListActivity.getTabRestore(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3724,6 +3887,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				if (lastView == DEF.LASTOPEN_IMAGE && !lastImage.isEmpty()) {
 					msg += "\n" + lastImage;
+				}
+				if (mTabMode && (!mURI.equals(uri) || !mPath.equals(path) || svrindex != mServer.getSelect())) {
+					msg += "\n\n" + res.getString(R.string.tabMsg);
+					dialogBuilder.setIcon(android.R.drawable.ic_dialog_alert);
 				}
 				dialogBuilder.setTitle(R.string.rsTitle);
 				dialogBuilder.setMessage(msg);
@@ -7490,7 +7657,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 
 	private void setDrawEnable() {
-		mListScreenView.setDrawEnable(false);
+		if (mListScreenView != null) {
+			mListScreenView.setDrawEnable(false);
+		}
 		// Message msg = mHandler.obtainMessage(DEF.HMSG_DRAWENABLE);
 		// mHandler.sendMessage(msg);
 	}
@@ -7687,10 +7856,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					case FileData.FILETYPE_TXT: // テキスト
 					case FileData.FILETYPE_ARC: // ZIP
 					case FileData.FILETYPE_EPUB: // Epub
-						sortfiles.add(mfiles.get(i));
-						break;
+					case FileData.FILETYPE_PDF: // PDF
 					case FileData.FILETYPE_IMG: // イメージ
-						// イメージは親フォルダで管理
+						sortfiles.add(mfiles.get(i));
 						break;
 				}
 			}
@@ -7703,10 +7871,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					case FileData.FILETYPE_TXT: // テキスト
 					case FileData.FILETYPE_ARC: // ZIP
 					case FileData.FILETYPE_EPUB: // Epub
-						sortfiles.add(fd);
-						break;
+					case FileData.FILETYPE_PDF: // PDF
 					case FileData.FILETYPE_IMG: // イメージ
-						// イメージは親フォルダで管理
+						sortfiles.add(fd);
 						break;
 				}
 			}
