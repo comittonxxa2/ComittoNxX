@@ -299,6 +299,7 @@
     <string name="rsMsg">Want to open the file that was last displayed?</string>
     <string name="rsBtnYes">Yes</string>
     <string name="rsBtnNo">No</string>
+    <string name="tabMsg">*The contents of the tab will be overwritten with the new file list.</string>
     <string name="noticeTitle">Notes of ComittoNxX</string>
     <string name="aboutDonate">Donate</string>
     <string name="aboutOK">OK</string>
@@ -1087,6 +1088,8 @@
     <string name="tab">Tab </string>
     <string name="tabstyle00">Web browser style</string>
     <string name="tabstyle01">+X button layout style</string>
+    <string name="tablayout00">Top of screen</string>
+    <string name="tablayout01">Bottom of screen</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
