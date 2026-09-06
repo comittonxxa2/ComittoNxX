@@ -416,6 +416,19 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="タブのサイズ" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="タブの上下配置の切り替え"
+            android:entries="@array/tablayout_name_list"
+            android:entryValues="@array/tablayout_value_list"
+            android:key="TabLayout"
+            android:summary="dummy"
+            android:title="タブの上下配置の切り替え" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="TabRestore"
+            android:summary="再起動時にタブの状態を復元する場合はチェックを入れる"
+            android:title="タブの状態を復元" />
     </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
