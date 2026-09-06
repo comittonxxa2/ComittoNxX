@@ -73,7 +73,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private ListPreference mThumbnailGridHorizontal;
 	private CheckBoxPreference mThumbnailGrid;
 	private CheckBoxPreference mTabEnable;
+	private CheckBoxPreference mTabRestore;
 	private ListPreference mTabStyle;
+	private ListPreference mTabLayout;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -164,6 +166,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static final int[] TabStyleList =
 			{ R.string.tabstyle00		// Webブラウザスタイル
 			, R.string.tabstyle01 };	// ＋×ボタン配置スタイル
+	public static final int[] TabLayoutList =
+			{ R.string.tablayout00		// 画面上側
+			, R.string.tablayout01 };	// 画面下側
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -219,6 +224,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mTabSeek = (TabSeekbar)getPreferenceScreen().findPreference(DEF.KEY_TABSEEK);
 		mTabEnable = (CheckBoxPreference) findPreference(DEF.KEY_TABMODE);
 		mTabStyle = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_TABSTYLE);
+		mTabLayout = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_TABLAYOUT);
+		mTabRestore = (CheckBoxPreference) findPreference(DEF.KEY_TABRESTORE);
 
 		if (!getThumbnailGrid(sharedPreferences)) {
 			mListThumbRatioSeek.setEnabled(false);
@@ -230,6 +237,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		if (!getTabMode(sharedPreferences)) {
 			mTabSeek.setEnabled(false);
 			mTabStyle.setEnabled(false);
+			mTabLayout.setEnabled(false);
+			mTabRestore.setEnabled(false);
 		}
 
 		mThumbnailGrid.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
@@ -253,6 +262,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				boolean isChecked = (Boolean) newValue;
 				mTabSeek.setEnabled(isChecked);
 				mTabStyle.setEnabled(isChecked);
+				mTabLayout.setEnabled(isChecked);
+				mTabRestore.setEnabled(isChecked);
 				// 親のActivityを再生成させる
 				FileSelectActivity.setChangeTheme();
 				// trueを返すと設定値が保存される
@@ -315,6 +326,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mThumbnailGridHorizontal.setSummary(getThumbnailGridHorizontalSummary(sharedPreferences));
 		mTabSeek.setSummary(getTabSeekSummary(sharedPreferences));
 		mTabStyle.setSummary(getTabStyleSummary(sharedPreferences));
+		mTabLayout.setSummary(getTabLayoutSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 }
 
@@ -461,6 +473,10 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 			mTabStyle.setSummary(getTabStyleSummary(sharedPreferences));
 			change = true;
 		}
+		else if(key.equals(DEF.KEY_TABLAYOUT)){
+			mTabLayout.setSummary(getTabLayoutSummary(sharedPreferences));
+			change = true;
+		}
 		if (change) {
 			// 親のActivityを再生成させる
 			FileSelectActivity.setChangeTheme();
@@ -570,6 +586,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static int getTabStyle(SharedPreferences sharedPreferences){
 		int val = DEF.getInt(sharedPreferences, DEF.KEY_TABSTYLE, "0");
 		if(val < 0 || val >= TabStyleList.length){
+			val = 0;
+		}
+		return val;
+	}
+
+	public static int getTabLayout(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_TABLAYOUT, "0");
+		if(val < 0 || val >= TabLayoutList.length){
 			val = 0;
 		}
 		return val;
@@ -954,6 +978,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static boolean getTabRestore(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_TABRESTORE, false);
+		return flag;
+	}
+
 	// 設定を保存
 	public static void setThumbnail(SharedPreferences sharedPreferences, boolean value){
 		Editor ed = sharedPreferences.edit();
@@ -1151,5 +1181,11 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		int val = getTabStyle(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(TabStyleList[val]);
+	}
+
+	private String getTabLayoutSummary(SharedPreferences sharedPreferences){
+		int val = getTabLayout(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(TabLayoutList[val]);
 	}
 }

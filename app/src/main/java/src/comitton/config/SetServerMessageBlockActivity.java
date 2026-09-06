@@ -5,7 +5,6 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
-import android.preference.ListPreference;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -22,12 +21,6 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 	private static SharedPreferences sharedPreferences;
-	private ListPreference mSelectSmbLib;
-
-	public static final int[] SelectSmbLib =
-		{ R.string.selectsmblib00
-		, R.string.selectsmblib01
-		, R.string.selectsmblib02 };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -50,17 +43,12 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.setservermessageblock);
-
-		mSelectSmbLib = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SELECTSMBLIB);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
-		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
-
-		mSelectSmbLib.setSummary(getSelectSmbLibSummary(sharedPreferences));
 	}
 
 	@Override
@@ -71,9 +59,6 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if(key.equals(DEF.KEY_SELECTSMBLIB)){
-			mSelectSmbLib.setSummary(getSelectSmbLibSummary(sharedPreferences));
-		}
 	}
 
 	public static boolean getSmbMode(SharedPreferences sharedPreferences){
@@ -84,19 +69,5 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 	public static boolean getSmbRetryMode(SharedPreferences sharedPreferences){
 		boolean num =  DEF.getBoolean(sharedPreferences, DEF.KEY_SMBRETRYMODE, false);
 		return num;
-	}
-
-	public static int getSelectSmbLib(SharedPreferences sharedPreferences){
-		int val = DEF.getInt(sharedPreferences, DEF.KEY_SELECTSMBLIB, "0");
-		if (val < 0 || val > SelectSmbLib.length) {
-			val = 0;
-		}
-		return val;
-	}
-
-	private String getSelectSmbLibSummary(SharedPreferences sharedPreferences){
-		int val = getSelectSmbLib(sharedPreferences);
-		Resources res = getResources();
-		return res.getString(SelectSmbLib[val]);
 	}
 }
