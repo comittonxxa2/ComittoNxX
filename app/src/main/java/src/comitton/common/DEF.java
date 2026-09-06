@@ -927,6 +927,15 @@ public class DEF {
 	public static final String KEY_OPENIMAGETEXTFILE = "OpenImageTextFile";
 	public static final String KEY_TABMODE = "TabMode";
 	public static final String KEY_TABSTYLE = "TabSytle";
+	public static final String KEY_TABLAYOUT = "TabLayout";
+
+	public static final String KEY_TABTITLES = "TabTitles";
+	public static final String KEY_TABURIS = "TabUris";
+	public static final String KEY_TABPATHS = "TabPaths";
+	public static final String KEY_TABSERVERS = "TabServers";
+	public static final String KEY_TABCURRENTPOSITION = "TabCurrentPosition";
+	public static final String KEY_TABCOUNTER = "TabCounter";
+	public static final String KEY_TABRESTORE = "TabRestore";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
