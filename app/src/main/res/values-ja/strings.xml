@@ -299,6 +299,7 @@
     <string name="rsMsg">前回表示していたファイルを開きますか？</string>
     <string name="rsBtnYes">はい</string>
     <string name="rsBtnNo">いいえ</string>
+    <string name="tabMsg">※タブの内容が新しいファイル一覧で上書きされます</string>
     <string name="noticeTitle">ComittoNxXについて</string>
     <string name="aboutDonate">寄付Ver.</string>
     <string name="aboutOK">OK</string>
@@ -1087,5 +1088,7 @@
     <string name="tab">タブ </string>
     <string name="tabstyle00">Webブラウザスタイル</string>
     <string name="tabstyle01">+×ボタン配置スタイル</string>
+    <string name="tablayout00">画面上側</string>
+    <string name="tablayout01">画面下側</string>
 
 </resources>
