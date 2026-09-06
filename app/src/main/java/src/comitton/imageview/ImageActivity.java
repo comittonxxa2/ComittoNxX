@@ -3141,9 +3141,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					statusbar_height = mImmCancelRange;
 					navibar_height = mImmCancelRange;
 				}
+				if (statusbar_height <= 0) statusbar_height = mImmCancelRange;
+				if (navibar_height <= 0) navibar_height = mImmCancelRange;
 				if (mHideNavigationBar) {
 					// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
-					navibar_height = CLICKGUARD;
+					navibar_height = mImmCancelRange;
 				}
 				if (y <= statusbar_height || y >= cy - navibar_height) {
 					mImmCancel = true;
@@ -3194,7 +3196,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								statusbar_height = mImmCancelRange;
 							}
 						}
-						if (navibar_height == 0) {
+						if (statusbar_height <= 0) {
+							statusbar_height = mImmCancelRange;
+						}
+						if (navibar_height <= 0) {
 							// ナビゲーションバーが非表示だった場合は固定値を入れる
 							navibar_height = mImmCancelRange;
 						}
@@ -7373,6 +7378,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (mCloseDialog != null) {
 			return;
 		}
+		// バックグラウンドでのキャッシュ読み込み停止(これを入れないと固まる場合がある)
+		mImageMgr.setCacheSleep(true);
 		mCloseDialog = new CloseDialog(this, R.style.MyDialog);
 		mCloseDialog.setTitleText(layout);
 		mCloseDialog.setPrevNextMask(mPrevNextMask);
@@ -7389,6 +7396,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			public void onClose() {
 				// 終了
 				mCloseDialog = null;
+				// バックグラウンドでのキャッシュ読み込み再開
+				mImageMgr.setCacheSleep(false);
 			}
 		});
 		mCloseDialog.show();

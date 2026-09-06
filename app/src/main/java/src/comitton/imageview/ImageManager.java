@@ -80,6 +80,11 @@ import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
 
+import jcifs.CIFSContext;
+import jcifs.context.SingletonContext;
+import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbRandomAccessFile;
 import src.comitton.common.DEF;
 import src.comitton.common.ExternalFilterData;
 import src.comitton.common.Logcat;
@@ -88,7 +93,6 @@ import src.comitton.config.SetImageActivity;
 import src.comitton.config.SetServerMessageBlockActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileaccess.SmbFileAccess;
-import src.comitton.fileaccess.SmbRandomAccessFileCompat;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
 import src.comitton.fileaccess.WorkStream;
@@ -661,15 +665,15 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 	// SMBのストリームアクセス(7-Zip-JBinding-4Android専用)
 	public class SmbInStream implements IInStream {
-		private final SmbRandomAccessFileCompat sraf;
-		private SmbInStream(SmbRandomAccessFileCompat sraf) {
+		private final SmbRandomAccessFile sraf;
+		private SmbInStream(SmbRandomAccessFile sraf) {
 			this.sraf = sraf;
 		}
 		@Override
 		public int read(byte[] data) throws SevenZipException {
 			try {
-				// SmbRandomAccessFileCompatから読み込み
-				int n = sraf.read(data, 0, data.length);
+				// SmbRandomAccessFileから読み込み
+		        int n = sraf.read(data);
 				if (n < 0) {
 					return 0; 
 				}
@@ -1161,13 +1165,17 @@ public class ImageManager extends InputStream implements Runnable {
 					}
 					case DEF.ACCESS_TYPE_SMB: {
 						// SMBの場合
+						CIFSContext mSmbContext = SingletonContext.getInstance()
+							.withCredentials(new NtlmPasswordAuthenticator(null, mUser, mPass));
+						// SMBのストリームアクセス
+						SmbFile smbFile = new SmbFile(mFilePath, mSmbContext);
 						// 判定用に一瞬開く
-						try (SmbRandomAccessFileCompat srafCheck = SmbFileAccess.openRandomAccessFile(mFilePath, mUser, mPass, "r")) {
+						try (SmbRandomAccessFile srafCheck = new SmbRandomAccessFile(smbFile, "r")) {
 							byte[] b = new byte[262];
-							int n = srafCheck.read(b, 0, b.length);
+							int n = srafCheck.read(b);
 							detectedFormat = ArchiveDetector.detect(b, n);
 						}
-						SmbRandomAccessFileCompat srafMain = SmbFileAccess.openRandomAccessFile(mFilePath, mUser, mPass, "r");
+						SmbRandomAccessFile srafMain = new SmbRandomAccessFile(smbFile, "r");
 						mainStream = new SmbInStream(srafMain);
 						break;
 					}
@@ -2490,6 +2498,13 @@ public class ImageManager extends InputStream implements Runnable {
 		int oldPercent = 0;
 
 		int count = 0;
+		int maxsize = 0;
+		try {
+			maxsize = FileSelectList.getFileList().size();
+		}
+		catch (Exception e) {
+			Logcat.e(logLevel, "", e);
+		}
 		while (true) {
 			if (!mRunningFlag) {
 				// 読み込み処理中断
@@ -2504,12 +2519,10 @@ public class ImageManager extends InputStream implements Runnable {
 			if (maxorglen < fl.orglen) {
 				maxorglen = fl.orglen;
 			}
-			// 使用されていないのでコメントアウトにした
-			/*
 			// 読込通知
 			oldPercent = nowPercent;
 			// 割合を計算する
-			nowPercent = (int)(((float)count / (float)maxorglen + 0.005) * 100);
+			nowPercent = (int)(((float)count / (float)maxsize + 0.005) * 100);
 			// 100パーセントを超えた場合はリミッタを掛ける
 			nowPercent = nowPercent > 100 ? 100 : nowPercent;
 			// 読込通知
@@ -2525,11 +2538,10 @@ public class ImageManager extends InputStream implements Runnable {
 				message.arg2 = 0;
 				Bundle bundle = new Bundle();
 				bundle.putLong("arg3", count);
-				bundle.putLong("arg4", maxorglen);
+				bundle.putLong("arg4", maxsize);
 				message.setData(bundle);
 				mHandler.sendMessage(message);
 			}
-			*/
 		}
 		mBlank = false;
 
@@ -2741,8 +2753,9 @@ public class ImageManager extends InputStream implements Runnable {
 								if (mPdfExpand == DEF.ACCESS_TYPE_SMB) {
 									// SMBのストリームアクセス
 									Logcat.v(logLevel, "SMBのストリームアクセス");
-									SmbRandomAccessFileCompat sraf = SmbFileAccess.openRandomAccessFile(mFilePath, user, pass, "r");
-									bis = sraf.getInputStream();
+									CIFSContext mSmbContext = SingletonContext.getInstance().withCredentials(new NtlmPasswordAuthenticator(null, user, pass));
+									SmbFile smbFile = new SmbFile(mFilePath, mSmbContext);
+									bis = smbFile.getInputStream();
 								}
 								else if (mPdfExpand == DEF.ACCESS_TYPE_SAF) {
 									// ストレージアクセスフレームワークの場合
@@ -3098,16 +3111,30 @@ public class ImageManager extends InputStream implements Runnable {
 						int chkPage2 = mMemPriority[iPrio] + mCurrentPage + (mMemPriority[iPrio] >= 0 ? 1 : -1);
 
 						if (0 <= chkPage2 && chkPage2 < mFileList.length && mFileList[chkPage2].width <= 0) {
-							if (SizeCheckImage(chkPage2) < 0) {
-								Logcat.e(logLevel, "SizeCheckImage(chkPage2) < 0, chkPage2=" + chkPage2);
+							// PDFファイルのスキャンに失敗すると落ちる可能性があるためtry～catchで囲む
+							try {
+								if (SizeCheckImage(chkPage2) < 0) {
+									Logcat.e(logLevel, "SizeCheckImage(chkPage2) < 0, chkPage2=" + chkPage2);
+									break;
+								}
+							}
+							catch(Exception e) {
+								// キャッシュ処理中断
 								break;
 							}
 						}
 
 						if (0 <= chkPage && chkPage < mFileList.length) {
 							if (mFileList[chkPage].width <= 0) {
-								if (SizeCheckImage(chkPage) < 0) {
-									Logcat.e(logLevel, "SizeCheckImage(chkPage) < 0, chkPage=" + chkPage);
+								// PDFファイルのスキャンに失敗すると落ちる可能性があるためtry～catchで囲む
+								try {
+									if (SizeCheckImage(chkPage) < 0) {
+										Logcat.e(logLevel, "SizeCheckImage(chkPage) < 0, chkPage=" + chkPage);
+										break;
+									}
+								}
+								catch(Exception e) {
+									// キャッシュ処理中断
 									break;
 								}
 							}
@@ -3694,48 +3721,48 @@ public class ImageManager extends InputStream implements Runnable {
 				mMessageMode = DEF.MESSAGE_IMAGE_START;
 				sendProgress(0, 0, 0, 0);
 			}
-			// SMBのストリームアクセス
-			try (SmbRandomAccessFileCompat sraf = SmbFileAccess.openRandomAccessFile(filepath, mUser, mPass, "r")) {
-				long fileSize = sraf.length();
-				long readsize = 0;
-				try (InputStream in = sraf.getInputStream();
-					 OutputStream out = new FileOutputStream(tempFile)) {
-					// 16KBのバッファ
-					byte[] buffer = new byte[16384];
-					boolean stop = false;
-					int bytesRead;
-					// データを読み込みながらローカルファイルへ書き出す
-					while ((bytesRead = in.read(buffer)) != -1) {
-						// スレッド中断チェック(ゾンビプロセス防止)
-						if (Thread.currentThread().isInterrupted() || !mRunningFlag) {
-							stop = true;
-							break;
-						}
-						out.write(buffer, 0, bytesRead);
-						if (message) {
-							readsize += bytesRead;
-							int nowpercent = (int) ((float) readsize * 100 / (float) fileSize);
-							sendProgress(0, nowpercent, readsize, fileSize);
+			// ファイルサイズを取得するためにlength()を呼ぶ
+			long fileSize = SmbFileAccess.length(filepath, mUser, mPass);
+			long readsize = 0;
+			try (InputStream in = SmbFileAccess.getInputStream(filepath, mUser, mPass);
+                 OutputStream out = new FileOutputStream(tempFile)) {
+				
+				// 16KBのバッファ
+				byte[] buffer = new byte[16384];
+				boolean stop = false;
+				int bytesRead;
+				
+				// データを読み込みながらローカルファイルへ書き出す
+				while ((bytesRead = in.read(buffer)) != -1) {
+					// スレッド中断チェック(ゾンビプロセス防止)
+					if (Thread.currentThread().isInterrupted() || !mRunningFlag) {
+						stop = true;
+						break;
+					}
+					out.write(buffer, 0, bytesRead);
+					if (message) {
+						readsize += bytesRead;
+						int nowpercent = (int) ((float) readsize * 100 / (float) fileSize);
+						sendProgress(0, nowpercent, readsize, fileSize);
+					}
+				}
+				// 残りのデータを確実に書き出す
+				out.flush();
+				// 書き込みを確定させる
+				if (out instanceof FileOutputStream) {
+					((FileOutputStream) out).getFD().sync();
+				}
+				if (stop) {
+					// 強制的に終了した場合は削除
+					try {
+						if (tempFile.exists()) {
+							tempFile.delete();
 						}
 					}
-					// 残りのデータを確実に書き出す
-					out.flush();
-					// 書き込みを確定させる
-					if (out instanceof FileOutputStream) {
-						((FileOutputStream) out).getFD().sync();
+					catch (Exception ignored) {
 					}
-					if (stop) {
-						// 強制的に終了した場合は削除
-						try {
-							if (tempFile.exists()) {
-								tempFile.delete();
-							}
-						}
-						catch (Exception ignored) {
-						}
-					} else {
-						file = tempFile;
-					}
+				} else {
+					file = tempFile;
 				}
 			}
 			if (message) {
