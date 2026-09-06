@@ -414,6 +414,19 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Tab size" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Toggle tab placement between top and bottom"
+            android:entries="@array/tablayout_name_list"
+            android:entryValues="@array/tablayout_value_list"
+            android:key="TabLayout"
+            android:summary="dummy"
+            android:title="Toggle tab placement between top and bottom" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="TabRestore"
+            android:summary="Check this box to restore the tab state upon restart."
+            android:title="Restore tab state" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
