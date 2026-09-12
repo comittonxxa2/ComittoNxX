@@ -98,6 +98,9 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 			mBlueLevel.setEnabled(false);
 		}
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
     mChkRgbLevel.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
         @Override
         public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
@@ -110,6 +113,44 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
         }
     });
 
+		ButtonPreferenceCategory webviewCategory = (ButtonPreferenceCategory) findPreference("webview_category");
+		if (webviewCategory != null) {
+			webviewCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_WEBVIEWFILTER, false);
+				ed.putBoolean(DEF.KEY_WEBVIEWPULLDOWNMENU, false);
+				ed.putString(DEF.KEY_WEBVIEWPULLDOWNTAPPOSITION, "0");
+				ed.putBoolean(DEF.KEY_WEBVIEWUSEREGENT, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory filterCategory = (ButtonPreferenceCategory) findPreference("filter_category");
+		if (filterCategory != null) {
+			filterCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_WEBVIEWGRAY, false);
+				ed.putBoolean(DEF.KEY_WEBVIEWINVERT, false);
+				ed.putBoolean(DEF.KEY_WEBVIEWCOLORING, false);
+				ed.putInt(DEF.KEY_WEBVIEWSHARPEN, 0);
+				ed.putInt(DEF.KEY_WEBVIEWBRIGHT, 5);
+				ed.putInt(DEF.KEY_WEBVIEWGAMMA, 5);
+				ed.putInt(DEF.KEY_WEBVIEWCONTRAST, 10);
+				ed.putInt(DEF.KEY_WEBVIEWHUE, 20);
+				ed.putInt(DEF.KEY_WEBVIEWSATURATION, 20);
+				ed.putInt(DEF.KEY_WEBVIEWKELVIN, 35);
+				ed.putBoolean(DEF.KEY_WEBVIEWCHECKRGBLEVEL, false);
+				ed.putInt(DEF.KEY_WEBVIEWREDLEVEL, 100);
+				ed.putInt(DEF.KEY_WEBVIEWGREENLEVEL, 100);
+				ed.putInt(DEF.KEY_WEBVIEWBLUELEVEL, 100);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

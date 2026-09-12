@@ -89,6 +89,39 @@ public class SetBookShelfActivity extends PreferenceActivity implements OnShared
 		mFilenameBottomSpace = (FilenameBottomSeekbar)getPreferenceScreen().findPreference(DEF.KEY_FILENAMEBOTTOMSPACE);
 		mBookShelfBrightLevel = (BookShelfBrightLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_BOOKSHELFBRIGHTLEVEL);
 		mBookShelfEdgeLevel = (BookShelfEdgeLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_BOOKSHELFEDGELEVEL);
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
+		ButtonPreferenceCategory selectbookshelfCategory = (ButtonPreferenceCategory) findPreference("selectbookshelf_category");
+		if (selectbookshelfCategory != null) {
+			selectbookshelfCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_BOOKSHELFPATTERN, DEF.DEFAULT_BOOKSHELFPATTERN);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory bookshelfdisplayparmCategory = (ButtonPreferenceCategory) findPreference("bookshelfdisplayparm_category");
+		if (bookshelfdisplayparmCategory != null) {
+			bookshelfdisplayparmCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_THUMBNAILTOPSPACE, DEF.DEFAULT_THUMBNAILTOPSPACE);
+				ed.putInt(DEF.KEY_THUMBNAILBOTTOMSPACE, DEF.DEFAULT_THUMBNAILBOTTOMSPACE);
+				ed.putInt(DEF.KEY_FILENAMEBOTTOMSPACE, DEF.DEFAULT_FILENAMEBOTTOMSPACE);
+				ed.putInt(DEF.KEY_BOOKSHELFBRIGHTLEVEL, DEF.DEFAULT_BOOKSHELFBRIGHTLEVEL);
+				ed.putInt(DEF.KEY_BOOKSHELFEDGELEVEL, DEF.DEFAULT_BOOKSHELFEDGELEVEL);
+				ed.putBoolean(DEF.KEY_BOOKSHELFCOLOREXTON, false);
+				ed.putBoolean(DEF.KEY_BOOKSHELFAFTERCURCLEON, false);
+				ed.putBoolean(DEF.KEY_BOOKSHELFTEXTSPLITON, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

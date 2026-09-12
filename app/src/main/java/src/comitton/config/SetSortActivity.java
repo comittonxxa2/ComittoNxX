@@ -79,6 +79,39 @@ public class SetSortActivity extends PreferenceActivity implements OnSharedPrefe
 		mSoftPdfFile = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SORTPDFFILE);
 		mSoftEpubFile = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SORTEPUBFILE);
 		mSoftOtherFile = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SORTOTHERFILE);
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
+		ButtonPreferenceCategory sortparmCategory = (ButtonPreferenceCategory) findPreference("sortparm_category");
+		if (sortparmCategory != null) {
+			sortparmCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_SORTDIRTOP, false);
+				ed.putString(DEF.KEY_SORTFILETOP, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory sortfileCategory = (ButtonPreferenceCategory) findPreference("sortfile_category");
+		if (sortfileCategory != null) {
+			sortfileCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_SORTDIRFILE, "0");
+				ed.putString(DEF.KEY_SORTCOMPFILE, "0");
+				ed.putString(DEF.KEY_SORTIMAGEFILE, "0");
+				ed.putString(DEF.KEY_SORTPDFFILE, "0");
+				ed.putString(DEF.KEY_SORTEPUBFILE, "0");
+				ed.putString(DEF.KEY_SORTTEXTFILE, "0");
+				ed.putString(DEF.KEY_SORTOTHERFILE, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

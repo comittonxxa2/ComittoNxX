@@ -240,6 +240,9 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 
 		mResources = getResources();
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_IMAGEHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -256,6 +259,96 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory startupCategory = (ButtonPreferenceCategory) findPreference("startup_category");
+		if (startupCategory != null) {
+			startupCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_INISCALE, Integer.toString(DEF.DEFAULT_INISCHALE));
+				ed.putString(DEF.KEY_INITVIEW, Integer.toString(DEF.DEFAULT_INITVIEW));
+				ed.putString(DEF.KEY_ALGOMODE, "2");
+				ed.putString(DEF.KEY_MARGINCUT, "0");
+				ed.putString(DEF.KEY_MARGINCUTCOLOR, "0");
+				ed.putString(DEF.KEY_DISPLAYPOSITION, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory displayrelatedCategory = (ButtonPreferenceCategory) findPreference("displayrelated_category");
+		if (displayrelatedCategory != null) {
+			displayrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_NOTICE, true);
+				ed.putBoolean(DEF.KEY_NOSLEEP, false);
+				ed.putString(DEF.KEY_VIEWROTA, "0");
+				ed.putString(DEF.KEY_FILESORT, "1");
+				ed.putBoolean(DEF.KEY_IMAGESORT, false);
+				ed.putString(DEF.KEY_PAGEWAY, "0");
+				ed.putBoolean(DEF.KEY_NOEXPAND, true);
+				ed.putBoolean(DEF.KEY_FITDUAL, true);
+				ed.putBoolean(DEF.KEY_ZOOMOFF, false);
+				ed.putString(DEF.KEY_ZOOMTYPE, "4");
+				ed.putBoolean(DEF.KEY_CMARGIN, true);
+				ed.putBoolean(DEF.KEY_CSHADOW, false);
+				ed.putString(DEF.KEY_EFFECTLIST, "1");
+				ed.putString(DEF.KEY_VIEWPT , "0");
+				ed.putBoolean(DEF.KEY_PREVREV, true);
+				ed.putBoolean(DEF.KEY_TIMEDISP, DEF.DEFAULT_TIMEDISP);
+				ed.putInt(DEF.KEY_TIMEFORMAT, DEF.DEFAULT_TIMEFORMAT);
+				ed.putInt(DEF.KEY_TIMEPOS, DEF.DEFAULT_TIMEPOS);
+				ed.putInt(DEF.KEY_TIMESIZE, DEF.DEFAULT_TIMESIZE);
+				ed.putInt(DEF.KEY_TIMECOLOR, DEF.DEFAULT_TIMECOLOR);
+				ed.putBoolean(DEF.KEY_FLOATINGICONENABLE, false);
+				ed.putBoolean(DEF.KEY_ANIMATIONENABLE, false);
+				ed.putBoolean(DEF.KEY_ANIMATIONSCAN, false);
+				ed.putBoolean(DEF.KEY_ARCHIVEANIMATIONENABLE, false);
+				ed.putBoolean(DEF.KEY_ANIMATIONFORCE, false);
+				ed.putBoolean(DEF.KEY_REDUCED, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory operationrelatedCategory = (ButtonPreferenceCategory) findPreference("operationrelated_category");
+		if (operationrelatedCategory != null) {
+			operationrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_RETURNKLISTVIEW, true);
+				ed.putBoolean(DEF.KEY_CONFIRMBACK, true);
+				ed.putString(DEF.KEY_LASTPAGE, "1");
+				ed.putBoolean(DEF.KEY_SAVEPAGE, DEF.DEF_SAVEPAGE);
+				ed.putString(DEF.KEY_SCRLWAY, "0");
+				ed.putBoolean(DEF.KEY_DELSHARE, true);
+				ed.putBoolean(DEF.KEY_CHGPAGE, DEF.DEFAULT_CHGPAGE);
+				ed.putBoolean(DEF.KEY_VIBFLAG, false);
+				ed.putString(DEF.KEY_VOLKEY, "1");
+				ed.putBoolean(DEF.KEY_TAPSCRL, false);
+				ed.putBoolean(DEF.KEY_FLICKPAGE, true);
+				ed.putBoolean(DEF.KEY_FLICKEDGE, true);
+				ed.putBoolean(DEF.KEY_CHGFLICK, false);
+				ed.putBoolean(DEF.KEY_SCRLNEXT, false);
+				ed.putBoolean(DEF.KEY_VIEWNEXT, false);
+				ed.putString(DEF.KEY_SCROLLMODE, "0");
+				ed.putBoolean(DEF.KEY_INERTIASCROLL, false);
+				ed.putBoolean(DEF.KEY_NEXTFILTER, true);
+				ed.putString(DEF.KEY_PAGESELECT, "2");
+				ed.putBoolean(DEF.KEY_CHGPAGEKEY, DEF.DEFAULT_CHGPAGEKEY);
+				ed.putBoolean(DEF.KEY_SORTCHGPAGE, DEF.DEFAULT_SORTCHGPAGE);
+				ed.putBoolean(DEF.KEY_BACKGROUNDPAUSE, false);
+				ed.putBoolean(DEF.KEY_DISABLEPAGEBUTTON, false);
+				ed.putBoolean(DEF.KEY_ENABLECONTENTSFILE, false);
+				ed.putBoolean(DEF.KEY_CHGPAGENEXT, false);
+				ed.putBoolean(DEF.KEY_MAKEZOOMSAMEASPINCH, false);
+				ed.putBoolean(DEF.KEY_ADJUSTZOOMSAMEASPINCH, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override
@@ -747,6 +840,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	public static boolean getArchiveAnimationEnable(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_ARCHIVEANIMATIONENABLE, false);
+		return flag;
+	}
+
+	public static boolean getAnimationForce(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_ANIMATIONFORCE, false);
 		return flag;
 	}
 

@@ -138,6 +138,9 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 		mPriorityWord09 = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_SORT_PRIORITY_WORD_09);
 		mPriorityWord10 = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_SORT_PRIORITY_WORD_10);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_COMMHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -154,6 +157,76 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory commonCategory = (ButtonPreferenceCategory) findPreference("common_category");
+		if (commonCategory != null) {
+			commonCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_CHECK_RELEASE, true);
+				ed.putBoolean(DEF.KEY_HIDDENFILE, true);
+				ed.putString(DEF.KEY_ROTATEBTN, "1");
+				ed.putBoolean(DEF.KEY_FORCENAVIGATIONBAR, false);
+				ed.putBoolean(DEF.KEY_FORCESTATUSBAR, false);
+				ed.putBoolean(DEF.KEY_DISPLAYVIEWROTATE, false);
+				ed.putBoolean(DEF.KEY_REVERSEROTARE, false);
+				ed.putBoolean(DEF.KEY_FALSEDISPLAYVIEWROTATE, false);
+				ed.putString(DEF.KEY_VIEWROTAALL, "0");
+				ed.putString(DEF.KEY_SELECTTHEME, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory charactercodeCategory = (ButtonPreferenceCategory) findPreference("charactercode_category");
+		if (charactercodeCategory != null) {
+			charactercodeCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_CHAR_DETECT, true);
+				ed.putString(DEF.KEY_CHARSET, "1");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory softCategory = (ButtonPreferenceCategory) findPreference("soft_category");
+		if (softCategory != null) {
+			softCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_SORT_BY_IGNORE_WIDTH, true);
+				ed.putBoolean(DEF.KEY_SORT_BY_IGNORE_CASE, true);
+				ed.putBoolean(DEF.KEY_SORT_BY_SYMBOL, true);
+				ed.putBoolean(DEF.KEY_SORT_BY_NATURAL_NUMBERS, true);
+				ed.putBoolean(DEF.KEY_SORT_BY_KANJI_NUMERALS, true);
+				ed.putBoolean(DEF.KEY_SORT_BY_JAPANESE_VOLUME_NAME, true);
+				ed.putBoolean(DEF.KEY_SORT_BY_FILE_TYPE, true);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory sortwordCategory = (ButtonPreferenceCategory) findPreference("sortword_category");
+		if (sortwordCategory != null) {
+			sortwordCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_01, "cover");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_02, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_03, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_04, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_05, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_06, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_07, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_08, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_09, "");
+				ed.putString(DEF.KEY_SORT_PRIORITY_WORD_10, "");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	private static void RotateMain(Activity activity, int orientation, int viewrota) {

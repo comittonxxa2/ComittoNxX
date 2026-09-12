@@ -99,6 +99,9 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 
 		mGradation  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_TX_GRADATION);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_ITCLRHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -115,6 +118,38 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory imageviewCategory = (ButtonPreferenceCategory) findPreference("imageview_category");
+		if (imageviewCategory != null) {
+			imageviewCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_MGNRGB, DEF.ColorList[22]);
+				ed.putInt(DEF.KEY_CNTRGB, DEF.ColorList[22]);
+				ed.putInt(DEF.KEY_GUIRGB, DEF.ColorList[1]);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory textviewCategory = (ButtonPreferenceCategory) findPreference("textview_category");
+		if (textviewCategory != null) {
+			textviewCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_TX_MGNRGB, DEF.ColorList[22]);
+				ed.putInt(DEF.KEY_TX_CNTRGB, DEF.ColorList[22]);
+				ed.putInt(DEF.KEY_TX_GUIRGB, DEF.ColorList[1]);
+				ed.putInt(DEF.KEY_TX_TVTRGB, DEF.COLOR_TX_TVTRGB);
+				ed.putInt(DEF.KEY_TX_TVBRGB, DEF.COLOR_TX_TVBRGB);
+				ed.putInt(DEF.KEY_TX_TVGRGB, DEF.COLOR_TX_TVGRGB);
+				ed.putString(DEF.KEY_TX_GRADATION, "1");
+				ed.putInt(DEF.KEY_TX_HITRGB, DEF.COLOR_TX_HITRGB);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

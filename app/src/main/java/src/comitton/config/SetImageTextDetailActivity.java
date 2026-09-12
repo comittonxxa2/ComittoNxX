@@ -10,6 +10,8 @@ import src.comitton.config.seekbar.PageRangeSeekbar;
 import src.comitton.config.seekbar.ScrollSeekbar;
 import src.comitton.config.seekbar.TapRangeSeekbar;
 import src.comitton.config.seekbar.VolScrlSeekbar;
+import src.comitton.config.seekbar.StatusAreaSeekbar;
+import src.comitton.config.seekbar.NavigationAreaSeekbar;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -31,6 +33,8 @@ import androidx.preference.PreferenceManager;
 public class SetImageTextDetailActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	private ScrollSeekbar mScroll;
 	private ClickAreaSeekbar mClickArea;
+	private StatusAreaSeekbar mStatusArea;
+	private NavigationAreaSeekbar mNavigationArea;
 	private PageRangeSeekbar mPageRange;
 	private TapRangeSeekbar mTapRange;
 	private MarginSeekbar mMargin;
@@ -68,6 +72,8 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 
 		mScroll = (ScrollSeekbar) getPreferenceScreen().findPreference(DEF.KEY_SCROLL);
 		mClickArea = (ClickAreaSeekbar) getPreferenceScreen().findPreference(DEF.KEY_CLICKAREA);
+		mStatusArea = (StatusAreaSeekbar) getPreferenceScreen().findPreference(DEF.KEY_STATUSAREA);
+		mNavigationArea = (NavigationAreaSeekbar) getPreferenceScreen().findPreference(DEF.KEY_NAVIGATIONAREA);
 		mPageRange = (PageRangeSeekbar) getPreferenceScreen().findPreference(DEF.KEY_PAGERANGE);
 		mTapRange = (TapRangeSeekbar) getPreferenceScreen().findPreference(DEF.KEY_TAPRANGE);
 		mMargin = (MarginSeekbar) getPreferenceScreen().findPreference(DEF.KEY_MARGIN);
@@ -76,6 +82,9 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 		mVolScrl = (VolScrlSeekbar) getPreferenceScreen().findPreference(DEF.KEY_VOLSCRL);
 		mEffectTime = (EffectTimeSeekbar) getPreferenceScreen().findPreference(DEF.KEY_EFFECTTIME);
 		mMomentMode = (MomentModeSeekbar) getPreferenceScreen().findPreference(DEF.KEY_MOMENTMODE);
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_ITDTLHELP);
@@ -93,6 +102,42 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 				return true;
 			}
 		});
+		ButtonPreferenceCategory displayrelatedCategory = (ButtonPreferenceCategory) findPreference("displayrelated_category");
+		if (displayrelatedCategory != null) {
+			displayrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_MARGIN, DEF.DEFAULT_MARGIN);
+				ed.putInt(DEF.KEY_CENTER, DEF.DEFAULT_CENTER);
+				ed.putInt(DEF.KEY_GRADATION, DEF.DEFAULT_GRADATION);
+				ed.putBoolean(DEF.KEY_IMMENABLE, false);
+				ed.putBoolean(DEF.KEY_OLDMENU, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory operationrelatedCategory = (ButtonPreferenceCategory) findPreference("operationrelated_category");
+		if (operationrelatedCategory != null) {
+			operationrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_EFFECTTIME, DEF.DEFAULT_EFFECTTIME);
+				ed.putInt(DEF.KEY_SCROLL, DEF.DEFAULT_SCROLL);
+				ed.putInt(DEF.KEY_CLICKAREA, DEF.DEFAULT_CLICKAREA);
+				ed.putInt(DEF.KEY_STATUSAREA, DEF.DEFAULT_STATUSAREA);
+				ed.putInt(DEF.KEY_NAVIGATIONAREA, DEF.DEFAULT_NAVIGATIONAREA);
+				ed.putInt(DEF.KEY_PAGERANGE, DEF.DEFAULT_PAGERANGE);
+				ed.putInt(DEF.KEY_TAPRANGE, DEF.DEFAULT_TAPRANGE);
+				ed.putInt(DEF.KEY_VOLSCRL, DEF.DEFAULT_VOLSCRL);
+				ed.putInt(DEF.KEY_MOMENTMODE, DEF.DEFAULT_MOMENTMODE);
+				ed.putBoolean(DEF.KEY_BOTTOMFILE, true);
+				ed.putBoolean(DEF.KEY_PINCHENABLE, true);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override
@@ -104,6 +149,8 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 		// シークバー
 		mScroll.setSummary(getScrollSummary(sharedPreferences)); // スクロール倍率
 		mClickArea.setSummary(getClickAreaSummary(sharedPreferences));
+		mStatusArea.setSummary(getStatusAreaSummary(sharedPreferences));
+		mNavigationArea.setSummary(getNavigationAreaSummary(sharedPreferences));
 		mPageRange.setSummary(getPageRangeSummary(sharedPreferences));
 		mTapRange.setSummary(getTapRangeSummary(sharedPreferences));
 		mMargin.setSummary(getMarginSummary(sharedPreferences));
@@ -134,6 +181,14 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 		else if (key.equals(DEF.KEY_CLICKAREA)) {
 			// 操作領域サイズ
 			mClickArea.setSummary(getClickAreaSummary(sharedPreferences));
+		}
+		else if (key.equals(DEF.KEY_STATUSAREA)) {
+			// 操作領域サイズ
+			mStatusArea.setSummary(getStatusAreaSummary(sharedPreferences));
+		}
+		else if (key.equals(DEF.KEY_NAVIGATIONAREA)) {
+			// 操作領域サイズ
+			mNavigationArea.setSummary(getNavigationAreaSummary(sharedPreferences));
 		}
 		else if (key.equals(DEF.KEY_PAGERANGE)) {
 			// ページ選択感度
@@ -197,6 +252,18 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 		return num;
 	}
 
+	public static int getStatusArea(SharedPreferences sharedPreferences) {
+		int num;
+		num = DEF.getInt(sharedPreferences, DEF.KEY_STATUSAREA, DEF.DEFAULT_STATUSAREA);
+		return num;
+	}
+
+	public static int getNavigationArea(SharedPreferences sharedPreferences) {
+		int num;
+		num = DEF.getInt(sharedPreferences, DEF.KEY_NAVIGATIONAREA, DEF.DEFAULT_NAVIGATIONAREA);
+		return num;
+	}
+
 	public static int getPageRange(SharedPreferences sharedPreferences) {
 		int num;
 		num = DEF.getInt(sharedPreferences, DEF.KEY_PAGERANGE, DEF.DEFAULT_PAGERANGE);
@@ -256,6 +323,22 @@ public class SetImageTextDetailActivity extends PreferenceActivity implements On
 
 	private String getClickAreaSummary(SharedPreferences sharedPreferences) {
 		int val = getClickArea(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.unitSumm1);
+
+		return DEF.getClickAreaStr(val, summ1);
+	}
+
+	private String getStatusAreaSummary(SharedPreferences sharedPreferences) {
+		int val = getStatusArea(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.unitSumm1);
+
+		return DEF.getClickAreaStr(val, summ1);
+	}
+
+	private String getNavigationAreaSummary(SharedPreferences sharedPreferences) {
+		int val = getNavigationArea(sharedPreferences);
 		Resources res = getResources();
 		String summ1 = res.getString(R.string.unitSumm1);
 

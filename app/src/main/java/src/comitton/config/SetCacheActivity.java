@@ -73,6 +73,9 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 		mMemPrev  = (MemPrevSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MEMPREV);
 		mMemCacheStartThreshold = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_MEMCACHESTARTTHRESHOLD);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_CACHEHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -89,6 +92,21 @@ public class SetCacheActivity extends PreferenceActivity implements OnSharedPref
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory cacheCategory = (ButtonPreferenceCategory) findPreference("cache_category");
+		if (cacheCategory != null) {
+			cacheCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_MEMSIZE, DEF.DEFAULT_MEMSIZE);
+				ed.putInt(DEF.KEY_MEMNEXT, DEF.DEFAULT_MEMNEXT);
+				ed.putInt(DEF.KEY_MEMPREV, DEF.DEFAULT_MEMPREV);
+				ed.putString(DEF.KEY_MEMCACHESTARTTHRESHOLD, DEF.DEFAULT_MEMCACHE);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

@@ -6,6 +6,8 @@ import src.comitton.config.SetCommonActivity;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.textview.EpubWebViewActivity;
 import jp.dip.muracoro.comittonx.R;
+
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -19,6 +21,7 @@ import android.preference.PreferenceScreen;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ListView;
 
 import androidx.preference.PreferenceManager;
 
@@ -49,6 +52,8 @@ public class SetConfigActivity extends PreferenceActivity implements OnSharedPre
 
 		addPreferencesFromResource(R.xml.config);
 
+		getScrollPosition();
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_CONFHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -65,6 +70,34 @@ public class SetConfigActivity extends PreferenceActivity implements OnSharedPre
 				return true;
 			}
 		});
+	}
+
+	private void putScrollPosition() {
+		ListView listView = getListView();
+		int index = listView.getFirstVisiblePosition();
+		View v = listView.getChildAt(0);
+		int top = (v == null) ? 0 : v.getTop();
+		android.content.Intent intent = getIntent();
+		intent.putExtra("scroll_index", index);
+		intent.putExtra("scroll_top", top);
+		finish();
+		startActivity(intent);
+	}
+	private void getScrollPosition() {
+		// 渡されたスクロール位置があれば復元する
+		int index = getIntent().getIntExtra("scroll_index", -1);
+		int top = getIntent().getIntExtra("scroll_top", 0);
+		if (index != -1) {
+			final ListView listView = getListView();
+			if (listView != null) {
+				listView.post(new Runnable() {
+					@Override
+					public void run() {
+						listView.setSelectionFromTop(index, top);
+					}
+				});
+			}
+		}
 	}
 
 	@Override

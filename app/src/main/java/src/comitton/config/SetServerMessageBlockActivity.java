@@ -8,12 +8,14 @@ import android.preference.PreferenceActivity;
 import android.view.View;
 import android.view.WindowManager;
 
-import androidx.preference.PreferenceManager;
+import android.preference.CheckBoxPreference;
+import android.preference.PreferenceManager;
 
 import src.comitton.config.SetCommonActivity;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
+import src.comitton.fileaccess.SmbFileAccess;
 
 public class SetServerMessageBlockActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 
@@ -21,6 +23,7 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 	private boolean mImmEnable = false;
 	private final int mSdkVersion = android.os.Build.VERSION.SDK_INT;
 	private static SharedPreferences sharedPreferences;
+	private CheckBoxPreference mSMBCallbackMode;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +46,36 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 		SetCommonActivity.SetOrientationEventListener(this, sharedPreferences);
 
 		addPreferencesFromResource(R.xml.setservermessageblock);
+
+		mSMBCallbackMode = (CheckBoxPreference) findPreference(DEF.KEY_SMBCALLBACKMODE);
+
+		mSMBCallbackMode.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// newValue には新しいチェック状態(Boolean)が入ってくる
+				boolean isChecked = (Boolean) newValue;
+				SmbFileAccess.setSmbAccessSwitch(isChecked);
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
+		ButtonPreferenceCategory smbsettingCategory = (ButtonPreferenceCategory) findPreference("smbsetting_category");
+		if (smbsettingCategory != null) {
+			smbsettingCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_SMB_MODE, false);
+				ed.putBoolean(DEF.KEY_SMBRETRYMODE, false);
+				ed.putBoolean(DEF.KEY_SMBCALLBACKMODE, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override
@@ -68,6 +101,11 @@ public class SetServerMessageBlockActivity extends PreferenceActivity implements
 
 	public static boolean getSmbRetryMode(SharedPreferences sharedPreferences){
 		boolean num =  DEF.getBoolean(sharedPreferences, DEF.KEY_SMBRETRYMODE, false);
+		return num;
+	}
+
+	public static boolean getSMBCallbackMode(SharedPreferences sharedPreferences){
+		boolean num =  DEF.getBoolean(sharedPreferences, DEF.KEY_SMBCALLBACKMODE, false);
 		return num;
 	}
 }

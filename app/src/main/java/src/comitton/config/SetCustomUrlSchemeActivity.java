@@ -76,6 +76,21 @@ public class SetCustomUrlSchemeActivity extends PreferenceActivity implements On
 		mPriorityWord = (EditTextPreference)getPreferenceScreen().findPreference(DEF.KEY_CUSTOM_URL_SCHEME_KEY);
 		// 値の表示更新
 		mPriorityWord.setSummary(getkey);
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
+		ButtonPreferenceCategory customurlschemeCategory = (ButtonPreferenceCategory) findPreference("customurlscheme_category");
+		if (customurlschemeCategory != null) {
+			customurlschemeCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_CUSTOM_URL_SCHEME_KEY, this.getPackageName());
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

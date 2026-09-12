@@ -176,6 +176,9 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 		mEvbColor = (ColorEvbSetting) getPreferenceScreen().findPreference(DEF.KEY_EVBRGB);
 		mTabColor = (ColorTabSetting) getPreferenceScreen().findPreference(DEF.KEY_TABRGB);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FCLRHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -212,6 +215,18 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory presetCategory = (ButtonPreferenceCategory) findPreference("preset_category");
+		if (presetCategory != null) {
+			presetCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_PRESET, "1");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

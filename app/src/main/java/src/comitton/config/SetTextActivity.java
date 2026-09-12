@@ -222,6 +222,9 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		mFontName.setEntryValues(values);
 		mFontName.setDefaultValue(values[0]);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_TEXTHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -238,6 +241,92 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory displaystatusatstartupCategory = (ButtonPreferenceCategory) findPreference("displaystatusatstartup_category");
+		if (displaystatusatstartupCategory != null) {
+			displaystatusatstartupCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_TX_INISCALE, "2");
+				ed.putString(DEF.KEY_TX_INITVIEW, "2");
+				ed.putString(DEF.KEY_TX_PAPER, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory displayrelatedCategory = (ButtonPreferenceCategory) findPreference("displayrelated_category");
+		if (displayrelatedCategory != null) {
+			displayrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_TX_PICSIZE, "0");
+				ed.putBoolean(DEF.KEY_TX_NOTICE, true);
+				ed.putBoolean(DEF.KEY_TX_NOSLEEP, false);
+				ed.putString(DEF.KEY_TX_VIEWROTA, "0");
+				ed.putBoolean(DEF.KEY_TX_CMARGIN, true);
+				ed.putBoolean(DEF.KEY_TX_CSHADOW, false);
+				ed.putBoolean(DEF.KEY_TX_EFFECT, true);
+				ed.putInt(DEF.KEY_TX_SCRLRNGW, DEF.DEFAULT_TX_SCRLRNGW);
+				ed.putInt(DEF.KEY_TX_SCRLRNGH, DEF.DEFAULT_TX_SCRLRNGH);
+				ed.putString(DEF.KEY_VIEWPT , "0");
+				ed.putBoolean(DEF.KEY_PREVREV, true);
+				ed.putBoolean(DEF.KEY_TIMEDISP, DEF.DEFAULT_TIMEDISP);
+				ed.putInt(DEF.KEY_TIMEFORMAT, DEF.DEFAULT_TIMEFORMAT);
+				ed.putInt(DEF.KEY_TIMEPOS, DEF.DEFAULT_TIMEPOS);
+				ed.putInt(DEF.KEY_TIMESIZE, DEF.DEFAULT_TIMESIZE);
+				ed.putInt(DEF.KEY_TIMECOLOR, DEF.DEFAULT_TIMECOLOR);
+				ed.putBoolean(DEF.KEY_REDUCED, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory operationrelatedCategory = (ButtonPreferenceCategory) findPreference("operationrelated_category");
+		if (operationrelatedCategory != null) {
+			operationrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_RETURNKLISTVIEW, true);
+				ed.putBoolean(DEF.KEY_CONFIRMBACK, true);
+				ed.putString(DEF.KEY_LASTPAGE, "1");
+				ed.putInt(DEF.KEY_TAPPATTERN, DEF.DEFAULT_TAPPATTERN);
+				ed.putBoolean(DEF.KEY_CHGPAGE, DEF.DEFAULT_CHGPAGE);
+				ed.putBoolean(DEF.KEY_VIBFLAG, false);
+				ed.putString(DEF.KEY_VOLKEY, "1");
+				ed.putBoolean(DEF.KEY_TAPSCRL, false);
+				ed.putBoolean(DEF.KEY_FLICKPAGE, true);
+				ed.putBoolean(DEF.KEY_FLICKEDGE, true);
+				ed.putBoolean(DEF.KEY_CHGFLICK, false);
+				ed.putString(DEF.KEY_TX_PAGESELECT, "1");
+				ed.putBoolean(DEF.KEY_CHGPAGEKEY, DEF.DEFAULT_CHGPAGEKEY);
+				ed.putBoolean(DEF.KEY_SORTCHGPAGE, DEF.DEFAULT_SORTCHGPAGE);
+				ed.putBoolean(DEF.KEY_DISABLEPAGEBUTTON, false);
+				ed.putBoolean(DEF.KEY_TX_DISABLETEXTINFO, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory fontsettingCategory = (ButtonPreferenceCategory) findPreference("fontsetting_category");
+		if (fontsettingCategory != null) {
+			fontsettingCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_TX_FONTNAME, "");
+				ed.putInt(DEF.KEY_TX_FONTTOP, DEF.DEFAULT_TX_FONTTOP);
+				ed.putInt(DEF.KEY_TX_FONTBODY, DEF.DEFAULT_TX_FONTBODY);
+				ed.putInt(DEF.KEY_TX_FONTRUBI, DEF.DEFAULT_TX_FONTRUBI);
+				ed.putInt(DEF.KEY_TX_FONTINFO, DEF.DEFAULT_TX_FONTINFO);
+				ed.putInt(DEF.KEY_TX_SPACEW, DEF.DEFAULT_TX_SPACEW);
+				ed.putInt(DEF.KEY_TX_SPACEH, DEF.DEFAULT_TX_SPACEH);
+				ed.putInt(DEF.KEY_TX_MARGINW, DEF.DEFAULT_TX_MARGINW);
+				ed.putInt(DEF.KEY_TX_MARGINH, DEF.DEFAULT_TX_MARGINH);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

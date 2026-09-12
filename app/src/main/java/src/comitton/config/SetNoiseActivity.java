@@ -65,6 +65,9 @@ public class SetNoiseActivity extends PreferenceActivity implements OnSharedPref
 
 		mNoiseDec  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_NOISEDEC);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_NOISEHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -81,6 +84,22 @@ public class SetNoiseActivity extends PreferenceActivity implements OnSharedPref
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory noiseCategory = (ButtonPreferenceCategory) findPreference("noise_category");
+		if (noiseCategory != null) {
+			noiseCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_NOISESCRL, DEF.DEFAULT_NOISESCRL);
+				ed.putInt(DEF.KEY_NOISEOVER, DEF.DEFAULT_NOISEOVER);
+				ed.putInt(DEF.KEY_NOISEUNDER, DEF.DEFAULT_NOISEUNDER);
+				ed.putString(DEF.KEY_NOISEDEC, "1");
+				ed.putBoolean(DEF.KEY_NOISELEVEL, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

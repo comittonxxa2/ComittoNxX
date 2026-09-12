@@ -186,6 +186,69 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		mFontName.setEntryValues(values);
 		mFontName.setDefaultValue(values[0]);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
+		ButtonPreferenceCategory viewerCategory = (ButtonPreferenceCategory) findPreference("viewer_category");
+		if (viewerCategory != null) {
+			viewerCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_EP_VIEWER, false);
+				ed.putBoolean(DEF.KEY_EP_ORDER, true);
+				ed.putBoolean(DEF.KEY_EP_THUMB, true);
+				ed.putBoolean(DEF.KEY_EP_WEBVIEW, false);
+				ed.putBoolean(DEF.KEY_EP_AOZORARUBYOFF, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory webviewbaseepubviewerCategory = (ButtonPreferenceCategory) findPreference("webviewbaseepubviewer_category");
+		if (webviewbaseepubviewerCategory != null) {
+			webviewbaseepubviewerCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_EP_INITVIEW, "0");
+				ed.putBoolean(DEF.KEY_EP_NOTICE, true);
+				ed.putBoolean(DEF.KEY_EP_NOSLEEP, false);
+				ed.putBoolean(DEF.KEY_EP_NOCACHE, false);
+				ed.putString(DEF.KEY_EP_VIEWROTA, "0");
+				ed.putBoolean(DEF.KEY_TIMEDISP, false);
+				ed.putInt(DEF.KEY_TIMEFORMAT, DEF.DEFAULT_TIMEFORMAT);
+				ed.putInt(DEF.KEY_TIMEPOS, DEF.DEFAULT_TIMEPOS);
+				ed.putInt(DEF.KEY_TIMESIZE, DEF.DEFAULT_TIMESIZE);
+				ed.putInt(DEF.KEY_TIMECOLOR, DEF.DEFAULT_TIMECOLOR);
+				ed.putBoolean(DEF.KEY_RETURNKLISTVIEW, true);
+				ed.putBoolean(DEF.KEY_CONFIRMBACK, true);
+				ed.putString(DEF.KEY_LASTPAGE, "1");
+				ed.putInt(DEF.KEY_TAPPATTERN, DEF.DEFAULT_TAPPATTERN);
+				ed.putBoolean(DEF.KEY_CHGPAGE, DEF.DEFAULT_CHGPAGE);
+				ed.putBoolean(DEF.KEY_VIBFLAG, false);
+				ed.putString(DEF.KEY_VOLKEY, "1");
+				ed.putBoolean(DEF.KEY_TAPSCRL, false);
+				ed.putBoolean(DEF.KEY_FLICKPAGE, true);
+				ed.putBoolean(DEF.KEY_FLICKEDGE, true);
+				ed.putBoolean(DEF.KEY_CHGPAGEKEY, DEF.DEFAULT_CHGPAGEKEY);
+				ed.putBoolean(DEF.KEY_SORTCHGPAGE, DEF.DEFAULT_SORTCHGPAGE);
+				ed.putBoolean(DEF.KEY_DISABLEPAGEBUTTON, false);
+				ed.putBoolean(DEF.KEY_EP_DISABLETEXTINFO, false);
+				ed.putBoolean(DEF.KEY_EP_TEXTCOLORFIX, false);
+				ed.putBoolean(DEF.KEY_EP_TEXTBAKCOLORFIX, false);
+				ed.putBoolean(DEF.KEY_EP_TEXTSIZEVALIABLE, false);
+				ed.putBoolean(DEF.KEY_EP_TEXTFRAME, false);
+				ed.putBoolean(DEF.KEY_EP_HORIZONTIALWRITING, false);
+				ed.putString(DEF.KEY_EP_FONTNAME, "");
+				ed.putInt(DEF.KEY_EP_FONTBODY, DEF.DEFAULT_EP_FONTBODY);
+				ed.putInt(DEF.KEY_EP_FONTTEXT, DEF.DEFAULT_EP_FONTTEXT);
+				ed.putInt(DEF.KEY_EP_FONTINFO, DEF.DEFAULT_EP_FONTINFO);
+				ed.putInt(DEF.KEY_EP_MARGINW, DEF.DEFAULT_EP_MARGINW);
+				ed.putInt(DEF.KEY_EP_MARGINH, DEF.DEFAULT_EP_MARGINH);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

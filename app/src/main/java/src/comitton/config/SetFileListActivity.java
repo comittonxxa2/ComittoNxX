@@ -271,6 +271,9 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 			}
 		});
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_FILEHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -287,6 +290,84 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory fileselectioscreenCategory = (ButtonPreferenceCategory) findPreference("fileselectioscreen_category");
+		if (fileselectioscreenCategory != null) {
+			fileselectioscreenCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_FILELISTCACHEOFF, false);
+				ed.putBoolean(DEF.KEY_FILELISTFASTREADOFF, false);
+				ed.putString(DEF.KEY_LISTROTA, "0");
+				ed.putString(DEF.KEY_LISTSORT, "2");
+				ed.putString(DEF.KEY_BACKMODE, "0");
+				ed.putString(DEF.KEY_STARTSERVER, "0");
+				ed.putBoolean(DEF.KEY_RESUMEOPEN, false);
+				ed.putBoolean(DEF.KEY_RESUMEOPENNOMESSAGE, false);
+				ed.putBoolean(DEF.KEY_TAPEXPAND, false);
+				ed.putBoolean(DEF.KEY_EP_VIEWER, false);
+				ed.putBoolean(DEF.KEY_PARENTMOVE, true);
+				ed.putBoolean(DEF.KEY_EXTENSION, true);
+				ed.putBoolean(DEF.KEY_SPLIT_FILENAME, true);
+				ed.putString(DEF.KEY_MAX_LINES, "2");
+				ed.putString(DEF.KEY_FILEDELMENU, "2");
+				ed.putString(DEF.KEY_FILERENMENU, "0");
+				ed.putInt(DEF.KEY_FONTTITLE, DEF.DEFAULT_FONTTITLE);
+				ed.putInt(DEF.KEY_FONTMAIN, DEF.DEFAULT_FONTMAIN);
+				ed.putInt(DEF.KEY_FONTSUB, DEF.DEFAULT_FONTSUB);
+				ed.putInt(DEF.KEY_FONTTILE, DEF.DEFAULT_FONTTILE);
+				ed.putInt(DEF.KEY_ITEMMRGN, DEF.DEFAULT_ITEMMARGIN);
+				ed.putBoolean(DEF.KEY_TOOLBARNAME, true);
+				ed.putInt(DEF.KEY_TOOLBARSEEK, DEF.DEFAULT_TOOLBARSEEK);
+				ed.putInt(DEF.KEY_THUMBSIZEW, DEF.DEFAULT_THUMBSIZEW);
+				ed.putInt(DEF.KEY_THUMBSIZEH, DEF.DEFAULT_THUMBSIZEH);
+				ed.putInt(DEF.KEY_LISTTHUMBSEEK, DEF.DEFAULT_LISTTHUMBSIZEH);
+				ed.putBoolean(DEF.KEY_THUMBGRID, false);
+				ed.putString(DEF.KEY_THUMBGRIDV, "1");
+				ed.putString(DEF.KEY_THUMBGRIDH, "1");
+				ed.putInt(DEF.KEY_TILETHUMBRATIO, DEF.DEFAULT_TILETHUMBRATIO);
+				ed.putInt(DEF.KEY_LISTTHUMBRATIO, DEF.DEFAULT_LISTTHUMBRATIO);
+				ed.putString(DEF.KEY_THUMBCACHE, "2");
+				ed.putBoolean(DEF.KEY_THUMBSORT, false);
+				ed.putString(DEF.KEY_THUMBSORTTYPE, "2");
+				ed.putBoolean(DEF.KEY_CLEARTOP, false);
+				ed.putBoolean(DEF.KEY_THUMBNAILTAP, true);
+				ed.putInt(DEF.KEY_MENULONGTAP, DEF.DEFAULT_MENULONGTAP);
+				ed.putString(DEF.KEY_THUMBCROP, "0");
+				ed.putString(DEF.KEY_THUMBMARGIN, "0");
+				ed.putBoolean(DEF.KEY_KEEPSORTSHUFFLE, false);
+				ed.putBoolean(DEF.KEY_KEEPFILELISTCURSOR, false);
+				ed.putBoolean(DEF.KEY_DISABLELISTICON, false);
+				ed.putString(DEF.KEY_READTEXTSETTING, "0");
+				ed.putString(DEF.KEY_READSTYLESETTING, "0");
+				ed.putString(DEF.KEY_READPROGRESSBARPOSITION, "0");
+				ed.putString(DEF.KEY_READPROGRESSBARWIDTH, "0");
+				ed.putBoolean(DEF.KEY_PROGRESSBARMODE, false);
+				ed.putBoolean(DEF.KEY_EXPANDTEXTENABLE, false);
+				ed.putBoolean(DEF.KEY_MARKERFILTERON, false);
+				ed.putBoolean(DEF.KEY_MARKERDIRON, false);
+				ed.putBoolean(DEF.KEY_ARCHIVECHECKMANUALMODE, false);
+				ed.putBoolean(DEF.KEY_SKIPGETTHUMBNAIL, false);
+				ed.putBoolean(DEF.KEY_SKIPZIPLIB, false);
+				ed.putBoolean(DEF.KEY_SETUNRARLIB, false);
+				ed.putBoolean(DEF.KEY_AOZORAZIPFILE, false);
+				ed.putBoolean(DEF.KEY_LISTEXTENSION, false);
+				ed.putBoolean(DEF.KEY_PDFEXPAND, false);
+				ed.putBoolean(DEF.KEY_SKIPUPDATEFILELIST, false);
+				ed.putBoolean(DEF.KEY_AOZORATEXTFILE, false);
+				ed.putBoolean(DEF.KEY_OPENIMAGEHTMLFILE, false);
+				ed.putBoolean(DEF.KEY_OPENIMAGETEXTFILE, false);
+				ed.putBoolean(DEF.KEY_TABMODE, false);
+				ed.putString(DEF.KEY_TABSTYLE, "0");
+				ed.putInt(DEF.KEY_TABSEEK, DEF.DEFAULT_TABSEEK);
+				ed.putString(DEF.KEY_TABLAYOUT, "0");
+				ed.putBoolean(DEF.KEY_TABRESTORE, false);
+				ed.putBoolean(DEF.KEY_CANCELFILELISTDIALOG, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@SuppressWarnings("deprecation")
@@ -981,6 +1062,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static boolean getTabRestore(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_TABRESTORE, false);
+		return flag;
+	}
+
+	public static boolean getCancelFileListDialog(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CANCELFILELISTDIALOG, false);
 		return flag;
 	}
 

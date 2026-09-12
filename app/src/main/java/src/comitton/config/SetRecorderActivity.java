@@ -58,6 +58,9 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 		addPreferencesFromResource(R.xml.recorder);
 		mHistNum = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_HISTNUM);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_RECHELP);
 		onlineHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -74,6 +77,23 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory recorderCategory = (ButtonPreferenceCategory) findPreference("recorder_category");
+		if (recorderCategory != null) {
+			recorderCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_RDIRVIEW, true);
+				ed.putBoolean(DEF.KEY_RBMVIEW, true);
+				ed.putBoolean(DEF.KEY_RHISTVIEW, true);
+				ed.putBoolean(DEF.KEY_RECLOCAL, true);
+				ed.putBoolean(DEF.KEY_RECSAMBA, true);
+				ed.putString(DEF.KEY_HISTNUM, "1");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

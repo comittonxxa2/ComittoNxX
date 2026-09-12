@@ -67,6 +67,37 @@ public class SetMarginCutActivity extends PreferenceActivity implements OnShared
 		mMarginRange = (MarginRangeSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MarginRange);
 		mMarginLimit = (MarginLimitSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MarginLimit);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
+		ButtonPreferenceCategory margincutCategory = (ButtonPreferenceCategory) findPreference("margincut_category");
+		if (margincutCategory != null) {
+			margincutCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_MarginAspectMask, false);
+				ed.putBoolean(DEF.KEY_MarginForceIgnoreAspect, false);
+				ed.putBoolean(DEF.KEY_MargingBlackMask, false);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory customsettingCategory = (ButtonPreferenceCategory) findPreference("customsetting_category");
+		if (customsettingCategory != null) {
+			customsettingCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_MarginLevel, DEF.DEFAULT_MarginLevel);
+				ed.putInt(DEF.KEY_MarginLimit, DEF.DEFAULT_MarginLimit);
+				ed.putInt(DEF.KEY_MarginStart, DEF.DEFAULT_MarginStart);
+				ed.putInt(DEF.KEY_MarginSpace, DEF.DEFAULT_MarginSpace);
+				ed.putInt(DEF.KEY_MarginRange, DEF.DEFAULT_MarginRange);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

@@ -212,6 +212,10 @@ public class SetThemeActivity extends PreferenceActivity implements OnSharedPref
 		mThemePreset = (ListPreference) getPreferenceScreen().findPreference(DEF.KEY_THEME_PRESET);
 
 		mEnableTheme = (CheckBoxPreference) findPreference(DEF.KEY_ENABLE_THEME);
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
+
 		if (!getCheckEnableTheme(sharedPreferences)) {
 			mThemePreset.setEnabled(false);
 		}
@@ -276,6 +280,46 @@ public class SetThemeActivity extends PreferenceActivity implements OnSharedPref
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory settingthemeCategory = (ButtonPreferenceCategory) findPreference("settingtheme_category");
+		if (settingthemeCategory != null) {
+			settingthemeCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_ENABLE_THEME, false);
+				ed.putString(DEF.KEY_THEME_PRESET, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory filelistCategory = (ButtonPreferenceCategory) findPreference("filelist_category");
+		if (filelistCategory != null) {
+			filelistCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_FONTTITLE, DEF.DEFAULT_FONTTITLE);
+				ed.putInt(DEF.KEY_FONTMAIN, DEF.DEFAULT_FONTMAIN);
+				ed.putInt(DEF.KEY_FONTSUB, DEF.DEFAULT_FONTSUB);
+				ed.putInt(DEF.KEY_FONTTILE, DEF.DEFAULT_FONTTILE);
+				ed.putInt(DEF.KEY_ITEMMRGN, DEF.DEFAULT_ITEMMARGIN);
+				ed.putInt(DEF.KEY_TOOLBARSEEK, DEF.DEFAULT_TOOLBARSEEK);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory presetcolorCategory = (ButtonPreferenceCategory) findPreference("presetcolor_category");
+		if (presetcolorCategory != null) {
+			presetcolorCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_PRESET, "1");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

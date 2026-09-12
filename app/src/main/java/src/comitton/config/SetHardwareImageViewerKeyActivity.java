@@ -153,8 +153,68 @@ public class SetHardwareImageViewerKeyActivity extends PreferenceActivity implem
 		// PreferenceScreenを作成
 		PreferenceScreen screen = getPreferenceManager().createPreferenceScreen(this);
 		PreferenceCategory category = new PreferenceCategory(this);
-		category.setTitle(R.string.imageviwerhardwarekeytitle);  
-		screen.addPreference(category);  
+		ButtonPreferenceCategory buttoncategory = new ButtonPreferenceCategory(this);
+		buttoncategory.setTitle(R.string.imageviwerhardwarekeytitle);
+		// ボタンが押されたときの処理を設定
+		buttoncategory.setOnButtonClickListener(new ButtonPreferenceCategory.OnClickListener() {
+			@Override
+			public void onButtonClick() {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_CODE_I_BACK, "0");
+				ed.putString(DEF.KEY_CODE_I_VOLUME_UP, "0");
+				ed.putString(DEF.KEY_CODE_I_VOLUME_DOWN, "0");
+				ed.putString(DEF.KEY_CODE_I_CAMERA, "0");
+				ed.putString(DEF.KEY_CODE_I_FOCUS, "0");
+				ed.putString(DEF.KEY_CODE_I_MENU, "0");
+				ed.putString(DEF.KEY_CODE_I_DPAD_LEFT, "0");
+				ed.putString(DEF.KEY_CODE_I_DPAD_RIGHT, "0");
+				ed.putString(DEF.KEY_CODE_I_DPAD_UP, "0");
+				ed.putString(DEF.KEY_CODE_I_DPAD_DOWN, "0");
+				ed.putString(DEF.KEY_CODE_I_DPAD_CENTER, "0");
+				ed.putString(DEF.KEY_CODE_I_ENTER, "0");
+				ed.putString(DEF.KEY_CODE_I_DEL, "0");
+				ed.putString(DEF.KEY_CODE_I_FORWARD_DEL, "0");
+				ed.putString(DEF.KEY_CODE_I_SPACE, "0");
+				ed.putString(DEF.KEY_CODE_I_SEARCH, "0");
+				ed.putString(DEF.KEY_CODE_I_PAGE_UP, "0");
+				ed.putString(DEF.KEY_CODE_I_PAGE_DOWN, "0");
+				ed.putString(DEF.KEY_CODE_I_ESCAPE, "0");
+				ed.putString(DEF.KEY_CODE_I_MOVEHOME, "0");
+				ed.putString(DEF.KEY_CODE_I_MOVEEND, "0");
+				ed.putString(DEF.KEY_CODE_I_FORWARD, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_L1, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_L2, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_THUMBL, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_R1, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_R2, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_THUMBR, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_A, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_B, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_X, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_Y, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_SELECT, "0");
+				ed.putString(DEF.KEY_CODE_I_BUTTON_START, "0");
+				ed.putString(DEF.KEY_CODE_I_MEDIA_NEXT, "0");
+				ed.putString(DEF.KEY_CODE_I_MEDIA_PREVIOUS, "0");
+				ed.putString(DEF.KEY_CODE_I_MEDIA_PLAY_PAUSE, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY01, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY02, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY03, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY04, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY05, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY06, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY07, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY08, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY09, "0");
+				ed.putString(DEF.KEY_CODE_I_CUSTOMKEY10, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(SetHardwareImageViewerKeyActivity.this, getListView());
+			}
+		});
+		// PreferenceScreenに追加
+		screen.addPreference(buttoncategory);
 
 		CharSequence[] titles = new String[DEF.HardwareKeyTitleName.length];
 		for (int i = 0; i < DEF.HardwareKeyTitleName.length; i++) {
@@ -229,6 +289,9 @@ public class SetHardwareImageViewerKeyActivity extends PreferenceActivity implem
 		mCustom08Key  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_I_CUSTOMKEY08);
 		mCustom09Key  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_I_CUSTOMKEY09);
 		mCustom10Key  = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_CODE_I_CUSTOMKEY10);
+
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
 	}
 
 	@SuppressWarnings("deprecation")

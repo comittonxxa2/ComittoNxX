@@ -113,6 +113,8 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 		mScrlDiag = (ScrlDiagSeekbar) getPreferenceScreen().findPreference(DEF.KEY_SCRLDIAG);
 		mBuffSize = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_BUFFSIZE);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
 
 		// 項目選択
 		PreferenceScreen onlineHelp = (PreferenceScreen) findPreference(DEF.KEY_IDTLHELP);
@@ -130,6 +132,39 @@ public class SetImageDetailActivity extends PreferenceActivity implements OnShar
 				return true;
 			}
 		});
+
+		ButtonPreferenceCategory displayrelatedCategory = (ButtonPreferenceCategory) findPreference("displayrelated_category");
+		if (displayrelatedCategory != null) {
+			displayrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_WADJUST, DEF.DEFAULT_WADJUST);
+				ed.putInt(DEF.KEY_WSCALING, DEF.DEFAULT_WSCALING);
+				ed.putInt(DEF.KEY_SCALING, DEF.DEFAULT_SCALING);
+				ed.putBoolean(DEF.KEY_ACCESSLAMP, true);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+		ButtonPreferenceCategory operationrelatedCategory = (ButtonPreferenceCategory) findPreference("operationrelated_category");
+		if (operationrelatedCategory != null) {
+			operationrelatedCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putInt(DEF.KEY_LONGTAP, DEF.DEFAULT_LONGTAP);
+				ed.putString(DEF.KEY_LOUPESIZE, "0");
+				ed.putInt(DEF.KEY_SCRLRNGW, DEF.DEFAULT_SCRLRNGW);
+				ed.putInt(DEF.KEY_SCRLRNGH, DEF.DEFAULT_SCRLRNGH);
+				ed.putInt(DEF.KEY_SCRLDIAG, DEF.DEFAULT_SCRLDIAG);
+				ed.putInt(DEF.KEY_AUTOPLAY, DEF.DEFAULT_AUTOPLAY);
+				ed.putString(DEF.KEY_BUFFSIZE, "0");
+				ed.putString(DEF.KEY_MAXTHREAD, "2");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
 	}
 
 	@Override

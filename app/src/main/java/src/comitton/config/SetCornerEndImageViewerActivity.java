@@ -12,6 +12,7 @@ import android.preference.PreferenceActivity;
 import android.preference.ListPreference;
 import android.preference.PreferenceScreen;
 import android.preference.RingtonePreference;
+import android.widget.Button;
 import android.widget.SeekBar;
 
 import androidx.preference.CheckBoxPreference;
@@ -128,12 +129,52 @@ public class SetCornerEndImageViewerActivity extends PreferenceActivity implemen
 		// チェックボックス/シークバーをxmlで作成
 		addPreferencesFromResource(R.xml.cornerendimage);
 
+		ButtonPreferenceCategory assignactionCategory = (ButtonPreferenceCategory) findPreference("assignaction_category");
+		if (assignactionCategory != null) {
+			assignactionCategory.setOnButtonClickListener(() -> {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putBoolean(DEF.KEY_CORNERENDIENABLE, false);
+				ed.putInt(DEF.KEY_CORNERENDIWIDTHLEVEL, DEF.DEFAULT_CORNERENDLEVEL);
+				ed.putInt(DEF.KEY_CORNERENDIHEIGHTLEVEL, DEF.DEFAULT_CORNERENDLEVEL);
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
+			});
+		}
+
 		// 設定数が多いためxmlに記述するのは大変なので動的に作成
 		// PreferenceScreenを作成して上のxmlに追記
 		PreferenceScreen screen = getPreferenceScreen();
-		PreferenceCategory category = new PreferenceCategory(this);
-		category.setTitle(R.string.CornerEndTitle);  
-		screen.addPreference(category);  
+		ButtonPreferenceCategory buttoncategory = new ButtonPreferenceCategory(this);
+		buttoncategory.setTitle(R.string.CornerEndTitle);  
+		// ボタンが押されたときの処理を設定
+		buttoncategory.setOnButtonClickListener(new ButtonPreferenceCategory.OnClickListener() {
+			@Override
+			public void onButtonClick() {
+				// 初期設定に戻す
+				SharedPreferences.Editor ed = sharedPreferences.edit();
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_01, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_02, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_03, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_04, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_05, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_06, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_07, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_08, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_09, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_10, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_11, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_12, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_13, "0");
+				ed.putString(DEF.KEY_CORNEREND_I_TAP_14, "0");
+				ed.apply();
+				// アクティビティを再起動
+				ListViewScrollUtils.restartActivityWithPosition(SetCornerEndImageViewerActivity.this, getListView());
+			}
+		});
+		// PreferenceScreenに追加
+		screen.addPreference(buttoncategory);
 
 		CharSequence[] titles = new String[DEF.CornerEndTitleName.length];
 		for (int i = 0; i < DEF.CornerEndTitleName.length; i++) {
@@ -178,6 +219,8 @@ public class SetCornerEndImageViewerActivity extends PreferenceActivity implemen
 		mCornerEndWidthLevel = (CornerEndWidthImageLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_CORNERENDIWIDTHLEVEL);
 		mCornerEndHeightLevel = (CornerEndHeightImageLevelSeekbar)getPreferenceScreen().findPreference(DEF.KEY_CORNERENDIHEIGHTLEVEL);
 
+		// ListViewの位置を元に戻す
+		ListViewScrollUtils.restorePosition(this, getListView());
 	}
 
 	@SuppressWarnings("deprecation")
@@ -268,7 +311,7 @@ public class SetCornerEndImageViewerActivity extends PreferenceActivity implemen
 
 	// 設定の読込
 	public static int getTopLeftCornerTap(SharedPreferences sharedPreferences) {
-		int val = convertdata(DEF.getInt(sharedPreferences, DEF.KEY_CORNEREND_I_TAP_01, "1"));
+		int val = convertdata(DEF.getInt(sharedPreferences, DEF.KEY_CORNEREND_I_TAP_01, "0"));
 		if (val < 0 || val >= mTpView.HardwareKeyName.length){
 			val = 0;
 		}
