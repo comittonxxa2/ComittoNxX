@@ -727,6 +727,7 @@
     <string name="ToolbarProfile8">Profile8</string>
     <string name="ToolbarProfile9">Profile9</string>
     <string name="ToolbarProfile10">Profile10</string>
+    <string name="ToolbarPageMovementBar">Page Movement Bar</string>
 
     <string name="TapTOC">Select Chapter</string>
     <string name="TapSearch">Set Search Text</string>
@@ -1090,6 +1091,7 @@
     <string name="tabstyle01">+X button layout style</string>
     <string name="tablayout00">Top of screen</string>
     <string name="tablayout01">Bottom of screen</string>
+    <string name="initbutton">Initialize</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
