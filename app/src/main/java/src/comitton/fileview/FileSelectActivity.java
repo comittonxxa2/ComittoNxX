@@ -47,6 +47,7 @@ import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.expandview.ExpandActivity;
+import src.comitton.fileaccess.SmbFileAccess;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.TouchPanelView;
@@ -427,8 +428,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private int tabCounter = 1;
 	private boolean isWebStyle;
 	private boolean isTabAtBottom;
+	private boolean mSmbAccessSwitch;
 	private static final String TabButtonBackColor = "#E0E0E0";
 	private static final String TabButtonDeleteColor = "#20ffffff";
+	private boolean mCustomUrlSchemeOn = false;
+	private boolean mCancelFileListDialog;
 
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
@@ -945,6 +949,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				ed = mSharedPreferences.edit();
 				ed.putBoolean(DEF.KEY_TABMODE, false);
 				ed.apply();
+				mCustomUrlSchemeOn = true;
 			}
 			else {
 				// キーが一致しなかった場合はアクティビティを終了させる
@@ -2461,7 +2466,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							}
 							else {
 								// 移動(これを入れないとカスタムURLスキームでフォルダを見失う)
-								moveFileSelect(mURI, path, true);
+								if (mCustomUrlSchemeOn) {
+									mCustomUrlSchemeOn = false;
+									moveFileSelect(mURI, path, true);
+								}
 							}
 						}
 					}
@@ -2810,6 +2818,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		isWebStyle = (SetFileListActivity.getTabStyle(mSharedPreferences) == 0) ? true : false;
 		isTabAtBottom = (SetFileListActivity.getTabLayout(mSharedPreferences) == 0) ? false : true;
 		mTabRestore = SetFileListActivity.getTabRestore(mSharedPreferences);
+		mSmbAccessSwitch = SetServerMessageBlockActivity.getSMBCallbackMode(mSharedPreferences);
+		SmbFileAccess.setSmbAccessSwitch(mSmbAccessSwitch);
+		mCancelFileListDialog = SetFileListActivity.getCancelFileListDialog(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -8078,7 +8089,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				// ファイルリストの更新ダイアログの表示を準備
 				Resources res = mActivity.getResources();
-				mProgressDialog = new CustomProgressDialog(res.getString(R.string.updatefilelist), res.getString(R.string.updatingfilelist),true, mHandler, mProgressbarMode);
+				// 周りをタッチしてダイアログをキャンセルさせる設定を選択式へ変更
+				// ダイアログをキャンセルさせない場合は自動的に戻るキーによるキャンセル動作になる
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.updatefilelist), res.getString(R.string.updatingfilelist),!mCancelFileListDialog, mHandler, mProgressbarMode);
 				supportFragmentManager = mActivity.getSupportFragmentManager();
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
@@ -9172,6 +9185,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			bigData.mGetHardwareKeySetData[i] = SetHardwareEpubWebViewKeyActivity.GetHardwareKeySetData(sharedPreferences, i + 1);
 		}
 		bigData.mRBSort = sharedPreferences.getInt("RBSort", 0);
+		bigData.mStatusAreaRange = (int)(mActivity.getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getStatusArea(sharedPreferences));
+		bigData.mNavigationAreaRange = (int)(mActivity.getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getNavigationArea(sharedPreferences));
 		// JSON(文字列)に変換
 		jsonEpubWebviewString = new Gson().toJson(bigData);
 	}
