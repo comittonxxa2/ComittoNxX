@@ -1531,15 +1531,20 @@ public class TouchPanelView extends View {
 	public static void SetAlertDialog(Activity activity) {
 
 		// 初期選択したいラジオボタンのインデックス (0から始まる)
-		int checkedItem_temp;
-		if (clickmode == 2) {
-			checkedItem_temp = (tapdata[tapindex] >> 16) & 0xff;
+		int checkedItem_temp = 0;
+		// 例外が出る可能性があるためtry～catchで囲む
+		try {
+			if (clickmode == 2) {
+				checkedItem_temp = (tapdata[tapindex] >> 16) & 0xff;
+			}
+			else if (clickmode == 1) {
+				checkedItem_temp = (tapdata[tapindex] >> 8) & 0xff;
+			}
+			else {
+				checkedItem_temp = tapdata[tapindex] & 0xff;
+			}
 		}
-		else if (clickmode == 1) {
-			checkedItem_temp = (tapdata[tapindex] >> 8) & 0xff;
-		}
-		else {
-			checkedItem_temp = tapdata[tapindex] & 0xff;
+		catch (Exception e) {
 		}
 		int checkedItem = 0;
 		final int[] loop = {0};
@@ -1552,11 +1557,16 @@ public class TouchPanelView extends View {
 				if (ImgEnable[i]) {
 					// 有効な項目のみ格納する
 					items_temp[loop[0]] = activity.getResources().getString(HardwareKeyName[i]);
-					if (i >= DEF.TAP_PROFILE1 && i <= DEF.TAP_PROFILE5 && !mProfileWord[i - DEF.TAP_PROFILE1].equals("")) {
-						items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE1];
+					// 例外が出る可能性があるためtry～catchで囲む
+					try {
+						if (i >= DEF.TAP_PROFILE1 && i <= DEF.TAP_PROFILE5 && !mProfileWord[i - DEF.TAP_PROFILE1].equals("")) {
+							items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE1];
+						}
+						if (i >= DEF.TAP_PROFILE6 && i <= DEF.TAP_PROFILE10 && !mProfileWord[i - DEF.TAP_PROFILE6 + 5].equals("")) {
+							items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE6 + 5];
+						}
 					}
-					if (i >= DEF.TAP_PROFILE6 && i <= DEF.TAP_PROFILE10 && !mProfileWord[i - DEF.TAP_PROFILE6 + 5].equals("")) {
-						items_temp[loop[0]] = mProfileWord[i - DEF.TAP_PROFILE6 + 5];
+					catch (Exception e) {
 					}
 					if (checkedItem_temp == i) {
 						// 初期選択したいラジオボタンのインデックスが有効な項目と一致した場合は有効な通し番号に置き換える
@@ -1691,7 +1701,7 @@ public class TouchPanelView extends View {
 					TextActivity.UpdateTouchPanelData();
 				}
 				else if (mMode == 3) {
-					// テキストビューア
+					// EPUBビューア
 					SaveTapPatternEpubData();
 					// 表示更新
 					EpubWebViewActivity.UpdateTouchPanelData();
@@ -1773,6 +1783,31 @@ public class TouchPanelView extends View {
 			}
 		}
 		return data;
+	}
+
+	public static void InitTapPattern() {
+		// 値を初期化
+		if (mMode == 1) {
+			// イメージビューア
+			InitTapPatternData();
+			LoadTapPatternData();
+			// 表示更新
+			ImageActivity.UpdateTouchPanelData();
+		}
+		else if (mMode == 2) {
+			// テキストビューア
+			InitTapPatternTxtData();
+			LoadTapPatternTxtData();
+			// 表示更新
+			TextActivity.UpdateTouchPanelData();
+		}
+		else if (mMode == 3) {
+			// EPUBビューア
+			InitTapPatternEpubData();
+			LoadTapPatternEpubData();
+			// 表示更新
+			EpubWebViewActivity.UpdateTouchPanelData();
+		}
 	}
 
 	private static final int Enable = 0;
@@ -2580,6 +2615,31 @@ public class TouchPanelView extends View {
 		textpaint.setAlpha(0xff);
 		textpaint.setStyle(Paint.Style.FILL);
 
+		// ボタン領域・描画の定義
+		// ボタンの幅
+		int btnWidth = 120;
+		// ボタンの高さ
+		int btnHeight = (int)(fontsize * 1.2f);
+		// 画面右端からの余白
+		int btnMarginRight = 10;
+		int btnX1 = disp_x - btnMarginRight - btnWidth;
+		int btnX2 = disp_x - btnMarginRight;
+
+		// ボタン描画用Paint
+		Paint btnPaint = new Paint();
+		// ボタン背景色
+		btnPaint.setColor(0xff50a050);
+		btnPaint.setStyle(Paint.Style.FILL);
+
+		TextPaint btnTextPaint = new TextPaint();
+		btnTextPaint.setColor(0xffffffff);
+		// ボタン文字サイズ
+		btnTextPaint.setTextSize(28f);
+		btnTextPaint.setTextAlign(Paint.Align.CENTER);
+		// 角の丸み半径
+		float radiusX = 10f;
+		float radiusY = 10f;
+
 		Resources res = mContext.getResources();
 		if (disp_x > disp_y) {
 			// 横画面
@@ -2594,6 +2654,14 @@ public class TouchPanelView extends View {
 			// 中心を求める
 			text_y = (pagecy + (int)fontsize) / 2;
 			canvas.drawText(mestext, text_x, text_y, textpaint);
+			// 1行目の高さに合わせて右端にボタンを描画
+			int btnY1 = text_y - btnHeight;
+			int btnY2 = btnY1 + btnHeight;
+			canvas.drawRoundRect(btnX1, btnY1, btnX2, btnY2, radiusX, radiusY, btnPaint);
+			// ボタンのテキスト描画
+			String btnText = res.getString(R.string.initbutton);
+			int btnTextY = text_y + (int)((btnTextPaint.descent() + btnTextPaint.ascent()) / 2);
+			canvas.drawText(btnText, (btnX1 + btnX2) / 2, btnTextY, btnTextPaint);
 		}
 		else {
 			// 縦画面
@@ -2605,8 +2673,16 @@ public class TouchPanelView extends View {
 			// 中心を求める
 			text_x = (disp_x - textWidth) / 2 + margin + 0;
 			// 中心を求める
-			text_y = (pagecy + (int)fontsize) / 2 - (int)fontsize / 2;
+			text_y = pagecy / 2;
 			canvas.drawText(mestext, text_x, text_y, textpaint);
+			// 1行目の高さに合わせて右端にボタンを描画
+			int btnY1 = text_y - btnHeight;
+			int btnY2 = btnY1 + btnHeight;
+			canvas.drawRoundRect(btnX1, btnY1, btnX2, btnY2, radiusX, radiusY, btnPaint);
+			// ボタンのテキスト描画
+			String btnText = res.getString(R.string.initbutton);
+			int btnTextY = text_y + (int)((btnTextPaint.descent() + btnTextPaint.ascent()) / 2);
+			canvas.drawText(btnText, (btnX1 + btnX2) / 2, btnTextY, btnTextPaint);
 
 			mestext = res.getString(R.string.MesTapHelpMes);
 			// テキストの横幅を取得
@@ -2614,7 +2690,7 @@ public class TouchPanelView extends View {
 			// 中心を求める
 			text_x = (disp_x - textWidth) / 2 + margin + 0;
 			// 中心を求める
-			text_y = (pagecy + (int)fontsize) / 2 + (int)fontsize / 2;
+			text_y = pagecy / 2 + (int)fontsize;
 			canvas.drawText(mestext, text_x, text_y, textpaint);
 		}
 
@@ -3274,6 +3350,300 @@ public class TouchPanelView extends View {
 				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_05, tapdata[4]);
 				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_06, tapdata[5]);
 				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_07, tapdata[6]);
+				ed.apply();
+				break;
+		}
+	}
+
+	// タップ操作のパターンの内容を初期化(イメージビューア)
+	private static void InitTapPatternData() {
+		tappattern = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_I_PATTERN_NUMBER, 0);
+		Editor ed = mSharedPreferences.edit();
+
+		switch (tappattern) {
+			case 0:
+				break;
+			case 1:
+				ed.putInt(DEF.KEY_TAP_PATTERN_01_01,  DEF.TAP_PATTERN_I01_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_01_02,  DEF.TAP_PATTERN_I01_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_01_03,  DEF.TAP_PATTERN_I01_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_01_04,  DEF.TAP_PATTERN_I01_DEFAULT_04);
+				ed.apply();
+				break;
+			case 2:
+				ed.putInt(DEF.KEY_TAP_PATTERN_02_01, DEF.TAP_PATTERN_I02_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_02_02, DEF.TAP_PATTERN_I02_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_02_03, DEF.TAP_PATTERN_I02_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_02_04, DEF.TAP_PATTERN_I02_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_02_05, DEF.TAP_PATTERN_I02_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_02_06, DEF.TAP_PATTERN_I02_DEFAULT_06);
+				ed.apply();
+				break;
+			case 3:
+				ed.putInt(DEF.KEY_TAP_PATTERN_03_01, DEF.TAP_PATTERN_I03_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_03_02, DEF.TAP_PATTERN_I03_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_03_03, DEF.TAP_PATTERN_I03_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_03_04, DEF.TAP_PATTERN_I03_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_03_05, DEF.TAP_PATTERN_I03_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_03_06, DEF.TAP_PATTERN_I03_DEFAULT_06);
+				ed.apply();
+				break;
+			case 4:
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_01, DEF.TAP_PATTERN_I04_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_02, DEF.TAP_PATTERN_I04_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_03, DEF.TAP_PATTERN_I04_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_04, DEF.TAP_PATTERN_I04_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_05, DEF.TAP_PATTERN_I04_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_06, DEF.TAP_PATTERN_I04_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_07, DEF.TAP_PATTERN_I04_DEFAULT_07);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_08, DEF.TAP_PATTERN_I04_DEFAULT_08);
+				ed.putInt(DEF.KEY_TAP_PATTERN_04_09, DEF.TAP_PATTERN_I04_DEFAULT_09);
+				ed.apply();
+				break;
+			case 5:
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_01, DEF.TAP_PATTERN_I05_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_02, DEF.TAP_PATTERN_I05_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_03, DEF.TAP_PATTERN_I05_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_04, DEF.TAP_PATTERN_I05_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_05, DEF.TAP_PATTERN_I05_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_06, DEF.TAP_PATTERN_I05_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_07, DEF.TAP_PATTERN_I05_DEFAULT_07);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_08, DEF.TAP_PATTERN_I05_DEFAULT_08);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_09, DEF.TAP_PATTERN_I05_DEFAULT_09);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_10, DEF.TAP_PATTERN_I05_DEFAULT_10);
+				ed.putInt(DEF.KEY_TAP_PATTERN_05_11, DEF.TAP_PATTERN_I05_DEFAULT_11);
+				ed.apply();
+				break;
+			case 6:
+				ed.putInt(DEF.KEY_TAP_PATTERN_06_01, DEF.TAP_PATTERN_I06_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_06_02, DEF.TAP_PATTERN_I06_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_06_03, DEF.TAP_PATTERN_I06_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_06_04, DEF.TAP_PATTERN_I06_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_06_05, DEF.TAP_PATTERN_I06_DEFAULT_05);
+				ed.apply();
+				break;
+			case 7:
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_01, DEF.TAP_PATTERN_I07_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_02, DEF.TAP_PATTERN_I07_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_03, DEF.TAP_PATTERN_I07_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_04, DEF.TAP_PATTERN_I07_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_05, DEF.TAP_PATTERN_I07_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_06, DEF.TAP_PATTERN_I07_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_07_07, DEF.TAP_PATTERN_I07_DEFAULT_07);
+				ed.apply();
+				break;
+			case 8:
+				ed.putInt(DEF.KEY_TAP_PATTERN_08_01, DEF.TAP_PATTERN_I08_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_08_02, DEF.TAP_PATTERN_I08_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_08_03, DEF.TAP_PATTERN_I08_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_08_04, DEF.TAP_PATTERN_I08_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_08_05, DEF.TAP_PATTERN_I08_DEFAULT_05);
+				ed.apply();
+				break;
+			case 9:
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_01, DEF.TAP_PATTERN_I09_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_02, DEF.TAP_PATTERN_I09_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_03, DEF.TAP_PATTERN_I09_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_04, DEF.TAP_PATTERN_I09_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_05, DEF.TAP_PATTERN_I09_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_06, DEF.TAP_PATTERN_I09_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_09_07, DEF.TAP_PATTERN_I09_DEFAULT_07);
+				ed.apply();
+				break;
+		}
+	}
+
+	// タップ操作のパターンの内容を初期化(テキストビューア)
+	private static void InitTapPatternTxtData() {
+		tappattern = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_T_PATTERN_NUMBER, 0);
+		Editor ed = mSharedPreferences.edit();
+
+		switch (tappattern) {
+			case 0:
+				break;
+			case 1:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_01_01, DEF.TAP_PATTERN_T01_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_01_02, DEF.TAP_PATTERN_T01_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_01_03, DEF.TAP_PATTERN_T01_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_01_04, DEF.TAP_PATTERN_T01_DEFAULT_04);
+				ed.apply();
+				break;
+			case 2:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_02_01, DEF.TAP_PATTERN_T02_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_02_02, DEF.TAP_PATTERN_T02_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_02_03, DEF.TAP_PATTERN_T02_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_02_04, DEF.TAP_PATTERN_T02_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_02_05, DEF.TAP_PATTERN_T02_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_02_06, DEF.TAP_PATTERN_T02_DEFAULT_06);
+				ed.apply();
+				break;
+			case 3:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_03_01, DEF.TAP_PATTERN_T03_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_03_02, DEF.TAP_PATTERN_T03_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_03_03, DEF.TAP_PATTERN_T03_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_03_04, DEF.TAP_PATTERN_T03_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_03_05, DEF.TAP_PATTERN_T03_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_03_06, DEF.TAP_PATTERN_T03_DEFAULT_06);
+				ed.apply();
+				break;
+			case 4:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_01, DEF.TAP_PATTERN_T04_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_02, DEF.TAP_PATTERN_T04_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_03, DEF.TAP_PATTERN_T04_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_04, DEF.TAP_PATTERN_T04_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_05, DEF.TAP_PATTERN_T04_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_06, DEF.TAP_PATTERN_T04_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_07, DEF.TAP_PATTERN_T04_DEFAULT_07);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_08, DEF.TAP_PATTERN_T04_DEFAULT_08);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_04_09, DEF.TAP_PATTERN_T04_DEFAULT_09);
+				ed.apply();
+				break;
+			case 5:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_01, DEF.TAP_PATTERN_T05_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_02, DEF.TAP_PATTERN_T05_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_03, DEF.TAP_PATTERN_T05_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_04, DEF.TAP_PATTERN_T05_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_05, DEF.TAP_PATTERN_T05_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_06, DEF.TAP_PATTERN_T05_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_07, DEF.TAP_PATTERN_T05_DEFAULT_07);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_08, DEF.TAP_PATTERN_T05_DEFAULT_08);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_09, DEF.TAP_PATTERN_T05_DEFAULT_09);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_10, DEF.TAP_PATTERN_T05_DEFAULT_10);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_05_11, DEF.TAP_PATTERN_T05_DEFAULT_11);
+				ed.apply();
+				break;
+			case 6:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_06_01, DEF.TAP_PATTERN_T06_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_06_02, DEF.TAP_PATTERN_T06_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_06_03, DEF.TAP_PATTERN_T06_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_06_04, DEF.TAP_PATTERN_T06_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_06_05, DEF.TAP_PATTERN_T06_DEFAULT_05);
+				ed.apply();
+				break;
+			case 7:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_01, DEF.TAP_PATTERN_T07_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_02, DEF.TAP_PATTERN_T07_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_03, DEF.TAP_PATTERN_T07_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_04, DEF.TAP_PATTERN_T07_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_05, DEF.TAP_PATTERN_T07_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_06, DEF.TAP_PATTERN_T07_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_07_07, DEF.TAP_PATTERN_T07_DEFAULT_07);
+				ed.apply();
+				break;
+			case 8:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_08_01, DEF.TAP_PATTERN_T08_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_08_02, DEF.TAP_PATTERN_T08_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_08_03, DEF.TAP_PATTERN_T08_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_08_04, DEF.TAP_PATTERN_T08_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_08_05, DEF.TAP_PATTERN_T08_DEFAULT_05);
+				ed.apply();
+				break;
+			case 9:
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_01, DEF.TAP_PATTERN_T09_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_02, DEF.TAP_PATTERN_T09_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_03, DEF.TAP_PATTERN_T09_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_04, DEF.TAP_PATTERN_T09_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_05, DEF.TAP_PATTERN_T09_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_06, DEF.TAP_PATTERN_T09_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_T_09_07, DEF.TAP_PATTERN_T09_DEFAULT_07);
+				ed.apply();
+				break;
+		}
+	}
+
+	// タップ操作のパターンの内容を初期化(EPUBビューア)
+	private static void InitTapPatternEpubData() {
+		tappattern = DEF.getInt(mSharedPreferences, DEF.KEY_TAP_E_PATTERN_NUMBER, 0);
+		Editor ed = mSharedPreferences.edit();
+
+		switch (tappattern) {
+			case 0:
+				break;
+			case 1:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_01, DEF.TAP_PATTERN_E01_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_02, DEF.TAP_PATTERN_E01_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_03, DEF.TAP_PATTERN_E01_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_01_04, DEF.TAP_PATTERN_E01_DEFAULT_04);
+				ed.apply();
+				break;
+			case 2:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_01, DEF.TAP_PATTERN_E02_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_02, DEF.TAP_PATTERN_E02_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_03, DEF.TAP_PATTERN_E02_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_04, DEF.TAP_PATTERN_E02_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_05, DEF.TAP_PATTERN_E02_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_02_06, DEF.TAP_PATTERN_E02_DEFAULT_06);
+				ed.apply();
+				break;
+			case 3:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_01, DEF.TAP_PATTERN_E03_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_02, DEF.TAP_PATTERN_E03_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_03, DEF.TAP_PATTERN_E03_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_04, DEF.TAP_PATTERN_E03_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_05, DEF.TAP_PATTERN_E03_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_03_06, DEF.TAP_PATTERN_E03_DEFAULT_06);
+				ed.apply();
+				break;
+			case 4:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_01, DEF.TAP_PATTERN_E04_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_02, DEF.TAP_PATTERN_E04_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_03, DEF.TAP_PATTERN_E04_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_04, DEF.TAP_PATTERN_E04_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_05, DEF.TAP_PATTERN_E04_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_06, DEF.TAP_PATTERN_E04_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_07, DEF.TAP_PATTERN_E04_DEFAULT_07);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_08, DEF.TAP_PATTERN_E04_DEFAULT_08);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_04_09, DEF.TAP_PATTERN_E04_DEFAULT_09);
+				ed.apply();
+				break;
+			case 5:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_01, DEF.TAP_PATTERN_E05_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_02, DEF.TAP_PATTERN_E05_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_03, DEF.TAP_PATTERN_E05_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_04, DEF.TAP_PATTERN_E05_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_05, DEF.TAP_PATTERN_E05_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_06, DEF.TAP_PATTERN_E05_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_07, DEF.TAP_PATTERN_E05_DEFAULT_07);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_08, DEF.TAP_PATTERN_E05_DEFAULT_08);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_09, DEF.TAP_PATTERN_E05_DEFAULT_09);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_10, DEF.TAP_PATTERN_E05_DEFAULT_10);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_05_11, DEF.TAP_PATTERN_E05_DEFAULT_11);
+				ed.apply();
+				break;
+			case 6:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_01, DEF.TAP_PATTERN_E06_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_02, DEF.TAP_PATTERN_E06_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_03, DEF.TAP_PATTERN_E06_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_04, DEF.TAP_PATTERN_E06_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_06_05, DEF.TAP_PATTERN_E06_DEFAULT_05);
+				ed.apply();
+				break;
+			case 7:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_01, DEF.TAP_PATTERN_E07_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_02, DEF.TAP_PATTERN_E07_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_03, DEF.TAP_PATTERN_E07_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_04, DEF.TAP_PATTERN_E07_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_05, DEF.TAP_PATTERN_E07_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_06, DEF.TAP_PATTERN_E07_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_07_07, DEF.TAP_PATTERN_E07_DEFAULT_07);
+				ed.apply();
+				break;
+			case 8:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_01, DEF.TAP_PATTERN_E08_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_02, DEF.TAP_PATTERN_E08_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_03, DEF.TAP_PATTERN_E08_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_04, DEF.TAP_PATTERN_E08_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_08_05, DEF.TAP_PATTERN_E08_DEFAULT_05);
+				ed.apply();
+				break;
+			case 9:
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_01, DEF.TAP_PATTERN_E09_DEFAULT_01);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_02, DEF.TAP_PATTERN_E09_DEFAULT_02);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_03, DEF.TAP_PATTERN_E09_DEFAULT_03);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_04, DEF.TAP_PATTERN_E09_DEFAULT_04);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_05, DEF.TAP_PATTERN_E09_DEFAULT_05);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_06, DEF.TAP_PATTERN_E09_DEFAULT_06);
+				ed.putInt(DEF.KEY_TAP_PATTERN_E_09_07, DEF.TAP_PATTERN_E09_DEFAULT_07);
 				ed.apply();
 				break;
 		}

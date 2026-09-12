@@ -666,6 +666,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private static SharedPreferences mSharedPreferences;
 	private float mSDensity;
 	private int mImmCancelRange;
+	private int mStatusAreaRange;
+	private int mNavigationAreaRange;
 	private boolean mImmCancel;
 
 	private boolean mTapEditMode = false;
@@ -714,6 +716,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private boolean mAnimationEnable;
 	private boolean mAnimationScan;
 	private boolean mArchiveAnimationEnable;
+	private boolean mAnimationForce;
 	private int mScrollMode;
 	private boolean mInertiaScroll;
 	private boolean mDisablePageButton;
@@ -2510,7 +2513,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// 拡大/縮小
 			ImageScaling();
 
-			if (mImageMgr.mAnimeList != null && mAnimationEnable && !mScrlNext) {
+			if (mImageMgr.mAnimeList != null && mAnimationEnable && (!mScrlNext || mAnimationForce)) {
 				// 以前の表示を取り消す前に背景を塗りつぶす
 				mImageView.ViewOff(true);
 				// 以前の表示を取り消す
@@ -2558,7 +2561,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 			}
 
-			if (mImageMgr.mAnimeFile && mAnimationEnable && mArchiveAnimationEnable && !mScrlNext) {
+			if (mImageMgr.mAnimeFile && mAnimationEnable && mArchiveAnimationEnable && (!mScrlNext || mAnimationForce)) {
 				// 以前の表示を取り消す前に背景を塗りつぶす
 				mImageView.ViewOff(true);
 				// 以前の表示を取り消す
@@ -2648,7 +2651,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 単独のアニメーション画像ファイルかどうかをチェック
 	private boolean checkSingleAnimeImage() {
-		return mImageMgr.mAnimeList == null && !mImageMgr.mAnimeFile && mAnimationEnable && !mScrlNext && mHalfPos == HALFPOS_1ST;
+		return mImageMgr.mAnimeList == null && !mImageMgr.mAnimeFile && mAnimationEnable && (!mScrlNext && mHalfPos == HALFPOS_1ST || mAnimationForce);
 	}
 
 	// Bitmapを読み込む
@@ -3138,14 +3141,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 				}
 				else {
-					statusbar_height = mImmCancelRange;
-					navibar_height = mImmCancelRange;
+					statusbar_height = mStatusAreaRange;
+					navibar_height = mNavigationAreaRange;
 				}
-				if (statusbar_height <= 0) statusbar_height = mImmCancelRange;
-				if (navibar_height <= 0) navibar_height = mImmCancelRange;
+				if (statusbar_height <= 0) statusbar_height = mStatusAreaRange;
+				if (navibar_height <= 0) navibar_height = mNavigationAreaRange;
 				if (mHideNavigationBar) {
 					// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
-					navibar_height = mImmCancelRange;
+					navibar_height = mNavigationAreaRange;
 				}
 				if (y <= statusbar_height || y >= cy - navibar_height) {
 					mImmCancel = true;
@@ -3168,44 +3171,39 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			switch (action) {
 				case MotionEvent.ACTION_DOWN:
 					Logcat.v(logLevel, "ACTION_DOWN");
+					int statusbar_height = 0;
+					int navibar_height = 0;
 					// 押下状態を設定
 					if (!mClickGuard) {
 						// ジェスチャーナビゲーションモードで画面下からのスワイプだった場合は無視する
-						int navibar_height = 0;
-						int statusbar_height = 0;
 						if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 							// ナビゲーションバーの高さを得る
 							if (mImageView.getHeight() < mImageView.getWidth()) {
 								// 横向きの場合
 								navibar_height = insets.right;
-								if (!mImmEnable && !mImmForce) {
-									statusbar_height = insets.left;
-								}
+								statusbar_height = insets.left;
 							}
 							else {
 								// 縦向きの場合
 								navibar_height = insets.bottom;
-								if (!mImmEnable && !mImmForce) {
-									statusbar_height = insets.top;
-								}
+								statusbar_height = insets.top;
 							}
 						}
 						else {
-							navibar_height = mImmCancelRange;
-							if (!mImmEnable && !mImmForce) {
-								statusbar_height = mImmCancelRange;
-							}
+							navibar_height = mNavigationAreaRange;
+							statusbar_height = mStatusAreaRange;
 						}
+						Logcat.v(1, "statusbar_height=" + statusbar_height + ", navibar_height=" + navibar_height);
 						if (statusbar_height <= 0) {
-							statusbar_height = mImmCancelRange;
+							statusbar_height = mStatusAreaRange;
 						}
 						if (navibar_height <= 0) {
 							// ナビゲーションバーが非表示だった場合は固定値を入れる
-							navibar_height = mImmCancelRange;
+							navibar_height = mNavigationAreaRange;
 						}
 						if (mHideNavigationBar) {
 							// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
-							navibar_height = mImmCancelRange;
+							navibar_height = mNavigationAreaRange;
 						}
 						if ((y >= cy + statusbar_height - navibar_height) && isGestureNavigationEnabled(mActivity) == 2 && (!mImmForce && !mImmEnable)) {
 							mClickGuard = true;
@@ -3226,7 +3224,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// 慣性スクロールの停止
 					mImageView.scrollStop();
 
-					if (y >= cy - mClickArea) {
+					if (y >= cy - mClickArea && !mTapEditMode || mTapEditMode && y >= cy + statusbar_height - navibar_height) {
 						if (mClickGuard) {
 						}
 						else if (mTapEditMode || mFloatingIconCursorSw) {
@@ -3262,9 +3260,21 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							}
 						}
 					}
-					else if (y <= mClickArea) {
+					else if (y <= mClickArea && !mTapEditMode || mTapEditMode && (y <= ((cx > cy) ? cy / 20 : cy / 40) + statusbar_height)) {
 						// 上部押下
-						if (mTapEditMode || mFloatingIconCursorSw) {
+						if (mTapEditMode) {
+							// 初期化の判定
+							int btnWidth = 120;
+							int btnMarginRight = 10;
+							int btnX1 = cx - btnMarginRight - btnWidth;
+							int btnX2 = cx - btnMarginRight;
+							int btnHeight = (cx > cy) ? cy / 20 : cy / 40;
+							if (y < (btnHeight + statusbar_height) && x > btnX1 && x < btnX2) {
+								// タッチパネル設定を初期化
+								TouchPanelView.InitTapPattern();
+							}
+						}
+						else if (mFloatingIconCursorSw) {
 						}
 						else {
 							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
@@ -6884,6 +6894,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mAnimationEnable = SetImageActivity.getAnimationEnable(sharedPreferences);
 			mAnimationScan = SetImageActivity.getAnimationScan(sharedPreferences);
 			mArchiveAnimationEnable = SetImageActivity.getArchiveAnimationEnable(sharedPreferences);
+			mAnimationForce = SetImageActivity.getAnimationForce(sharedPreferences);
 			mScrollMode = SetImageActivity.getScrollMode(sharedPreferences);
 			mInertiaScroll = SetImageActivity.getInertiaScroll(sharedPreferences);
 			mDisablePageButton = SetImageActivity.getDisablePageButton(sharedPreferences);
@@ -6913,6 +6924,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mEpubOrder = SetEpubActivity.getEpubOrder(sharedPreferences);
 			mChgPageNext = SetImageActivity.getChgPageNext(sharedPreferences);
 			LoadExtFilter(sharedPreferences, DEF.KEY_EXTERNALFILTERDATA);
+			mStatusAreaRange = (int)(getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getStatusArea(sharedPreferences));
+			mNavigationAreaRange = (int)(getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getNavigationArea(sharedPreferences));
 		}
 		catch (Exception e) {
 			Logcat.e(logLevel, "error.");
@@ -9195,6 +9208,44 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				break;
 			case DEF.FLOATING_PROFILE10:
 				LoadProfile(9);
+				break;
+			case DEF.FLOATING_SLIDER:
+				// 表示中の画像が1枚か2枚かを判定
+				ImageData[] bm = mImageView.getImageBitmap();
+				int shareType;
+				if (bm[0] != null && bm[1] != null) {
+					shareType = DEF.SHARE_LR;
+				}
+				else {
+					shareType = DEF.SHARE_SINGLE;
+				}
+				if (mPageSelect == PAGE_INPUT) {
+					// 文書情報を表示
+					mGuideView.setPageText(mImageMgr.createPageStr(mSelectPage));
+					mGuideView.setPageColor(0x80000000);
+					// ページ番号入力
+					if (!PageSelectDialog.mIsOpened) {
+						PageSelectDialog pageDlg = new PageSelectDialog(this, R.style.MyDialog);
+						pageDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mImageMgr.length(), mPageWay == DEF.PAGEWAY_RIGHT, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR),mHandler);
+						pageDlg.setPageSelectListear(this);
+						pageDlg.show();
+						pageDlg.setShareType(shareType);
+						mPageDlg = pageDlg;
+					}
+				}
+				else if (mPageSelect == PAGE_THUMB) {
+					// 文書情報を表示
+					mGuideView.setPageText(mImageMgr.createPageStr(mSelectPage));
+					mGuideView.setPageColor(0x80000000);
+					// サムネイルページ選択
+					if (!PageThumbnail.mIsOpened) {
+						PageThumbnail thumbDlg = new PageThumbnail(this, R.style.MyDialog);
+						thumbDlg.setParams(DEF.IMAGE_VIEWER, mCurrentPage, mPageWay == DEF.PAGEWAY_RIGHT, mImageMgr, mThumID, (mImageMgr.getFileType() == mImageMgr.FILETYPE_ZIP || mImageMgr.getFileType() == mImageMgr.FILETYPE_RAR), mHandler);						thumbDlg.setPageSelectListear(this);
+						thumbDlg.show();
+						thumbDlg.setShareType(shareType);
+						mThumbDlg = thumbDlg;
+					}
+				}
 				break;
 		}
 	}
