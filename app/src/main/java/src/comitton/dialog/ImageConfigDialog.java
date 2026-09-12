@@ -115,6 +115,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 	private Button mBtnOK;
 	private Button mBtnInit1;
 	private Button mBtnInit2;
+	private Button mBtnInitSet;
+	private Button mBtnInitSetOther;
 	private CheckBox mChkGray;
 	private CheckBox mChkColoring;
 	private CheckBox mChkInvert;
@@ -488,6 +490,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 			mRadioButtonPost = mRadioButtonPost != null ? mRadioButtonPost : (RadioButton) mViewArray.get(i).findViewById(R.id.radio_extpostfilter);
 			mBtnInit1 = mBtnInit1 != null ? mBtnInit1 : (Button) mViewArray.get(i).findViewById(R.id.button_init1);
 			mBtnInit2 = mBtnInit2 != null ? mBtnInit2 : (Button) mViewArray.get(i).findViewById(R.id.button_init2);
+			mBtnInitSet = mBtnInitSet != null ? mBtnInitSet : (Button) mViewArray.get(i).findViewById(R.id.btn_init_setting);
+			mBtnInitSetOther = mBtnInitSetOther != null ? mBtnInitSetOther : (Button) mViewArray.get(i).findViewById(R.id.btn_init_setting_other);
 		}
 
 		mKelvinRgb = ImageManager.getRGBFromKelvin(mKelvin);
@@ -891,6 +895,8 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 		mBtnRevert.setOnClickListener(this);
 		mBtnInit1.setOnClickListener(this);
 		mBtnInit2.setOnClickListener(this);
+		mBtnInitSet.setOnClickListener(this);
+		mBtnInitSetOther.setOnClickListener(this);
 
 		// ドロップダウンUI
 		mSpinnerExtFilter1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -1303,6 +1309,7 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 						// 画面の表示位置
 						mDisplayPositionTemp = index;
 						mBtnDisplayPosition.setText(mDisplayPositionItems[index]);
+						break;
 					case SELLIST_SCROLL_DIRECTION:
 						// スクロール操作によるページ移動の縦横選択の設定
 						mScrollDirectionTemp = index;
@@ -1436,6 +1443,46 @@ public class ImageConfigDialog extends TabDialogFragment implements OnClickListe
 					mSkbAdaptivec.setProgress(mexternalfilterdata.mAdaptive_c + 50);
 					break;
 			}
+			return;
+		}
+		else if (mBtnInitSet == v) {
+			// 初期値をセット
+			mChkGray.setChecked(false);
+			mChkColoring.setChecked(false);
+			mChkInvert.setChecked(false);
+			mChkMoire.setChecked(false);
+			mChkRgbLevel.setChecked(false);
+			mChkExtFilter.setChecked(false);
+			mSkbSharpen.setProgress(0);
+			mSkbBright.setProgress(5);
+			mSkbGamma.setProgress(5);
+			mSkbContrast.setProgress(50 / 5);
+			mSkbHue.setProgress(0 / 5 + 20);
+			mSkbSaturation.setProgress(100 / 5);
+			mSkbKelvin.setProgress(35);
+			mSkbRedLevel.setProgress(100);
+			mSkbGreenLevel.setProgress(100);
+			mSkbBlueLevel.setProgress(100);
+			return;
+		}
+		else if (mBtnInitSetOther == v) {
+			// 初期値をセット
+			mChkTopSingle.setChecked(false);
+			mSkbBkLight.setProgress(11);
+			mAlgoModeTemp = 2;
+			mDispModeTemp = 1;
+			mScaleModeTemp = 5;
+			mMgnCutTemp = 0;
+			mMgnCutColorTemp = 0;
+			mDisplayPositionTemp = 0;
+			mScrollDirectionTemp = 0;
+			mBtnAlgoMode.setText(mAlgoModeItems[mAlgoModeTemp]);
+			mBtnDispMode.setText(mDispModeItems[mDispModeTemp]);
+			mBtnScaleMode.setText(mScaleModeItems[mScaleModeTemp]);
+			mBtnMgncut.setText(mMgnCutItems[mMgnCutTemp]);
+			mBtnMgncutColor.setText(mMgnCutColorItems[mMgnCutColorTemp]);
+			mBtnDisplayPosition.setText(mDisplayPositionItems[mDisplayPositionTemp]);
+			mBtnScrollDirection.setText(mScrollDirectionItems[mScrollDirectionTemp]);
 			return;
 		}
 

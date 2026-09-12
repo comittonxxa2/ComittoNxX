@@ -111,12 +111,13 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.drawable.profile8,
 					R.drawable.profile9,
 					R.drawable.profile10,
+					R.drawable.slider,
 			};
 
 	// 先頭からのプロファイル1へのオフセット
 	private static final int FLOATING_OFFSET_PROFILE1 = 25;
 	// 先頭からのプロファイル10へのオフセット
-	private static final int FLOATING_OFFSET_PROFILE10 = 35;
+	private static final int FLOATING_OFFSET_PROFILE10 = 34;
 
 	public static final int[] COMMAND_ID =
 		{
@@ -155,6 +156,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			DEF.FLOATING_PROFILE8,
 			DEF.FLOATING_PROFILE9,
 			DEF.FLOATING_PROFILE10,
+			DEF.FLOATING_SLIDER,
 		};
 
 	private static final boolean[] DEFAULT_VALUES =
@@ -194,6 +196,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			false,		// プロファイル8
 			false,		// プロファイル9
 			false,		// プロファイル10
+			false,
 		};
 
 	private static final int[] COMMAND_RES =
@@ -233,6 +236,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.string.ToolbarProfile8,		// プロファイル8
 					R.string.ToolbarProfile9,		// プロファイル9
 					R.string.ToolbarProfile10,		// プロファイル10
+					R.string.ToolbarPageMovementBar,
 			};
 
 	private class Mlist {
