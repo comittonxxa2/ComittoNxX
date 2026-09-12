@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Preset Color" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="preset_category"
+        android:title="Preset Color"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="Select Preset Color"
@@ -14,7 +17,7 @@
             android:summary="to overwrite the custom color settings in the Preset."
             android:title="Overwrite Custom Color" >
         </PreferenceScreen>
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Custom Setting" >
         <src.comitton.config.color.ColorTxtSetting
             android:dialogMessage="Please Select Color."

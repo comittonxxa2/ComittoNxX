@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Recorder Settings" >
-<!--         <CheckBoxPreference -->
-<!--             android:defaultValue="true" -->
-<!--             android:key="ShowSelector" -->
-<!--             android:summary="Show the list selector to the bottom of the list." -->
-<!--             android:title="Show List Selector" /> -->
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="recorder_category"
+        android:title="Recorder Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="RDView"
@@ -39,7 +37,7 @@
             android:key="RLSave3"
             android:summary="dummy"
             android:title="Number of saved history" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="RecordHelp"

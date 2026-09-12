@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="View Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="View Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.WAdjustSeekbar
             android:dialogMessage="Adjust the display&apos;s aspect ratio when the landscape."
             android:dialogTitle="Aspect Ratio"
@@ -27,8 +30,11 @@
             android:key="AccessLamp"
             android:summary="To view the status of reading in the upper left corner"
             android:title="View the status file reading" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Operation Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="Operation Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.LongTapSeekbar
             android:dialogMessage="Time to select the Loupe view in the long tap."
             android:dialogTitle="Time to Loupe view"
@@ -88,7 +94,7 @@
             android:key="MaxThread"
             android:summary="dummy"
             android:title="Max number of processing threads" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="IDtlHelp"

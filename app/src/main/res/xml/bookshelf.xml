@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Bookshelf selection" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="selectbookshelf_category"
+        android:title="Bookshelf selection"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.BookShelfSelectPreference
             android:dialogMessage="Please select a bookshelf"
             android:dialogTitle="Bookshelf selection"
@@ -8,8 +11,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Bookshelf selection" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Bookshelf display parameters" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="bookshelfdisplayparm_category"
+        android:title="Bookshelf display parameters"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.ThumbnailTopSeekbar
             android:dialogMessage=""
             android:dialogTitle="Space above the thumbnail"
@@ -60,7 +66,7 @@
             android:key="BookShelfTextSplitOn"
             android:summary="Check this box to prevent the lower half of the file name from being hidden when splitting it."
             android:title="Double the number of lines in split filename display" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Remove custom bookshelf image" >
         <src.comitton.config.BookShelfDeletePreference
             android:dialogMessage="Choose a custom image"

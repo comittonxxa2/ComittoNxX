@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory android:title="Common Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="common_category"
+        android:title="Common Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="CheckRelease"
@@ -61,10 +64,12 @@
             android:key="SelectTheme"
             android:summary="dummy"
             android:title="Theme selection at startup(The changes will take effect after restarting.)" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
-
-    <PreferenceCategory android:title="Character Code" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="charactercode_category"
+        android:title="Character Code"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="CharDetect"
@@ -78,9 +83,12 @@
             android:key="Charset"
             android:summary="dummy"
             android:title="Specify the Charset" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
-    <PreferenceCategory android:title="Sort Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="soft_category"
+        android:title="Sort Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="SortByIgnoreWidth"
@@ -116,9 +124,12 @@
             android:key="SortByFileType"
             android:summary="Prefer files over directories.\nOnly valid for image viewer and thumbnails."
             android:title="Give priority to files" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
-    <PreferenceCategory android:title="Sorting priority words" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="sortpriorityword_category"
+        android:title="Sorting priority words"
+        android:layout="@layout/custom_preference_category">
         <Preference
             android:summary="Treat the priority word as the lowest character in the sort order." />
         <EditTextPreference
@@ -172,7 +183,7 @@
             android:title="priority word 10"
             app:useSimpleSummaryProvider="true"
             android:dialogTitle="priority word 10" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

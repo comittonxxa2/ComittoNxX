@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Initial Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="startup_category"
+        android:title="Initial Settings"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="5"
             android:dialogTitle="Initial Scale Mode"
@@ -63,8 +66,11 @@
             android:key="Sharpen"
             android:title="Sharpen image" />
 -->
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Display Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="Display Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="Notice"
@@ -192,11 +198,19 @@
             android:title="Enable WebP/GIF animations in the library." />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="AnimationForce"
+            android:summary="Check this box to display WebP/GIF animations regardless of the screen mode (the display switches to a dedicated screen while the animation is playing)."
+            android:title="Force WebP/GIF animation" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="Reduced"
             android:summary="Check this box to reduce power consumption by reducing the display frequency."
             android:title="Display thinned images(*)" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Operation Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="Operation Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ReturnListView"
@@ -369,7 +383,7 @@
             android:key="AdjustZoomSameAsPinch"
             android:summary="Check this box to use the press-and-hold magnifier function immediately after zooming in, zooming out, or resetting the zoom."
             android:title="Adjust zoom operation to match pinch-in and pinch-out gestures." />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="ImageHelp"

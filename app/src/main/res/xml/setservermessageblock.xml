@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Setting for SMB(Server Message Block)" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="smbsetting_category"
+        android:title="Setting for SMB(Server Message Block)"
+        android:layout="@layout/custom_preference_category">
        <CheckBoxPreference
             android:defaultValue="false"
             android:key="ComittoNMode"
@@ -11,5 +14,10 @@
             android:key="SmbRetryMode"
             android:summary="Check this box to increase the wait time between retries and reduce the retry frequency when access to the compressed file extraction library fails."
             android:title="Relaxed retry logic for compressed file extraction libraries." />
-    </PreferenceCategory>
+       <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SMBCallbackMode"
+            android:summary="Check this box if you do not intend to modify the SMB callback sections responsible for retrieving the size and reading data.\nThis will revert to the behavior prior to version 2.4.10.BV."
+            android:title="Do not modify the SMB callback." />
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

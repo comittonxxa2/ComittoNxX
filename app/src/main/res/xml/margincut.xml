@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Advanced settings for remove the margin" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="margincut_category"
+        android:title="Advanced settings for remove the margin"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="MarginAspectMask"
@@ -24,8 +27,11 @@
             android:key="MarginCustomInit"
             android:summary="Select from the Delete Margin list and overwrite"
             android:title="Reset custom settings" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Custom Settings Parameters" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="customsetting_category"
+        android:title="Custom Settings Parameters"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.MarginLevelSeekbar
             android:dialogMessage="If all RGB values ​​match this number of bits from the top 4 bits, they are determined to be the same color."
             android:dialogTitle="Bitmask depth for color detection(0～15)"
@@ -61,5 +67,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Range for margin determination" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Viewer Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="viewer_category"
+        android:title="Viewer Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="epubViewer"
@@ -26,8 +29,11 @@
             android:key="epubAozoraRubyOff"
             android:summary="Check this box to avoid converting Aozora Bunko-style ruby ​​(《》).\nWebView-based EPUB viewers ignore Aozora Bunko-style ruby ​​(《》)."
             android:title="Ignore Aozora Bunko-style ruby." />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="WebView-based EPUB viewer settings (* indicates settings common to text viewer settings)" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="webviewbaseepubviewer_category"
+        android:title="WebView-based EPUB viewer settings (* indicates settings common to text viewer settings)"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Double-page spread mode"
@@ -217,5 +223,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Top and bottom margin size" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

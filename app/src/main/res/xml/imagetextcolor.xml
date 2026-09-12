@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Image Viewer Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="imageview_category"
+        android:title="Image Viewer Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.color.ColorMgnSetting
             android:dialogMessage="Please Select Color."
             android:dialogTitle="Margin Color"
@@ -25,8 +28,11 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatorguirgb"
             android:title="Guide Color" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Text Viewer Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="textview_category"
+        android:title="Text Viewer Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.color.ColorTxtMgnSetting
             android:dialogMessage="Please Select Color."
             android:dialogTitle="Margin Color"
@@ -91,7 +97,7 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatortxhitrgb"
             android:title="Search Hit Color" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="ImgTxtClrHelp"

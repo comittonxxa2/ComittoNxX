@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Webview screen settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="webview_category"
+        android:title="Webview screen settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="WebviewFilter"
@@ -24,8 +27,11 @@
             android:key="WebviewUserAgent"
             android:summary="Spoofing the User-Agent to the PC version"
             android:title="Use a desktop User-Agent" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Filter settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="filter_category"
+        android:title="Filter settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="WebviewGray"
@@ -116,5 +122,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Blue level" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

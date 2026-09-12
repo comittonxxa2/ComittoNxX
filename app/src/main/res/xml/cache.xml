@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Settings for Memory Cache" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="cache_category"
+        android:title="Settings for Memory Cache"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.MemSizeSeekbar
             android:dialogMessage="The size of the memory used to cache. (Too large to hang.)"
             android:dialogTitle="Memory Cache Size"
@@ -30,7 +33,7 @@
             android:key="MemCacheStartThreshold"
             android:summary="dummy"
             android:title="The page cache start threshold" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="CacheHelp"

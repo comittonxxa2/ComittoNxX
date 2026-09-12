@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Setting theme presets" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="settingtheme_category"
+        android:title="Setting theme presets"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="EnableTheme"
@@ -14,8 +17,11 @@
             android:key="ThemePreset"
             android:summary="dummy"
             android:title="Preset value" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="File List Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="filelist_category"
+        android:title="File List Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.FontTitleSeekbar
             android:dialogMessage="Select font size of the title."
             android:dialogTitle="Title Font Size"
@@ -58,8 +64,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Toolbar Size" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Preset Color" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="presetcolor_category"
+        android:title="Preset Color"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="Select Preset Color"
@@ -73,7 +82,7 @@
             android:summary="to overwrite the custom color settings in the Preset."
             android:title="Overwrite Custom Color" >
         </PreferenceScreen>
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Custom Setting" >
         <src.comitton.config.color.ColorTxtSetting
             android:dialogMessage="Please Select Color."

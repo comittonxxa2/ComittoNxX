@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="File List Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="fileselectioscreen_category"
+        android:title="File List Settings"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="FileListCacheOff"
@@ -427,7 +430,12 @@
             android:key="TabRestore"
             android:summary="Check this box to restore the tab state upon restart."
             android:title="Restore tab state" />
-    </PreferenceCategory>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="CancelFileListDialog"
+            android:summary="Check this box if you want to use the back key to cancel the display of the file list loading dialog."
+            android:title="Canceling a dialog box by pressing the back key" />
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="FileHelp"

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Noise Operation Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="noise_category"
+        android:title="Noise Operation Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.NoiseScrlSeekbar
             android:dialogMessage="Scroll speed by during the operation of the long noise."
             android:dialogTitle="Scrolling Speed"
@@ -35,7 +38,7 @@
             android:key="NoiseLevel"
             android:summary="Displays the microphone input level during the operation of the noise."
             android:title="View microphone input level" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="NoiseHelp"

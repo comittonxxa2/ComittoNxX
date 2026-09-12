@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Assign actions to the corners or edges as tap areas" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="assignaction_category"
+        android:title="Assign actions to the corners or edges as tap areas"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="CornerEndTEnable"
@@ -20,5 +23,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Ratio of top and bottom tap areas" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="Initial Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displaystatusatstartup_category"
+        android:title="Initial Settings"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="2"
             android:dialogTitle="Initial Scale Mode"
@@ -25,8 +28,11 @@
             android:key="txPaperSize"
             android:summary="dummy"
             android:title="Paper Size" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Display Settings(* is common to the image setting)" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="Display Settings(* is common to the image setting)"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="Illustrations Size"
@@ -106,8 +112,11 @@
             android:key="Reduced"
             android:summary="Check this box to reduce power consumption by reducing the display frequency."
             android:title="Display thinned images(*)" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Operation Settings(* is common to the image setting)" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="Operation Settings(* is common to the image setting)"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ReturnListView"
@@ -212,8 +221,11 @@
             android:key="DisableTextInfo"
             android:summary="Check this box if you do not want to display the top and bottom headers/footers."
             android:title="Do not display header/footer" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Font Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="fontsetting_category"
+        android:title="Font Settings"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue=""
             android:dialogTitle="Select Font (Select from [sdcard]/comittona/font/)"
@@ -276,7 +288,7 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Top and Bottom Margins Size" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="TextHelp"

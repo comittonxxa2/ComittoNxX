@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="View Settings" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="View Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.MarginSeekbar
             android:dialogMessage="Select end of scroll margin size."
             android:dialogTitle="Margin Size"
@@ -32,8 +35,11 @@
             android:key="OldMenu"
             android:summary="Menu to select the command in a single action."
             android:title="Old type on the top menu." />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Operation Settings" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="Operation Settings"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.EffectTimeSeekbar
             android:dialogMessage="Effect time at turning page"
             android:dialogTitle="Effect Time"
@@ -55,6 +61,20 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="Operation Area Size" />
+        <src.comitton.config.seekbar.StatusAreaSeekbar
+            android:dialogMessage="Specify a dummy size to use when the status size cannot be retrieved."
+            android:dialogTitle="Status Area Size"
+            android:key="StatusAreaSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Status Area Size" />
+        <src.comitton.config.seekbar.NavigationAreaSeekbar
+            android:dialogMessage="Specify a dummy size to use when the navigation size cannot be retrieved."
+            android:dialogTitle="Navigation Area Size"
+            android:key="NavigationAreaSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="Navigation Area Size" />
         <src.comitton.config.seekbar.PageRangeSeekbar
             android:dialogMessage="Page selection sensitivity at the bottom of the screen."
             android:dialogTitle="Page Change Sensitivity"
@@ -93,7 +113,7 @@
             android:key="PinchEnable"
             android:summary="Enable the change of display size by pinch operation."
             android:title="Pinch Operation" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
             android:key="ImgTxtDtlHelp"
