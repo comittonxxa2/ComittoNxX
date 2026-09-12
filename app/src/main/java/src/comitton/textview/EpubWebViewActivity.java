@@ -413,6 +413,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private ArrayList<RecordItem> list_copy;
 	private boolean mInternaerror = false;
 	private int mImmCancelRange;
+	private int mStatusAreaRange;
+	private int mNavigationAreaRange;
 	private boolean mImmCancel;
 	private Insets insets;
 	private boolean mActionUp = false;
@@ -1825,32 +1827,34 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		cx = rootContainer.getWidth();
 		cy = rootContainer.getHeight();
 
+		int navibar_height = 0;
+		int statusbar_height = 0;
 		if (mImmEnable || mImmForce) {
 			// IMMERSIVEモードの発動時にタッチ処理を無視する(スワイプでバーを表示させるときに重なるのを防ぐ)
-			int navibar_height = 0;
-			int statusibar_height = 0;
 			if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 				// ナビゲーションバーの高さを得る
 				if (rootContainer.getHeight() < rootContainer.getWidth()) {
 					// 横向きの場合
 					navibar_height = insets.right;
-					statusibar_height = insets.left;
+					statusbar_height = insets.left;
 				}
 				else {
 					// 縦向きの場合
 					navibar_height = insets.bottom;
-					statusibar_height = insets.top;
+					statusbar_height = insets.top;
 				}
 			}
 			else {
-				statusibar_height = mImmCancelRange;
-				navibar_height = mImmCancelRange;
+				statusbar_height = mStatusAreaRange;
+				navibar_height = mNavigationAreaRange;
 			}
+			if (statusbar_height <= 0) statusbar_height = mStatusAreaRange;
+			if (navibar_height <= 0) navibar_height = mNavigationAreaRange;
 			if (mHideNavigationBar) {
 				// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
 				navibar_height = CLICKGUARD;
 			}
-			if (y <= statusibar_height || y >= cy - navibar_height) {
+			if (y <= statusbar_height || y >= cy - navibar_height) {
 				mImmCancel = true;
 			}
 			if (mImmCancel) {
@@ -1861,34 +1865,29 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 		if (!mClickGuard) {
 			// ジェスチャーナビゲーションモードで画面下からのスワイプだった場合は無視する
-			int navibar_height = 0;
-			int statusbar_height = 0;
 			if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
 				// ナビゲーションバーの高さを得る
 				if (rootContainer.getHeight() < rootContainer.getWidth()) {
 					// 横向きの場合
 					navibar_height = insets.right;
-					if (!mImmEnable && !mImmForce) {
-						statusbar_height = insets.left;
-					}
+					statusbar_height = insets.left;
 				}
 				else {
 					// 縦向きの場合
 					navibar_height = insets.bottom;
-					if (!mImmEnable && !mImmForce) {
-						statusbar_height = insets.top;
-					}
+					statusbar_height = insets.top;
 				}
 			}
 			else {
-				navibar_height = mImmCancelRange;
-				if (!mImmEnable && !mImmForce) {
-					statusbar_height = mImmCancelRange;
-				}
+				navibar_height = mNavigationAreaRange;
+				statusbar_height = mStatusAreaRange;
 			}
-			if (navibar_height == 0) {
+			if (statusbar_height <= 0) {
+				statusbar_height = mStatusAreaRange;
+			}
+			if (navibar_height <= 0) {
 				// ナビゲーションバーが非表示だった場合は固定値を入れる
-				navibar_height = mImmCancelRange;
+				navibar_height = mNavigationAreaRange;
 			}
 			if (mHideNavigationBar) {
 				// ナビゲーションバーが非表示の場合は誤検出防止のガードを入れる
@@ -1909,7 +1908,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 
 		mPageMode = false;
 
-		if (y > cy - mClickArea) {
+		if (y >= cy - mClickArea && !mTapEditMode || mTapEditMode && y >= cy + statusbar_height - navibar_height) {
 			if (mClickGuard) {
 			}
 			else if (mTapEditMode) {
@@ -1949,9 +1948,19 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 			}
 		}
-		else if (y < mClickArea) {
+		else if (y <= mClickArea && !mTapEditMode || mTapEditMode && (y <= ((cx > cy) ? cy / 20 : cy / 40) + statusbar_height)) {
 			// 上部押下
 			if (mTapEditMode) {
+				// 初期化の判定
+				int btnWidth = 120;
+				int btnMarginRight = 10;
+				int btnX1 = cx - btnMarginRight - btnWidth;
+				int btnX2 = cx - btnMarginRight;
+				int btnHeight = (cx > cy) ? cy / 20 : cy / 40;
+				if (y < (btnHeight + statusbar_height) && x > btnX1 && x < btnX2) {
+					// タッチパネル設定を初期化
+					TouchPanelView.InitTapPattern();
+				}
 			}
 			else {
 				startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
@@ -3693,6 +3702,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				mGetHardwareKeySetData[i] = bigData.mGetHardwareKeySetData[i];
 			}
 			mRBSort = bigData.mRBSort;
+			mStatusAreaRange = bigData.mStatusAreaRange;
+			mNavigationAreaRange = bigData.mNavigationAreaRange;
 		}
 		if (mSdkVersion >= 19) {
 			// KitKat以降のみ設定読み込み
