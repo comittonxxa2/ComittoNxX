@@ -94,11 +94,11 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 
 	public void setKey(String key) {
 		mKey = key;
-		if (mKey.equals(DEF.KEY_CLICKAREA) || mKey.equals(DEF.KEY_PAGERANGE) || mKey.equals(DEF.KEY_TAPRANGE)) {
+		if (mKey.equals(DEF.KEY_CLICKAREA) || mKey.equals(DEF.KEY_PAGERANGE) || mKey.equals(DEF.KEY_TAPRANGE) || mKey.equals(DEF.KEY_STATUSAREA) || mKey.equals(DEF.KEY_NAVIGATIONAREA)) {
 			mSummary1 = mContext.getString(R.string.unitSumm1);
 			mSummary2 = "";
 		}
-		if (mKey.equals(DEF.KEY_MARGIN)) {
+		else if (mKey.equals(DEF.KEY_MARGIN)) {
 			mSummary1 = mContext.getString(R.string.rangeSumm1);
 			mSummary2 = "";
 		}
@@ -228,7 +228,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 	private String getSummaryString(int num) {
 		String strSummary;
 
-		if (mKey.equals(DEF.KEY_CLICKAREA)) {
+		if (mKey.equals(DEF.KEY_CLICKAREA) || mKey.equals(DEF.KEY_STATUSAREA) || mKey.equals(DEF.KEY_NAVIGATIONAREA)) {
 			strSummary = DEF.getClickAreaStr(num, mSummary1);
 		}
 		else if (mKey.equals(DEF.KEY_TAPRANGE)) {
