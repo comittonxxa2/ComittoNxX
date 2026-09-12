@@ -729,6 +729,7 @@
     <string name="ToolbarProfile8">プロファイル8</string>
     <string name="ToolbarProfile9">プロファイル9</string>
     <string name="ToolbarProfile10">プロファイル10</string>
+    <string name="ToolbarPageMovementBar">ページ移動バー</string>
 
     <string name="TapTOC">見出し選択</string>
     <string name="TapSearch">検索文字列設定</string>
@@ -1090,5 +1091,6 @@
     <string name="tabstyle01">+×ボタン配置スタイル</string>
     <string name="tablayout00">画面上側</string>
     <string name="tablayout01">画面下側</string>
+    <string name="initbutton">初期化</string>
 
 </resources>
