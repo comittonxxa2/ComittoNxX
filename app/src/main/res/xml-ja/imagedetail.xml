@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="表示関連の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="表示関連の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.WAdjustSeekbar
             android:dialogMessage="横持ちの状態での画面縦に対する横の比率を設定"
             android:dialogTitle="画面縦横比率の調整"
@@ -27,8 +30,11 @@
             android:key="AccessLamp"
             android:summary="画像読み込みの状態を画面左上に表示する"
             android:title="ファイルアクセス状態を表示" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="操作関連の設定" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="操作関連の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.LongTapSeekbar
             android:dialogMessage="ルーペを表示する長押しの時間を選択"
             android:dialogTitle="ルーペ表示までの長押し時間"
@@ -88,7 +94,7 @@
             android:key="MaxThread"
             android:summary="dummy"
             android:title="画像処理スレッド数" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="IDtlHelp"

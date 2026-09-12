@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="ビュワーの設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="viewer_category"
+        android:title="ビュワーの設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="epubViewer"
@@ -26,8 +29,11 @@
             android:key="epubAozoraRubyOff"
             android:summary="青空文庫形式のルビ《》を変換しない場合にチェックを入れる\nWebViewベースのEPUBビューアでは青空文庫形式のルビ《》が無視される"
             android:title="青空文庫形式のルビを無視する" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="WebViewベースのEPUBビューア設定(＊はテキストと共通)" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="webviewbaseepubviewer_category"
+        android:title="WebViewベースのEPUBビューア設定(＊はテキストと共通)"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="見開きモード"
@@ -217,5 +223,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="上下の余白サイズ" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

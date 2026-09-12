@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="表示関連の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="表示関連の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.MarginSeekbar
             android:dialogMessage="スクロールの端を表す余白サイズの選択"
             android:dialogTitle="余白サイズ"
@@ -32,8 +35,11 @@
             android:key="OldMenu"
             android:summary="シングルアクションでコマンドを選択するメニュー"
             android:title="旧タイプの上部メニューを使用" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="操作関連の設定" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="操作関連の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.EffectTimeSeekbar
             android:dialogMessage="ページめくり時のエフェクト時間"
             android:dialogTitle="エフェクト時間"
@@ -55,6 +61,20 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="上下の操作エリアサイズ" />
+        <src.comitton.config.seekbar.StatusAreaSeekbar
+            android:dialogMessage="ステータスサイズが取得できなかった時のダミーのサイズを指定"
+            android:dialogTitle="ステータスエリアサイズ"
+            android:key="StatusAreaSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="ステータスエリアサイズ" />
+        <src.comitton.config.seekbar.NavigationAreaSeekbar
+            android:dialogMessage="ナビゲーションサイズが取得できなかった時のダミーのサイズを指定"
+            android:dialogTitle="ナビゲーションエリアサイズ"
+            android:key="NavigationAreaSp"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="ナビゲーションエリアサイズ" />
         <src.comitton.config.seekbar.PageRangeSeekbar
             android:dialogMessage="下部ページ選択領域で1ページあたりのドラッグ量"
             android:dialogTitle="ページ選択の感度"
@@ -93,7 +113,7 @@
             android:key="PinchEnable"
             android:summary="ピンチイン/アウト操作で表示サイズを変更します"
             android:title="ピンチイン/アウト操作" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="ImgTxtDtlHelp"

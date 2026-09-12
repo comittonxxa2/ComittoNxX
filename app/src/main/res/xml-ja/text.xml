@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="起動時の表示状態の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displaystatusatstartup_category"
+        android:title="起動時の表示状態の設定"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="2"
             android:dialogTitle="サイズ調整方法"
@@ -25,8 +28,11 @@
             android:key="txPaperSize"
             android:summary="dummy"
             android:title="用紙選択" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="表示関連の設定(＊はイメージと共通)" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="表示関連の設定(＊はイメージと共通)"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="挿絵のサイズ"
@@ -106,8 +112,11 @@
             android:key="Reduced"
             android:summary="表示の頻度を下げて消費電力を抑える場合はチェックを入れる"
             android:title="間引き表示を行う＊" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="操作関連の設定(＊はイメージと共通)" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="操作関連の設定(＊はイメージと共通)"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ReturnListView"
@@ -212,8 +221,11 @@
             android:key="DisableTextInfo"
             android:summary="上下のヘッダー/フッターを表示しない場合にチェックを入れる"
             android:title="ヘッダー/フッターを表示しない" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="フォント設定" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="fontsetting_category"
+        android:title="フォント設定"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue=""
             android:dialogTitle="フォント選択 ([sdcard]/comittona/font/から選択)"
@@ -276,7 +288,7 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="上下の余白サイズ" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="TextHelp"

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="プリセット色" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="preset_category"
+        android:title="プリセット色"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="1"
             android:dialogTitle="プリセットの選択"
@@ -14,7 +17,7 @@
             android:summary="現在選択中のプリセットの配色をカスタム設定の各項目に反映します"
             android:title="プリセットの反映" >
         </PreferenceScreen>
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="カスタム設定" >
         <src.comitton.config.color.ColorTxtSetting
             android:dialogMessage="色を設定してください。"
@@ -192,7 +195,7 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatortabrgb"
             android:title="タブのテキストの色" />
-    </PreferenceCategory>
+   </PreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="FClrHelp"

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="記録系リストの設定" >
-<!--         <CheckBoxPreference -->
-<!--             android:defaultValue="true" -->
-<!--             android:key="ShowSelector" -->
-<!--             android:summary="リスト下部のリスト選択ツールバーを表示する" -->
-<!--             android:title="リスト選択を表示" /> -->
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="recorder_category"
+        android:title="記録系リストの設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="RDView"
@@ -39,7 +37,7 @@
             android:key="RLSave3"
             android:summary="dummy"
             android:title="履歴の保持件数" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="RecordHelp"

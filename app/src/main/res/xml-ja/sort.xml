@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="ソート表示のパラメータ設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="sortparm_category"
+        android:title="ソート表示のパラメータ設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="SoftDirTop"
@@ -14,8 +17,11 @@
             android:key="SoftFileTop"
             android:summary="dummy"
             android:title="最優先で先頭に表示するファイルの種類" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="ソート表示のファイル別設定" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="sortfile_category"
+        android:title="ソート表示のファイル別設定"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="0"
             android:dialogTitle="ディレクトリ"
@@ -72,5 +78,5 @@
             android:key="SoftOtherFile"
             android:summary="dummy"
             android:title="その他のファイル" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="メモリーキャッシュの設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="cache_category"
+        android:title="メモリーキャッシュの設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.MemSizeSeekbar
             android:dialogMessage="キャッシュに使用するメモリサイズ (多すぎると落ちます)"
             android:dialogTitle="使用メモリサイズ"
@@ -30,7 +33,7 @@
             android:key="MemCacheStartThreshold"
             android:summary="dummy"
             android:title="ページキャッシュ開始しきい値" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="CacheHelp"

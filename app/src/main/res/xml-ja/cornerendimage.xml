@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="四隅と端をタップエリアにして動作を割り当て" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="assignaction_category"
+        android:title="四隅と端をタップエリアにして動作を割り当て"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="CornerEndIEnable"
@@ -20,5 +23,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="上下のタップエリアの割合" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="余白の削除の詳細設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="margincut_category"
+        android:title="余白の削除の詳細設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="MarginAspectMask"
@@ -24,8 +27,11 @@
             android:key="MarginCustomInit"
             android:summary="余白の削除の一覧から選択して上書きする"
             android:title="カスタム設定の初期化" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="カスタム設定のパラメータ" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="customsetting_category"
+        android:title="カスタム設定のパラメータ"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.MarginLevelSeekbar
             android:dialogMessage="RGBすべてが上位4ビットからこのビット数と一致すれば同じ色と判定する"
             android:dialogTitle="色判定時のビットマスク深度(0～15)"
@@ -61,5 +67,5 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="余白判定を行う範囲" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

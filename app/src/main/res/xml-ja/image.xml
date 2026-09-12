@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="起動時状態の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="startup_category"
+        android:title="起動時状態の設定"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="2"
             android:dialogTitle="サイズ調整方法"
@@ -63,8 +66,11 @@
             android:key="Sharpen"
             android:title="画像のシャープ化" />
 -->
-    </PreferenceCategory>
-    <PreferenceCategory android:title="表示関連の設定（＊はテキストと共通の設定）" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="displayrelated_category"
+        android:title="表示関連の設定（＊はテキストと共通の設定）"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="Notice"
@@ -192,11 +198,19 @@
             android:title="書庫のWebP/Gifアニメーションを有効にする" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="AnimationForce"
+            android:summary="画面のモードを無視してWebP/Gifアニメーション表示を行いたい場合はチェックを入れる(WebP/Gifアニメーション表示中は単独画面になる)"
+            android:title="WebP/Gifアニメーションを強制する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="Reduced"
             android:summary="表示の頻度を下げて消費電力を抑える場合はチェックを入れる"
             android:title="間引き表示を行う＊" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="操作関連の設定（＊はテキストと共通の設定）" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="operationrelated_category"
+        android:title="操作関連の設定（＊はテキストと共通の設定）"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ReturnListView"
@@ -367,7 +381,7 @@
             android:key="AdjustZoomSameAsPinch"
             android:summary="ズームのイン/アウト/リセット操作後に続けて長押しルーペ機能を使う場合にチェックを入れる"
             android:title="ズーム処理をピンチインアウトに合わせる" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="ImageHelp"

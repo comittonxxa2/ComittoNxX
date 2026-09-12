@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="SMB(Server Message Block)の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="smbsetting_category"
+        android:title="SMB(Server Message Block)の設定"
+        android:layout="@layout/custom_preference_category">
        <CheckBoxPreference
             android:defaultValue="false"
             android:key="ComittoNMode"
@@ -11,5 +14,10 @@
             android:key="SmbRetryMode"
             android:summary="圧縮ファイルの展開ライブラリのアクセス失敗による再試行の時間待ちを長くして再試行の頻度を減らす場合にチェックを入れる"
             android:title="圧縮ファイルの展開ライブラリの再試行を緩和" />
-    </PreferenceCategory>
+       <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SMBCallbackMode"
+            android:summary="SMBのコールバックのサイズ取得と読み出し部分の手直しを行わない場合はチェックを入れる\n2.4.10.BV以前の動作になる"
+            android:title="SMBのコールバックの手直しを行わない" />
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

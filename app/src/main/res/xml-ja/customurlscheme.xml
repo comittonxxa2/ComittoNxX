@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="カスタムURLスキームの設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="customurlscheme_category"
+        android:title="カスタムURLスキームの設定"
+        android:layout="@layout/custom_preference_category">
         <EditTextPreference
             android:key="CustomUrlSchemeAuthenticationKey"
             android:title="認証キー" >
         </EditTextPreference>
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

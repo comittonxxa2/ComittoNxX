@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="テーマのプリセットの設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="settingtheme_category"
+        android:title="テーマのプリセットの設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="EnableTheme"
@@ -14,8 +17,11 @@
             android:key="ThemePreset"
             android:summary="dummy"
             android:title="プリセット値" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="ファイル選択画面設定" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="filelist_category"
+        android:title="ファイル選択画面設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.FontTitleSeekbar
             android:dialogMessage="タイトルのフォントサイズを選択"
             android:dialogTitle="タイトルのフォントサイズ"
@@ -58,11 +64,14 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="ツールバーのサイズ" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="プリセット色" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="presetcolor_category"
+        android:title="プリセット色"
+        android:layout="@layout/custom_preference_category">
         <ListPreference
             android:defaultValue="1"
-            android:dialogTitle="プリセットの選択"
+            android:dialogTitle="プリセット色の選択"
             android:entries="@array/preset_name_list"
             android:entryValues="@array/preset_value_list"
             android:key="Preset"
@@ -73,7 +82,7 @@
             android:summary="現在選択中のプリセットの配色をカスタム設定の各項目に反映します"
             android:title="プリセットの反映" >
         </PreferenceScreen>
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="カスタム設定" >
         <src.comitton.config.color.ColorTxtSetting
             android:dialogMessage="色を設定してください。"

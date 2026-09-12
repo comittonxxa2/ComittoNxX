@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory android:title="共通設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="common_category"
+        android:title="共通設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="CheckRelease"
@@ -61,9 +64,12 @@
             android:key="SelectTheme"
             android:summary="dummy"
             android:title="起動時のテーマ選択(再起動で反映)" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
-    <PreferenceCategory android:title="文字コード" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="charactercode_category"
+        android:title="文字コード"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="CharDetect"
@@ -77,9 +83,12 @@
         android:key="Charset"
         android:summary="dummy"
         android:title="文字コード指定" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
-    <PreferenceCategory android:title="ソートの設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="soft_category"
+        android:title="ソートの設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="SortByIgnoreWidth"
@@ -115,9 +124,12 @@
             android:key="SortByFileType"
             android:summary="ディレクトリよりファイルを優先します。\nイメージビュワーとサムネイルのみ有効です。"
             android:title="ファイルを優先する" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
-    <PreferenceCategory android:title="ソートの優先ワード" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="sortword_category"
+        android:title="ソートの優先ワード"
+        android:layout="@layout/custom_preference_category">
         <Preference
             android:summary="優先ワードをソート順序が最小の文字として扱います。" />
         <EditTextPreference
@@ -171,7 +183,7 @@
             android:title="優先ワード10"
             app:useSimpleSummaryProvider="true"
             android:dialogTitle="優先ワード10" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
 
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

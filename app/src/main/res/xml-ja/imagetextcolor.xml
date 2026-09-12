@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="イメージ表示の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="imageview_category"
+        android:title="イメージ表示の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.color.ColorMgnSetting
             android:dialogMessage="色を設定してください。"
             android:dialogTitle="周囲の余白の色"
@@ -25,8 +28,11 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatorguirgb"
             android:title="情報表示の背景色" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="テキスト表示の設定" >
+    </src.comitton.config.ButtonPreferenceCategory>
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="textview_category"
+        android:title="テキスト表示の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.color.ColorTxtMgnSetting
             android:dialogMessage="色を設定してください。"
             android:dialogTitle="周囲の余白の色"
@@ -91,7 +97,7 @@
             android:summary="dummy"
             android:widgetLayout="@layout/indicatortxhitrgb"
             android:title="検索ヒットの色" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="ImgTxtClrHelp"

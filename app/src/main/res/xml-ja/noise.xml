@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="音操作の設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="noise_category"
+        android:title="音操作の設定"
+        android:layout="@layout/custom_preference_category">
         <src.comitton.config.seekbar.NoiseScrlSeekbar
             android:dialogMessage="長い音でスクロールする際の速度"
             android:dialogTitle="スクロール速度"
@@ -35,7 +38,7 @@
             android:key="NoiseLevel"
             android:summary="音での操作中にマイクの入力レベルを表示する"
             android:title="マイクの入力レベルを表示" />
-    </PreferenceCategory>
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="NoiseHelp"

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <PreferenceCategory android:title="ファイル選択画面設定" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="fileselectioscreen_category"
+        android:title="ファイル選択画面設定"
+        android:layout="@layout/custom_preference_category">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="FileListCacheOff"
@@ -429,7 +432,12 @@
             android:key="TabRestore"
             android:summary="再起動時にタブの状態を復元する場合はチェックを入れる"
             android:title="タブの状態を復元" />
-    </PreferenceCategory>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="CancelFileListDialog"
+            android:summary="ファイルリストの読み込みダイアログの表示のキャンセルを戻るキーにする場合にチェックを入れる"
+            android:title="ダイアログの戻るキーによるキャンセル" />
+    </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
             android:key="FileHelp"
