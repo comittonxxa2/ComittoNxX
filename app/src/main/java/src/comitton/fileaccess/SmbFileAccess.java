@@ -41,6 +41,7 @@ import src.comitton.fileview.FileSelectActivity;
 
 public class SmbFileAccess {
 	private static final String TAG = "SmbFileAccess";
+	private static boolean mSmbAccessSwitch = false;
 
 	private static String[] parseUri(@NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -332,7 +333,7 @@ public class SmbFileAccess {
 					return new SmbRandomAccessFile(sfile, "r");
 				}
 			});
-
+			executor.shutdown();
 			try {
 				stream = future.get();
 			} catch (Exception e) {
@@ -408,7 +409,7 @@ public class SmbFileAccess {
 					return result;
 				}
 			});
-
+			executor.shutdown();
 			try {
 				result = future.get();
 			} catch (Exception e) {
@@ -453,7 +454,7 @@ public class SmbFileAccess {
 					return result;
 				}
 			});
-
+			executor.shutdown();
 			try {
 				result = future.get();
 			} catch (Exception e) {
@@ -648,6 +649,7 @@ public class SmbFileAccess {
 					return fileList;
 				}
 			});
+			executor.shutdown();
 			try {
 				fileList = future.get();
 			} catch (Exception e) {
@@ -746,6 +748,7 @@ public class SmbFileAccess {
 					}
 				}
 			});
+			executor.shutdown();
 			try {
 				return future.get();
 			} catch (Exception e) {
@@ -800,6 +803,7 @@ public class SmbFileAccess {
 					}
 				}
 			});
+			executor.shutdown();
 			try {
 				return future.get();
 			} catch (Exception e) {
@@ -851,6 +855,7 @@ public class SmbFileAccess {
 					}
 				}
 			});
+			executor.shutdown();
 			try {
 				result = future.get();
 			} catch (Exception e) {
@@ -904,6 +909,7 @@ public class SmbFileAccess {
 					}
 				}
 			});
+			executor.shutdown();
 			try {
 				result = future.get();
 			} catch (Exception e) {
@@ -914,4 +920,10 @@ public class SmbFileAccess {
 		return result;
 	}
 
+	public static void setSmbAccessSwitch(boolean sw) {
+		mSmbAccessSwitch = sw;
+	}
+	public static boolean getSmbAccessSwitch() {
+		return mSmbAccessSwitch;
+	}
 }
