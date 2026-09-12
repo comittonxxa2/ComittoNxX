@@ -290,6 +290,14 @@
                 android:tint="@color/grey1" />
 
             <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/slider"
+                android:src="@drawable/slider"
+                android:layout_width="64sp"
+                android:layout_height="64sp"
+                android:background="@null"
+                android:tint="@color/white1" />
+
+            <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/profile1"
                 android:src="@drawable/profile1"
                 android:layout_width="32sp"
