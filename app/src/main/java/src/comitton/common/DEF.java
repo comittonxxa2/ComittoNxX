@@ -385,6 +385,7 @@ public class DEF {
 	public static final int FLOATING_PROFILE8 = 1038;
 	public static final int FLOATING_PROFILE9 = 1039;
 	public static final int FLOATING_PROFILE10 = 1040;
+	public static final int FLOATING_SLIDER = 1041;
 
 	public static final int READ_REQUEST_CODE = 42;
 	public static final int WRITE_REQUEST_CODE = 43;
@@ -580,6 +581,8 @@ public class DEF {
 	public static final String KEY_INISCALE = "IniScale";
 
 	public static final String KEY_CLICKAREA = "ClickAreaSp";
+	public static final String KEY_STATUSAREA = "StatusAreaSp";
+	public static final String KEY_NAVIGATIONAREA = "NavigationAreaSp";
 	public static final String KEY_PAGERANGE = "PageRangeSp";
 	public static final String KEY_TAPRANGE = "TapRangeSp";
 	public static final String KEY_VOLSCRL = "VolScrlSp";
@@ -741,6 +744,7 @@ public class DEF {
 	public static final String KEY_ANIMATIONENABLE = "AnimationEnable";
 	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
 	public static final String KEY_ARCHIVEANIMATIONENABLE = "ArchiveAnimationEnable";
+	public static final String KEY_ANIMATIONFORCE = "AnimationForce";
 	public static final String KEY_DISABLEPAGEBUTTON = "DisablePageButton";
 	public static final String KEY_ENABLECONTENTSFILE = "EnableContentsFile";
 	public static final String KEY_MAKEZOOMSAMEASPINCH = "MakeZoomSameAsPinch";
@@ -923,6 +927,7 @@ public class DEF {
 	public static final String KEY_LISTEXTENSION = "ListExtension";
 	public static final String KEY_PDFEXPAND = "PdfExpand";
 	public static final String KEY_SELECTSMBLIB = "SelectSmbLib";
+	public static final String KEY_SMBCALLBACKMODE = "SMBCallbackMode";
 	public static final String KEY_OPENIMAGEHTMLFILE = "OpenImageHtmlFile";
 	public static final String KEY_OPENIMAGETEXTFILE = "OpenImageTextFile";
 	public static final String KEY_TABMODE = "TabMode";
@@ -936,6 +941,8 @@ public class DEF {
 	public static final String KEY_TABCURRENTPOSITION = "TabCurrentPosition";
 	public static final String KEY_TABCOUNTER = "TabCounter";
 	public static final String KEY_TABRESTORE = "TabRestore";
+
+	public static final String KEY_CANCELFILELISTDIALOG = "CancelFileListDialog";
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -1605,6 +1612,8 @@ public class DEF {
 	public static final int DEFAULT_INITVIEW = 1; //見開き表示
 	public static final int DEFAULT_QUALITY = 1; //画質を優先する
 	public static final int DEFAULT_CLICKAREA = 30; //上下の操作エリアサイズ:60sp
+	public static final int DEFAULT_STATUSAREA = 16; //ステータスバーサイズ:32sp
+	public static final int DEFAULT_NAVIGATIONAREA = 16; //上下の操作エリアサイズ:32sp
 	public static final int DEFAULT_PAGERANGE = 5; //ページ選択の感度:1ページ/5sp
 	public static final int DEFAULT_SCROLL = 2;
 	public static final int DEFAULT_ORGWIDTH = 0;
@@ -1743,6 +1752,8 @@ public class DEF {
 
 	public static final int MAX_SCROLL = 9;
 	public static final int MAX_CLICKAREA = 100;
+	public static final int MAX_STATUSAREA = 100;
+	public static final int MAX_NAVIGATIONAREA = 100;
 	public static final int MAX_PAGERANGE = 25;
 	public static final int MAX_ORGWIDTH = 32;
 	public static final int MAX_ORGHEIGHT = 32;

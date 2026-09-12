@@ -66,6 +66,8 @@ public class EpubWebViewSharedData{
 	public int[] mLoadCustomkeyCode = new int[DEF.KEY_CODE_CUSTOM_MAX];
 	public int[] mGetHardwareKeySetData = new int[DEF.KEYCODE_INDEX.length + DEF.KEY_CODE_CUSTOM_MAX];
 	public int mRBSort;
+	public int mStatusAreaRange;
+	public int mNavigationAreaRange;
 
 	public EpubWebViewSharedData() {}
 }
