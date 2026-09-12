@@ -141,6 +141,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private boolean mEpubWebView;
 	private boolean mAozoraZipFile;
 	private boolean mAozoraTextFile;
+	private boolean mCancelFileListDialog;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
@@ -449,7 +450,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				// ファイルリスト読み込みダイアログの表示を準備
 				Resources res = mActivity.getResources();
 				boolean mProgressbarMode = SetFileListActivity.getProgressBarMode(mSp);
-				mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadfilelist), res.getString(R.string.loadingfilelist),true, mHandler, mProgressbarMode);
+				boolean mCancelFileListDialog = SetFileListActivity.getCancelFileListDialog(mSp);
+				// 周りをタッチしてダイアログをキャンセルさせる設定を選択式へ変更
+				// ダイアログをキャンセルさせない場合は自動的に戻るキーによるキャンセル動作になる
+				mProgressDialog = new CustomProgressDialog(res.getString(R.string.loadfilelist), res.getString(R.string.loadingfilelist),!mCancelFileListDialog, mHandler, mProgressbarMode);
 				supportFragmentManager = mActivity.getSupportFragmentManager();
 				// メイン画面で表示させるためハンドラを得る
 				mainHandler = new Handler(Looper.getMainLooper());
