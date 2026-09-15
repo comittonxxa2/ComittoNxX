@@ -1077,6 +1077,14 @@ public class ImageManager extends InputStream implements Runnable {
 					// ファイルリストの読み込みとタイムスタンプが同じだった場合はファイルリストの取得をキャンセルさせる
 					Logcat.d(logLevel, "stop.");
 				    stop = true;
+					// キャッシュには「生の格納順」で書き込まれる場合がある(サムネイル取得等、
+					// mFileSort=FILESORT_NONEでスキャンされた際にソートされないまま保存されるため)。
+					// 閲覧時は毎回、現在のソート設定を使って読み込み直したリストに適用する。
+					if (mFileSort != FILESORT_NONE && mFileList != null && mFileList.length > 0) {
+						List<FileListItem> cachedList = new ArrayList<FileListItem>(Arrays.asList(mFileList));
+						sort(cachedList);
+						mFileList = cachedList.toArray(new FileListItem[0]);
+					}
 				}
 			}
 		}
