@@ -647,6 +647,7 @@ public class DEF {
 	public static final String KEY_READPROGRESSBARPOSITION = "ReadProgressbarPosition";
 	public static final String KEY_PROGRESSBARMODE = "ProgressBarMode";
 	public static final String KEY_READPROGRESSBARWIDTH = "ReadProgressbarWidth";
+	public static final String KEY_SKIPSORTFILELIST = "SkipSortFilelist";
 
 	public static final String KEY_NOISESCRL = "NoiseScrlSp";
 	public static final String KEY_NOISEUNDER = "NoiseUnder";
@@ -930,6 +931,7 @@ public class DEF {
 	public static final String KEY_SMBCALLBACKMODE = "SMBCallbackMode";
 	public static final String KEY_OPENIMAGEHTMLFILE = "OpenImageHtmlFile";
 	public static final String KEY_OPENIMAGETEXTFILE = "OpenImageTextFile";
+	public static final String KEY_BACKGROUNDDOWNLOADIMAGEFILE = "BackgroundDownloadImageFile";
 	public static final String KEY_TABMODE = "TabMode";
 	public static final String KEY_TABSTYLE = "TabSytle";
 	public static final String KEY_TABLAYOUT = "TabLayout";
