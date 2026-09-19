@@ -74,6 +74,8 @@
     <string name="readxref">Loading XRef</string>
     <string name="readpage">Loading Page Object</string>
     <string name="download">Downloading File</string>
+    <string name="sortlist">Sorting list</string>
+    <string name="searchfile">Searching for files</string>
     <string name="imageParsing">Image Parsing</string>
     <string name="loaderr">Image Load Error.</string>
     <string name="localStrage">Local Storage</string>
@@ -309,6 +311,8 @@
     <string name="addBmOK">OK</string>
     <string name="addBmCancel">Cancel</string>
     <string name="dlTitle">Download</string>
+    <string name="sortListTitle">Sorting the list</string>
+    <string name="searchTitle">Search for files</string>
     <string name="rmTitle">Remove</string>
     <string name="exportLabel">File name</string>
     <string name="opeTitle">Operations</string>
