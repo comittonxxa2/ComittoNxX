@@ -128,7 +128,9 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.Icon;
@@ -396,6 +398,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean mSkipUpdateFileList;
 	private boolean mOpenImageHtmlFile;
 	private boolean mOpenImageTextFile;
+	private boolean mBackgroundDownloadImageFile;
 	private FrameLayout rootLayout;
 	private FrameLayout autoLoadingOverlay = null;
 	// 画面ロックのタイムアウト処理(timeoutRunnable)を登録
@@ -433,6 +436,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static final String TabButtonDeleteColor = "#20ffffff";
 	private boolean mCustomUrlSchemeOn = false;
 	private boolean mCancelFileListDialog;
+	public static HybridImageLoader loader;
+	public static List<File> finalFiles;
+	private boolean mResumeOff;
+	private Intent mBackupIntent;
+	private static boolean mSkipSortFilelist;
 
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
@@ -992,6 +1000,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mInitialize = 0;
 			}
 		}
+		mResumeOff = intent.getBooleanExtra("ResumeOff", false);
+		// 起動時のIntentを保存する
+		mBackupIntent = intent;
 		// 起動パラメータをクリアする
 		intent.setData(null);
 		setIntent(intent);
@@ -1107,11 +1118,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// レジューム起動チェック
 		if (path == null) {
 			// アイコンから起動(ショートカットや回転ではない)とき
-			if (mResumeOpenNoMessage && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
+			if (mResumeOpenNoMessage && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null && !mResumeOff) {
 				// 起動時の自動読み込み
 				ExecLastOpen();
 			}
-			if (mResumeOpen && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null) {
+			if (mResumeOpen && mSavedInstanceState == null && intent.getStringExtra("Refresh") == null && !mResumeOff) {
 				// 初回起動のみ(回転時などは行わない)
 				int lastView = mSharedPreferences.getInt("LastOpen", -1);
 				if (lastView != DEF.LASTOPEN_NONE) {
@@ -1225,6 +1236,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			permissions.add(Manifest.permission.RECORD_AUDIO);
 		} else {
 			Logcat.d(logLevel, "RECORD_AUDIO 権限があります.");
+		}
+
+		//==== パーミッション承認状態判定(ローカルネットワーク) ====//
+		if (Build.VERSION.SDK_INT >= 37) {
+			String permLocalNetwork = "android.permission.ACCESS_LOCAL_NETWORK";			if (ContextCompat.checkSelfPermission(this, permLocalNetwork) != PackageManager.PERMISSION_GRANTED) {
+				Logcat.d(logLevel, "ACCESS_LOCAL_NETWORK 権限がありません.");
+				//==== 承認要求する権限リストに追加 ====//
+				permissions.add(permLocalNetwork);
+			}
+			else {
+				Logcat.d(logLevel, "ACCESS_LOCAL_NETWORK 権限があります.");
+			}
 		}
 
 		if (permissions.size() > 0) {
@@ -2088,6 +2111,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			String lastText = mSharedPreferences.getString("LastText", "");
 			String lastImage = mSharedPreferences.getString("LastImage", "");
 			int server = mSharedPreferences.getInt("LastServer", DEF.INDEX_LOCAL);
+			String packageName = this.getPackageName();
+			if (path.contains("/" + packageName + "/cache/")) {
+				// キャッシュフォルダは除外する
+				return;
+			}
 			// 起動処理失敗回数をリセット
 			if (mInitialize != 0) {
 				SharedPreferences.Editor ed = mSharedPreferences.edit();
@@ -2302,6 +2330,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 				if (mChangeTheme) {
 					mChangeTheme = false;
+					// 起動パラメータに追加する
+					mBackupIntent.putExtra("ResumeOff", true);
 					// 現在のActivityを再生成する
 					Intent intent = getIntent();
 					finish();
@@ -2546,8 +2576,56 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private boolean nextFileOpen(int nextopen, String path, String file, String infile, int type, int page) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. nextopen=" + nextopen + ", path=" + path + ", file=" + file + ", infile=" + infile + ", type=" + type + ", page=" + page);
-		// 次のファイル検索
-		FileData nextfile = searchNextFile(mFileList.getFileList(), file, nextopen);
+		// 次のファイル検索をバックグラウンドで実行
+		final FileData[] nextfile = {null};
+		final boolean[] result = {false};
+		// ファイルの検索のダイアログの表示を準備
+		Resources res = mActivity.getResources();
+		// ファイルの検索中はダイアログの表示をキャンセルさせないようにする
+		mProgressDialog = new CustomProgressDialog(res.getString(R.string.searchTitle), res.getString(R.string.searchfile),false, mHandler, mProgressbarMode);
+		supportFragmentManager = mActivity.getSupportFragmentManager();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			// ダイアログの表示
+			mProgressDialog.show(supportFragmentManager, TAG);
+			// プログレスバーをリセット
+			mProgressDialog.setProgress(0, 0, 0);
+		});
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Handler handler = new Handler(Looper.getMainLooper());
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					// 次のファイル検索
+					nextfile[0] = searchNextFile(mFileList.getFileList(), file, nextopen);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				finally {
+					// 処理が完了したらメインスレッドに戻してダイアログを閉じる
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							mainHandler.post(() -> {
+								mProgressDialog.dismiss();
+							});
+							// 次のファイルを開く(メイン)
+							result[0] = nextOpenMain(nextopen, path, file, infile, type, page, nextfile[0]);
+						}
+					});
+				}
+			}
+		});
+		return result[0];
+	}
+
+	// 次のファイルを開く(メイン)
+	private boolean nextOpenMain(int nextopen, String path, String file, String infile, int type, int page, FileData nextfile) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
 
 		Editor ed = mSharedPreferences.edit();
 		String user = mServer.getUser();
@@ -2813,6 +2891,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mSkipUpdateFileList = SetFileListActivity.getSkipUpdateFileList(mSharedPreferences);
 		mOpenImageHtmlFile = SetFileListActivity.getOpenImageHtmlFile(mSharedPreferences);
 		mOpenImageTextFile = SetFileListActivity.getOpenImageTextFile(mSharedPreferences);
+		mBackgroundDownloadImageFile = SetFileListActivity.getBackgroundDownloadImageFile(mSharedPreferences);
 		mTabMode = SetFileListActivity.getTabMode(mSharedPreferences);
 		mTabSize = SetFileListActivity.getTabSize(mSharedPreferences) + DEF.MIN_TABSEEK;
 		isWebStyle = (SetFileListActivity.getTabStyle(mSharedPreferences) == 0) ? true : false;
@@ -2821,6 +2900,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mSmbAccessSwitch = SetServerMessageBlockActivity.getSMBCallbackMode(mSharedPreferences);
 		SmbFileAccess.setSmbAccessSwitch(mSmbAccessSwitch);
 		mCancelFileListDialog = SetFileListActivity.getCancelFileListDialog(mSharedPreferences);
+		mSkipSortFilelist = SetFileListActivity.getSkipSortFilelist(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3882,6 +3962,12 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				String lastText = mSharedPreferences.getString("LastText", "");
 				String lastImage = mSharedPreferences.getString("LastImage", "");
 				String uri = "";
+				String packageName = this.getPackageName();
+				if (path.contains("/" + packageName + "/cache/")) {
+					// キャッシュフォルダは除外する
+					// ダイアログ終了
+					break;
+				}
 				if (svrindex != DEF.INDEX_LOCAL) {
 					ServerSelect server = new ServerSelect(mSharedPreferences, this);
 					server.select(svrindex);
@@ -5930,7 +6016,50 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * リストをソート
 	 */
 	private void sortList(int listtype) {
+		// リストのソートをバックグラウンドで実行
+		final FileData[] nextfile = {null};
+		final boolean[] result = {false};
+		// リストのソートのダイアログの表示を準備
+		Resources res = mActivity.getResources();
+		// リストのソート中はダイアログの表示をキャンセルさせないようにする
+		mProgressDialog = new CustomProgressDialog(res.getString(R.string.sortListTitle), res.getString(R.string.sortlist),false, mHandler, mProgressbarMode);
+		supportFragmentManager = mActivity.getSupportFragmentManager();
+		// メイン画面で表示させるためハンドラを得る
+		mainHandler = new Handler(Looper.getMainLooper());
+		// メイン画面で表示
+		mainHandler.post(() -> {
+			// ダイアログの表示
+			mProgressDialog.show(supportFragmentManager, TAG);
+			// プログレスバーをリセット
+			mProgressDialog.setProgress(0, 0, 0);
+		});
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Handler handler = new Handler(Looper.getMainLooper());
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					sortListMain(listtype);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				finally {
+					// 処理が完了したらメインスレッドに戻してダイアログを閉じる
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							mainHandler.post(() -> {
+								mProgressDialog.dismiss();
+							});
+						}
+					});
+				}
+			}
+		});
+	}
 
+	private void sortListMain(int listtype) {
 		if (listtype == RecordList.TYPE_FILELIST) {
 			if (mFileList == null || mFileList.getFileList() == null) {
 				return;
@@ -6091,8 +6220,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (history) {
 			if (!uri.equals(mURI) || !path.equals(mPath)) {
 				// タイルの場合
-				int topindex = mListScreenView.mFileListArea.getTopIndex();
-				mPathHistory.push(mServer.getCode(), mPath, topindex);
+				if (mPathHistory != null) {
+					int topindex = mListScreenView.mFileListArea.getTopIndex();
+					mPathHistory.push(mServer.getCode(), mPath, topindex);
+				}
 			}
 		}
 		if	(!uri.equals(mURI) || !path.equals(mPath))	{
@@ -6403,6 +6534,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		intent.putExtra("Pass", mServer.getPass());		// SMB認証用
 		intent.putExtra("File", filename);					// ファイル名称を追加(これが無いとSAFでエラーが出る)
 		intent.putExtra("Image", name); 					// 中身の画像ファイル名
+		intent.putExtra("Lastpath", "");
 		startActivityForResult(intent, DEF.REQUEST_IMAGE);
 	}
 
@@ -6743,6 +6875,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						dummyIntent.putExtra("LastPath", mPath);
 						// 現在のActivityを再生成させる
 						mChangeTheme = true;
+						// 起動パラメータに追加する
+						mBackupIntent.putExtra("ResumeOff", true);
 						// 直接onActivityResultを呼び出す
 						onActivityResult(DEF.REQUEST_IMAGE, mActivity.RESULT_OK, dummyIntent);
 					}
@@ -6825,6 +6959,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		String mFilePath = DEF.relativePath(mActivity, mUriPath, name);
+		finalFiles = null;
 
 		Logcat.v(logLevel, "mURI=" + mURI + ", mPath=" + mPath + ", mFilePath=" + mFilePath);
 		File htmlFile = new File(mFilePath);
@@ -6931,9 +7066,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// ローカル画像が0件でWeb(https://)画像のみの場合(非同期取得)
 		Logcat.v(logLevel, "ローカル画像がないため、Web画像のバックグラウンド取得を行います");
 		AtomicBoolean result = new AtomicBoolean(false);
-		HybridImageLoader loader = new HybridImageLoader(mActivity);
+		loader = new HybridImageLoader(mActivity);
 		// 混在するパス/URLリストをローカルのFileリストに統一して返す
-		List<File> finalFiles = loader.processMixedPaths(rawPaths, htmlFile, mFilePath);
+		finalFiles = loader.processMixedPaths(rawPaths, htmlFile, mFilePath);
 		if (finalFiles != null && !finalFiles.isEmpty()) {
 			// ファイルをソート
 			sort(finalFiles);
@@ -7157,6 +7292,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		String mFilePath = DEF.relativePath(mActivity, mUriPath, name);
 		Logcat.v(logLevel, "mURI=" + mURI + ", mPath=" + mPath + ", mFilePath=" + mFilePath);
+		finalFiles = null;
 		File textFile = new File(mFilePath);
 		// 平文テキストファイルから画像パスリストを抽出
 		List<String> rawPaths = extractImagePathsFromTextFile(textFile);
@@ -7236,9 +7372,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// ローカル画像が0件でWeb(https://)画像のみの場合(バックグラウンド取得)
 		Logcat.v(logLevel, "ローカル画像がないため、Web画像のバックグラウンド取得を行います");
 		AtomicBoolean result = new AtomicBoolean(false);
-		HybridImageLoader loader = new HybridImageLoader(mActivity);
+		loader = new HybridImageLoader(mActivity);
 		// 混在するパス/URLリストをローカルのFileリストに統一して返す
-		List<File> finalFiles = loader.processMixedPaths(rawPaths, textFile, mFilePath);
+		finalFiles = loader.processMixedPaths(rawPaths, textFile, mFilePath);
 		if (finalFiles != null && !finalFiles.isEmpty()) {
 			// ファイルをソート
 			sort(finalFiles);
@@ -7281,7 +7417,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			Logcat.v(logLevel, "テキスト文字数: " + textContent.length());
 			// Web上の絶対・相対URLパターン
 			Pattern webImgPattern = Pattern.compile(
-				"(?:https?:)?//[^\"'\\s<>]+\\.(?:jpg|jpeg|png|webp|gif|avif)(?:\\?[^\"'\\s<>]*)?", 
+				"(?:https?:)?//[^\"'\\s<>]+",
 				Pattern.CASE_INSENSITIVE
 			);
 			Matcher webMatcher = webImgPattern.matcher(textContent);
@@ -7315,6 +7451,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 		return sb.toString();
 	}
+	public static List<File> getfinalFiles() {
+		return finalFiles;
+	}
 
 	// 拡張子チェック(画像ファイル以外を除外する)
 	private boolean checklowerExtPathendsWith(String cleanPath) {
@@ -7343,6 +7482,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public class HybridImageLoader {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		private final Context context;
+		// キャッシュファイルから元のWeb URLを逆引きするためのマップ
+		private final Map<File, String> cacheToUrlMap = new HashMap<>();
 		public HybridImageLoader(Context context) {
 			this.context = context;
 		}
@@ -7350,6 +7491,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		public List<File> processMixedPaths(List<String> rawPaths, File htmlFile, String baseUrl) {
 			Logcat.v(logLevel, "processMixedPaths start.");
 			List<File> finalFileList = new ArrayList<>();
+			// 新しい処理の開始時にマップをクリア
+			cacheToUrlMap.clear();
+			if (rawPaths == null || rawPaths.isEmpty()) {
+				return finalFileList;
+			}
 			// ファイル名をMD5のハッシュ値へ変換
 			String mCacheDirName = DEF.makeCode(baseUrl, 0, 0);
 			File cacheDir = new File(context.getCacheDir(), mCacheDirName);
@@ -7443,8 +7589,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					String normalizedUrl = normalizeUrl(path);
 					String cacheFileName = generateCacheFileName(currentListHash, orderIndex, normalizedUrl);
 					File cachedFile = new File(cacheDir, cacheFileName);
-					if (cachedFile.exists() && cachedFile.length() > 0) {
+					if (mBackgroundDownloadImageFile || cachedFile.exists() && cachedFile.length() > 0) {
 						Logcat.v(logLevel, "キャッシュから読み込み: " + path);
+						// マップにキャッシュファイルと元のURLを紐付けて保存
+						cacheToUrlMap.put(cachedFile, path);
 						if (!finalFileList.contains(cachedFile)) {
 							finalFileList.add(cachedFile);
 						}
@@ -7498,11 +7646,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						String cacheFileName = generateCacheFileName(currentListHash, orderIndex, normalizedUrl);
 						File cachedFile = new File(cacheDir, cacheFileName);
 
-						if (cachedFile.exists() && cachedFile.length() > 0) {
+						if (mBackgroundDownloadImageFile || cachedFile.exists() && cachedFile.length() > 0) {
+							cacheToUrlMap.put(cachedFile, absolutePathStr);
 							if (!finalFileList.contains(cachedFile)) {
 								finalFileList.add(cachedFile);
 							}
-						} else {
+						}
+						else {
 							File downloadedFile = downloadWebImageToDestination(absolutePathStr, cachedFile);
 							if (downloadedFile != null && downloadedFile.exists()) {
 								if (!finalFileList.contains(downloadedFile)) {
@@ -7521,13 +7671,22 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			rawPathsCountTotal = (int)((float)(rawPathsCount * 100) / (float)rawPathsLength);
 			return finalFileList;
 		}
-		// 画像ファイル判定用ヘルパー関数
-		private boolean isImageFile(File file) {
-			String name = file.getName().toLowerCase(Locale.US);
-			return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif") || name.endsWith(".webp") || name.endsWith(".bmp");
+		// ビューア側から呼び出し：ファイルが存在しなければ、マップから元URLを逆引きして自動ダウンロードする
+		public File getOrDownloadImage(File targetFile) {
+			if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+				// 既に存在する場合はそのまま返す
+				return targetFile;
+			}
+			// マップから元のURLを逆引き
+			String originalUrl = cacheToUrlMap.get(targetFile);
+			if (originalUrl != null && !originalUrl.isEmpty()) {
+				Logcat.v(logLevel, "オンデマンドダウンロード実行: " + originalUrl);
+				return downloadWebImageToDestination(originalUrl, targetFile);
+			}
+			return targetFile;
 		}
 		// 指定された保存先ファイルへWeb画像をダウンロードする
-		private File downloadWebImageToDestination(String urlStr, File destFile) {
+		public File downloadWebImageToDestination(String urlStr, File destFile) {
 			HttpURLConnection conn = null;
 			try {
 				String currentUrl = urlStr;
@@ -7561,7 +7720,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						return destFile;
 					}
 					else {
-						break;
+						// 該当なしの場合はレスポンス表示用のプレースホルダーBitmapを生成してアプリのキャッシュ領域にPNGファイルとして保存
+						return saveErrorImageFile(mActivity, 400, 300, responseCode, conn.getResponseMessage());
 					}
 				}
 			}
@@ -7574,6 +7734,57 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 			}
 			return null;
+		}
+		// Bitmapを生成してアプリのキャッシュ領域にPNGファイルとして保存
+		public static File saveErrorImageFile(Context context, int width, int height, int responseCode, String responseMessage) {
+			// Bitmapを生成
+			Bitmap bitmap = createErrorBitmap(width, height, responseCode, responseMessage);
+			// 保存先のファイルパスを設定
+			File file = new File(context.getCacheDir(), "error_" + responseCode + ".png");
+			try (FileOutputStream out = new FileOutputStream(file)) {
+				// PNG形式で圧縮して書き出し(品質100%)
+				bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+				out.flush();
+				// 保存されたファイルオブジェクトを返す
+				return file;
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+		// レスポンス表示用のプレースホルダーBitmapを生成
+		private static Bitmap createErrorBitmap(int width, int height, int responseCode, String responseMessage) {
+			// 空のBitmapオブジェクトを作成
+			Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+			Canvas canvas = new Canvas(bitmap);
+			// テキスト描画用のPaintを設定
+			Paint paint = new Paint();
+			// アンチエイリアスを有効化
+			paint.setAntiAlias(true);
+			// 中央揃え
+			paint.setTextAlign(Paint.Align.CENTER);
+			// 背景の描画
+			canvas.drawColor(Color.LTGRAY);
+			// 文字色: 濃いグレー
+			paint.setColor(Color.DKGRAY);
+			// 自動取得したメッセージを合成
+			String text = responseCode + (responseMessage != null && !responseMessage.isEmpty() ? " " + responseMessage : "");
+			// 文字サイズの自動調整処理
+			float textSize = Math.min(width, height) * 0.2f;
+			// 横幅の85%以内に収める制限
+			float maxTextWidth = width * 0.85f;
+			paint.setTextSize(textSize);
+			// 文字幅が制限値を超えている間少しずつサイズを小さくする
+			while (paint.measureText(text) > maxTextWidth && textSize > 10f) {
+				textSize -= 2f;
+				paint.setTextSize(textSize);
+			}
+			// 中央描画用の計算
+			float x = width / 2f;
+			float y = (height / 2f) - ((paint.descent() + paint.ascent()) / 2f);
+			canvas.drawText(text, x, y, paint);
+			return bitmap;
 		}
 		// URLの表記ゆれを解消・統一する関数
 		private String normalizeUrl(String url) {
@@ -7593,7 +7804,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			return normalized;
 		}
 		// 現在のリストハッシュ(Prefix)以外の古いファイルをクリーンアップする処理
-		private void cleanOldCacheFiles(File cacheDir, String currentListHash) {			try {
+		private void cleanOldCacheFiles(File cacheDir, String currentListHash) {
+			try {
 				File[] files = cacheDir.listFiles();
 				if (files == null) return;
 				for (File file : files) {
@@ -7888,7 +8100,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						break;
 				}
 			}
-			Collections.sort(sortfiles, new FilenameComparator());
+			if (!mSkipSortFilelist) {
+				Collections.sort(sortfiles, new FilenameComparator());
+			}
 		}
 
 		// ソート後に現在ファイルを探す
@@ -9323,5 +9537,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			ed.putInt(DEF.KEY_CUSTOMKEY_CODE_10, bigData.mCustomkeycode10);
 			ed.apply();
 		}
+	}
+
+	public static boolean getSkipSortFilelist() {
+		return mSkipSortFilelist;
 	}
 }
