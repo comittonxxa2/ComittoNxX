@@ -357,12 +357,14 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				ed.putBoolean(DEF.KEY_AOZORATEXTFILE, false);
 				ed.putBoolean(DEF.KEY_OPENIMAGEHTMLFILE, false);
 				ed.putBoolean(DEF.KEY_OPENIMAGETEXTFILE, false);
+				ed.putBoolean(DEF.KEY_BACKGROUNDDOWNLOADIMAGEFILE, false);
 				ed.putBoolean(DEF.KEY_TABMODE, false);
 				ed.putString(DEF.KEY_TABSTYLE, "0");
 				ed.putInt(DEF.KEY_TABSEEK, DEF.DEFAULT_TABSEEK);
 				ed.putString(DEF.KEY_TABLAYOUT, "0");
 				ed.putBoolean(DEF.KEY_TABRESTORE, false);
 				ed.putBoolean(DEF.KEY_CANCELFILELISTDIALOG, false);
+				ed.putBoolean(DEF.KEY_SKIPSORTFILELIST, false);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
@@ -1047,6 +1049,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static boolean getBackgroundDownloadImageFile(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_BACKGROUNDDOWNLOADIMAGEFILE, false);
+		return flag;
+	}
+
 	public static boolean getOpenImageTextFile(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_OPENIMAGETEXTFILE, false);
@@ -1068,6 +1076,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static boolean getCancelFileListDialog(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CANCELFILELISTDIALOG, false);
+		return flag;
+	}
+
+	public static boolean getSkipSortFilelist(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_SKIPSORTFILELIST, false);
 		return flag;
 	}
 
