@@ -528,7 +528,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	/** ファイルのタイムスタンプ */
 	private long mTimestamp = 0L;
 	private String mLastpath = "";
-	private boolean mPrevNextMask = false;
+	private static boolean mPrevNextMask = false;
 
 	private ImageManager mImageMgr = null;
 
@@ -981,7 +981,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mImageName = intent.getStringExtra("Image"); 			// 画像直接指定時はファイル/ExpandActivityから開いた時はZIP内部のファイル
 		mLastpath = intent.getStringExtra("Lastpath");
 		// HTML/テキストの展開中は前後のしおり及びファイル移動を行わせない
-		if (mLastpath != null) mPrevNextMask = true;
+		mPrevNextMask = (mLastpath != null && !mLastpath.equals("")) ? true : false;
 
 		// intentからページ番号を取り出すとバグが発生するため保存しない
 		// 画像ファイル名からページ番号を決めることもしない
@@ -3193,7 +3193,6 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 							navibar_height = mNavigationAreaRange;
 							statusbar_height = mStatusAreaRange;
 						}
-						Logcat.v(1, "statusbar_height=" + statusbar_height + ", navibar_height=" + navibar_height);
 						if (statusbar_height <= 0) {
 							statusbar_height = mStatusAreaRange;
 						}
@@ -5492,10 +5491,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			// ディレクトリ選択
 			mMenuDialog.addItem(DEF.MENU_SEL_DIR_TREE, res.getString(R.string.selDirTreeMenu));
 		}
-		// ブックマーク選択
-		mMenuDialog.addItem(DEF.MENU_SELBOOKMARK, res.getString(R.string.selBookmarkMenu));
-		// ブックマーク追加
-		mMenuDialog.addItem(DEF.MENU_ADDBOOKMARK, res.getString(R.string.addBookmarkMenu));
+		if (!mPrevNextMask) {
+			// ブックマーク選択
+			mMenuDialog.addItem(DEF.MENU_SELBOOKMARK, res.getString(R.string.selBookmarkMenu));
+			// ブックマーク追加
+			mMenuDialog.addItem(DEF.MENU_ADDBOOKMARK, res.getString(R.string.addBookmarkMenu));
+		}
 		if (mEnableContentsFile) {
 			// 目次の選択
 			mMenuDialog.addItem(DEF.MENU_CONTENTS, res.getString(R.string.SelectContentsMenu));
@@ -5528,8 +5529,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 		// 共有一時ファイル削除
 		mMenuDialog.addItem(DEF.MENU_DELSHARE, res.getString(R.string.delshareMenu));
-		mMenuDialog.addItem(DEF.MENU_SETTHUMB, res.getString(R.string.setThumb));
-		mMenuDialog.addItem(DEF.MENU_SETTHUMBCROPPED, res.getString(R.string.setThumbCropped));
+		if (!mPrevNextMask) {
+			mMenuDialog.addItem(DEF.MENU_SETTHUMB, res.getString(R.string.setThumb));
+			mMenuDialog.addItem(DEF.MENU_SETTHUMBCROPPED, res.getString(R.string.setThumbCropped));
+		}
 		if (mAnimationEnable) {
 			// アニメーション再生の一時停止
 			mMenuDialog.addItem(DEF.MENU_DISPLAY_ANIMEPAUSE, res.getString(R.string.AnimationPause));
@@ -7478,7 +7481,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				lastfile = mImageName;
 				lastpath = mPath;
 				// 元のフォルダが指定されていれば特別に処理
-				if (mLastpath != null) lastpath = mLastpath;
+				if (!mLastpath.equals("")) lastpath = mLastpath;
 			}
 			else {
 				// ディレクトリオープンのとき
@@ -9465,5 +9468,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 			}
 		});
+	}
+
+	public static boolean getPrevNextMask() {
+		return mPrevNextMask;
 	}
 }
