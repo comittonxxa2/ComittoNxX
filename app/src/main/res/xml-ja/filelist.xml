@@ -401,6 +401,11 @@
             android:title="テキストのリンク先の画像をイメージビューアで開く" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="BackgroundDownloadImageFile"
+            android:summary="リンク先の画像を一括でダウンロードせずにページの先読み時にバックグラウンドで取得する場合はチェックを入れる"
+            android:title="リンク先の画像の取得をバックグラウンドで行う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="TabMode"
             android:summary="ファイル選択画面のタブ表示を有効にする場合はチェックを入れる"
             android:title="ファイル選択画面のタブ表示を有効にする" />
@@ -437,6 +442,11 @@
             android:key="CancelFileListDialog"
             android:summary="ファイルリストの読み込みダイアログの表示のキャンセルを戻るキーにする場合にチェックを入れる"
             android:title="ダイアログの戻るキーによるキャンセル" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipSortFilelist"
+            android:summary="ソート済みファイルリストを用いてアクセス時間を短縮する場合はチェックを入れる\n※もしもソートに失敗する場合はチェックを外す"
+            android:title="ファイルのソート処理を省略" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
