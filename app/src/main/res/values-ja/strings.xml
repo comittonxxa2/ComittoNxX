@@ -74,6 +74,8 @@
     <string name="readxref">XREF読込中</string>
     <string name="readpage">Page構造読込中</string>
     <string name="download">ダウンロード中</string>
+    <string name="sortlist">リストのソート中</string>
+    <string name="searchfile">ファイルの検索中</string>
     <string name="imageParsing">画像解析中</string>
     <string name="loaderr">画像の読込みに失敗しました</string>
     <string name="localStrage">ローカル</string>
@@ -309,6 +311,8 @@
     <string name="addBmOK">OK</string>
     <string name="addBmCancel">キャンセル</string>
     <string name="dlTitle">ダウンロード</string>
+    <string name="sortListTitle">リストのソート</string>
+    <string name="searchTitle">ファイルの検索</string>
     <string name="rmTitle">削除</string>
     <string name="exportLabel">出力ファイル名</string>
     <string name="opeTitle">操作選択</string>
