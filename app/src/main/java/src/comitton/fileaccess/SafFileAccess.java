@@ -32,6 +32,7 @@ import java.util.List;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
 
 public class SafFileAccess {
@@ -489,7 +490,7 @@ public class SafFileAccess {
 			}
 		}
 
-		if (!fileList.isEmpty()) {
+		if (!fileList.isEmpty() && !FileSelectActivity.getSkipSortFilelist()) {
 			Collections.sort(fileList, new FileAccess.FileDataComparator());
 		}
 

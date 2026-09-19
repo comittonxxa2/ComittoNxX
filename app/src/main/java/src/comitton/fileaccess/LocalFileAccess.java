@@ -26,6 +26,7 @@ import jp.dip.muracoro.comittonx.R;
 import org.apache.commons.io.FileUtils;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
 
 public class LocalFileAccess {
@@ -216,7 +217,7 @@ public class LocalFileAccess {
 			Logcat.d(logLevel, "index=" + (fileList.size() - 1) + ", name=" + fileData.getName() + ", type=" + fileData.getType() + ", extType=" + fileData.getExtType());
 		}
 
-		if (!fileList.isEmpty()) {
+		if (!fileList.isEmpty() && !FileSelectActivity.getSkipSortFilelist()) {
 			Collections.sort(fileList, new FileAccess.FileDataComparator());
 		}
 

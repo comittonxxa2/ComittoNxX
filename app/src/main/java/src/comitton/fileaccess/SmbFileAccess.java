@@ -558,7 +558,7 @@ public class SmbFileAccess {
 				Logcat.d(logLevel, "index=" + (fileList.size() - 1) + ", name=" + fileData.getName() + ", type=" + fileData.getType() + ", extType=" + fileData.getExtType());
 			}
 
-			if (!fileList.isEmpty()) {
+			if (!fileList.isEmpty() && !FileSelectActivity.getSkipSortFilelist()) {
 				Collections.sort(fileList, new FileAccess.FileDataComparator());
 			}
 		}
@@ -643,7 +643,7 @@ public class SmbFileAccess {
 						Logcat.d(logLevel, "index=" + (fileList.size() - 1) + ", name=" + fileData.getName() + ", type=" + fileData.getType() + ", extType=" + fileData.getExtType());
 					}
 
-					if (!fileList.isEmpty()) {
+					if (!fileList.isEmpty() && !FileSelectActivity.getSkipSortFilelist()) {
 						Collections.sort(fileList, new FileAccess.FileDataComparator());
 					}
 					return fileList;
