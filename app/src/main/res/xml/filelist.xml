@@ -399,6 +399,11 @@
             android:title="Open the image linked in the Text in an image viewer." />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="BackgroundDownloadImageFile"
+            android:summary="Check this box to retrieve linked images in the background when the page preloads, rather than downloading them all at once."
+            android:title="Fetch the linked image in the background." />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="TabMode"
             android:summary="Check this box to enable tabbed display on the file selection screen."
             android:title="Enable tab display on the file selection screen." />
@@ -435,6 +440,11 @@
             android:key="CancelFileListDialog"
             android:summary="Check this box if you want to use the back key to cancel the display of the file list loading dialog."
             android:title="Canceling a dialog box by pressing the back key" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SkipSortFilelist"
+            android:summary="Check this box to reduce access time by using a sorted file list.\n*If sorting fails, uncheck this box."
+            android:title="File sorting process is omitted." />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
