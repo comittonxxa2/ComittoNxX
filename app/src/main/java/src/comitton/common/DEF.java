@@ -386,6 +386,13 @@ public class DEF {
 	public static final int FLOATING_PROFILE9 = 1039;
 	public static final int FLOATING_PROFILE10 = 1040;
 	public static final int FLOATING_SLIDER = 1041;
+	public static final int FLOATING_LEFTSCROLL = 1042;
+	public static final int FLOATING_RIGHTSCROLL = 1043;
+	public static final int FLOATING_GLASSPLUS = 1044;
+	public static final int FLOATING_GLASSMINUS = 1045;
+	public static final int FLOATING_ZOOMRESET = 1046;
+	public static final int FLOATING_PLAYPAUSE = 1047;
+	public static final int FLOATING_NAVIBACK = 1048;
 
 	public static final int READ_REQUEST_CODE = 42;
 	public static final int WRITE_REQUEST_CODE = 43;
@@ -952,6 +959,8 @@ public class DEF {
 	public static final String KEY_FLOATINGICONVIRTICAL = "FloatingIconVertical";
 	public static final String KEY_FLOATINGICONTRANSPARENCY = "FloatingIconTransParency";
 	public static final String KEY_FLOATINGICONENABLE = "FloatingIconEnable";
+
+	public static final String KEY_FLOATINGICONBARGRIP = "FloatingIconBarGrip";
 
 	// プロファイル設定
 	public static final String KEY_PROFILE_WORD_01 = "Profile1";
