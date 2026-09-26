@@ -112,6 +112,13 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.drawable.profile9,
 					R.drawable.profile10,
 					R.drawable.slider,
+					R.drawable.double_arrow_left,
+					R.drawable.double_arrow_right,
+					R.drawable.magnifying_glass_plus,
+					R.drawable.magnifying_glass_minus,
+					R.drawable.fitscreen,
+					R.drawable.play_pause,
+					R.drawable.exit,
 			};
 
 	// 先頭からのプロファイル1へのオフセット
@@ -157,6 +164,13 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			DEF.FLOATING_PROFILE9,
 			DEF.FLOATING_PROFILE10,
 			DEF.FLOATING_SLIDER,
+			DEF.FLOATING_LEFTSCROLL,
+			DEF.FLOATING_RIGHTSCROLL,
+			DEF.FLOATING_GLASSPLUS,
+			DEF.FLOATING_GLASSMINUS,
+			DEF.FLOATING_ZOOMRESET,
+			DEF.FLOATING_PLAYPAUSE,
+			DEF.FLOATING_NAVIBACK,
 		};
 
 	private static final boolean[] DEFAULT_VALUES =
@@ -196,7 +210,14 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			false,		// プロファイル8
 			false,		// プロファイル9
 			false,		// プロファイル10
-			false,
+			false,		// ページ移動バー
+			false,		// 次のページへスクロール
+			false,		// 前のページへスクロール
+			false,		// ズームイン
+			false,		// ズームアウト
+			false,		// ズームリセット
+			false,		// アニメ再生の停止/再開
+			false,		// ビューアの終了
 		};
 
 	private static final int[] COMMAND_RES =
@@ -236,7 +257,14 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.string.ToolbarProfile8,		// プロファイル8
 					R.string.ToolbarProfile9,		// プロファイル9
 					R.string.ToolbarProfile10,		// プロファイル10
-					R.string.ToolbarPageMovementBar,
+					R.string.ToolbarPageMovementBar,	// ページ移動バー
+					R.string.ToolbarNextScroll,		// 次のページへスクロール
+					R.string.ToolbarPrevScroll,		// 前のページへスクロール
+					R.string.ToolbarPinchScaleUp,	// ズームイン
+					R.string.ToolbarPinchScaleDown,	// ズームアウト
+					R.string.ZoomReset,				// ズームリセット
+					R.string.AnimationPause,		// アニメ再生の停止/再開
+					R.string.ToolbarExitViewer,		// ビューアの終了
 			};
 
 	private class Mlist {

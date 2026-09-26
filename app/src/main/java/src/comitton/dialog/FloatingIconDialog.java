@@ -53,6 +53,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private int mDirectionMode;
 
 	private CheckBox mChkEnable;
+	private CheckBox mChkBarGrip;
 
 	private Button mBtnRevert;
 	private Button mBtnApply;
@@ -66,6 +67,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private TextView mDummyText2;
 
 	private boolean mEnable;
+	private boolean mBarGrip;
 	private int mSize;
 	private static int mHorizontal;
 	private static int mVertical;
@@ -121,7 +123,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		addItem(inflater.inflate(R.layout.floatingiconconfig, null, false));
 	}
 
-	public void setConfig(int directionmode, int size, int horizontal, int vertical, int transparency, boolean enable) {
+	public void setConfig(int directionmode, int size, int horizontal, int vertical, int transparency, boolean enable, boolean bargrip) {
 
 		mDirectionModeTemp  = mDirectionMode  = directionmode;
 		mSize = size;
@@ -129,6 +131,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		mVertical = vertical;
 		mTransparency = transparency;
 		mEnable = enable;
+		mBarGrip = bargrip;
 	}
 
 	public static void SetFloatingIconCursor(int horizontal, int vertical) {
@@ -156,6 +159,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		for( int i = 0; i < mViewArray.size(); ++i) {
 
 			mChkEnable = mChkEnable != null ? mChkEnable : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_enablefloatingicon);
+			mChkBarGrip = mChkBarGrip != null ? mChkBarGrip : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_enablebargrip);
 
 			mDummyText1 = mDummyText1 != null ? mDummyText1 : (TextView) mViewArray.get(i).findViewById(R.id.label_editfloatingicon);
 			mDummyText2 = mDummyText2 != null ? mDummyText2 : (TextView) mViewArray.get(i).findViewById(R.id.label_directionfloatingicon);
@@ -177,6 +181,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		}
 
 		if (mChkEnable != null) mChkEnable.setChecked(mEnable);
+		if (mChkBarGrip != null) mChkBarGrip.setChecked(mBarGrip);
 
 		if (mTxtSize != null) mSizeStr = mTxtSize.getText().toString();
 		if (mTxtSize != null) mTxtSize.setText(mSizeStr.replaceAll("%", getSizeStr(mSize)));
@@ -252,6 +257,10 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		boolean val = DEF.getBoolean(sharedPreferences, DEF.KEY_FLOATINGICONENABLE, false);
 		return val;
 	}
+	public static boolean getBarGrip(SharedPreferences sharedPreferences) {
+		boolean val = DEF.getBoolean(sharedPreferences, DEF.KEY_FLOATINGICONBARGRIP, false);
+		return val;
+	}
 
 	public void setFloatingIconListner(FloatingIconListenerInterface listener) {
 		mListener = listener;
@@ -260,7 +269,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	public interface FloatingIconListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable);
+	    public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable, boolean bargrip);
 	    public void onClose();
 	}
 
@@ -344,7 +353,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 		if (select == CLICK_REVERT) {
 			// 戻す場合は元の値を通知
-			mListener.onButtonSelect(select, mSize, mHorizontal, mVertical, mTransparency, mDirectionMode, mEnable);
+			mListener.onButtonSelect(select, mSize, mHorizontal, mVertical, mTransparency, mDirectionMode, mEnable, mBarGrip);
 		}
 		else {
 			// OK/適用は設定された値を通知
@@ -353,7 +362,8 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 			int vertical = mSkbVertical.getProgress();
 			int transparency = mSkbTransparency.getProgress();
 			boolean enable = mChkEnable.isChecked();
-			mListener.onButtonSelect(select, size, horizontal, vertical, transparency, mDirectionModeTemp, enable);
+			boolean bargrip = mChkBarGrip.isChecked();
+			mListener.onButtonSelect(select, size, horizontal, vertical, transparency, mDirectionModeTemp, enable, bargrip);
 		}
 
 		if (select != CLICK_APPLY) {
