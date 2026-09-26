@@ -977,6 +977,7 @@
     <string name="horizontalfloatingicon">Horizontal position(%)</string>
     <string name="verticalfloatingicon">Vertical position(%)</string>
     <string name="transparencyfloatingicon">Background Transparency(%)</string>
+    <string name="enablebargrip">Enable the grip(drag handle).</string>
 
     <string name="floatingicondir00">Vertical direction</string>
     <string name="floatingicondir01">Horizontal direction</string>
@@ -1096,6 +1097,9 @@
     <string name="tablayout00">Top of screen</string>
     <string name="tablayout01">Bottom of screen</string>
     <string name="initbutton">Initialize</string>
+
+    <string name="ExitImageViewer">Exiting the image viewer</string>
+    <string name="ExitImageViewerEnding">Ending...</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

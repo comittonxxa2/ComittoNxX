@@ -59,6 +59,11 @@
         <!-- EditTextのスタイル -->
         <item name="editTextStyle">@style/MyEditText</item>
     </style>
+    <style name="MyNoneDialog" parent="@style/ThemeOverlay.AppCompat.Dialog.Alert">
+        <item name="android:backgroundDimAmount">0.0</item>
+        <item name="android:windowBackground">@drawable/dialogframe</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
 
     <style name="spinnerDropDownItemStyle" parent="Widget.AppCompat.DropDownItem.Spinner">
         <item name="android:gravity">center</item>
