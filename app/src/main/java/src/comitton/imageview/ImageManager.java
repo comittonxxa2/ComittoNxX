@@ -272,6 +272,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mCloseFlag = false;
 	private boolean mCacheBreak;
 	private boolean mCacheSleep;
+	private boolean mCacheSleepOn = false;
 	private final Object mLock;
 
 	/** URIとパスとファイル名 */
@@ -2881,6 +2882,9 @@ public class ImageManager extends InputStream implements Runnable {
 		return mFileType;
 	}
 
+	public int getExttype(int index) {
+		return mFileList[index].exttype;
+	}
 	// 最大ファイルサイズ(圧縮時)を返す
 	public int getMaxCmpLength() {
 		return mMaxCmpLength;
@@ -3077,6 +3081,7 @@ public class ImageManager extends InputStream implements Runnable {
 
 			boolean fMemCacheWrite = false;
 			int page = -1;
+			mCacheSleepOn = false;
 			if (mCacheBreak || mCacheSleep) {
 				mCacheBreak = false;
 				if (mMemPriority != null && mMemPriority.length > 0) {
@@ -3089,6 +3094,9 @@ public class ImageManager extends InputStream implements Runnable {
 				}
 				catch (InterruptedException e) {
 
+				}
+				if (mCacheSleep) {
+					mCacheSleepOn = true;
 				}
 				continue;
 			}
@@ -3564,6 +3572,12 @@ public class ImageManager extends InputStream implements Runnable {
 		Logcat.d(logLevel, "終了します.");
 	}
 
+	public boolean checkTerminate() {
+		return mCacheSleepOn;
+	}
+	public boolean checkCacheSleep() {
+		return mCacheSleep;
+	}
 	private void sendMessage(Handler handler, int what, int arg1, int arg2, Object obj) {
 //		Logcat.d(logLevel, "arg=" + arg1 + ", " + arg2);
 		Message message = new Message();
