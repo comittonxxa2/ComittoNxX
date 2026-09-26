@@ -145,6 +145,14 @@
 				android:paddingLeft="4sp"
 				android:paddingRight="4sp" />
 
+			<CheckBox
+				android:id="@+id/chk_enablebargrip"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="left|center"
+				android:textSize="17sp"
+				android:text= "@string/enablebargrip" />
+
 		</LinearLayout>
 	</ScrollView>
 
