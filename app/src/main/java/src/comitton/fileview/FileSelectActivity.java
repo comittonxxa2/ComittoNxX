@@ -46,6 +46,7 @@ import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetWebViewActivity;
+import src.comitton.dialog.CustomNoneProgressDialog;
 import src.comitton.expandview.ExpandActivity;
 import src.comitton.fileaccess.SmbFileAccess;
 import src.comitton.helpview.HelpActivity;
@@ -235,6 +236,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private TextInputDialog mTextInputDialog;
 	EditServerDialog mEditServerDialog;
 	private static CustomProgressDialog mProgressDialog;
+	private static CustomNoneProgressDialog mNoneProgressDialog;
 	private static FragmentManager supportFragmentManager;
 	private static int old_progress;
 	private static int progress;
@@ -2149,6 +2151,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mLoadListNextInFile = "";
 				}
 			}
+			// 起動pathがnullの場合は最後に開いていたpathを設定
+			if (mLoadListNextPath == null) mLoadListNextPath = path;
 			// ファイルを読み込み
 			mLoadListAuto = true;
 			moveFileSelectFromServer(server, mLoadListNextPath);
@@ -2582,16 +2586,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// ファイルの検索のダイアログの表示を準備
 		Resources res = mActivity.getResources();
 		// ファイルの検索中はダイアログの表示をキャンセルさせないようにする
-		mProgressDialog = new CustomProgressDialog(res.getString(R.string.searchTitle), res.getString(R.string.searchfile),false, mHandler, mProgressbarMode);
+		mNoneProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.searchTitle), res.getString(R.string.searchfile), mHandler);
 		supportFragmentManager = mActivity.getSupportFragmentManager();
 		// メイン画面で表示させるためハンドラを得る
 		mainHandler = new Handler(Looper.getMainLooper());
 		// メイン画面で表示
 		mainHandler.post(() -> {
 			// ダイアログの表示
-			mProgressDialog.show(supportFragmentManager, TAG);
-			// プログレスバーをリセット
-			mProgressDialog.setProgress(0, 0, 0);
+			mNoneProgressDialog.show(supportFragmentManager, TAG);
 		});
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		Handler handler = new Handler(Looper.getMainLooper());
@@ -2611,7 +2613,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						@Override
 						public void run() {
 							mainHandler.post(() -> {
-								mProgressDialog.dismiss();
+								mNoneProgressDialog.dismissAllowingStateLoss();
 							});
 							// 次のファイルを開く(メイン)
 							result[0] = nextOpenMain(nextopen, path, file, infile, type, page, nextfile[0]);
@@ -6022,16 +6024,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// リストのソートのダイアログの表示を準備
 		Resources res = mActivity.getResources();
 		// リストのソート中はダイアログの表示をキャンセルさせないようにする
-		mProgressDialog = new CustomProgressDialog(res.getString(R.string.sortListTitle), res.getString(R.string.sortlist),false, mHandler, mProgressbarMode);
+		mNoneProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.sortListTitle), res.getString(R.string.sortlist), mHandler);
 		supportFragmentManager = mActivity.getSupportFragmentManager();
 		// メイン画面で表示させるためハンドラを得る
 		mainHandler = new Handler(Looper.getMainLooper());
 		// メイン画面で表示
 		mainHandler.post(() -> {
 			// ダイアログの表示
-			mProgressDialog.show(supportFragmentManager, TAG);
-			// プログレスバーをリセット
-			mProgressDialog.setProgress(0, 0, 0);
+			mNoneProgressDialog.show(supportFragmentManager, TAG);
 		});
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		Handler handler = new Handler(Looper.getMainLooper());
@@ -6050,7 +6050,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						@Override
 						public void run() {
 							mainHandler.post(() -> {
-								mProgressDialog.dismiss();
+								mNoneProgressDialog.dismissAllowingStateLoss();
 							});
 						}
 					});
@@ -6464,6 +6464,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		final boolean checkAozora = (mAozoraTextFile && mode) ? analyzeTextFile(path) : false;
 
 		Intent intent;
+		finalFiles = null;
 		if (checkAozora) {
 			// WebベースのEPUBビューアの場合
 			intent = new Intent(FileSelectActivity.this, EpubWebViewActivity.class);
@@ -6555,6 +6556,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 描画停止
 		setDrawEnable();
 
+		finalFiles = null;
 		if (mOpenImageHtmlFile) {
 			// HTMLのリンク先の画像をイメージビューアで開く場合
 			setImageHtmlTextfile(file, name, true);
@@ -6959,7 +6961,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		String mFilePath = DEF.relativePath(mActivity, mUriPath, name);
-		finalFiles = null;
 
 		Logcat.v(logLevel, "mURI=" + mURI + ", mPath=" + mPath + ", mFilePath=" + mFilePath);
 		File htmlFile = new File(mFilePath);
@@ -7292,7 +7293,6 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		String mFilePath = DEF.relativePath(mActivity, mUriPath, name);
 		Logcat.v(logLevel, "mURI=" + mURI + ", mPath=" + mPath + ", mFilePath=" + mFilePath);
-		finalFiles = null;
 		File textFile = new File(mFilePath);
 		// 平文テキストファイルから画像パスリストを抽出
 		List<String> rawPaths = extractImagePathsFromTextFile(textFile);
