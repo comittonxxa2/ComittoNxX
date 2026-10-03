@@ -136,6 +136,12 @@
     <string name="ZoomLevelUndo">undo</string>
     <string name="ZoomReset">Zoom reset</string>
     <string name="downloadCountMenu">Number of Downloads</string>
+    <string name="everythingSearchMenu">Everything Search</string>
+    <string name="everythingSearchTitle">Search with Everything</string>
+    <string name="everythingSearchHint">Enter search keyword</string>
+    <string name="everythingSearchNoServer">No matching SMB server is registered for this host. Add it in the server list first.</string>
+    <string name="everythingSearchNoResult">No results found.</string>
+    <string name="everythingSearchPrompt">Tap to search with Everything</string>
     <string name="licenseMenu">License</string>
     <string name="noiseMenu">Operation by noise</string>
     <string name="HorizontalWriting">Change to horizontal display</string>
@@ -556,12 +562,34 @@
     <string name="toolbar03">Marker</string>
     <string name="toolbar04">Add</string>
     <string name="toolbar05">Exit</string>
+    <string name="toolbar06">Sync</string>
+    <string name="readPositionSyncDone">Synced read position for %1$d file(s)</string>
+    <string name="readPositionSyncUnavailable">Bookmark sync server is not configured, or this is a local file list</string>
     <string name="listname00">File</string>
     <string name="listname01">Directory</string>
     <string name="listname02">Server</string>
     <string name="listname03">Favorite</string>
     <string name="listname04">History</string>
     <string name="listname05">Menu</string>
+    <string name="listname06">Search</string>
+    <string name="listname07">Library</string>
+    <string name="libraryTapToSearch">Tap to search Library titles</string>
+    <string name="libraryVolumeCount">%1$d volume(s)</string>
+    <string name="librarySyncDone">Library updated: %1$d new item(s)</string>
+    <string name="libraryMenuRescan">Scan server now</string>
+    <string name="libraryMenuPull">Update from server</string>
+    <string name="libraryRescanTriggered">Server scan started. Use \"Update from server\" once it finishes.</string>
+    <string name="libraryRescanCooldown">A scan already ran recently. Use \"Update from server\" to fetch the current catalog.</string>
+    <string name="libraryRescanError">Could not start the server scan.</string>
+    <string name="libraryMenuSearch">Search by title</string>
+    <string name="libraryMenuClearFilter">Clear filter</string>
+    <string name="libraryMenuImportError">Failed to import Library data</string>
+    <string name="libraryMenuVerify">Check existence and remove missing volumes</string>
+    <string name="libraryVerifyStart">Checking files on the server...</string>
+    <string name="libraryVerifyDone">Checked %1$d volume(s), removed %2$d missing</string>
+    <string name="libraryVerifyError">Could not verify (server unreachable?). Nothing was removed.</string>
+    <string name="libraryFilterTitle">Search Library</string>
+    <string name="libraryFilterHint">Enter part of a title</string>
     <string name="maxthread00">Auto</string>
     <string name="maxthread01">1 therad</string>
     <string name="maxthread02">2 threads</string>
@@ -618,6 +646,9 @@
     <string name="selectOrEnterFile">Select or enter a file.</string>
     <string name="SaveConfig">Save settings to file.</string>
     <string name="LoadConfig">Load setting from file.</string>
+    <string name="SaveServerCode">Saved to the local folder.</string>
+    <string name="SaveErrorServerCode">Failed to save.</string>
+    <string name="LoadErrorServerCode">Failed to load.</string>
     <string name="FileNotExist">File not exist.</string>
 
     <string name="fontdlMsg">You text file for display setting to download the font.\nRun Download If you have selected more than once downloaded, the existing file is overwritten.</string>
@@ -653,6 +684,8 @@
 
     <string name="mkChk1">Filter</string>
     <string name="mkChk2">Apply to directory</string>
+    <string name="mkChk3">Files only</string>
+    <string name="mkChk4">Folders only</string>
     <string name="ope100">Set as thumbnail of parent directory</string>
     <string name="ope101">Crop first page and set to thumbnail</string>
     <string name="cMargin">Center Margin</string>
@@ -710,6 +743,7 @@
     <string name="ToolbarPinchScaleUp">Zoom In</string>
     <string name="ToolbarPinchScaleDown">Zoom Out</string>
     <string name="ToolbarExitViewer">Exit viewer</string>
+    <string name="ToolbarReload">Reload image</string>
     <string name="Toolbarpicsize00">Original Size</string>
     <string name="Toolbarpicsize01">Original x1</string>
     <string name="Toolbarpicsize02">Original x2</string>
@@ -1100,6 +1134,22 @@
 
     <string name="ExitImageViewer">Exiting the image viewer</string>
     <string name="ExitImageViewerEnding">Ending...</string>
+
+　　<string name="SetValue">\nSetting value: </string>
+    <string name="BookmarkSyncHost">Bookmark Sync Server IP Address</string>
+    <string name="BookmarkSyncPort">Bookmark Sync Server Port Number</string>
+    <string name="BookmarkSyncUser">Username for HTTP Auth (optional)</string>
+    <string name="BookmarkSyncPass">Password for HTTP Auth (optional)</string>
+
+    <string name="EverythingHost">Everything Server IP Address</string>
+    <string name="EverythingPort">Everything HTTP API Port Number</string>
+    <string name="EverythingUser">Username for HTTP Auth (optional)</string>
+    <string name="EverythingPass">Password for HTTP Auth (optional)</string>
+    <string name="EverythingReplaceFrom">Local path prefix on the Everything server to be replaced (e.g., /srv/share/)</string>
+    <string name="EverythingReplaceTo">SMB path prefix (e.g., smb://192.168.1.10/share/)</string>
+
+    <string name="ValidIPaddress">Please enter a valid IP address (e.g., 192.168.1.1).</string>
+    <string name="ValidPortaddress">Please enter a port number in the range of 1 to 65535.</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
