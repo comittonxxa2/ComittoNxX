@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "CJ"
+def revision = "CK"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -201,10 +201,10 @@ android {
 dependencies {
     implementation 'androidx.activity:activity:1.13.0'
     implementation 'androidx.appcompat:appcompat:1.8.0'
-    implementation 'androidx.core:core:1.19.0'
+    implementation 'androidx.core:core:1.19.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
     implementation 'androidx.documentfile:documentfile:1.1.0'
-    implementation 'androidx.fragment:fragment:1.9.0'
+    implementation 'androidx.fragment:fragment:1.9.1'
     implementation "androidx.preference:preference:1.2.1"
     implementation "androidx.viewpager2:viewpager2:1.1.0"
     implementation 'com.github.cachapa:ExpandableLayout:2.9.2'
@@ -223,7 +223,7 @@ dependencies {
     implementation 'org.tukaani:xz:1.12' // これがないと7zのLZMA解凍でエラーになる
 
     implementation 'com.sorrowblue.sevenzipjbinding:7-Zip-JBinding-4Android:16.02-2.4'
-    implementation 'androidx.webkit:webkit:1.17.0'
+    implementation 'androidx.webkit:webkit:1.17.1'
 
     implementation('io.documentnode:epub4j-core:4.2.3') {
         // 以下の2つがAndroid標準と衝突するため除外する
@@ -235,6 +235,6 @@ dependencies {
 
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
-    compileOnly 'org.projectlombok:lombok:1.18.46'
-    annotationProcessor 'org.projectlombok:lombok:1.18.46'
+    compileOnly 'org.projectlombok:lombok:1.18.48'
+    annotationProcessor 'org.projectlombok:lombok:1.18.48'
 }
