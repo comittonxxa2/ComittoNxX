@@ -17,15 +17,15 @@ import android.graphics.Paint.Style;
 import android.view.MotionEvent;
 
 public class SelectorArea {
-	private final int BUTTON_MAXNUM = 6;
+	private final int BUTTON_MAXNUM = 8;
 
 	private final int ICON_ID[] =
 	{
-			R.drawable.directory, R.drawable.toolbar_server, R.drawable.list_favorite, R.drawable.list_history, R.drawable.menu, R.drawable.list_file,
+			R.drawable.directory, R.drawable.toolbar_server, R.drawable.list_favorite, R.drawable.list_history, R.drawable.menu, R.drawable.list_file, R.drawable.toolbar_search, R.drawable.ic_menu_archive,
 	};
 	private final int TEXT_ID[] =
 	{
-		R.string.listname01, R.string.listname02, R.string.listname03, R.string.listname04, R.string.listname05, R.string.listname00
+		R.string.listname01, R.string.listname02, R.string.listname03, R.string.listname04, R.string.listname05, R.string.listname00, R.string.listname06, R.string.listname07
 	};
 
 	private Bitmap mBitmap[];

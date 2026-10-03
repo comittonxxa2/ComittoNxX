@@ -2,6 +2,7 @@ package src.comitton.fileview.view.list;
 
 import src.comitton.common.DEF;
 import src.comitton.common.ImageAccess;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.view.DrawNoticeListener;
 import jp.dip.muracoro.comittonx.R;
 import android.content.Context;
@@ -18,12 +19,18 @@ import android.view.MotionEvent;
 
 public class ToolbarArea {
 	private final int BUTTON_NUM = 6;
+	private final int BUTTON_NUM_EXT = 7;
 
 	private final int[] ICON_ID =
 	{
 			R.drawable.toolbar_back, R.drawable.toolbar_refresh, R.drawable.toolbar_mode, R.drawable.toolbar_search, R.drawable.add_directory, R.drawable.toolbar_exit
 	};
+	private final int[] ICON_ID_EXT =
+	{
+			R.drawable.toolbar_back, R.drawable.toolbar_refresh, R.drawable.toolbar_mode, R.drawable.toolbar_search, R.drawable.toolbar_sync, R.drawable.add_directory, R.drawable.toolbar_exit
+	};
 	private final int[] TEXT_ID = { R.string.toolbar00, R.string.toolbar01, R.string.toolbar02, R.string.toolbar03, R.string.toolbar04, R.string.toolbar05 };
+	private final int[] TEXT_ID_EXT = { R.string.toolbar00, R.string.toolbar01, R.string.toolbar02, R.string.toolbar03, R.string.toolbar06, R.string.toolbar04, R.string.toolbar05 };
 
 	private Bitmap[] mBitmap;
 	private int mTouchIndex;
@@ -56,11 +63,13 @@ public class ToolbarArea {
 	public ToolbarArea(Context context, DrawNoticeListener listener) {
 		mContext = context;
 		Resources res = mContext.getResources();
+		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
+		int button_num = (mReadPositionSyncSet) ? BUTTON_NUM_EXT : BUTTON_NUM;
 
 		// ボタン名称をリソースから読み込み
-		mNameText = new String[BUTTON_NUM];
-		for (int i = 0; i < BUTTON_NUM; i++) {
-			mNameText[i] = res.getString(TEXT_ID[i]);
+		mNameText = new String[button_num];
+		for (int i = 0; i < button_num; i++) {
+			mNameText[i] = (mReadPositionSyncSet) ? res.getString(TEXT_ID_EXT[i]) : res.getString(TEXT_ID[i]);
 		}
 
 		mTouchIndex = -1;
@@ -84,13 +93,15 @@ public class ToolbarArea {
 
 		int cx = mAreaWidth;
 		int cy = mAreaHeight;
+		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
+		int button_num = (mReadPositionSyncSet) ? BUTTON_NUM_EXT : BUTTON_NUM;
 
 		// グラデーション幅算出
-		int[] bmp_x = new int[BUTTON_NUM];
-		int[] bmp_y = new int[BUTTON_NUM];
+		int[] bmp_x = new int[button_num];
+		int[] bmp_y = new int[button_num];
 		int line1, line2;
 
-		for (int i = 0; i < BUTTON_NUM; i++) {
+		for (int i = 0; i < button_num; i++) {
 			boolean btnDown = false;
 			if (mTouchIndex == i) {
 				btnDown = true;
@@ -103,21 +114,21 @@ public class ToolbarArea {
 				mFillPaint.setColor(mBakColor);
 			}
 			if (cx > cy) {
-				line1 = baseX + cx * i / BUTTON_NUM;
-				line2 = baseX + cx * (i + 1) / BUTTON_NUM;
+				line1 = baseX + cx * i / button_num;
+				line2 = baseX + cx * (i + 1) / button_num;
 
-				bmp_x[i] = baseX + cx * (i * 2 + 1) / (BUTTON_NUM * 2) - mSizeBitmap / 2;
+				bmp_x[i] = baseX + cx * (i * 2 + 1) / (button_num * 2) - mSizeBitmap / 2;
 				bmp_y[i] = baseY + (cy - (mSizeBitmap + (mShowLabel ? mSizeFont + mTextMargin : 0))) / 2;
 
 				// 押されていないか押されてても違うボタン
 				canvas.drawRect(line1, baseY + 0, line2, baseY + cy, mFillPaint);
 			}
 			else {
-				line1 = baseY + cy * i / BUTTON_NUM;
-				line2 = baseY + cy * (i + 1) / BUTTON_NUM;
+				line1 = baseY + cy * i / button_num;
+				line2 = baseY + cy * (i + 1) / button_num;
 
 				bmp_x[i] = baseX + (cx - mSizeBitmap) / 2;
-				bmp_y[i] = baseY + cy * (i * 2 + 1) / (BUTTON_NUM * 2) - (mSizeBitmap + (mShowLabel ? mSizeFont + mTextMargin : 0)) / 2;
+				bmp_y[i] = baseY + cy * (i * 2 + 1) / (button_num * 2) - (mSizeBitmap + (mShowLabel ? mSizeFont + mTextMargin : 0)) / 2;
 
 				// 押されていないか押されてても違うボタン
 				canvas.drawRect(baseX + 0, line1, baseX + cx, line2, mFillPaint);
@@ -125,13 +136,13 @@ public class ToolbarArea {
 		}
 
 		// ビットマップ描画
-		for (int i = 0; i < BUTTON_NUM; i++) {
+		for (int i = 0; i < button_num; i++) {
 			Bitmap bm = mBitmap[i];
 			canvas.drawBitmap(bm,  bmp_x[i], bmp_y[i], mBitmapPaint);
 		}
 
 		if (mShowLabel) {
-			for (int i = 0; i < BUTTON_NUM; i++) {
+			for (int i = 0; i < button_num; i++) {
 				int tx = bmp_x[i] + mSizeBitmap / 2;
 				int ty = bmp_y[i] + mSizeBitmap + mTextMargin + mTextAscent;
 				canvas.drawText(mNameText[i], tx, ty, mTextPaint);
@@ -171,6 +182,8 @@ public class ToolbarArea {
 		int index;
 		boolean inArea;
 		int ret = -1;
+		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
+		int button_num = (mReadPositionSyncSet) ? BUTTON_NUM_EXT : BUTTON_NUM;
 
 		// エリア内かを求める
 		if (0 <= x && x < cx && 0 <= y && y <= cy) {
@@ -185,10 +198,10 @@ public class ToolbarArea {
 			index = -1;
 		}
 		else if (cx > cy) {
-			index = x * BUTTON_NUM / cx;
+			index = x * button_num / cx;
 		}
 		else {
-			index = y * BUTTON_NUM / cy;
+			index = y * button_num / cy;
 		}
 
 		// イベント処理
@@ -250,10 +263,12 @@ public class ToolbarArea {
 
 		// ビットマップリソースを読み込み
 		Resources res = mContext.getResources();
-		mBitmap = new Bitmap[ICON_ID.length];
+		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
+		mBitmap = new Bitmap[(mReadPositionSyncSet) ? ICON_ID_EXT.length : ICON_ID.length];
+		int button_num = (mReadPositionSyncSet) ? BUTTON_NUM_EXT : BUTTON_NUM;
 		if (mShowToolbar) {
-			for (int i = 0; i < BUTTON_NUM; i++) {
-				mBitmap[i] = ImageAccess.createIcon(res, ICON_ID[i], mSizeBitmap, drawcolor);
+			for (int i = 0; i < button_num; i++) {
+				mBitmap[i] = ImageAccess.createIcon(res, (mReadPositionSyncSet) ? ICON_ID_EXT[i] : ICON_ID[i], mSizeBitmap, drawcolor);
 			}
 			mTextPaint.setColor(drawcolor);
 		}

@@ -45,6 +45,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 	public final static short AREATYPE_MENULIST = 0x80;
 	public final static short AREATYPE_SELECTOR = 0x100;
 	public final static short AREATYPE_LIST = 0x200;
+	public final static short AREATYPE_SEARCHLIST = 0x400;
+	public final static short AREATYPE_LIBRARYLIST = 0x800;
 
 	public final static short AREATYPE_ALL = 0xFFF;
 
@@ -58,6 +60,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 	public RecordListArea mFavoListArea;
 	public RecordListArea mHistListArea;
 	public RecordListArea mMenuListArea;
+	public RecordListArea mSearchListArea;
+	public RecordListArea mLibraryListArea;
 
 	private Rect mTitleRect;
 	private Rect mToolbarRect;
@@ -68,6 +72,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 	private Rect mFavoListRect;
 	private Rect mHistListRect;
 	private Rect mMenuListRect;
+	private Rect mSearchListRect;
+	private Rect mLibraryListRect;
 
 	private int mListBorder;
 
@@ -112,6 +118,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		mFavoListArea = new RecordListArea(context, RecordList.TYPE_BOOKMARK, res.getString(R.string.bmTitle), this);
 		mHistListArea = new RecordListArea(context, RecordList.TYPE_HISTORY, res.getString(R.string.hsTitle), this);
 		mMenuListArea = new RecordListArea(context, RecordList.TYPE_MENU, res.getString(R.string.listname05), this);
+		mSearchListArea = new RecordListArea(context, RecordList.TYPE_SEARCH, res.getString(R.string.listname06), this);
+		mLibraryListArea = new RecordListArea(context, RecordList.TYPE_LIBRARY, res.getString(R.string.listname07), this);
 		mSelectorArea = new SelectorArea(context, this);
 		// mScrollerArea = new ScrollerArea(context, this);
 
@@ -121,6 +129,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		mFavoListArea.setListTitle("[" + res.getString(R.string.bmTitle) + "]", null);
 		mHistListArea.setListTitle("[" + res.getString(R.string.hsTitle) + "]", null);
 		mMenuListArea.setListTitle("[" + res.getString(R.string.listname05) + "]", null);
+		mSearchListArea.setListTitle("[" + res.getString(R.string.listname06) + "]", null);
+		mLibraryListArea.setListTitle("[" + res.getString(R.string.listname07) + "]", null);
 
 		float density = context.getResources().getDisplayMetrics().scaledDensity;
 		mListBorder = (int) (3 * density);
@@ -233,6 +243,16 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 				areatype = AREATYPE_MENULIST;
 			}
 		}
+		else if (mListType[listIndex] == RecordList.TYPE_SEARCH) {
+			if (checkInRect(mSearchListRect, x, y)) {
+				areatype = AREATYPE_SEARCHLIST;
+			}
+		}
+		else if (mListType[listIndex] == RecordList.TYPE_LIBRARY) {
+			if (checkInRect(mLibraryListRect, x, y)) {
+				areatype = AREATYPE_LIBRARYLIST;
+			}
+		}
 		return areatype;
 	}
 
@@ -263,6 +283,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 			mFavoListRect = mFavoListArea.setDrawArea(0, y, mSelectorRect.left, cy, mOrientation);
 			mHistListRect = mHistListArea.setDrawArea(0, y, mSelectorRect.left, cy, mOrientation);
 			mMenuListRect = mMenuListArea.setDrawArea(0, y, mSelectorRect.left, cy, mOrientation);
+			mSearchListRect = mSearchListArea.setDrawArea(0, y, mSelectorRect.left, cy, mOrientation);
+			mLibraryListRect = mLibraryListArea.setDrawArea(0, y, mSelectorRect.left, cy, mOrientation);
 		}
 		else {
 			// 縦画面
@@ -275,6 +297,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 			mFavoListRect = mFavoListArea.setDrawArea(0, y2, cx, mSelectorRect.top, mOrientation);
 			mHistListRect = mHistListArea.setDrawArea(0, y2, cx, mSelectorRect.top, mOrientation);
 			mMenuListRect = mMenuListArea.setDrawArea(0, y2, cx, mSelectorRect.top, mOrientation);
+			mSearchListRect = mSearchListArea.setDrawArea(0, y2, cx, mSelectorRect.top, mOrientation);
+			mLibraryListRect = mLibraryListArea.setDrawArea(0, y2, cx, mSelectorRect.top, mOrientation);
 		}
 		mListRect.set(mToolbarRect.left, mToolbarRect.top, mFileListRect.right, mFileListRect.bottom);
 		int minwidth = Math.min(cx, cy);
@@ -413,6 +437,12 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 					else if (type == RecordList.TYPE_MENU) {
 						mMenuListArea.drawArea(canvas, mMenuListRect.left + offsetX, mMenuListRect.top);
 					}
+					else if (type == RecordList.TYPE_SEARCH) {
+						mSearchListArea.drawArea(canvas, mSearchListRect.left + offsetX, mSearchListRect.top);
+					}
+					else if (type == RecordList.TYPE_LIBRARY) {
+						mLibraryListArea.drawArea(canvas, mLibraryListRect.left + offsetX, mLibraryListRect.top);
+					}
 				}
 			}
 		}
@@ -442,6 +472,12 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 			}
 			else if (listtype == RecordList.TYPE_MENU) {
 				mMenuListArea.drawArea(canvas, mMenuListRect.left, mMenuListRect.top);
+			}
+			else if (listtype == RecordList.TYPE_SEARCH) {
+				mSearchListArea.drawArea(canvas, mSearchListRect.left, mSearchListRect.top);
+			}
+			else if (listtype == RecordList.TYPE_LIBRARY) {
+				mLibraryListArea.drawArea(canvas, mLibraryListRect.left, mLibraryListRect.top);
 			}
 		}
 		if (Rect.intersects(mTitleRect, rc)) {
@@ -483,6 +519,12 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		else if (areatype == AREATYPE_MENULIST) {
 			x -= mMenuListRect.left;
 		}
+		else if (areatype == AREATYPE_SEARCHLIST) {
+			x -= mSearchListRect.left;
+		}
+		else if (areatype == AREATYPE_LIBRARYLIST) {
+			x -= mLibraryListRect.left;
+		}
 		return x;
 	}
 
@@ -513,6 +555,12 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		}
 		else if (areatype == AREATYPE_MENULIST) {
 			y -= mMenuListRect.top;
+		}
+		else if (areatype == AREATYPE_SEARCHLIST) {
+			y -= mSearchListRect.top;
+		}
+		else if (areatype == AREATYPE_LIBRARYLIST) {
+			y -= mLibraryListRect.top;
 		}
 		return y;
 	}
@@ -633,6 +681,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		mFavoListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
 		mHistListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
 		mMenuListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
+		mSearchListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
+		mLibraryListArea.setDrawColor(clr_txt, clr_inf, clr_bak, clr_cur, clr_frm);
 	}
 
 	public void setDrawInfo(int tilesize, int titlesize, int infosize, int margin, boolean showext, boolean splitfilename, int maxlines) {
@@ -642,6 +692,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		mFavoListArea.setDrawInfo(titlesize, infosize, margin);
 		mHistListArea.setDrawInfo(titlesize, infosize, margin);
 		mMenuListArea.setDrawInfo(titlesize, infosize, margin);
+		mSearchListArea.setDrawInfo(titlesize, infosize, margin);
+		mLibraryListArea.setDrawInfo(titlesize, infosize, margin);
 	}
 
 	public void switchListType(boolean isReverse) {
@@ -753,7 +805,7 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 					break;
 			}
 		}
-		else if (listtype == RecordList.TYPE_SERVER || listtype == RecordList.TYPE_MENU) {
+		else if (listtype == RecordList.TYPE_SERVER || listtype == RecordList.TYPE_MENU || listtype == RecordList.TYPE_SEARCH || listtype == RecordList.TYPE_LIBRARY) {
 			name = "";
 			way = true;
 		}
@@ -797,6 +849,12 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		else if (listtype == RecordList.TYPE_MENU) {
 			return mMenuListArea;
 		}
+		else if (listtype == RecordList.TYPE_SEARCH) {
+			return mSearchListArea;
+		}
+		else if (listtype == RecordList.TYPE_LIBRARY) {
+			return mLibraryListArea;
+		}
 		return null;
 	}
 
@@ -809,6 +867,8 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 		mFavoListArea.setListNoticeListener(listener);
 		mHistListArea.setListNoticeListener(listener);
 		mMenuListArea.setListNoticeListener(listener);
+		mSearchListArea.setListNoticeListener(listener);
+		mLibraryListArea.setListNoticeListener(listener);
 	}
 
 	// listindexの加減算後の値(範囲考慮)
@@ -844,6 +904,13 @@ public class ListScreenView extends SurfaceView implements SurfaceHolder.Callbac
 	public void setRecordList(RecordListArea list, ArrayList<RecordItem> recordlist) {
 		synchronized (getHolder()) {
 			list.setList(recordlist);
+		}
+	}
+
+	// Everything検索結果を検索タブへ反映する
+	public void setSearchList(ArrayList<RecordItem> recordlist) {
+		synchronized (getHolder()) {
+			mSearchListArea.setList(recordlist);
 		}
 	}
 
