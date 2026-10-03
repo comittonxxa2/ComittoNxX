@@ -70,6 +70,7 @@ import src.comitton.common.CustomKeySharedData;
 import src.comitton.config.SetConfigActivity;
 import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetFileColorActivity;
+import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetHardwareEpubWebViewKeyActivity;
 import src.comitton.config.SetImageActivity;
 import src.comitton.config.SetImageText;
@@ -153,6 +154,9 @@ import src.comitton.dialog.PageSelectDialog;
 import src.comitton.dialog.TabDialogFragment;
 import src.comitton.dialog.ToolbarEditDialog;
 import src.comitton.fileaccess.FileAccess;
+import src.comitton.fileaccess.BookmarkSyncClient;
+import src.comitton.fileaccess.HistorySyncClient;
+import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.data.RecordItem;
@@ -1635,8 +1639,31 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private void saveHistory(boolean isSavePage) {
 
 		int type = (mFileName == null || mFileName.isEmpty()) ? RecordItem.TYPE_TEXT : RecordItem.TYPE_COMPTEXT;
+		long historyDate = new Date().getTime();
+		int nowPage = GetNowPage();
+		float rate = (float) nowPage / getTotalPagesNow();
+		boolean mHistorySyncSet = FileSelectActivity.getHistorySyncSet();
 		RecordList.add(RecordList.TYPE_HISTORY, type, mServer, mLocalFileName
-			, mTextName, new Date().getTime(), null, 0, (float)GetNowPage() / getTotalPagesNow(), GetNowPage(), null);
+			, mTextName, historyDate, null, 0, rate, nowPage, null);
+
+		// SMBサーバー上のファイルであれば、複数端末で共有できるよう履歴もサーバーへ同期する
+		// (onAddBookmarkと同じ判定・同じpath/fileを使う)
+		if (mServer != DEF.INDEX_LOCAL && mHistorySyncSet) {
+			String host = new ServerSelect(mSharedPreferences, this).getHost(mServer);
+			RecordItem syncItem = new RecordItem();
+			syncItem.setType(type);
+			syncItem.setServer(mServer);
+			syncItem.setPath(mLocalFileName);
+			syncItem.setFile(mTextName);
+			syncItem.setDate(historyDate);
+			syncItem.setImage("");
+			syncItem.setChapter(0);
+			syncItem.setPageRate(rate);
+			syncItem.setPage(nowPage);
+			syncItem.setDispName(null);
+			HistorySyncClient.pushUpsert(mActivity, syncItem, host, mSharedPreferences);
+		}
+
 		// タスク切り替え時しおりを保存
 		if (isSavePage) {
 			saveCurrentPage();
@@ -3294,8 +3321,28 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		Logcat.v(logLevel, "onAddBookmark() name=" + name);
 		float rate = (isJapaneseMode) ? ratiox : ratioy;
 		int type = (mFileName == null || mFileName.isEmpty()) ? RecordItem.TYPE_TEXT : RecordItem.TYPE_COMPTEXT;
+		long bookmarkDate = new Date().getTime();
+		int nowPage = GetNowPage();
+		boolean mBookmarkSyncSet = FileSelectActivity.getBookmarkSyncSet();
 		RecordList.add(RecordList.TYPE_BOOKMARK, type, mServer, mLocalFileName
-				, mTextName, new Date().getTime(), null, currentSpineIndex, rate, GetNowPage(), name);
+				, mTextName, bookmarkDate, null, currentSpineIndex, rate, nowPage, name);
+
+		// SMBサーバー上のファイルであれば、複数端末で共有できるよう栞をサーバーへも同期する
+		if (mServer != DEF.INDEX_LOCAL && mBookmarkSyncSet) {
+			String host = new ServerSelect(mSharedPreferences, this).getHost(mServer);
+			RecordItem syncItem = new RecordItem();
+			syncItem.setType(type);
+			syncItem.setServer(mServer);
+			syncItem.setPath(mLocalFileName);
+			syncItem.setFile(mTextName);
+			syncItem.setDate(bookmarkDate);
+			syncItem.setImage("");
+			syncItem.setChapter(currentSpineIndex);
+			syncItem.setPageRate(rate);
+			syncItem.setPage(nowPage);
+			syncItem.setDispName(name);
+			BookmarkSyncClient.pushUpsert(mActivity, syncItem, host, mSharedPreferences);
+		}
 	}
 
 	// テキスト設定用ダイアログ表示
