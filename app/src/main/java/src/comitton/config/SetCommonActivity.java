@@ -227,6 +227,8 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
 			});
 		}
+		// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
+		PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
 	}
 
 	private static void RotateMain(Activity activity, int orientation, int viewrota) {

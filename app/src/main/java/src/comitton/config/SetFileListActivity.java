@@ -346,6 +346,8 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				ed.putBoolean(DEF.KEY_EXPANDTEXTENABLE, false);
 				ed.putBoolean(DEF.KEY_MARKERFILTERON, false);
 				ed.putBoolean(DEF.KEY_MARKERDIRON, false);
+				ed.putBoolean(DEF.KEY_MARKERFILEONLYON, false);
+				ed.putBoolean(DEF.KEY_MARKERFOLDERONLYON, false);
 				ed.putBoolean(DEF.KEY_ARCHIVECHECKMANUALMODE, false);
 				ed.putBoolean(DEF.KEY_SKIPGETTHUMBNAIL, false);
 				ed.putBoolean(DEF.KEY_SKIPZIPLIB, false);
@@ -365,10 +367,15 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				ed.putBoolean(DEF.KEY_TABRESTORE, false);
 				ed.putBoolean(DEF.KEY_CANCELFILELISTDIALOG, false);
 				ed.putBoolean(DEF.KEY_SKIPSORTFILELIST, false);
+				ed.putBoolean(DEF.KEY_EVERYTHINGBOOKMARKSYNCSET, false);
+				ed.putBoolean(DEF.KEY_RESOLVEPAGEKEY, false);
+				ed.putBoolean(DEF.KEY_LOADWITHFALLBACK, false);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
 			});
+			// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
+			PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
 		}
 	}
 
@@ -983,6 +990,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static boolean getMarkerFileOnlyOn(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_MARKERFILEONLYON, false);
+		return flag;
+	}
+
+	public static boolean getMarkerFolderOnlyOn(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_MARKERFOLDERONLYON, false);
+		return flag;
+	}
+
 	public static boolean getArchiveCheckManualMode(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_ARCHIVECHECKMANUALMODE, false);
@@ -1082,6 +1101,18 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static boolean getSkipSortFilelist(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_SKIPSORTFILELIST, false);
+		return flag;
+	}
+
+	public static boolean getResolvePageKey(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_RESOLVEPAGEKEY, false);
+		return flag;
+	}
+
+	public static boolean getLoadWithFallback(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_LOADWITHFALLBACK, false);
 		return flag;
 	}
 

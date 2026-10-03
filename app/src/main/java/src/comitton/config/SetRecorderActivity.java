@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.fileview.filelist.RecordList;
@@ -94,6 +95,8 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
 			});
 		}
+		// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
+		PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
 	}
 
 	@Override
@@ -167,6 +170,14 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 		return flag;
 	}
 
+	public static boolean getEverythingSearchView(SharedPreferences sharedPreferences){
+		return true;
+	}
+
+	public static boolean getLibraryView(SharedPreferences sharedPreferences){
+		return true;
+	}
+
 	public static boolean getRecLocal(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_RECLOCAL, true);
@@ -197,16 +208,47 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 		for (int i = 0 ; i < listflag.length ; i ++) {
 			listnum += listflag[i] ? 1 : 0;
 		}
+		// 検索(Everything)タブ。TYPE_FILELIST(5)より後ろの値なのでlistflag[]とは別枠で追加する
+		boolean showSearch = getEverythingSearchView(sharedPreferences);
+		if (showSearch && FileSelectActivity.getEverythingSet()) {
+			listnum++;
+		}
+		// 書庫管理タブ。同じくTYPE_FILELIST(5)より後ろの値なので別枠で追加する
+		boolean showLibrary = getLibraryView(sharedPreferences);
+		if (showLibrary && FileSelectActivity.getLibrarySyncSet()) {
+			listnum++;
+		}
 
 		short[] listtype = new short[listnum + 1];
 		int index = 1;
 		listtype[0] = RecordList.TYPE_FILELIST;
-		for (int i = 0 ; i < listflag.length ; i ++) {
-			if (listflag[i]) {
-				// 表示する場合
-				listtype[index] = (short)i;
-				index ++;
-			}
+		// 表示する場合
+		if (listflag[0]) {
+			listtype[index] = RecordList.TYPE_DIRECTORY;
+			index++;
+		}
+		if (listflag[1]) {
+			listtype[index] = RecordList.TYPE_SERVER;
+			index++;
+		}
+		if (listflag[2]) {
+			listtype[index] = RecordList.TYPE_BOOKMARK;
+			index++;
+		}
+		if (FileSelectActivity.getEverythingSet()) {
+			listtype[index] = RecordList.TYPE_SEARCH;
+			index++;
+		}
+		if (FileSelectActivity.getLibrarySyncSet()) {
+			listtype[index] = RecordList.TYPE_LIBRARY;
+			index++;
+		}
+		if (listflag[3]) {
+			listtype[index] = RecordList.TYPE_HISTORY;
+			index++;
+		}
+		if (listflag[4]) {
+			listtype[index] = RecordList.TYPE_MENU;
 		}
 		return listtype;
 	}

@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ListView;
 
+import android.preference.PreferenceGroup;
 import androidx.preference.PreferenceManager;
 
 public class SetConfigActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
@@ -70,6 +71,8 @@ public class SetConfigActivity extends PreferenceActivity implements OnSharedPre
 				return true;
 			}
 		});
+		// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
+		PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
 	}
 
 	private void putScrollPosition() {

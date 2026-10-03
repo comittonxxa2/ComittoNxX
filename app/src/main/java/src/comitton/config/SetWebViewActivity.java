@@ -151,6 +151,8 @@ public class SetWebViewActivity extends PreferenceActivity implements OnSharedPr
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
 			});
 		}
+		// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
+		PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
 	}
 
 	@Override
