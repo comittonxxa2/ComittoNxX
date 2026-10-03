@@ -230,6 +230,18 @@
             android:screenOrientation="behind"
             android:theme="@style/MyTheme"></activity>
         <activity
+            android:name="src.comitton.config.SetEverythingActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:screenOrientation="behind"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetBookmarkSyncActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:screenOrientation="behind"
+            android:theme="@style/MyTheme"></activity>
+        <activity
             android:name="src.comitton.config.SetHardwareSelectKeyActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
