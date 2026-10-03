@@ -33,7 +33,13 @@ public class RecordList {
 	public static final int TYPE_HISTORY = 3;
 	public static final int TYPE_MENU = 4;
 	public static final int TYPE_FILELIST = 5;
-	public static final int TYPE_MAXNUM = TYPE_FILELIST;
+	// Everything検索結果一覧(ディスク永続化はしない。検索するたびにメモリ上のリストを差し替える)
+	public static final int TYPE_SEARCH = 6;
+	// 書庫管理(EverythingX /list経由の作品/巻一覧)。TYPE_SEARCHと同様にRecordList汎用の
+	// per-type .datファイル機構(FILENAME[]索引)は使わず、LibraryCacheが独自形式で
+	// 別途永続化する。ここでのload/checkModifiedはメモリ上のリストをそのまま返す。
+	public static final int TYPE_LIBRARY = 7;
+	public static final int TYPE_MAXNUM = TYPE_LIBRARY;
 	private static final String[] FILENAME = {"directory.dat", "server.dat", "bookmark.dat", "history.dat", "optmenu.dat"};
 	private static final String SEPARATOR = "\t";
 	private static final int INDEX_TYPE = 0;
@@ -66,12 +72,12 @@ public class RecordList {
 	 * 		- 画面更新の要・不要
 	 */
 	public static boolean checkModified(int listtype, long modified) {
-		String filepath = getFilePath(listtype);
-
-		if (listtype == TYPE_SERVER || listtype == TYPE_MENU){
+		if (listtype == TYPE_SERVER || listtype == TYPE_MENU || listtype == TYPE_SEARCH || listtype == TYPE_LIBRARY){
+			// TYPE_SEARCH/TYPE_LIBRARYはファイルに永続化しない(FILENAME[]に対応エントリが無いためgetFilePath()を呼ばない)
 			return true;
 		}
 		else {
+			String filepath = getFilePath(listtype);
 			File file = new File(filepath);
 			if (!file.exists()) {
 				// ファイルが存在しない
@@ -140,6 +146,31 @@ public class RecordList {
 				data.setIcon(MENU_IMAGE[index]);
 				data.setDispName(res.getString(MENU_TITLE_ID[index]));
 				list.add(data);
+			}
+			return list;
+		}
+		else if (listtype == TYPE_SEARCH) {
+			// 検索結果はディスクに永続化しない。ListScreenView.setSearchList()で差し替えられた
+			// メモリ上のリストをそのまま返す(検索前の初期状態=空の場合のみ、タップで検索できる
+			// ダミー項目1件のリストを用意する)
+			if (list == null || list.isEmpty()) {
+				list = new ArrayList<RecordItem>();
+				Resources res = mContext.getResources();
+				RecordItem prompt = new RecordItem();
+				prompt.setType(RecordItem.TYPE_NONE);
+				prompt.setServer(DEF.INDEX_LOCAL);
+				prompt.setPath("");
+				prompt.setFile("");
+				prompt.setDispName(res.getString(R.string.everythingSearchPrompt));
+				list.add(prompt);
+			}
+			return list;
+		}
+		else if (listtype == TYPE_LIBRARY) {
+			// 書庫管理一覧もディスクに永続化しない(RecordList汎用機構は使わない)。
+			// LibraryCache.buildWorkList()等で差し替えられたメモリ上のリストをそのまま返す。
+			if (list == null) {
+				list = new ArrayList<RecordItem>();
 			}
 			return list;
 		}
@@ -238,6 +269,63 @@ public class RecordList {
 			Logcat.e(logLevel, "", ex);
 		}
 		return list;
+	}
+
+	/**
+	 * {@link #load(ArrayList, int, int, String, String)} と同じだが、完全一致するレコードが
+	 * 無かった場合に、同一サーバー内でファイル名(アーカイブ拡張子は無視)が一致する直近のファイルの
+	 * レコード一式(複数件の栞等)にフォールバックする。
+	 * これにより、ZIP<->RARの拡張子違いやディレクトリ移動後でも栞・履歴を引き継げる。
+	 * 保存(add/update)は常に呼び出し元が渡す正確な path/file で行われるため、このメソッドの
+	 * 変更だけでデータ移行は不要。
+	 */
+	public static ArrayList<RecordItem> loadWithFallback(ArrayList<RecordItem> list, int listtype, int server, String path, String name) {
+		ArrayList<RecordItem> exact = load(list, listtype, server, path, name);
+		if (!exact.isEmpty() || name == null || name.isEmpty()) {
+			return exact;
+		}
+
+		String targetBase = DEF.stripArchiveExt(name);
+		ArrayList<RecordItem> all = load(null, listtype);
+
+		// 同一サーバー内でファイル名(拡張子除く)が一致する「元ファイル」を1つ選ぶ。
+		// 同じディレクトリのものを優先し、次点で登録日時が新しいものを優先する。
+		String bestFile = null;
+		String bestPath = null;
+		long bestDate = -1;
+		for (RecordItem item : all) {
+			if (item.getServer() != server) {
+				continue;
+			}
+			if (!DEF.stripArchiveExt(item.getFile()).equals(targetBase)) {
+				continue;
+			}
+			boolean better;
+			if (bestFile == null) {
+				better = true;
+			}
+			else {
+				boolean itemSamePath = item.getPath().equals(path);
+				boolean bestSamePath = bestPath.equals(path);
+				better = (itemSamePath != bestSamePath) ? itemSamePath : (item.getDate() > bestDate);
+			}
+			if (better) {
+				bestFile = item.getFile();
+				bestPath = item.getPath();
+				bestDate = item.getDate();
+			}
+		}
+		if (bestFile == null) {
+			return exact;
+		}
+
+		// 選ばれた元ファイルに紐づく全レコードを集めて返す
+		for (RecordItem item : all) {
+			if (item.getServer() == server && item.getPath().equals(bestPath) && item.getFile().equals(bestFile)) {
+				exact.add(item);
+			}
+		}
+		return exact;
 	}
 
 	public static void add(int listtype, int type, int server, String path, String file, long date, String image, int page, String name) {
@@ -383,6 +471,12 @@ public class RecordList {
 
 	public static void update(ArrayList<RecordItem> list, int listtype) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		if (listtype == TYPE_LIBRARY) {
+			// 書庫管理一覧はRecordList汎用の.dat機構を使わない(LibraryCacheが別途永続化する)。
+			// FILENAME[]にTYPE_LIBRARY分のエントリが無いため、ここで抜けないとgetFilePath()で
+			// ArrayIndexOutOfBoundsExceptionになる。
+			return;
+		}
 		String filepath = getFilePath(listtype);
 		FileOutputStream os;
 		OutputStreamWriter sw;

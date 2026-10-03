@@ -13,6 +13,7 @@ import src.comitton.common.Logcat;
 import src.comitton.config.SetEpubActivity;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.fileaccess.FileAccess;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.dialog.LoadingDialog;
 import src.comitton.imageview.ImageActivity;
@@ -65,6 +66,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private boolean mHidden;
 	private boolean mFilter;
 	private boolean mApplyDir;
+	private boolean mFileOnly;
+	private boolean mFolderOnly;
 	private String mMarker;
 	private boolean mEpubViewer;
 	private static boolean mKeepSortShuffle;
@@ -310,11 +313,13 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	}
 
 	// リストモード
-	public void setParams(boolean hidden, String marker, boolean filter, boolean applydir, boolean parentmove, boolean epubViewer, boolean epubWebViewer, boolean aozorazipfile, boolean aozoratextfile) {
+	public void setParams(boolean hidden, String marker, boolean filter, boolean applydir, boolean fileOnly, boolean folderOnly, boolean parentmove, boolean epubViewer, boolean epubWebViewer, boolean aozorazipfile, boolean aozoratextfile) {
 		mHidden = hidden;
 		mMarker = marker;
 		mFilter = filter;
 		mApplyDir = applydir;
+		mFileOnly = fileOnly;
+		mFolderOnly = folderOnly;
 		mParentMove = parentmove;
 		mEpubViewer = epubViewer;
 		mEpubWebView = epubWebViewer;
@@ -650,11 +655,11 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						}
 					}
 					if (!chkAozora) {
-						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+						maxpage = (FileSelectActivity.getResolvePageKey()) ? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = (FileSelectActivity.getResolvePageKey()) ? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass), DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
 						if (state >= 0) { // 先頭ページでも動作するようにした
-							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
+							nowdate = (FileSelectActivity.getResolvePageKey()) ? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
 							if ((nowdate != ((date / 1000))) || (mChangeTextSize)) {
 								int openmode = 0;
@@ -738,11 +743,11 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						}
 					}
 					if (!chkAozora) {
-						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+						maxpage = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass), DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
 						if	(state >= 0)	{ // 先頭ページでも動作するようにした
-							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
+							nowdate = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
 							if (nowdate != ((date / 1000)))	{
 								int openmode = 0;
@@ -799,7 +804,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "META-INF/container.xml", DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
 						if	(state >= 0)	{ // 先頭ページでも動作するようにした
-							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
+							nowdate = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
 							if ((nowdate != ((date / 1000))) || (mChangeTextSize))	{
 								int openmode = 0;
@@ -870,11 +875,11 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						}
 					}
 					else {
-						maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-						state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+						maxpage = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass), DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
 						if	(state >= 0)	{ // 先頭ページでも動作するようにした
-							nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
+							nowdate = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD): mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
 							if ((nowdate != ((date / 1000))) || (mChangeTextSize))	{
 								int openmode = 0;
@@ -919,10 +924,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 				}
 
 				if (fileList.get(i).getType() == FileData.FILETYPE_DIR) {
-					maxpage = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
-					state = mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+					maxpage = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
+					state = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass), DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 					if	(state >= 0)	{ // 先頭ページでも動作するようにした
-						nowdate = mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
+						nowdate = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKey(mSp, uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 						date = fileList.get(i).getDate();
 						if (nowdate != ((date / 1000)))	{
 							int openmode = 0;
@@ -979,12 +984,23 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					fileList.remove(i);
 					continue;
 				}
-				if (fileList.get(i).getType() != FileData.FILETYPE_DIR && fileList.get(i).getType() != FileData.FILETYPE_PARENT) {
+				boolean isDirEntry = (fileList.get(i).getType() == FileData.FILETYPE_DIR || fileList.get(i).getType() == FileData.FILETYPE_PARENT);
+				if (!isDirEntry) {
 					// 通常のファイル
 					if (hidden && DEF.checkHiddenFile(name)) {
 						fileList.remove(i);
 						continue;
 					}
+				}
+
+				// ファイルのみ/フォルダのみ表示(マーカー文字列の有無に関わらず適用する)
+				if (mFileOnly && isDirEntry) {
+					fileList.remove(i);
+					continue;
+				}
+				if (mFolderOnly && !isDirEntry) {
+					fileList.remove(i);
+					continue;
 				}
 
 				hit = false;
