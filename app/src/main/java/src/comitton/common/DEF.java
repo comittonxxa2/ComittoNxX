@@ -145,6 +145,7 @@ public class DEF {
 	public static final int HMSG_EVENT_ZOOMLEVELDECISION = 226;
 	public static final int HMSG_EVENT_ZOOMLEVELUNDO = 227;
 	public static final int HMSG_EVENT_ZOOMVIEWOFF = 228;
+	public static final int HMSG_EVENT_RELOAD = 229;
 
 	public static final int INTERVAL_DEFAULT = 50;	// Milliseconds
 	public static final int INTERVAL_EFFECT = 1;	// Milliseconds
@@ -244,6 +245,7 @@ public class DEF {
 	public static final int MENU_ZOOMLEVEL_SETTING = Menu.FIRST + 81;
 	public static final int MENU_HORIZONTIALWRITING = Menu.FIRST + 82;
 	public static final int MENU_EXT_FILTER = Menu.FIRST + 83;
+	public static final int MENU_RELOAD = Menu.FIRST + 84;
 	// ブックマークおよび目次でページ番号の上限に達してしまうため増やしてみた
 	public static final int MENU_BOOKMARK = Menu.FIRST + 100000;
 	public static final int MENU_CHAPTER = Menu.FIRST + 200000;
@@ -301,6 +303,14 @@ public class DEF {
 	public static final int TOOLBAR_PROFILE8 = 1038;
 	public static final int TOOLBAR_PROFILE9 = 1039;
 	public static final int TOOLBAR_PROFILE10 = 1040;
+	public static final int TOOLBAR_LEFTSCROLL = 1041;
+	public static final int TOOLBAR_RIGHTSCROLL = 1042;
+	public static final int TOOLBAR_GLASSPLUS = 1043;
+	public static final int TOOLBAR_GLASSMINUS = 1044;
+	public static final int TOOLBAR_ZOOMRESET = 1045;
+	public static final int TOOLBAR_PLAYPAUSE = 1046;
+	public static final int TOOLBAR_NAVIBACK = 1047;
+	public static final int TOOLBAR_RELOAD = 1048;
 	public static final int TOOLBAR_DISMISS = 1100;
 
 	public static final int TOOLBAR_EVENT_LEFTMOST = 0;
@@ -341,6 +351,14 @@ public class DEF {
 	public static final int TOOLBAR_EVENT_PROFILE8 = 35;
 	public static final int TOOLBAR_EVENT_PROFILE9 = 36;
 	public static final int TOOLBAR_EVENT_PROFILE10 = 37;
+	public static final int TOOLBAR_EVENT_LEFTSCROLL = 38;
+	public static final int TOOLBAR_EVENT_RIGHTSCROLL = 39;
+	public static final int TOOLBAR_EVENT_GLASSPLUS = 40;
+	public static final int TOOLBAR_EVENT_GLASSMINUS = 41;
+	public static final int TOOLBAR_EVENT_ZOOMRESET = 42;
+	public static final int TOOLBAR_EVENT_PLAYPAUSE = 43;
+	public static final int TOOLBAR_EVENT_NAVIBACK = 44;
+	public static final int TOOLBAR_EVENT_RELOAD = 45;
 
 	public static final int SHARE_SINGLE = 2001;
 	public static final int SHARE_LR = 2002;
@@ -393,6 +411,7 @@ public class DEF {
 	public static final int FLOATING_ZOOMRESET = 1046;
 	public static final int FLOATING_PLAYPAUSE = 1047;
 	public static final int FLOATING_NAVIBACK = 1048;
+	public static final int FLOATING_RELOAD = 1049;
 
 	public static final int READ_REQUEST_CODE = 42;
 	public static final int WRITE_REQUEST_CODE = 43;
@@ -441,8 +460,9 @@ public class DEF {
 	public static final int TOOLBAR_THUMBNAIL = 2;
 	public static final int TOOLBAR_MARKER = 3;
 	//	public static final int TOOLBAR_SERVER = 4;
-	public static final int TOOLBAR_ADDDIR = 4;
-	public static final int TOOLBAR_EXIT = 5;
+	public static final int TOOLBAR_UPDATE_READPOSITION = 4;
+	public static final int TOOLBAR_ADDDIR = 5;
+	public static final int TOOLBAR_EXIT = 6;
 
 	// ページめくり表示方向
 	public static final int PAGEWAY_RIGHT = 0; // 右から左
@@ -748,6 +768,7 @@ public class DEF {
 	public static final String KEY_SORTCHGPAGE = "SoftChgPage";
 	public static final String KEY_FILELISTCACHEOFF = "FileListCacheOff";
 	public static final String KEY_FILELISTFASTREADOFF = "FileListFastReadOff";
+	public static final String KEY_EVERYTHINGBOOKMARKSYNCSET =  "EverythingBookmarkSyncSet";
 	public static final String KEY_BACKGROUNDPAUSE = "BackgroundPause";
 	public static final String KEY_ANIMATIONENABLE = "AnimationEnable";
 	public static final String KEY_ANIMATIONSCAN = "AnimationScan";
@@ -926,6 +947,8 @@ public class DEF {
 	public static final String KEY_SMBRETRYMODE = "SmbRetryMode";
 	public static final String KEY_MARKERFILTERON = "MarkerFilterOn";
 	public static final String KEY_MARKERDIRON = "MarkerDirOn";
+	public static final String KEY_MARKERFILEONLYON = "MarkerFileOnlyOn";
+	public static final String KEY_MARKERFOLDERONLYON = "MarkerFolderOnlyOn";
 	public static final String KEY_ARCHIVECHECKMANUALMODE = "ArchiveCheckManualMode";
 	public static final String KEY_SKIPGETTHUMBNAIL = "SkipGetThumbnail";
 	public static final String KEY_SKIPZIPLIB = "SkipZipLib";
@@ -952,6 +975,54 @@ public class DEF {
 	public static final String KEY_TABRESTORE = "TabRestore";
 
 	public static final String KEY_CANCELFILELISTDIALOG = "CancelFileListDialog";
+	public static final String KEY_RESOLVEPAGEKEY = "ResolvePageKey";
+	public static final String KEY_LOADWITHFALLBACK = "LoadWithFallback";
+
+	public static final String KEY_EVERYTHING_HOST = "EverythingHost";
+	public static final String KEY_EVERYTHING_PORT = "EverythingPort";
+	public static final String KEY_EVERYTHING_USER = "EverythingUser";
+	public static final String KEY_EVERYTHING_PASS = "EverythingPass";
+	public static final String KEY_EVERYTHING_REPLACE_FROM = "EverythingReplaceFrom";
+	public static final String KEY_EVERYTHING_REPLACE_TO = "EverythingReplaceTo";
+	public static final String KEY_EVERYTHING_ENABLE = "EverythingEnable";
+
+	public static final String DEFAULT_EVERYTHING_HOST = "192.168.1.1";
+	public static final String DEFAULT_EVERYTHING_PORT = "8080";
+	public static final String DEFAULT_EVERYTHING_USER = "";
+	public static final String DEFAULT_EVERYTHING_PASS = "";
+	public static final String DEFAULT_EVERYTHING_REPLACE_FROM = "";
+	public static final String DEFAULT_EVERYTHING_REPLACE_TO = "";
+
+	public static final int HMSG_EVERYTHING_RESULT = 33;
+	public static final int TOOLBAR_EVERYTHING = 1041;
+	public static final int TOOLBAR_EVENT_EVERYTHING = 38;
+
+	public static final String KEY_BOOKMARKSYNC_HOST = "BookmarkSyncHost";
+	public static final String KEY_BOOKMARKSYNC_PORT = "BookmarkSyncPort";
+	public static final String KEY_BOOKMARKSYNC_USER = "BookmarkSyncUser";
+	public static final String KEY_BOOKMARKSYNC_PASS = "BookmarkSyncPass";
+	public static final String KEY_DOWNLOADSOURCECODE = "download_source_code";
+	public static final String KEY_BOOKMARKSYNC_ENABLE = "BookmarkSyncEnable";
+	public static final String KEY_READPOSITIONSYNC_ENABLE = "ReadPositionSyncEnable";
+	public static final String KEY_HISTORYSYNC_ENABLE = "HistorySyncEnable";
+	public static final String KEY_LIBRARYSYNC_ENABLE = "LibrarySyncEnable";
+
+	public static final String DEFAULT_BOOKMARKSYNC_HOST = "192.168.1.1";
+	public static final String DEFAULT_BOOKMARKSYNC_PORT = "8081";
+	public static final String DEFAULT_BOOKMARKSYNC_USER = "";
+	public static final String DEFAULT_BOOKMARKSYNC_PASS = "";
+
+	public static final String SERVER_SAMPLE_CODE = "server.py";
+
+	public static final int HMSG_BOOKMARKSYNC_RESULT = 34;
+	public static final int HMSG_READPOSITION_PULL_RESULT = 35;
+	public static final int HMSG_HISTORYSYNC_RESULT = 36;
+	// 書庫管理タブ(EverythingX /list)の非同期取得結果
+	public static final int HMSG_LIBRARY_RESULT = 37;
+	// 書庫管理タブ(bookmark-sync-server /library、全件取得)の非同期取得結果
+	public static final int HMSG_LIBRARYSYNC_RESULT = 38;
+	// 書庫管理タブ(bookmark-sync-server /library/rescan)のスキャン起動結果
+	public static final int HMSG_LIBRARYSYNC_RESCAN_RESULT = 39;
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -4603,6 +4674,10 @@ public class DEF {
 			int len = key.length();
 			if (len >= 1 && key.startsWith("/")) {
 			} else if (len >= 6 && key.startsWith("smb://")) {
+				// SMB上のファイルの既読位置キャッシュ(createUrlの出力)。
+				// 既読位置サーバー同期(ReadPositionSyncClient)導入により、
+				// SMB上のファイルの既読位置はサーバー側が正となるため、端末間で持ち回る設定には含めない。
+				return false;
 			} else {
 				return false;
 			}
@@ -4713,6 +4788,111 @@ public class DEF {
 		return ret;
 	}
 
+	/**
+	 * アーカイブ系拡張子(FileData.isArchive()が対象とする zip/rar/cbz/cbr等)のみを除去したベース名を返す。
+	 * txt/pdf/epub等の非アーカイブ形式は対象外(別コンテンツとして扱う)。
+	 * 例: "作品A.zip" と "作品A.rar" は同じ "作品A" になる。
+	 */
+	public static String stripArchiveExt(String filename) {
+		if (filename == null || filename.isEmpty()) {
+			return "";
+		}
+		if (!FileData.isArchive(filename)) {
+			return filename;
+		}
+		int idx = filename.lastIndexOf('.');
+		return idx > 0 ? filename.substring(0, idx) : filename;
+	}
+
+	// url(またはSharedPreferencesのキー)からファイル名部分だけを取り出す
+	private static String fileNameOfUrl(String url) {
+		if (url == null) {
+			return "";
+		}
+		String s = url;
+		if (s.endsWith("/")) {
+			s = s.substring(0, s.length() - 1);
+		}
+		int idx = s.lastIndexOf('/');
+		return idx >= 0 ? s.substring(idx + 1) : s;
+	}
+
+	// url(またはSharedPreferencesのキー)からサーバー(ホスト)部分までを取り出す。
+	// ローカルパス等スキームを持たない場合は絞り込みなし("")を返す。
+	private static String rootOfUrl(String url) {
+		if (url == null) {
+			return "";
+		}
+		int schemeIdx = url.indexOf("://");
+		if (schemeIdx < 0) {
+			return "";
+		}
+		int hostStart = schemeIdx + 3;
+		int hostEnd = url.indexOf('/', hostStart);
+		return hostEnd >= 0 ? url.substring(0, hostEnd + 1) : url + "/";
+	}
+
+	/**
+	 * 既読位置(SharedPreferences)を引くべきキーを解決する。まず完全一致(createUrlで作られる
+	 * 正確なキー)を試し、見つからなければ同一サーバー内でファイル名(アーカイブ拡張子は無視)が
+	 * 一致する直近のレコードのキーにフォールバックする。
+	 * これにより、ZIP<->RARの拡張子違いやディレクトリ移動後でも既読位置・既読/未読状態
+	 * ("キー"+"#maxpage"、"キー"+"#date"を含む)を一貫して引き継げる。
+	 * 書き込み側は変更しない(常に正確なキー=createUrl(url,user,pass)で保存される)ため、
+	 * データ移行は不要。フォールバックが見つからない場合は正確なキー(exactKey)をそのまま返す
+	 * (=既存動作どおり未読扱いになる)。
+	 */
+	public static String resolvePageKey(SharedPreferences prefs, String url, String user, String pass) {
+		String exactKey = createUrl(url, user, pass);
+		if (prefs.contains(exactKey)) {
+			return exactKey;
+		}
+
+		String targetName = fileNameOfUrl(url);
+		if (targetName.isEmpty()) {
+			return exactKey;
+		}
+		String targetBase = stripArchiveExt(targetName);
+		String targetRoot = rootOfUrl(exactKey);
+
+		java.util.Map<String, ?> all = prefs.getAll();
+		String bestKey = null;
+		int bestDate = -1;
+		for (String key : all.keySet()) {
+			if (key.endsWith("#maxpage") || key.endsWith("#date")) {
+				// 付随データのキーは対象外
+				continue;
+			}
+			if (!key.startsWith(targetRoot)) {
+				// 別サーバーは対象外
+				continue;
+			}
+			Object val = all.get(key);
+			if (!(val instanceof Integer)) {
+				continue;
+			}
+			String candidateBase = stripArchiveExt(fileNameOfUrl(key));
+			if (!candidateBase.equals(targetBase)) {
+				continue;
+			}
+			Object dateObj = all.get(key + "#date");
+			int date = (dateObj instanceof Integer) ? (Integer) dateObj : 0;
+			if (bestKey == null || date > bestDate) {
+				bestKey = key;
+				bestDate = date;
+			}
+		}
+		return bestKey != null ? bestKey : exactKey;
+	}
+
+	/**
+	 * 既読ページ位置を取得する({@link #resolvePageKey}のフォールバック込み)。
+	 * "#maxpage"/"#date"のような付随データを伴わない単純な参照(ビューア起動時の再開ページ等)向け。
+	 */
+	public static int getPageWithFallback(SharedPreferences prefs, String url, String user, String pass) {
+		return prefs.getInt(resolvePageKey(prefs, url, user, pass), PAGENUMBER_UNREAD);
+	}
+
 
 	public static boolean CHAR_DETECT = true;
 	public static String CHARSET = "Shift_JIS";
@@ -4741,11 +4921,16 @@ public class DEF {
 		String encoding = "UTF-8";
 		String dst;
 
+		if (bytes == null || offset < 0 || length <= 0 || offset >= bytes.length) {
+			// 空/範囲外のデータ(中身が空のファイルをそのまま読んだ場合など)は空文字列を返す
+			return "";
+		}
+
 		int tmp_offset = offset;
 		int tmp_length = length;
 
 		// UTF-8のBOMがあったら削除する
-		if( bytes[offset] == (byte)0xFE && bytes[offset+1] == (byte)0xFF ){
+		if( length >= 2 && bytes[offset] == (byte)0xFE && bytes[offset+1] == (byte)0xFF ){
 			tmp_offset = offset + 1;
 			tmp_length = length - 1;
 		}
