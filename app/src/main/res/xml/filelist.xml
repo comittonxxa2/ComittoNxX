@@ -445,6 +445,18 @@
             android:key="SkipSortFilelist"
             android:summary="Check this box to reduce access time by using a sorted file list.\n*If sorting fails, uncheck this box."
             android:title="File sorting process is omitted." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ResolvePageKey"
+            android:summary="First, it attempts an exact match, and if no match is found, it falls back to the key of the nearest record on the same server with a matching filename (ignoring archive extensions).\nIt can consistently maintain the read position and read/unread status even after switching between ZIP or RAR file extensions or moving directories.\nIf no fallback is found, the exact key is returned."
+            android:title="Solve the problem of which key should be used to retrieve the read position." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="LoadWithFallback"
+            android:summary="If no exact match is found, the system will fall back to the most recent set of records (e.g., multiple bookmarks) on the same server with matching filenames (ignoring archive extensions).\nBookmarks and history can be retained even after files have different extensions (ZIP or RAR) or after directory changes."
+            android:title="Collect and return all records associated with the original file of the bookmark.
+
+" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

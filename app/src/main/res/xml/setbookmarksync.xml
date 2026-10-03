@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="bookmarksync_category"
+        android:title="Setting for Bookmark Sync"
+        android:layout="@layout/custom_preference_category">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookmarkSyncEnable"
+            android:summary="Check this box to enable bookmark synchronization."
+            android:title="Enable bookmark synchronization." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReadPositionSyncEnable"
+            android:summary="Check this box to share your reading position across multiple devices (uses the same server as bookmarks)."
+            android:title="Enable synchronization of read position" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="HistorySyncEnable"
+            android:summary="Check this box to share your history (recently opened files) across multiple devices (uses the same server as bookmarks)."
+            android:title="Enable history synchronization" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="LibrarySyncEnable"
+            android:summary="Check this box to enable the server-side archive catalog (uses the same host settings as bookmarks)."
+            android:title="Enable the archive management tab." />
+        <EditTextPreference
+            android:key="BookmarkSyncHost"
+            android:title="Host IP Address"
+            android:summary="Bookmark Sync Server IP Address"
+            android:dialogTitle="Host IP Address" />
+        <EditTextPreference
+            android:key="BookmarkSyncPort"
+            android:defaultValue="8081"
+            android:title="Port Number"
+            android:summary="Bookmark Sync Server Port Number"
+            android:dialogTitle="Port Number" />
+        <EditTextPreference
+            android:key="BookmarkSyncUser"
+            android:title="Username"
+            android:summary="Username for HTTP Auth (optional)"
+            android:dialogTitle="Username" />
+        <EditTextPreference
+            android:key="BookmarkSyncPass"
+            android:title="Password"
+            android:password="true"
+            android:summary="Password for HTTP Auth (optional)"
+            android:dialogTitle="Password"
+            android:layout="@layout/preference_with_divider" />
+        <src.comitton.config.DownloadPreference
+            android:key="download_source_code"
+            android:title="Download the server source code."
+            android:summary="Save the server's internal Python script as a file." />
+    </src.comitton.config.ButtonPreferenceCategory>
+</PreferenceScreen>

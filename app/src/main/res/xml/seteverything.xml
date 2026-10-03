@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="everything_category"
+        android:title="Setting for Everything Search"
+        android:layout="@layout/custom_preference_category">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="EverythingEnable"
+            android:summary="Check this box to enable Everything search."
+            android:title="Enable Everything search" />
+        <EditTextPreference
+            android:key="EverythingHost"
+            android:title="Host IP Address"/>
+        <EditTextPreference
+            android:key="EverythingPort"
+            android:defaultValue="8080"
+            android:title="Port Number"/>
+        <EditTextPreference
+            android:key="EverythingUser"
+            android:title="Username"/>
+        <EditTextPreference
+            android:key="EverythingPass"
+            android:title="Password"
+            android:password="true"/>
+        <EditTextPreference
+            android:key="EverythingReplaceFrom"
+            android:title="Path Replace (From)"/>
+        <EditTextPreference
+            android:key="EverythingReplaceTo"
+            android:title="Path Replace (To)"/>
+    </src.comitton.config.ButtonPreferenceCategory>
+</PreferenceScreen>

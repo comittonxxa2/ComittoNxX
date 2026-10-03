@@ -137,6 +137,22 @@
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
         <PreferenceScreen
+            android:key="EverythingSet"
+            android:title="Setting for Everything Search"
+            android:summary="Set connection parameters for Windows Everything search." >
+            <intent
+                android:targetClass="src.comitton.config.SetEverythingActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookmarkSyncSet"
+            android:title="Setting for Bookmark Sync"
+            android:summary="Set connection parameters for cross-device bookmark sync." >
+            <intent
+                android:targetClass="src.comitton.config.SetBookmarkSyncActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
             android:key="HardKeySet"
             android:title="Managing hardware keys"
             android:summary="Setting hardware key assignments" >
