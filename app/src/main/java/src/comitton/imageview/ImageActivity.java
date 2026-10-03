@@ -32,6 +32,10 @@ import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetNoiseActivity;
 import src.comitton.config.SetHardwareImageViewerKeyActivity;
 import src.comitton.fileaccess.FileAccess;
+import src.comitton.fileaccess.BookmarkSyncClient;
+import src.comitton.fileaccess.HistorySyncClient;
+import src.comitton.fileaccess.ReadPositionSyncClient;
+import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.fileview.data.RecordItem;
 import src.comitton.dialog.BookmarkDialog;
 import src.comitton.dialog.CheckDialog;
@@ -223,6 +227,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			20,	// 中央影表示,
 			31,	// 画面の表示位置
 			41,	// アニメーション再生の一時停止
+			45,	// 画像の再読み込み
 			LIST_PROFILE1,	// プロファイル1
 			LIST_PROFILE2,	// プロファイル2
 			LIST_PROFILE3,	// プロファイル3
@@ -272,6 +277,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		DEF.MENU_CSHADOW,	// 中央影表示
 		DEF.MENU_DISPLAY_POSITION,	// 画面の表示位置
 		DEF.MENU_DISPLAY_ANIMEPAUSE,	// アニメーション再生の一時停止
+		DEF.MENU_RELOAD,	// 画像の再読み込み
 		DEF.MENU_PROFILE1,	// プロファイル1
 		DEF.MENU_PROFILE2,	// プロファイル2
 		DEF.MENU_PROFILE3,	// プロファイル3
@@ -320,6 +326,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.cShadow,		// 中央影表示
 		R.string.DisplayPositionMenu,		// 画面の表示位置
 		R.string.AnimationPause,	// アニメーション再生の一時停止
+		R.string.ToolbarReload,	// 画像の再読込み
 		R.string.Profile1,		// プロファイル1
 		R.string.Profile2,		// プロファイル2
 		R.string.Profile3,		// プロファイル3
@@ -329,7 +336,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		R.string.Profile7,		// プロファイル7
 		R.string.Profile8,		// プロファイル8
 		R.string.Profile9,		// プロファイル9
-		R.string.Profile10		// プロファイル10
+		R.string.Profile10,		// プロファイル10
 	};
 	private int[] mCommandId;
 	private String[] mCommandStr;
@@ -734,6 +741,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private String jsonString;
 	private Handler mWaitHandler;
 	private Runnable mWaitRunnable;
+	private int mReloadPage;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -876,6 +884,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mNextPage = -1;
 		mIsConfSave = true;
 		mNoiseSwitch = new NoiseSwitch(mHandler);
+		mReloadPage = -1;
 
 		// ダイアログは初期化
 		PageThumbnail.mIsOpened = false;
@@ -1015,7 +1024,20 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		saveLastFile();
 
 		Logcat.d(logLevel, "既読位置を取得します.");
-		mRestorePage = mSharedPreferences.getInt(DEF.createUrl(mFilePath, mUser, mPass), DEF.PAGENUMBER_UNREAD);
+		mRestorePage = DEF.getPageWithFallback(mSharedPreferences, mFilePath, mUser, mPass);
+		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
+
+		// サーバー同期が有効なSMBサーバー上のファイルであれば、開く前にサーバー側の既読位置を問い合わせて
+		// ローカルより優先する(「サーバー側と同期してから開く」仕様)
+		if (mServer != DEF.INDEX_LOCAL && mFileName != null && !mFileName.isEmpty() && mReadPositionSyncSet) {
+			String syncHost = new ServerSelect(mSharedPreferences, mActivity).getHost(mServer);
+			ReadPositionSyncClient.Position remotePosition =
+					ReadPositionSyncClient.getRemotePosition(mSharedPreferences, syncHost, mPath, mFileName);
+			if (remotePosition != null && remotePosition.page >= 0) {
+				Logcat.d(logLevel, "サーバー側の既読位置を採用します. page=" + remotePosition.page);
+				mRestorePage = remotePosition.page;
+			}
+		}
 
 		// ジェスチャー検出を有効にする
 		mDetector = new GestureDetectorCompat(this,this);
@@ -1165,6 +1187,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		if (!mFinishActivity && mSavePage && !mReadBreak) {
 			saveCurrentPage();
+			pushReadPositionToServer();
 		}
 		if (mNoiseSwitch != null) {
 			mNoiseSwitch.recordPause(true);
@@ -2166,6 +2189,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				else if (mCurrentPage >= mImageMgr.length()) {
 					mCurrentPage = mImageMgr.length() - 1;
 				}
+				if (mReloadPage != -1) {
+					// リロード時はページを戻す
+					mCurrentPage = mReloadPage;
+					mReloadPage = -1;
+				}
 
 				mThumID = System.currentTimeMillis();
 				mPageBack = false;
@@ -2269,6 +2297,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.HMSG_EVENT_ZOOMVIEWOFF:
 				// 画面更新中の文字を消す
 				mGuideView.setGuideText(null);
+				break;
+			case DEF.HMSG_EVENT_RELOAD:
+				// リロード用に現在のページを保存
+				mReloadPage = mCurrentPage;
+				// リロード時は再描画のスレッド開始
+				mZipLoad = new ZipLoad(mHandler, this);
+				mZipThread = new Thread(mZipLoad);
+				mZipThread.start();
 				break;
 		}
 		return false;
@@ -5742,7 +5778,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
 
-		ArrayList<RecordItem> list = RecordList.load(null, RecordList.TYPE_BOOKMARK, mServer, mPath, mFileName);
+		ArrayList<RecordItem> list = (FileSelectActivity.getLoadWithFallback())? RecordList.loadWithFallback(null, RecordList.TYPE_BOOKMARK, mServer, mPath, mFileName) : RecordList.load(null, RecordList.TYPE_BOOKMARK, mServer, mPath, mFileName);
 		// ブックマークのコピーを作る
 		ArrayList<RecordItem> list_copy = new ArrayList<RecordItem>(list);
 
@@ -6284,6 +6320,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				TouchPanelView.setHandler(mHandler, mPinchScaleSel);
 				TouchPanelView.SetAlertDialogZoomLevel(mActivity);
 				break;
+			case DEF.MENU_RELOAD: {
+				// 画像の再読み込み
+				execReloadFile(mCurrentPage);
+				break;
+			}
 
 			default: {
 				if (id >= DEF.MENU_DIR_TREE) {
@@ -6604,6 +6645,38 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			}
 			case DEF.TOOLBAR_PROFILE10: {
 				LoadProfile(9);
+				break;
+			}
+			case DEF.TOOLBAR_LEFTSCROLL: {
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARNEXTSCROLL);
+				break;
+			}
+			case DEF.TOOLBAR_RIGHTSCROLL: {
+				SetTouchPanelCommandMain(DEF.TAP_TOOLBARPREVSCROLL);
+				break;
+			}
+			case DEF.TOOLBAR_GLASSPLUS: {
+				SetTouchPanelCommandMain(DEF.TAP_PINCHSCALEUP);
+				break;
+			}
+			case DEF.TOOLBAR_GLASSMINUS: {
+				SetTouchPanelCommandMain(DEF.TAP_PINCHSCALEDOWN);
+				break;
+			}
+			case DEF.TOOLBAR_ZOOMRESET: {
+				SetTouchPanelCommandMain(DEF.TAP_ZOOMRESET);
+				break;
+			}
+			case DEF.TOOLBAR_PLAYPAUSE: {
+				SetTouchPanelCommandMain(DEF.TAP_ANIMEPAUSE);
+				break;
+			}
+			case DEF.TOOLBAR_NAVIBACK: {
+				SetTouchPanelCommandMain(DEF.TAP_EXIT_VIEWER);
+				break;
+			}
+			case DEF.TOOLBAR_RELOAD: {
+				execReloadFile(mCurrentPage);
 				break;
 			}
 
@@ -7220,12 +7293,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 既読判定の最大ページ数から引き算する値を返す
 	public static int isDualMode() {
-		if (mDispMode == DEF.DISPMODE_IM_DUAL) {
-			// 見開きの場合は1増やす
-			return 2;
-		}
-		// 通常は1を返す
-		return 1;
+		// nextPage()の終端判定は見開き表示中、最終ページの1つ手前(maxpage-2)で止まる仕様のため、
+		// 表示モードによらず常に2を返す。単ページ表示では実際にはmaxpage-1まで進むため、
+		// 2を引いても既読判定には影響しない。
+		// (このメソッドは呼び出し時点の現在の表示モード(mDispMode、プロセス内で共有のstatic変数)を
+		// 見て判定していたが、これはその書庫を実際に読んだ時のモードとは限らず、
+		// 見開きで最後まで読んだ書庫が既読率99%のまま表示され続ける不具合があった)
+		return 2;
 	}
 
 	private void startScroll(int move) {
@@ -7440,17 +7514,36 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
 				+ ", mFileName=" + mFileName + ", mImageName=" + mImageName + ", mCurrentPage=" + mCurrentPage);
 		// ブックマーク追加
+		long bookmarkDate = new Date().getTime();
+		String bookmarkImage = mImageMgr.mFileList[mCurrentPage].name;
+		boolean mBookmarkSyncSet = FileSelectActivity.getBookmarkSyncSet();
+		int bookmarkType;
 		if ((mFileName == null || mFileName.isEmpty()) && (mImageName != null && !mImageName.isEmpty())) {
 			Logcat.d(logLevel, "画像ファイル指定.");
 				// 画像ファイル直接指定
-			RecordList.add(RecordList.TYPE_BOOKMARK, RecordItem.TYPE_IMAGEDIRECT, mServer, mPath, mFileName
-					, new Date().getTime(), mImageMgr.mFileList[mCurrentPage].name, mCurrentPage, name);
+			bookmarkType = RecordItem.TYPE_IMAGEDIRECT;
 		}
 		else {
 			Logcat.d(logLevel, "ディレクトリまたは圧縮ファイル.");
 			// ディレクトリまたは圧縮ファイル
-			RecordList.add(RecordList.TYPE_BOOKMARK, RecordItem.TYPE_IMAGE, mServer, mPath, mFileName
-					, new Date().getTime(), mImageMgr.mFileList[mCurrentPage].name, mCurrentPage, name);
+			bookmarkType = RecordItem.TYPE_IMAGE;
+		}
+		RecordList.add(RecordList.TYPE_BOOKMARK, bookmarkType, mServer, mPath, mFileName
+				, bookmarkDate, bookmarkImage, mCurrentPage, name);
+
+		// SMBサーバー上のファイルであれば、複数端末で共有できるよう栞をサーバーへも同期する
+		if (mServer != DEF.INDEX_LOCAL && mBookmarkSyncSet) {
+			String host = new ServerSelect(mSharedPreferences, this).getHost(mServer);
+			RecordItem syncItem = new RecordItem();
+			syncItem.setType(bookmarkType);
+			syncItem.setServer(mServer);
+			syncItem.setPath(mPath);
+			syncItem.setFile(mFileName);
+			syncItem.setDate(bookmarkDate);
+			syncItem.setImage(bookmarkImage);
+			syncItem.setPage(mCurrentPage);
+			syncItem.setDispName(name);
+			BookmarkSyncClient.pushUpsert(mActivity, syncItem, host, mSharedPreferences);
 		}
 	}
 
@@ -7530,6 +7623,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		} else if (!mark && mSavePage) {
 			// しおりを起動時の状態に戻す
 			restoreCurrentPage();
+		}
+		if (mark) {
+			// 既読位置をサーバーへ反映する(mSavePage設定に関わらず、ファイルを閉じる時点の位置を同期する)
+			pushReadPositionToServer();
 		}
 
 		// 履歴保存
@@ -7657,6 +7754,20 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 
 
+	}
+
+	// 既読位置をサーバーへ反映する(SMBサーバー上のアーカイブのみ対象、ベストエフォート)
+	private void pushReadPositionToServer() {
+		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
+		if (mImageMgr == null || mServer == DEF.INDEX_LOCAL || mFileName == null || mFileName.isEmpty() || !mReadPositionSyncSet) {
+			return;
+		}
+		int maxpage = mImageMgr.length();
+		if (maxpage <= 0) {
+			return;
+		}
+		String syncHost = new ServerSelect(mSharedPreferences, mActivity).getHost(mServer);
+		ReadPositionSyncClient.pushPosition(mSharedPreferences, syncHost, mPath, mFileName, mCurrentPage, maxpage, -1, -1f);
 	}
 
 	// アクティビティ一時停止時に保存される
@@ -7799,9 +7910,28 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			else {
 				Logcat.d(logLevel, "ディレクトリまたは圧縮ファイル.");
 				// ディレクトリまたは圧縮ファイル
+				long historyDate = new Date().getTime();
 				RecordList.add(RecordList.TYPE_HISTORY, RecordItem.TYPE_IMAGE
-						, mServer, mPath, mFileName, new Date().getTime()
+						, mServer, mPath, mFileName, historyDate
 						, mImageMgr.mFileList[mCurrentPage].name, mCurrentPage, null);
+
+				// SMBサーバー上のファイルであれば、複数端末で共有できるよう履歴もサーバーへ同期する
+				boolean mHistorySyncSet = FileSelectActivity.getHistorySyncSet();
+				if (mServer != DEF.INDEX_LOCAL && mHistorySyncSet) {
+					String host = new ServerSelect(mSharedPreferences, mActivity).getHost(mServer);
+					RecordItem syncItem = new RecordItem();
+					syncItem.setType(RecordItem.TYPE_IMAGE);
+					syncItem.setServer(mServer);
+					syncItem.setPath(mPath);
+					syncItem.setFile(mFileName);
+					syncItem.setDate(historyDate);
+					syncItem.setImage(mImageMgr.mFileList[mCurrentPage].name);
+					syncItem.setChapter(-1);
+					syncItem.setPageRate(-1f);
+					syncItem.setPage(mCurrentPage);
+					syncItem.setDispName(null);
+					HistorySyncClient.pushUpsert(mActivity, syncItem, host, mSharedPreferences);
+				}
 			}
 		}
 	}
@@ -9552,6 +9682,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			case DEF.FLOATING_NAVIBACK:
 				SetTouchPanelCommandMain(DEF.TAP_EXIT_VIEWER);
 				break;
+			case DEF.FLOATING_RELOAD:
+				execReloadFile(mCurrentPage);
+				break;
 		}
 	}
 
@@ -9774,5 +9907,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	public static boolean getPrevNextMask() {
 		return mPrevNextMask;
+	}
+	// 画像の再読み込み
+	private void execReloadFile(int page) {
+		// バックグラウンド処理でページの再読み込みを実行
+		mImageMgr.ReloadPage(page);
 	}
 }

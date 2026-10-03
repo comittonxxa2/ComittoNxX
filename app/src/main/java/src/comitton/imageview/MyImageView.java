@@ -147,6 +147,16 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	private boolean mIsScrolling = false;
 	private int mScrollCount = 0;
 
+	// 静止画表示中の無駄な毎フレーム再描画を抑制するための時刻管理。
+	// updateNotify()の直後しばらくは毎フレーム(60fps相当)再描画し、それ以降は
+	// 何も変化が無い間は低頻度(IDLE_REDRAW_INTERVAL_MS間隔)に落とす。
+	// (何も変わっていないのに毎フレーム描画し続けると、一部端末で可変リフレッシュレート制御と
+	// 干渉して画面がちらつく不具合が確認されたため)
+	private static final long ACTIVE_REDRAW_WINDOW_MS = 500;
+	private static final long IDLE_REDRAW_INTERVAL_MS = 100;
+	private volatile long mLastNotifyTime = 0;
+	private long mLastRedrawTime = 0;
+
 	// イメージ更新処理
 	private boolean mIsPageBack = false;
 
@@ -216,6 +226,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		mIsRunning = true;
+		mLastNotifyTime = System.currentTimeMillis();
 
 		Choreographer.getInstance().postFrameCallback(mFrameCallback);
 		// 描画スレッド起動
@@ -300,6 +311,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	public void updateNotify() {
 		// 外部からの描画更新用の割り込みを実行→サーフェスビューの割り込みへ変更
 		mIsScrolling = true;
+		mLastNotifyTime = System.currentTimeMillis();
 		/*
 		if (mUpdateThread != null) {
 			mUpdateThread.interrupt();
@@ -316,9 +328,19 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		public void doFrame(long frameTimeNanos) {
 			// 動作フラグが true の場合のみ処理を継続
 			if (mIsRunning) {
-				// スレッドへ割り込みをかける(update(false)を実行させる)
-				if (mUpdateThread != null) {
-					mUpdateThread.interrupt();
+				long now = System.currentTimeMillis();
+				// updateNotify()から間もない(=何か変化があった)間は毎フレーム再描画する。
+				// それ以外(静止画表示中)は低頻度に落とし、無駄な毎フレーム再描画による
+				// 一部端末での可変リフレッシュレート制御との干渉(画面のちらつき)を避ける。
+				// updateNotify()を呼ばない経路からの変化も取りこぼさないよう、
+				// 低頻度時でもIDLE_REDRAW_INTERVAL_MSごとには必ず再描画する。
+				boolean active = (now - mLastNotifyTime) < ACTIVE_REDRAW_WINDOW_MS;
+				if (active || (now - mLastRedrawTime) >= IDLE_REDRAW_INTERVAL_MS) {
+					mLastRedrawTime = now;
+					// スレッドへ割り込みをかける(update(false)を実行させる)
+					if (mUpdateThread != null) {
+						mUpdateThread.interrupt();
+					}
 				}
 				// 次のフレームの実行を予約する
 				Choreographer.getInstance().postFrameCallback(this);
