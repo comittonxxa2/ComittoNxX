@@ -88,7 +88,12 @@ public class WorkStream extends InputStream {
 	@Override
 	public int read(byte[] b, int off, int size) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, off={1}, size={2}, pos+off+size={3}, length={4}", new Object[]{mPos, off, size, mPos+off+size, length()}));
+		// 転送のホットパスなので、実際に出力されないログレベルのときはMessageFormat.format等の
+		// 文字列生成コストをかけない
+		boolean logEnabled = Logcat.global_log_level <= Logcat.LOG_LEVEL_DEBUG;
+		if (logEnabled) {
+			Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, off={1}, size={2}, pos+off+size={3}, length={4}", new Object[]{mPos, off, size, mPos+off+size, length()}));
+		}
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "READ");
 
 		mPos += off;
@@ -107,7 +112,9 @@ public class WorkStream extends InputStream {
 				mPos += ret;
 			}
 		}
-		Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{ret, off, mPos, length()}));
+		if (logEnabled) {
+			Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{ret, off, mPos, length()}));
+		}
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 		return ret;
 	}
