@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="bookmarksync_category"
+        android:title="栞(ブックマーク)同期の設定"
+        android:layout="@layout/custom_preference_category">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="BookmarkSyncEnable"
+            android:summary="栞(ブックマーク)同期を有効にする場合はチェックを入れる"
+            android:title="栞(ブックマーク)同期を有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ReadPositionSyncEnable"
+            android:summary="既読位置を複数端末間で共有する場合はチェックを入れる(栞(ブックマーク)と同じサーバーを使用)"
+            android:title="既読位置の同期を有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="HistorySyncEnable"
+            android:summary="履歴(最近開いたファイル)を複数端末間で共有する場合はチェックを入れる(栞(ブックマーク)と同じサーバーを使用)"
+            android:title="履歴の同期を有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="LibrarySyncEnable"
+            android:summary="サーバー側の書庫カタログを有効にする場合はチェックを入れる(栞(ブックマーク)と同じホスト設定を使用)"
+            android:title="書庫管理のタブを有効にする" />
+        <EditTextPreference
+            android:key="BookmarkSyncHost"
+            android:title="ホストIPアドレス"
+            android:summary="栞(ブックマーク)同期サーバーのIPアドレス"
+            android:dialogTitle="ホストIPアドレス" />
+        <EditTextPreference
+            android:key="BookmarkSyncPort"
+            android:defaultValue="8081"
+            android:title="ポート番号"
+            android:summary="栞(ブックマーク)同期サーバーのポート番号"
+            android:dialogTitle="ポート番号" />
+        <EditTextPreference
+            android:key="BookmarkSyncUser"
+            android:title="ユーザー名"
+            android:summary="HTTP認証用ユーザー名(任意)"
+            android:dialogTitle="ユーザー名" />
+        <EditTextPreference
+            android:key="BookmarkSyncPass"
+            android:title="パスワード"
+            android:password="true"
+            android:summary="HTTP認証用パスワード(任意)"
+            android:dialogTitle="パスワード"
+            android:layout="@layout/preference_with_divider" />
+        <src.comitton.config.DownloadPreference
+            android:key="download_source_code"
+            android:title="サーバーのソースコードをダウンロード"
+            android:summary="内部に保持されているサーバーのPythonスクリプトをファイルとして保存" />
+    </src.comitton.config.ButtonPreferenceCategory>
+</PreferenceScreen>

@@ -447,6 +447,16 @@
             android:key="SkipSortFilelist"
             android:summary="ソート済みファイルリストを用いてアクセス時間を短縮する場合はチェックを入れる\n※もしもソートに失敗する場合はチェックを外す"
             android:title="ファイルのソート処理を省略" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ResolvePageKey"
+            android:summary="まず完全一致を試し、見つからなければ同一サーバー内でファイル名(アーカイブ拡張子は無視)が一致する直近のレコードのキーにフォールバックする\nZIP及びRARの拡張子違いやディレクトリ移動後でも既読位置・既読/未読状態を一貫して引き継げる\nフォールバックが見つからない場合は正確なキーをそのまま返す"
+            android:title="既読位置を引くべきキーを解決する" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="LoadWithFallback"
+            android:summary="完全一致するレコードが無かった場合に、同一サーバー内でファイル名(アーカイブ拡張子は無視)が一致する直近のレコード一式(複数件の栞等)にフォールバックする\nZIP及びRARの拡張子違いやディレクトリ移動後でも栞・履歴を引き継げる"
+            android:title="ブックマークの元ファイルに紐づく全レコードを集めて返す" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

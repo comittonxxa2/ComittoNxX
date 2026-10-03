@@ -136,6 +136,22 @@
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
         <PreferenceScreen
+            android:key="EverythingSet"
+            android:title="Everything検索の設定"
+            android:summary="Windows Everything検索の接続パラメータを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetEverythingActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
+            android:key="BookmarkSyncSet"
+            android:title="栞(ブックマーク)同期の設定"
+            android:summary="複数端末間で栞を共有するための接続パラメータを設定する" >
+            <intent
+                android:targetClass="src.comitton.config.SetBookmarkSyncActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
+        <PreferenceScreen
             android:key="HardKeySet"
             android:title="ハードウェアキーの管理"
             android:summary="ハードウェアキーの割り当てを設定する" >
