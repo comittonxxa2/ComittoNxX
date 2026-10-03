@@ -136,6 +136,12 @@
     <string name="ZoomReset">ズームリセット</string>
 
     <string name="downloadCountMenu">ダウンロード数</string>
+    <string name="everythingSearchMenu">Everything検索</string>
+    <string name="everythingSearchTitle">Everythingで検索</string>
+    <string name="everythingSearchHint">検索キーワードを入力してください</string>
+    <string name="everythingSearchNoServer">該当するホストのSMBサーバーが登録されていません。先にサーバー一覧に追加してください。</string>
+    <string name="everythingSearchNoResult">検索結果がありませんでした。</string>
+    <string name="everythingSearchPrompt">タップしてEverythingで検索</string>
     <string name="licenseMenu">ライセンス情報</string>
     <string name="noiseMenu">音での操作</string>
     <string name="HorizontalWriting">横書き表示に変更</string>
@@ -556,12 +562,34 @@
     <string name="toolbar03">マーク</string>
     <string name="toolbar04">登録</string>
     <string name="toolbar05">終了</string>
+    <string name="toolbar06">同期</string>
+    <string name="readPositionSyncDone">%1$d件の既読位置を同期しました</string>
+    <string name="readPositionSyncUnavailable">栞同期の設定が未設定か、ローカルのファイル一覧です</string>
     <string name="listname00">ファイル</string>
     <string name="listname01">ディレクトリ</string>
     <string name="listname02">サーバー</string>
     <string name="listname03">ブックマーク</string>
     <string name="listname04">履歴</string>
     <string name="listname05">メニュー</string>
+    <string name="listname06">検索</string>
+    <string name="listname07">書庫管理</string>
+    <string name="libraryTapToSearch">タップして書庫管理を検索</string>
+    <string name="libraryVolumeCount">%1$d巻</string>
+    <string name="librarySyncDone">書庫一覧を更新しました: 新規%1$d件</string>
+    <string name="libraryMenuRescan">サーバー側を更新</string>
+    <string name="libraryMenuPull">端末側を更新</string>
+    <string name="libraryRescanTriggered">サーバー側のスキャンを開始しました。完了後に「端末側を更新」を実行してください。</string>
+    <string name="libraryRescanCooldown">直近でスキャン済みです。「端末側を更新」で現在のカタログを取得できます。</string>
+    <string name="libraryRescanError">サーバー側のスキャンを開始できませんでした。</string>
+    <string name="libraryMenuSearch">タイトルで検索</string>
+    <string name="libraryMenuClearFilter">絞り込みを解除</string>
+    <string name="libraryMenuImportError">書庫管理データの読み込みに失敗しました</string>
+    <string name="libraryMenuVerify">存在確認して実在しない巻を削除</string>
+    <string name="libraryVerifyStart">サーバー上のファイルを確認しています...</string>
+    <string name="libraryVerifyDone">%1$d巻を確認し、実在しない%2$d巻を削除しました</string>
+    <string name="libraryVerifyError">確認できませんでした(サーバーに接続できない可能性があります)。何も削除していません.</string>
+    <string name="libraryFilterTitle">書庫管理を検索</string>
+    <string name="libraryFilterHint">タイトルの一部を入力してください</string>
     <string name="maxthread00">自動</string>
     <string name="maxthread01">1 スレッド</string>
     <string name="maxthread02">2 スレッド</string>
@@ -618,6 +646,9 @@
     <string name="selectOrEnterFile">ファイルを選択または入力してください.</string>
     <string name="SaveConfig">設定を保存しました.</string>
     <string name="LoadConfig">設定ファイルを適用しました.</string>
+    <string name="SaveServerCode">ローカルフォルダに保存しました.</string>
+    <string name="SaveErrorServerCode">保存に失敗しました.</string>
+    <string name="LoadErrorServerCode">読み込みに失敗しました.</string>
     <string name="FileNotExist">ファイルが存在しません.</string>
 
     <string name="fontdlMsg">フォントをダウンロードしてテキストファイルの表示に使用します。\n複数回ダウンロードを選択した場合もダウンロードは実行し、既存ファイルが上書きされます。</string>
@@ -653,6 +684,8 @@
 
     <string name="mkChk1">フィルタ</string>
     <string name="mkChk2">ディレクトリにも適用する</string>
+    <string name="mkChk3">ファイルのみ表示</string>
+    <string name="mkChk4">フォルダのみ表示</string>
     <string name="ope100">親ディレクトリのサムネイルに設定</string>
     <string name="ope101">範囲選択してサムネイルに設定</string>
     <string name="cMargin">中央に余白を表示</string>
@@ -711,6 +744,7 @@
     <string name="ToolbarPinchScaleUp">ズームイン</string>
     <string name="ToolbarPinchScaleDown">ズームアウト</string>
     <string name="ToolbarExitViewer">ビューアの終了</string>
+    <string name="ToolbarReload">画像の再読込み</string>
 
     <string name="Toolbarpicsize00">元画像サイズ(テキストビュワーのみ)</string>
     <string name="Toolbarpicsize01">元画像サイズの2倍(テキストビュワーのみ)</string>
@@ -1100,5 +1134,21 @@
 
     <string name="ExitImageViewer">イメージビューアの終了</string>
     <string name="ExitImageViewerEnding">終了中...</string>
+
+　　<string name="SetValue">\n設定値: </string>
+    <string name="BookmarkSyncHost">栞同期サーバーのIPアドレス</string>
+    <string name="BookmarkSyncPort">栞同期サーバーのポート番号</string>
+    <string name="BookmarkSyncUser">HTTP認証用ユーザー名(任意)</string>
+    <string name="BookmarkSyncPass">HTTP認証用パスワード(任意)</string>
+
+    <string name="EverythingHost">EverythingサーバーのIPアドレス</string>
+    <string name="EverythingPort">EverythingのHTTP APIのポート番号</string>
+    <string name="EverythingUser">HTTP認証用ユーザー名(任意)</string>
+    <string name="EverythingPass">HTTP認証用パスワード(任意)</string>
+    <string name="EverythingReplaceFrom">Everythingサーバー上で置換対象となるローカルパスのプレフィックス(例: /srv/share/)</string>
+    <string name="EverythingReplaceTo">SMBパスのプレフィックス(例: smb://192.168.1.10/share/)</string>
+
+    <string name="ValidIPaddress">有効なIPアドレスを入力してください(例: 192.168.1.1)</string>
+    <string name="ValidPortaddress">ポート番号は1～65535の範囲で入力してください</string>
 
 </resources>
