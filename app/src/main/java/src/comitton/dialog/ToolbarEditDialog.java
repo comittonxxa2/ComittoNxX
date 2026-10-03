@@ -109,7 +109,20 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 					R.drawable.profile8,
 					R.drawable.profile9,
 					R.drawable.profile10,
+					R.drawable.double_arrow_left,
+					R.drawable.double_arrow_right,
+					R.drawable.magnifying_glass_plus,
+					R.drawable.magnifying_glass_minus,
+					R.drawable.fitscreen,
+					R.drawable.play_pause,
+					R.drawable.exit,
+					R.drawable.reload,
 			};
+
+	// 先頭からのプロファイル1へのオフセット
+	private static final int TOOLBAR_OFFSET_PROFILE1 = 28;
+	// 先頭からのプロファイル10へのオフセット
+	private static final int TOOLBAR_OFFSET_PROFILE10 = 37;
 
 	public static final int[] COMMAND_ID =
 		{
@@ -151,6 +164,14 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 			DEF.TOOLBAR_PROFILE8,
 			DEF.TOOLBAR_PROFILE9,
 			DEF.TOOLBAR_PROFILE10,
+			DEF.TOOLBAR_LEFTSCROLL,
+			DEF.TOOLBAR_RIGHTSCROLL,
+			DEF.TOOLBAR_GLASSPLUS,
+			DEF.TOOLBAR_GLASSMINUS,
+			DEF.TOOLBAR_ZOOMRESET,
+			DEF.TOOLBAR_PLAYPAUSE,
+			DEF.TOOLBAR_NAVIBACK,
+			DEF.TOOLBAR_RELOAD,
 		};
 
 	public static final boolean[] DEFAULT_VALUES =
@@ -193,6 +214,14 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 			false,		// プロファイル8
 			false,		// プロファイル9
 			false,		// プロファイル10
+			false,		// 次のページへスクロール
+			false,		// 前のページへスクロール
+			false,		// ズームイン
+			false,		// ズームアウト
+			false,		// ズームリセット
+			false,		// アニメ再生の停止/再開
+			false,		// ビューアの終了
+			false,		// 画像の再読込み
 		};
 
 	private static final int[] COMMAND_RES =
@@ -235,6 +264,14 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 					R.string.ToolbarProfile8,		// プロファイル8
 					R.string.ToolbarProfile9,		// プロファイル9
 					R.string.ToolbarProfile10,		// プロファイル10
+					R.string.ToolbarNextScroll,		// 次のページへスクロール
+					R.string.ToolbarPrevScroll,		// 前のページへスクロール
+					R.string.ToolbarPinchScaleUp,	// ズームイン
+					R.string.ToolbarPinchScaleDown,	// ズームアウト
+					R.string.ZoomReset,				// ズームリセット
+					R.string.AnimationPause,		// アニメ再生の停止/再開
+					R.string.ToolbarExitViewer,		// ビューアの終了
+					R.string.ToolbarReload,			// 画像の再読込み
 			};
 
 	private class Mlist {
@@ -300,15 +337,15 @@ public class ToolbarEditDialog extends ImmersiveDialog implements OnClickListene
 			mIndex[i] = sharedPreference.getInt(DEF.KEY_PAGE_SELECT_TOOLBAR_INDEX + COMMAND_ID[i], i);
 		}
 		for (int i = 0; i < COMMAND_RES.length; i++) {
-			if (COMMAND_ID[i] >= DEF.TOOLBAR_PROFILE1 && COMMAND_ID[i] <= DEF.TOOLBAR_PROFILE10) {
+			if (mIndex[i] >= TOOLBAR_OFFSET_PROFILE1 && mIndex[i] <= TOOLBAR_OFFSET_PROFILE10) {
 				// プロファイル
-				if (mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1].equals("")) {
+				if (mProfileWord[mIndex[i] - TOOLBAR_OFFSET_PROFILE1].equals("")) {
 					// 中身が未定義なら
 					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]);
 				}
 				else {
 					// 後半に中身を追加
-					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]) + " : " + mProfileWord[COMMAND_ID[i] - DEF.TOOLBAR_PROFILE1];
+					items[i] = activity.getResources().getString(COMMAND_RES[mIndex[i]]) + " : " + mProfileWord[mIndex[i] - TOOLBAR_OFFSET_PROFILE1];
 				}
 			}
 			else {

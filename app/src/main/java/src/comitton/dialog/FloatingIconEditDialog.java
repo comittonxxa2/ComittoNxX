@@ -119,6 +119,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.drawable.fitscreen,
 					R.drawable.play_pause,
 					R.drawable.exit,
+					R.drawable.reload,
 			};
 
 	// 先頭からのプロファイル1へのオフセット
@@ -171,6 +172,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			DEF.FLOATING_ZOOMRESET,
 			DEF.FLOATING_PLAYPAUSE,
 			DEF.FLOATING_NAVIBACK,
+			DEF.FLOATING_RELOAD,
 		};
 
 	private static final boolean[] DEFAULT_VALUES =
@@ -218,6 +220,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 			false,		// ズームリセット
 			false,		// アニメ再生の停止/再開
 			false,		// ビューアの終了
+			false,		// 画像の再読込み
 		};
 
 	private static final int[] COMMAND_RES =
@@ -265,6 +268,7 @@ public class FloatingIconEditDialog extends ImmersiveDialog implements OnClickLi
 					R.string.ZoomReset,				// ズームリセット
 					R.string.AnimationPause,		// アニメ再生の停止/再開
 					R.string.ToolbarExitViewer,		// ビューアの終了
+					R.string.ToolbarReload,			// 画像の再読込み
 			};
 
 	private class Mlist {

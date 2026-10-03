@@ -27,16 +27,20 @@ public class MarkerInputDialog extends ImmersiveDialog implements OnClickListene
 	private EditText mEditText;
 	private CheckBox chkFilter;
 	private CheckBox chkApplyDir;
+	private CheckBox chkFileOnly;
+	private CheckBox chkFolderOnly;
 	private Button mBtnCancel;
 	private Button mBtnSearch;
 
 	private String mEdit;
 	private boolean mFilter;
 	private boolean mApplyDir;
+	private boolean mFileOnly;
+	private boolean mFolderOnly;
 
 	SearchListener mListener;
 
-	public MarkerInputDialog(AppCompatActivity activity, @StyleRes int themeResId, String edit, boolean filter, boolean applyDir, SearchListener listener) {
+	public MarkerInputDialog(AppCompatActivity activity, @StyleRes int themeResId, String edit, boolean filter, boolean applyDir, boolean fileOnly, boolean folderOnly, SearchListener listener) {
 		super(activity, themeResId, true);
 
 		setCanceledOnTouchOutside(true);
@@ -47,6 +51,8 @@ public class MarkerInputDialog extends ImmersiveDialog implements OnClickListene
 		mEdit = edit != null ? edit : "";
 		mFilter = filter;
 		mApplyDir = applyDir;
+		mFileOnly = fileOnly;
+		mFolderOnly = folderOnly;
 		mListener = listener;
 	}
 
@@ -57,12 +63,28 @@ public class MarkerInputDialog extends ImmersiveDialog implements OnClickListene
 		mEditText = (EditText)this.findViewById(R.id.edit_text);
 		chkFilter = (CheckBox) this.findViewById(R.id.chk1);
 		chkApplyDir = (CheckBox) this.findViewById(R.id.chk2);
+		chkFileOnly = (CheckBox) this.findViewById(R.id.chk3);
+		chkFolderOnly = (CheckBox) this.findViewById(R.id.chk4);
 		mBtnCancel  = (Button)this.findViewById(R.id.btn_cancel);
 		mBtnSearch  = (Button)this.findViewById(R.id.btn_search);
 
 		mEditText.setText(mEdit);
 		chkFilter.setChecked(mFilter);
 		chkApplyDir.setChecked(mApplyDir);
+		chkFileOnly.setChecked(mFileOnly);
+		chkFolderOnly.setChecked(mFolderOnly);
+
+		// ファイルのみ/フォルダのみは同時に指定できない(片方をチェックしたらもう片方は外す)
+		chkFileOnly.setOnCheckedChangeListener((buttonView, isChecked) -> {
+			if (isChecked) {
+				chkFolderOnly.setChecked(false);
+			}
+		});
+		chkFolderOnly.setOnCheckedChangeListener((buttonView, isChecked) -> {
+			if (isChecked) {
+				chkFileOnly.setChecked(false);
+			}
+		});
 
 		// キャンセルボタン
 		mBtnCancel.setOnClickListener(this);
@@ -87,7 +109,7 @@ public class MarkerInputDialog extends ImmersiveDialog implements OnClickListene
 
 	public interface SearchListener extends EventListener {
 	    // 入力
-	    public void onSearch(String text, boolean filter, boolean applyDir);
+	    public void onSearch(String text, boolean filter, boolean applyDir, boolean fileOnly, boolean folderOnly);
 	    public void onCancel();
 	    public void onClose();
 	}
@@ -99,7 +121,7 @@ public class MarkerInputDialog extends ImmersiveDialog implements OnClickListene
 			if (mEditText.getText() != null) {
 				text = mEditText.getText().toString().trim();
 			}
-			mListener.onSearch(text, chkFilter.isChecked(), chkApplyDir.isChecked());
+			mListener.onSearch(text, chkFilter.isChecked(), chkApplyDir.isChecked(), chkFileOnly.isChecked(), chkFolderOnly.isChecked());
 		}
 		else {
 			// キャンセルクリック

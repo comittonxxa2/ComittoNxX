@@ -661,6 +661,30 @@ public class ToolbarDialog extends ImmersiveDialog implements
 			case DEF.TOOLBAR_EVENT_PROFILE10:
 				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PROFILE10);
 				break;
+			case DEF.TOOLBAR_EVENT_LEFTSCROLL:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_LEFTSCROLL);
+				break;
+			case DEF.TOOLBAR_EVENT_RIGHTSCROLL:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_RIGHTSCROLL);
+				break;
+			case DEF.TOOLBAR_EVENT_GLASSPLUS:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_GLASSPLUS);
+				break;
+			case DEF.TOOLBAR_EVENT_GLASSMINUS:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_GLASSMINUS);
+				break;
+			case DEF.TOOLBAR_EVENT_ZOOMRESET:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_ZOOMRESET);
+				break;
+			case DEF.TOOLBAR_EVENT_PLAYPAUSE:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_PLAYPAUSE);
+				break;
+			case DEF.TOOLBAR_EVENT_NAVIBACK:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_NAVIBACK);
+				break;
+			case DEF.TOOLBAR_EVENT_RELOAD:
+				mListener.onSelectPageSelectDialog(DEF.TOOLBAR_RELOAD);
+				break;
 		}
 		if (index > DEF.TOOLBAR_EVENT_PAGE_RESET) {
 			return;
