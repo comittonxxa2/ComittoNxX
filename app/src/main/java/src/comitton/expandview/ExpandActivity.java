@@ -994,7 +994,7 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 				Logcat.v(logLevel, "DEF.HMSG_READ_END. ImageManager の読み込みが終了しました.");
 				// 読込中の表示
 				if (mProgressDialog != null) {
-					mProgressDialog.dismiss();
+					mProgressDialog.dismissAllowingStateLoss();
 					mProgressDialog = null;
 				}
 
