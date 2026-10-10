@@ -558,6 +558,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		applyAppTheme(sharedPreferences);
 		super.onCreate(savedInstanceState);
+
+		if (savedInstanceState != null) {
+            savedInstanceState.remove("android:support:fragments");
+        }
+
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.v(logLevel, "開始します");
 		// レジューム起動を保存
@@ -4967,7 +4972,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 * SMB上のサーバーかつ栞同期の設定が済んでいる場合のみ有効。結果はHMSG_READPOSITION_PULL_RESULTで返る。
 	 */
 	private void updateReadPositionFromServer() {
-		if (mServer.getSelect() == DEF.INDEX_LOCAL || !ReadPositionSyncClient.isConfigured(mSharedPreferences)) {
+		if (mServer.getSelect() == DEF.INDEX_LOCAL || !ReadPositionSyncClient.isConfigured(mSharedPreferences) || !mReadPositionSyncSet) {
 			Toast.makeText(mActivity, R.string.readPositionSyncUnavailable, Toast.LENGTH_SHORT).show();
 			return;
 		}
@@ -5959,7 +5964,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// しおり削除が完了していれば終了させる
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.dismiss();
+							mProgressDialog.dismissAllowingStateLoss();
 						});
 						// ループ終了
 						stop = false;
@@ -6054,7 +6059,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// サムネイルキャッシュ削除が完了していれば終了させる
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.dismiss();
+							mProgressDialog.dismissAllowingStateLoss();
 						});
 						// ループ終了
 						stop = false;
@@ -6350,6 +6355,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			return false;
 		}
 		if (server.getAccesType() == DEF.ACCESS_TYPE_SAF && uri.isEmpty()) {
+			Logcat.v(logLevel, "return false");
+			return false;
+		}
+		if (server.getAccesType() == DEF.ACCESS_TYPE_WEBDAV && (!uri.startsWith("http://") && !uri.startsWith("https://") && !uri.startsWith("webdav://"))) {
 			Logcat.v(logLevel, "return false");
 			return false;
 		}
@@ -7826,7 +7835,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// ダウンロードが完了していれば終了させる
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.dismiss();
+							mProgressDialog.dismissAllowingStateLoss();
 						});
 						// ループ終了
 						stop = false;
@@ -9411,7 +9420,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// ファイルリストの更新が完了していれば終了させる
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.dismiss();
+							mProgressDialog.dismissAllowingStateLoss();
 						});
 						// ループ終了
 						stop = false;
@@ -9430,7 +9439,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						// 処理中断
 						// メイン画面で表示
 						mainHandler.post(() -> {
-							mProgressDialog.dismiss();
+							mProgressDialog.dismissAllowingStateLoss();
 						});
 						// ループ終了
 						stop = false;
@@ -10260,7 +10269,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 栞タブを表示するたびに、設定済みの各SMBサーバーへ最新の栞一覧を問い合わせる。
 		// 結果は非同期でHMSG_BOOKMARKSYNC_RESULTとして返り、handleMessage側でマージ・再描画する。
-		if (listtype == RecordList.TYPE_BOOKMARK) {
+		if (listtype == RecordList.TYPE_BOOKMARK && mBookmarkSyncSet) {
 			for (int s = 0; s < DEF.MAX_SERVER; s++) {
 				if (mServer.getAccessType(s) == DEF.ACCESS_TYPE_SMB) {
 					String host = mServer.getHost(s);
@@ -10273,7 +10282,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 履歴タブを表示するたびに、設定済みの各SMBサーバーへ最新の履歴一覧を問い合わせる。
 		// 結果は非同期でHMSG_HISTORYSYNC_RESULTとして返り、handleMessage側でマージ・再描画する。
-		if (listtype == RecordList.TYPE_HISTORY) {
+		if (listtype == RecordList.TYPE_HISTORY && mHistorySyncSet) {
 			for (int s = 0; s < DEF.MAX_SERVER; s++) {
 				if (mServer.getAccessType(s) == DEF.ACCESS_TYPE_SMB) {
 					String host = mServer.getHost(s);
