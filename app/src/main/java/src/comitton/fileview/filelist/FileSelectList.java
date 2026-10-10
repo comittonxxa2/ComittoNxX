@@ -476,8 +476,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 					if (threadstartcheck) {
 						// ファイルリスト読み込みが完了していれば終了させる
 						mainHandler.post(() -> {
-							// メイン画面で表示
-							mProgressDialog.dismiss();
+							// メイン画面で表示(クラッシュ防止)
+							mProgressDialog.dismissAllowingStateLoss();
 						});
 						// ループ終了
 						stop = false;
@@ -496,8 +496,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 			} catch  (Exception e) {
 				// 処理中断
 				mainHandler.post(() -> {
-					// メイン画面で表示
-					mProgressDialog.dismiss();
+					// メイン画面で表示(クラッシュ防止)
+					mProgressDialog.dismissAllowingStateLoss();
 				});
 			}
 			// スレッドを終了させて最初から始める

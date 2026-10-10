@@ -66,11 +66,11 @@ public class ServerSelect {
 			String provider = sharedPreferences.getString("smb-provider" + i, "");
 			String dispName = sharedPreferences.getString("smb-dispname" + i, "");
 			if (dispName.isEmpty()) {
-				dispName = dispName(host, user, pass);
+				dispName = dispName(host, user, pass, (accessType == DEF.ACCESS_TYPE_WEBDAV) ? true : false);
 			}
-			if (accessType < DEF.ACCESS_TYPE_SMB || accessType > DEF.ACCESS_TYPE_PICKER) {
-				accessType = DEF.ACCESS_TYPE_SMB;
-			}
+//			if (accessType < DEF.ACCESS_TYPE_SMB || accessType > DEF.ACCESS_TYPE_PICKER) {
+//				accessType = DEF.ACCESS_TYPE_SMB;
+//			}
 			Logcat.d(logLevel, "i=" + i + ", accessType=" + accessType + ", name=" + name + ", host=" + host + ", path=" + path + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName);
 			mServer[i].setAccessType(accessType);
 			mServer[i].setName(name);
@@ -319,7 +319,7 @@ public class ServerSelect {
 		}
 		else{
 			// サーバ名
-			String ret = "smb://";
+			String ret = (mServer[index].getAccessType() == DEF.ACCESS_TYPE_WEBDAV) ? "http://" : "smb://";
 			String user = URLEncoder.encode(mServer[index].getUser());
 			String pass = URLEncoder.encode(mServer[index].getPass());
 			if (!user.equals("")) {
@@ -411,11 +411,11 @@ public class ServerSelect {
 		ed.apply();
 	}
 
-	public static String dispName(String host, String user, String pass) {
+	public static String dispName(String host, String user, String pass, boolean type) {
 		if (host.isEmpty()) {
 			return "";
 		}
-		String dispName = "smb://";
+		String dispName = (type) ? "http://" : "smb://";
 		if (!user.isEmpty()) {
 			dispName += user;
 			if (!pass.isEmpty()) {
