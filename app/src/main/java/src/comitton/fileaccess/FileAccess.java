@@ -57,6 +57,7 @@ public class FileAccess {
 	private RandomAccessFile mRandomAccessFile;
 	private SmbRandomAccessFile mSmbRandomAccessFile;
 	private SafRandomAccessFile mSafRandomAccessFile;
+	private WebDavRandomAccessFile mWebDavRandomAccessFile;
 	private static Object mLock1 = new Object();
 	private static Object mLock2 = new Object();
 
@@ -78,7 +79,12 @@ public class FileAccess {
 		else if (uri.startsWith("content://")) {
 			return DEF.ACCESS_TYPE_SAF;
 		}
-		return DEF.ACCESS_TYPE_LOCAL;
+		else if (uri.startsWith("http://")) {
+			return DEF.ACCESS_TYPE_WEBDAV;
+		}
+		else {
+			return DEF.ACCESS_TYPE_LOCAL;
+		}
 	}
 
 	// 相対パスを絶対パスに変換
@@ -99,12 +105,16 @@ public class FileAccess {
 				result = SafFileAccess.filename(context, uri);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.filename(uri);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
 	}
 
-	// ファイル存在チェック
+	// 親ディレクトリ取得
 	public static String parent(@NonNull final Context context, @NonNull final String uri) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. uri=" + uri);
@@ -121,6 +131,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = SafFileAccess.parent(context, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.parent(uri);
 				break;
 			}
 		}
@@ -149,6 +163,10 @@ public class FileAccess {
 				}
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.relativePath(base, target);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -170,6 +188,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				length = SafFileAccess.length(context, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				length = WebDavFileAccess.length(uri, user, pass);
 				break;
 			}
 		}
@@ -221,6 +243,18 @@ public class FileAccess {
 				}
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				if (mWebDavRandomAccessFile != null) {
+					try {
+						length = mWebDavRandomAccessFile.length();
+					} catch (Exception e) {
+						throw new FileAccessException("length: WEBDAV: " + e.getMessage());
+					}
+				} else {
+					length = WebDavFileAccess.length(mURI, mUser, mPass);
+				}
+				break;
+			}
 		}
 		Logcat.d(logLevel, MessageFormat.format("終了します. length={0}", new Object[]{length}));
 		return length;
@@ -246,6 +280,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				parcelFileDescriptor = SafFileAccess.openParcelFileDescriptor(activity, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				parcelFileDescriptor = WebDavFileAccess.openParcelFileDescriptor(activity, uri, user, pass);
 				break;
 			}
 		}
@@ -287,6 +325,14 @@ public class FileAccess {
 				}
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				mWebDavRandomAccessFile = WebDavFileAccess.openRandomAccessFile(mURI, mUser, mPass, mode);
+				if (mWebDavRandomAccessFile == null) {
+					Logcat.e(logLevel, "WebDav: mWebDavRandomAccessFile == null");
+					throw new FileAccessException(TAG + "openRandomAccessFile: WebDav: mWebDavRandomAccessFile == null");
+				}
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します.");
 	}
@@ -320,6 +366,13 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				mSafRandomAccessFile.seek(pos);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				if (mWebDavRandomAccessFile == null) {
+					throw new IOException("WebDavRandomAccessFile is not initialized.");
+				}
+				mWebDavRandomAccessFile.seek(pos);
 				break;
 			}
 		}
@@ -365,6 +418,12 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = mSafRandomAccessFile.getFilePointer();
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				if (mWebDavRandomAccessFile != null) {
+					result = mWebDavRandomAccessFile.getFilePointer();
+				}
 				break;
 			}
 		}
@@ -413,6 +472,13 @@ public class FileAccess {
 				result = mSafRandomAccessFile.read(buf, off, size);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				if (mWebDavRandomAccessFile == null) {
+					throw new IOException("WebDavRandomAccessFile is not initialized.");
+				}
+				result = mWebDavRandomAccessFile.read(buf, off, size);
+				break;
+			}
 		}
 		Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{result, off, getFilePointer(), length()}));
 		return result;
@@ -459,6 +525,13 @@ public class FileAccess {
 				mSafRandomAccessFile.write(buf, off, size);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				if (mWebDavRandomAccessFile == null) {
+					throw new IOException("WebDavRandomAccessFile is not initialized.");
+				}
+				mWebDavRandomAccessFile.write(buf, off, size);
+				break;
+			}
 		}
 		Logcat.d(logLevel,"終了します.");
 	}
@@ -492,6 +565,10 @@ public class FileAccess {
 						mSafRandomAccessFile.close();
 						mSafRandomAccessFile = null;
 					}
+					if (mWebDavRandomAccessFile != null) {
+						mWebDavRandomAccessFile.close();
+						mWebDavRandomAccessFile = null;
+					}
 					if (mSafFile != null) {
 						mSafFile = null;
 					}
@@ -501,7 +578,8 @@ public class FileAccess {
 				}
             }
 		});
-
+		// スレッドプールを適切にシャットダウンする
+		executor.shutdown();
 		Logcat.d(logLevel, "終了します.");
 	}
 
@@ -527,6 +605,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = SafFileAccess.getInputStream(context, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.getInputStream(uri, user, pass);
 				break;
 			}
 		}
@@ -556,6 +638,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = SafFileAccess.getOutputStream(activity, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.getOutputStream(uri, user, pass);
 				break;
 			}
 		}
@@ -608,6 +694,10 @@ public class FileAccess {
 				result = SafFileAccess.exists(context, uri);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.exists(uri, user, pass);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します.");
 		return result;
@@ -633,6 +723,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = SafFileAccess.isDirectory(context, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.isDirectory(uri, user, pass);
 				break;
 			}
 		}
@@ -665,6 +759,10 @@ public class FileAccess {
 				}
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.listFiles(activity, uri, user, pass);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result.size()=" + result.size());
 		return result;
@@ -691,13 +789,17 @@ public class FileAccess {
 				result = SafFileAccess.renameTo(activity, uri, fromfile, tofile);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.renameTo(fromfile, tofile, user, pass);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
 	}
 
-	public boolean date() throws FileAccessException {
-		return delete(mActivity, mURI, mUser, mPass);
+	public long date() throws FileAccessException {
+		return date(mActivity, mURI, mUser, mPass);
 	}
 
 	// タイムスタンプ
@@ -739,6 +841,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = SafFileAccess.date(activity, uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.date(uri, user, pass);
 				break;
 			}
 		}
@@ -791,6 +897,10 @@ public class FileAccess {
 				result = SafFileAccess.delete(activity, uri);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.delete(uri, user, pass);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -818,6 +928,10 @@ public class FileAccess {
 				result = SafFileAccess.mkdir(context, uri, item);
 				break;
 			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.mkdir(uri, user, pass, item);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -839,6 +953,10 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_SAF: {
 				result = SafFileAccess.createFile(activity, uri, item);
+				break;
+			}
+			case DEF.ACCESS_TYPE_WEBDAV: {
+				result = WebDavFileAccess.createFile(uri, user, pass, item);
 				break;
 			}
 		}
