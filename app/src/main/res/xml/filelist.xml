@@ -344,6 +344,16 @@
             android:title="Check the directory for marker settings." />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="MarkerFileOnlyOn"
+            android:summary="Enable the 'Files only' checkbox in the marker settings by default."
+            android:title="Check only the marker setting file" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarkerFolderOnlyOn"
+            android:summary="Enable the 'Folders only' checkbox in the marker settings by default."
+            android:title="Check only the marker setting folder" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="ArchiveCheckManualMode"
             android:summary="The identification time for compressed files will be shortened by fixing the identification process using a magic number instead of automatic detection."
             android:title="Referencing a magic number for identifying compressed files" />
