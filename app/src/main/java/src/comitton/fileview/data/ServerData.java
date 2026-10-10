@@ -87,6 +87,9 @@ public class ServerData {
 		if (getAccessType() == DEF.ACCESS_TYPE_SMB) {
 			return "smb://" + getHost();
 		}
+		else if (getAccessType() == DEF.ACCESS_TYPE_WEBDAV) {
+			return "http://" + getHost();
+		}
 		else {
 			return getProvider();
 		}
