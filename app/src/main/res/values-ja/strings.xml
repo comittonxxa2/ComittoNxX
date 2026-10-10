@@ -872,6 +872,7 @@
     <string name="serverTypeSMB">SMB</string>
     <string name="serverTypeSAF">ストレージ アクセス フレームワーク</string>
     <string name="serverTypePicker">ファイル ピッカー</string>
+    <string name="serverTypeWebDAV">WebDAV</string>
     <string name="SafChooseTitle">フォルダを選択してください.</string>
     <string name="permissionDenied">権限がありません.</string>
     <string name="noResponseProvider">コンテンツプロバイダからの応答がありません.</string>
