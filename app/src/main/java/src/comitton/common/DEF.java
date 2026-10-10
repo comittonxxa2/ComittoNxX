@@ -34,6 +34,7 @@ import androidx.core.app.ActivityCompat;
 import jp.dip.muracoro.comittonx.BuildConfig;
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.fileaccess.FileAccess;
+import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
 
 import org.mozilla.universalchardet.UniversalDetector;
@@ -439,6 +440,7 @@ public class DEF {
 	public static final int ACCESS_TYPE_SMB = 0;
 	public static final int ACCESS_TYPE_SAF = 1;
 	public static final int ACCESS_TYPE_PICKER = 2;
+	public static final int ACCESS_TYPE_WEBDAV = 3;
 
 	public static final int VIEWPT_RIGHTTOP = 0;
 	public static final int VIEWPT_LEFTTOP = 1;
@@ -4677,7 +4679,7 @@ public class DEF {
 				// SMB上のファイルの既読位置キャッシュ(createUrlの出力)。
 				// 既読位置サーバー同期(ReadPositionSyncClient)導入により、
 				// SMB上のファイルの既読位置はサーバー側が正となるため、端末間で持ち回る設定には含めない。
-				return false;
+				if (FileSelectActivity.getBookmarkSyncSet()) return false;
 			} else {
 				return false;
 			}
@@ -4771,13 +4773,14 @@ public class DEF {
 		if (url.length() <= 6) {
 			return url;
 		}
-		if (!url.startsWith("smb://") || user == null || user.isEmpty()) {
+		if (!url.startsWith("smb://") && !url.startsWith("http://") && !url.startsWith("https://") || user == null || user.isEmpty()) {
 			return url;
 		}
 		// サーバ名
 		String ret = "";
 		try {
-			ret = "smb://" + URLEncoder.encode(user, "UTF-8");
+			String host = (url.startsWith("smb://")) ? "smb://" : "http://";
+			ret = host + URLEncoder.encode(user, "UTF-8");
 			if (pass != null && !pass.isEmpty()) {
 				ret += ":" + URLEncoder.encode(pass, "UTF-8");
 			}
