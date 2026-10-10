@@ -870,6 +870,7 @@
     <string name="serverTypeSMB">SMB</string>
     <string name="serverTypeSAF">Storage Access Framework</string>
     <string name="serverTypePicker">File Picker</string>
+    <string name="serverTypeWebDAV">WebDAV</string>
     <string name="SafChooseTitle">Select a folder.</string>
     <string name="permissionDenied">Permission denied.</string>
     <string name="noResponseProvider">No response from content provider.</string>
