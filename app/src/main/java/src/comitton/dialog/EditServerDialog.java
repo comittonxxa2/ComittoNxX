@@ -36,7 +36,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 
 	private final int SELLIST_SERVER_TYPE = 0;
 
-	public static final int[] Servertype = { R.string.serverTypeSMB, R.string.serverTypeSAF, R.string.serverTypePicker};
+	public static final int[] Servertype = { R.string.serverTypeSMB, R.string.serverTypeSAF, R.string.serverTypePicker, R.string.serverTypeWebDAV};
 
 	private ListDialog mListDialog;
 	private int mSelectMode;
@@ -142,6 +142,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 		mBtnCancel.setOnClickListener(this);
 		mBtnClear.setOnClickListener(this);
 		mBtnOK.setOnClickListener(this);
+		mBtnAccessType.setAllCaps(false);
 	}
 
 	@Override
@@ -182,7 +183,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			if (mEditName.getText() != null) {
 				name = mEditName.getText().toString().trim();
 			}
-			if (mAccessType == DEF.ACCESS_TYPE_SMB) {
+			if (mAccessType == DEF.ACCESS_TYPE_SMB || mAccessType == DEF.ACCESS_TYPE_WEBDAV) {
 				if (mEditHost.getText() != null) {
 					host = mEditHost.getText().toString().trim();
 				}
@@ -194,7 +195,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 				}
 				path = "/";
 
-				dispName = ServerSelect.dispName(host, user, pass);
+				dispName = ServerSelect.dispName(host, user, pass, (mAccessType == DEF.ACCESS_TYPE_WEBDAV) ? true : false);
 			}
 			else if (mAccessType == DEF.ACCESS_TYPE_SAF || mAccessType == DEF.ACCESS_TYPE_PICKER) {
 				provider = mProvider;
@@ -333,7 +334,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 	}
 
 	private void showItem(int serverType) {
-		if (serverType == DEF.ACCESS_TYPE_SMB) {
+		if (serverType == DEF.ACCESS_TYPE_SMB || serverType == DEF.ACCESS_TYPE_WEBDAV) {
 			mTextName.setVisibility(View.VISIBLE);
 			mTextHost.setVisibility(View.VISIBLE);
 			mTextUser.setVisibility(View.VISIBLE);
