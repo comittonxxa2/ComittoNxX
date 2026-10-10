@@ -258,7 +258,7 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 				Map<String, ?> keys = mSp.getAll();
 				if (keys != null) {
 					for (String key : keys.keySet()) {
-						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://"))) {
+						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://") || key.length() >= 7 && key.startsWith("http://"))) {
 							// 既読情報を読み込まない場合は削除しない
 						}
 						else if (DEF.checkExportKey(key)) {
@@ -320,7 +320,7 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 						case 'i': // NxT専用キー
 						{
 							int work = Integer.parseInt(value);
-							if (mIgnoreReadInfo && (line.length() >= 3 && line.startsWith("i:/") || line.length() >= 8 && line.startsWith("i:smb://"))) {
+							if (mIgnoreReadInfo && (line.length() >= 3 && line.startsWith("i:/") || line.length() >= 8 && line.startsWith("i:smb://") || line.length() >= 9 && line.startsWith("i:http://"))) {
 								// 既読情報を読み込まない場合は何もしない
 							}
 							else {
