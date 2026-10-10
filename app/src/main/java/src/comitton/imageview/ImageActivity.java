@@ -2144,7 +2144,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			case DEF.HMSG_PROGRESS_IMAGE_END:
 				if (mProgressDialog != null) {
-					mProgressDialog.dismiss();
+					mProgressDialog.dismissAllowingStateLoss();
 					mProgressDialog = null;
 				}
 				return true;
@@ -2153,7 +2153,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 読込中の表示
 				if (!isFinishing() && mProgressDialog != null) {
 					try {
-						mProgressDialog.dismiss();
+						mProgressDialog.dismissAllowingStateLoss();
 						mProgressDialog = null;
 					}
 					catch (Exception ex) {
@@ -9635,7 +9635,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				if (mPageSelect == PAGE_INPUT) {
 					// 文書情報を表示
-					mGuideView.setPageText(mImageMgr.createPageStr(mSelectPage));
+					mGuideView.setPageText(mImageMgr.createPageStr(mCurrentPage));
 					mGuideView.setPageColor(0x80000000);
 					// ページ番号入力
 					if (!PageSelectDialog.mIsOpened) {
@@ -9649,7 +9649,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				else if (mPageSelect == PAGE_THUMB) {
 					// 文書情報を表示
-					mGuideView.setPageText(mImageMgr.createPageStr(mSelectPage));
+					mGuideView.setPageText(mImageMgr.createPageStr(mCurrentPage));
 					mGuideView.setPageColor(0x80000000);
 					// サムネイルページ選択
 					if (!PageThumbnail.mIsOpened) {

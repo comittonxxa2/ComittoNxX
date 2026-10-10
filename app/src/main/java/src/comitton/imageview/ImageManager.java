@@ -97,6 +97,8 @@ import src.comitton.config.SetImageActivity;
 import src.comitton.config.SetServerMessageBlockActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileaccess.SmbFileAccess;
+import src.comitton.fileaccess.WebDavRandomAccessFile;
+import src.comitton.fileaccess.WebDavUtil;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileaccess.FileAccessException;
@@ -615,6 +617,9 @@ public class ImageManager extends InputStream implements Runnable {
 		else if (uri.startsWith("content://")) {
 			return DEF.ACCESS_TYPE_SAF;
 		}
+		else if (uri.startsWith("http://") || uri.startsWith("https://") || uri.startsWith("webdav://")) {
+			return DEF.ACCESS_TYPE_WEBDAV;
+		}
 		return DEF.ACCESS_TYPE_LOCAL;
 	}
 	// ストレージアクセスフレームワークのストリームアクセス(7-Zip-JBinding-4Android専用)
@@ -870,6 +875,46 @@ public class ImageManager extends InputStream implements Runnable {
 		@Override
 		public void close() throws IOException {
 			raf.close();
+		}
+	}
+	// WebDAVのストリームアクセス(7-Zip-JBinding-4Android専用)
+	public class WebDavInStream implements IInStream {
+		private final WebDavRandomAccessFile file;
+		public WebDavInStream(WebDavRandomAccessFile file) {
+			this.file = file;
+		}
+		@Override
+		public long seek(long offset, int origin) throws SevenZipException {
+			try {
+				switch (origin) {
+					case SEEK_SET:
+						file.seek(offset);
+						break;
+					case SEEK_CUR:
+						file.seek(file.getFilePointer() + offset);
+						break;
+					case SEEK_END:
+						file.seek(file.length() + offset);
+						break;
+				}
+				return file.getFilePointer();
+			}
+			catch (IOException e) {
+				throw new SevenZipException("WebDAV seek error: " + e.getMessage());
+			}
+		}
+		@Override
+		public int read(byte[] data) throws SevenZipException {
+			try {
+				return file.read(data, 0, data.length);
+			}
+			catch (IOException e) {
+				throw new SevenZipException("WebDAV read error: " + e.getMessage());
+			}
+		}
+		@Override
+		public void close() throws IOException {
+			file.close();
 		}
 	}
 	// 再帰的な削除メソッド(キャッシュ削除に使用する)
@@ -1208,6 +1253,22 @@ public class ImageManager extends InputStream implements Runnable {
 						}
 						ParcelFileDescriptor pfdMain = mActivity.getContentResolver().openFileDescriptor(uri, "r");
 						mainStream = new SafInStream(pfdMain);
+						break;
+					}
+					case DEF.ACCESS_TYPE_WEBDAV: {
+						// WebDAVの場合
+						// URIの正規化(二重スラッシュ除去・デコード)
+						String normalizedUrl = WebDavUtil.normalizeUri(mFilePath);
+						// フォーマット判定用に一瞬開いてヘッダー(262バイト)を読み込む
+						try (WebDavRandomAccessFile wrafCheck = new WebDavRandomAccessFile(normalizedUrl, mUser, mPass)) {
+							byte[] b = new byte[262];
+							int n = wrafCheck.read(b, 0, b.length);
+							detectedFormat = ArchiveDetector.detect(b, n);
+						}
+						// 本番用のランダムアクセスファイルを生成
+						WebDavRandomAccessFile wrafMain = new WebDavRandomAccessFile(normalizedUrl, mUser, mPass);
+						// 7-Zip解凍用の IInStream ラッパー(WebDavInStream)を生成
+						mainStream = new WebDavInStream(wrafMain);
 						break;
 					}
 				}
@@ -3025,6 +3086,12 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		else if (mHostType == DEF.ACCESS_TYPE_SAF || mHostType == DEF.ACCESS_TYPE_PICKER) {
 			strPath = FileAccess.filename(mActivity, strPath);
+		}
+		else if (mHostType == DEF.ACCESS_TYPE_WEBDAV) {
+			int idx = strPath.indexOf("@");
+			if (idx >= 0) {
+				strPath = "http://" + strPath.substring(idx + 1);
+			}
 		}
 
 		String pageStr;
