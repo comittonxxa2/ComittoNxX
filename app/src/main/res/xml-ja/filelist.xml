@@ -346,6 +346,16 @@
             android:title="マーカー設定のディレクトリのチェック" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="MarkerFileOnlyOn"
+            android:summary="マーカー設定のファイルのみのチェックをデフォルトでオンにする"
+            android:title="マーカー設定のファイルのみのチェック" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MarkerFolderOnlyOn"
+            android:summary="マーカー設定のフォルダのみのチェックをデフォルトでオンにする"
+            android:title="マーカー設定のフォルダのみのチェック" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="ArchiveCheckManualMode"
             android:summary="圧縮ファイルの識別を自動判定からマジックナンバーで固定にして識別の時間を短縮する"
             android:title="圧縮ファイルの識別でマジックナンバーを参照する" />
