@@ -150,7 +150,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = mContext.getString(R.string.mSizeSumm1);
 			mSummary2 = mContext.getString(R.string.mSizeSumm2);
 		}
-		else if (mKey.equals(DEF.KEY_MEMNEXT) || mKey.equals(DEF.KEY_MEMPREV)) {
+		else if (mKey.equals(DEF.KEY_MEMNEXT) || mKey.equals(DEF.KEY_MEMPREV) || mKey.equals(DEF.KEY_MEMLIMIT)) {
 			mSummary1 = mContext.getString(R.string.mPageSumm1);
 			mSummary2 = "";
 		}
@@ -294,7 +294,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		else if (mKey.equals(DEF.KEY_MEMSIZE)) {
 			strSummary = DEF.getMemSizeStr(num, mSummary1, mSummary2);
 		}
-		else if (mKey.equals(DEF.KEY_MEMNEXT) || mKey.equals(DEF.KEY_MEMPREV)) {
+		else if (mKey.equals(DEF.KEY_MEMNEXT) || mKey.equals(DEF.KEY_MEMPREV) || mKey.equals(DEF.KEY_MEMLIMIT)) {
 			strSummary = DEF.getMemPageStr(num, mSummary1);
 		}
 		else if (mKey.equals(DEF.KEY_VOLSCRL) || mKey.equals(DEF.KEY_NOISESCRL) || mKey.equals(DEF.KEY_SCRLDIAG)) {
