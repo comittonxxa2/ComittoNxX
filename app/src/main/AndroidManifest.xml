@@ -15,6 +15,10 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:hardwareAccelerated="true"
@@ -34,6 +38,10 @@
         <service
             android:name="src.comitton.common.SplashActivity$WebViewService" 
             android:process=":webview_process" />
+        <service
+            android:name="src.comitton.WebSharing.WebServerService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         <activity
             android:name="src.comitton.common.SplashActivity"
             android:exported="true"
@@ -321,6 +329,18 @@
             android:theme="@style/MyTheme"></activity>
         <activity
             android:name="src.comitton.config.SetWebViewActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:screenOrientation="behind"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.SetWebServerActivity"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:screenOrientation="behind"
+            android:theme="@style/MyTheme"></activity>
+        <activity
+            android:name="src.comitton.config.DirChooserActivity"
             android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:screenOrientation="behind"
