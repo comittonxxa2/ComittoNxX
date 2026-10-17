@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="webserver_category"
+        android:title="Web Sharing Settings"
+        android:layout="@layout/custom_preference_category">
+        <Preference
+            android:key="status_info"
+            android:title="Current status"
+            android:summary="dummy"
+            android:selectable="false"
+            android:layout="@layout/preference_with_divider" />
+        <src.comitton.config.DownloadPreference
+            android:key="download_source_code"
+            android:title="Starting the web sharing"
+            android:summary="Start and stop Web sharing." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="Start/Stop Web Sharing"
+            android:summary="Check this box to enable Web Sharing at startup."
+            android:title="Enable Web Sharing at startup" />
+        <EditTextPreference
+            android:key="WebServerPort"
+            android:defaultValue="8080"
+            android:title="Port number"
+            android:summary="Web sharing port number"
+            android:dialogTitle="Port number" />
+        <Preference
+            android:key="pref_dir_selector"
+            android:title="Select Initial Folder for Web Sharing"
+            android:summary="No initial folder has been selected." />
+        <EditTextPreference
+            android:key="BulkDownload"
+            android:defaultValue="archive"
+            android:title="File name when downloading the selection as a ZIP archive"
+            android:summary="archive"
+            android:dialogTitle="Enter the filename after ZIP compression." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="PopupImage"
+            android:summary="Check this box if you want to view the contents of the image file."
+            android:title="Display a pop-up when a file is clicked or tapped" />
+    </src.comitton.config.ButtonPreferenceCategory>
+</PreferenceScreen>

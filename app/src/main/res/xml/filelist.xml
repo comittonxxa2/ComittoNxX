@@ -464,9 +464,19 @@
             android:defaultValue="false"
             android:key="LoadWithFallback"
             android:summary="If no exact match is found, the system will fall back to the most recent set of records (e.g., multiple bookmarks) on the same server with matching filenames (ignoring archive extensions).\nBookmarks and history can be retained even after files have different extensions (ZIP or RAR) or after directory changes."
-            android:title="Collect and return all records associated with the original file of the bookmark.
-
-" />
+            android:title="Collect and return all records associated with the original file of the bookmark." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="MemLimitEnable"
+            android:summary="Check this box to limit the number of pages retrieved when preloading images linked from HTML and text files."
+            android:title="Limit the number of pages from which images linked in HTML and text are retrieved." />
+        <src.comitton.config.seekbar.LimitDownloadImageSeekbar
+            android:dialogMessage="Set a size limit for the number of pages to retrieve, including the number of pages before and after the specified number."
+            android:dialogTitle="The limit on the number of pages to retrieve images from HTML and text links."
+            android:key="MemLimit"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="The limit on the number of pages to retrieve images from HTML and text links." />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

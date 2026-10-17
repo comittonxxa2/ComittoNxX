@@ -168,6 +168,14 @@
                 android:targetClass="src.comitton.config.SetWebViewActivity"
                 android:targetPackage="@string/application_id" />
         </PreferenceScreen>
+        <PreferenceScreen
+            android:key="WebServerSet"
+            android:title="Setting for Web Sharing"
+            android:summary="Set the parameters for the Web Sharing" >
+            <intent
+                android:targetClass="src.comitton.config.SetWebServerActivity"
+                android:targetPackage="@string/application_id" />
+        </PreferenceScreen>
     </PreferenceCategory>
     <PreferenceCategory android:title="Save settings to file" >
         <src.comitton.config.ExportSettingPreference
