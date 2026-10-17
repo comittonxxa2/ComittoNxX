@@ -48,6 +48,7 @@ import src.comitton.config.SetNoiseActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
+import src.comitton.config.SetWebServerActivity;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.dialog.CustomNoneProgressDialog;
 import src.comitton.expandview.ExpandActivity;
@@ -103,6 +104,7 @@ import src.comitton.fileview.view.list.RecordListArea;
 import src.comitton.fileview.view.list.TitleArea;
 import src.comitton.webview.WebViewActivity;
 import src.comitton.config.SetServerMessageBlockActivity;
+import src.comitton.WebSharing.WebServerService;
 
 import static src.comitton.common.DEF.DEFAULT_TOOLBAR_SIZE;
 import static src.comitton.dialog.ToolbarEditDialog.COMMAND_ID;
@@ -480,6 +482,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static boolean mEverythingSet;
 	private static boolean mResolvePageKey;
 	private static boolean mLoadWithFallback;
+	private static boolean mWebServerStart;
+	private static boolean mWebServerEnable = false;
 
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
@@ -1313,6 +1317,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// GitHubに新しいバージョンがリリースされているか確認する
 		mInformation.checkRecentRelease(mHandler, false);
+
+		if (mWebServerStart) startWebServerService();
 	}
 
 	// タブを表示
@@ -3002,6 +3008,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mSkipSortFilelist = SetFileListActivity.getSkipSortFilelist(mSharedPreferences);
 		mResolvePageKey = SetFileListActivity.getResolvePageKey(mSharedPreferences);
 		mLoadWithFallback = SetFileListActivity.getLoadWithFallback(mSharedPreferences);
+		mWebServerStart = SetWebServerActivity.getWebServerStart(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3720,6 +3727,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		threadstartcheck2 = true;
 		threadstartcheck3 = true;
 		threadstartcheck4 = true;
+		if (mWebServerEnable) stopWebServerService();
 		return;
 	}
 
@@ -10729,4 +10737,46 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public static boolean getLoadWithFallback() {
 		return mLoadWithFallback;
 	}
+
+	// バックグラウンドでサーバーサービスを起動するメソッド
+	private void startWebServerService() {
+		Intent intent = new Intent(this, WebServerService.class);
+		intent.putExtra("PORT", SetWebServerActivity.getWebserverPort(mSharedPreferences));
+		intent.putExtra("PATH", SetWebServerActivity.getWebserverPath(mSharedPreferences));
+		intent.putExtra("BULKDOWNLOAD", SetWebServerActivity.getBulkDownload(mSharedPreferences));
+		intent.putExtra("POPUPIMAGE", SetWebServerActivity.getPopupImage(mSharedPreferences));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			// Android 8.0以降はフォアグラウンドサービス専用の起動メソッドを使用
+			startForegroundService(intent);
+		}
+		else {
+			startService(intent);
+		}
+		mWebServerEnable = true;
+		android.widget.Toast.makeText(this, R.string.StartWebServer, android.widget.Toast.LENGTH_SHORT).show();
+	}
+
+	// バックグラウンドサーバーを停止するメソッド
+	private void stopWebServerService() {
+		Intent intent = new Intent(this, WebServerService.class);
+		stopService(intent);
+		android.widget.Toast.makeText(this, R.string.StopWebServer, android.widget.Toast.LENGTH_SHORT).show();
+		mWebServerEnable = false;
+	}
+
+	public static String getPath() {
+		int mNowSelect = mServer.getSelect();
+		mServer.select(DEF.INDEX_LOCAL);
+		String mNewPath = mServer.getPath();
+		mServer.select(mNowSelect);
+		return mNewPath;
+	}
+
+	public static boolean getWebServerEnable() {
+		return mWebServerEnable;
+	}
+	public static void setWebServerEnable(boolean value) {
+		mWebServerEnable = value;
+	}
+
 }
