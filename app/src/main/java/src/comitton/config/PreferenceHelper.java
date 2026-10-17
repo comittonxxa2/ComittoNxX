@@ -21,17 +21,26 @@ public class PreferenceHelper {
 				// ListView のスクロール監視を設定して再利用時の表示戻りを防止
 				View listView = rootView.findViewById(android.R.id.list);
 				if (listView instanceof ListView) {
-					ListView list = (ListView) listView;
+					final ListView list = (ListView) listView;
+					// 画面の回転やレイアウト変更時（サイズ変化など）に確実に適用する
+					list.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+						@Override
+						public void onLayoutChange(View v, int left, int top, int right, int bottom,
+												   int oldLeft, int oldTop, int oldRight, int oldBottom) {
+							makeAllTitlesMultiline(v);
+						}
+					});
 					list.setOnScrollListener(new AbsListView.OnScrollListener() {
 						@Override
 						public void onScrollStateChanged(AbsListView view, int scrollState) {
-							// スクロール状態が変わったタイミングで解除処理を実行
-							makeAllTitlesMultiline(view);
+							// スクロールが完全に停止したタイミングで再適用し、表示戻りを防止する
+							if (scrollState == SCROLL_STATE_IDLE) {
+								makeAllTitlesMultiline(view);
+							}
 						}
 						@Override
 						public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-							// スクロール中も常に表示項目に対して解除処理を実行
-							makeAllTitlesMultiline(view);
+							// スクロール中の高頻度な更新は避けるため、ここでは何もしない
 						}
 					});
 				}

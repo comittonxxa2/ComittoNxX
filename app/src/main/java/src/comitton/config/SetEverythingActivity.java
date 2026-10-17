@@ -184,7 +184,7 @@ public class SetEverythingActivity extends PreferenceActivity implements OnShare
 		}
 		try {
 			int port = Integer.parseInt(portStr);
-			return port >= 1 && port <= 65535;
+			return port >= 1024 && port <= 65535;
 		}
 		catch (NumberFormatException e) {
 			return false;
