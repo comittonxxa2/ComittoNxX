@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <src.comitton.config.ButtonPreferenceCategory
+        android:key="webserver_category"
+        android:title="Web共有の設定"
+        android:layout="@layout/custom_preference_category">
+        <Preference
+            android:key="status_info"
+            android:title="現在のステータス"
+            android:summary="dummy"
+            android:selectable="false"
+            android:layout="@layout/preference_with_divider" />
+        <src.comitton.config.DownloadPreference
+            android:key="download_source_code"
+            android:title="Web共有の開始/停止"
+            android:summary="Web共有の開始及び停止を行う" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerStart"
+            android:summary="起動時にWeb共有を有効にする場合はチェックを入れる"
+            android:title="起動時にWeb共有を有効にする" />
+        <EditTextPreference
+            android:key="WebServerPort"
+            android:defaultValue="8080"
+            android:title="ポート番号"
+            android:summary="Web共有のポート番号"
+            android:dialogTitle="ポート番号" />
+        <Preference
+            android:key="pref_dir_selector"
+            android:title="Web共有の初期フォルダの選択"
+            android:summary="初期フォルダが選択されていません" />
+        <EditTextPreference
+            android:key="BulkDownload"
+            android:defaultValue="archive"
+            android:title="「選択をZIP圧縮してダウンロード」する時のファイル名"
+            android:summary="archive"
+            android:dialogTitle="ZIP圧縮後のファイル名を入力" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="PopupImage"
+            android:summary="ファイルの内容を確認したい場合はチェックを入れる"
+            android:title="ファイルをクリックまたはタップした時にポップアップ表示する" />
+    </src.comitton.config.ButtonPreferenceCategory>
+</PreferenceScreen>
