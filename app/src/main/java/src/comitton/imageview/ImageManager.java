@@ -339,6 +339,8 @@ public class ImageManager extends InputStream implements Runnable {
 	private ExternalFilterData mExternalFilterData;
 	private static boolean mBlank;
 	private boolean mDownload;
+	private boolean mMemLimitEnable;
+	private int mMemLimit;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -380,6 +382,8 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		mSmbRetryMode = SetServerMessageBlockActivity.getSmbRetryMode(sp);
 		mDownload = SetFileListActivity.getBackgroundDownloadImageFile(sp) && ImageActivity.getPrevNextMask();
+		mMemLimitEnable = SetFileListActivity.getMemLimitEnable(sp);
+		mMemLimit = SetFileListActivity.getMemLimit(sp);
 
  		// スレッド数
  		mMaxThreadNum = maxthread;
@@ -405,8 +409,8 @@ public class ImageManager extends InputStream implements Runnable {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. memsize=" + memsize + ", memnext=" + memnext + ", memprev=" + memprev + ", memcache=" + memcache + ", messagemode=" + messagemode);
 		mMemSize = memsize;
-		mMemNextPages = memnext;
-		mMemPrevPages = memprev;
+		mMemNextPages = (mMemLimitEnable && mDownload && memnext >= mMemLimit) ? mMemLimit : memnext;
+		mMemPrevPages = (mMemLimitEnable && mDownload && memprev >= mMemLimit) ? mMemLimit : memprev;
 		mMemCacheThreshold = memcache;
 		mMessageMode = messagemode;
 
