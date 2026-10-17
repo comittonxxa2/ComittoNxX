@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "CL"
+def revision = "CM"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -243,4 +243,6 @@ dependencies {
         exclude group: 'stax', module: 'stax-api'
         exclude module: 'stax'
     }
+
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
 }
