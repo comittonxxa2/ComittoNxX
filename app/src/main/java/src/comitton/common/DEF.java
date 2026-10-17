@@ -933,6 +933,8 @@ public class DEF {
 	public static final String KEY_MEMSIZE = "MemSize";
 	public static final String KEY_MEMNEXT = "MemNext";
 	public static final String KEY_MEMPREV = "MemPrev";
+	public static final String KEY_MEMLIMIT = "MemLimit";
+	public static final String KEY_MEMLIMITENABLE = "MemLimitEnable";
 	public static final String KEY_MEMCACHESTARTTHRESHOLD = "MemCacheStartThreshold";
 
 	public static final String KEY_PinchScale = "PinchScale";
@@ -1015,6 +1017,15 @@ public class DEF {
 	public static final String DEFAULT_BOOKMARKSYNC_PASS = "";
 
 	public static final String SERVER_SAMPLE_CODE = "server.py";
+
+	public static final String KEY_WEBSERVER_PORT = "WebServerPort";
+	public static final String KEY_WEBSERVER_DIRECTORY = "WebServerDirectory";
+	public static final String KEY_WEBSERVER_START = "WebServerStart";
+	public static final String KEY_WEBSERVER_BULKDOWNLOAD = "BulkDownload";
+	public static final String KEY_WEBSERVER_POPUPIMAGE = "PopupImage";
+
+	public static final String DEFAULT_WEBSERVER_PORT = "8080";
+	public static final String DEFAULT_WEBSERVER_BULKDOWNLOAD = "archive";
 
 	public static final int HMSG_BOOKMARKSYNC_RESULT = 34;
 	public static final int HMSG_READPOSITION_PULL_RESULT = 35;
@@ -1718,6 +1729,7 @@ public class DEF {
 	public static final int DEFAULT_MEMSIZE = 18; // キャッシュサイズ:200MByte
 	public static final int DEFAULT_MEMNEXT = 16; // キャッシュ前方:32ページ
 	public static final int DEFAULT_MEMPREV = 8; // キャッシュ後方:16ページ
+	public static final int DEFAULT_MEMLIMIT = 16; // キャッシュ前方:32ページ
 	public static final String DEFAULT_MEMCACHE = "0"; // 自動
 	public static final int DEFAULT_NOISESCRL = 1; // 20ドット
 	public static final int DEFAULT_NOISEUNDER = 8; // 800
@@ -1858,6 +1870,7 @@ public class DEF {
 	public static final int MAX_MEMSIZE = 198; // 2000MByte
 	public static final int MAX_MEMNEXT = 100; // 200ページ
 	public static final int MAX_MEMPREV = 100; // 200ページ
+	public static final int MAX_MEMLIMIT = 100; // 200ページ
 	public static final int MAX_NOISESCRL = 39; // 200ドット
 	public static final int MAX_NOISEUNDER = 50; // 5000
 	public static final int MAX_NOISEOVER = 50; // 5000
