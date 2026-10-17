@@ -1150,6 +1150,26 @@
     <string name="EverythingReplaceTo">SMBパスのプレフィックス(例: smb://192.168.1.10/share/)</string>
 
     <string name="ValidIPaddress">有効なIPアドレスを入力してください(例: 192.168.1.1)</string>
-    <string name="ValidPortaddress">ポート番号は1～65535の範囲で入力してください</string>
+    <string name="ValidPortaddress">ポート番号は1024～65535の範囲で入力してください</string>
+    <string name="ValidDirectory">有効なディレクトリを選択してください</string>
+    <string name="ValidFilename">有効なファイル名を入力してください</string>
+    <string name="ReturnStorageList">[ストレージ一覧へ戻る]</string>
+    <string name="StorageSelection">ストレージ選択</string>
+    <string name="InternalStorage">内蔵ストレージ</string>
+    <string name="ExternalSDcard">外部SDカード</string>
+    <string name="SelectDirectory">このディレクトリを選択</string>
+    <string name="StartWebServer">バックグラウンドでWeb共有を開始しました</string>
+    <string name="StopWebServer">Web共有を停止しました</string>
+    <string name="SelectedPath">選択されたディレクトリパス: </string>
+    <string name="StartService">共有を開始</string>
+    <string name="StopService">共有を停止</string>
+    <string name="IPaddrtess">IPアドレス : </string>
+    <string name="PortNumber">ポート番号 : </string>
+    <string name="inoperation">共有中</string>
+    <string name="Stopped">停止中</string>
+    <string name="notificationWebServerTitle">ComittoNxX Web共有サービス</string>
+    <string name="notificationWebServerText">Web共有中です</string>
+    <string name="notificationChannel">Web Share Service Channel</string>
+    <string name="notificationWebServer">バックグラウンドでWeb共有中</string>
 
 </resources>
