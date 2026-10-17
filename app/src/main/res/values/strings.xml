@@ -1150,7 +1150,28 @@
     <string name="EverythingReplaceTo">SMB path prefix (e.g., smb://192.168.1.10/share/)</string>
 
     <string name="ValidIPaddress">Please enter a valid IP address (e.g., 192.168.1.1).</string>
-    <string name="ValidPortaddress">Please enter a port number in the range of 1 to 65535.</string>
+    <string name="ValidPortaddress">Please enter a port number in the range of 1024 to 65535.</string>
+
+    <string name="ValidDirectory">Please select a valid directory.</string>
+    <string name="ValidFilename">Please enter a valid file name</string>
+    <string name="ReturnStorageList">[Return to storage list]</string>
+    <string name="StorageSelection">Select storage</string>
+    <string name="InternalStorage">Internal storage</string>
+    <string name="ExternalSDcard">External SD card</string>
+    <string name="SelectDirectory">Select this directory</string>
+    <string name="StartWebServer">Web sharing has started in the background.</string>
+    <string name="StopWebServer">Web sharing has been stopped.</string>
+    <string name="SelectedPath">Selected directory path: </string>
+    <string name="StartService">Start sharing</string>
+    <string name="StopService">Stop sharing</string>
+    <string name="IPaddrtess">IP Addrtess : </string>
+    <string name="PortNumber">Port Number : </string>
+    <string name="inoperation">In Operation</string>
+    <string name="Stopped">Stopped</string>
+    <string name="notificationWebServerTitle">ComittoNxX Web Sharing Service</string>
+    <string name="notificationWebServerText">Currently sharing on the web</string>
+    <string name="notificationChannel">Web Share Service Channel</string>
+    <string name="notificationWebServer">Web sharing in the background</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
