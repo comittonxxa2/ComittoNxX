@@ -19,6 +19,11 @@
             android:key="WebServerStart"
             android:summary="起動時にWeb共有を有効にする場合はチェックを入れる"
             android:title="起動時にWeb共有を有効にする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerIcon"
+            android:summary="Web共有の開始・停止のアイコンを表示したい場合はチェックを入れる"
+            android:title="Web共有の開始・停止のアイコンを表示" />
         <EditTextPreference
             android:key="WebServerPort"
             android:defaultValue="8080"
@@ -40,5 +45,34 @@
             android:key="PopupImage"
             android:summary="ファイルの内容を確認したい場合はチェックを入れる"
             android:title="ファイルをクリックまたはタップした時にポップアップ表示する" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="認証モード"
+            android:entries="@array/webserverauth_name_list"
+            android:entryValues="@array/webserverauth_value_list"
+            android:key="WebServerAuth"
+            android:summary="dummy"
+            android:title="認証モード" />
+        <EditTextPreference
+            android:key="WebServerUser"
+            android:title="ユーザー名"
+            android:summary="認証用ユーザー名"
+            android:dialogTitle="ユーザー名" />
+        <EditTextPreference
+            android:key="WebServerPass"
+            android:title="パスワード"
+            android:password="true"
+            android:summary="認証用パスワード"
+            android:dialogTitle="パスワード" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerTls"
+            android:summary="自己署名証明書を動的に作成してTLS(HTTPS)を有効にする場合はチェックを入れる"
+            android:title="自己署名証明書によるTLS(HTTPS)を有効" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerReadonly"
+            android:summary="読み取り専用モードを有効にする場合はチェックを入れる"
+            android:title="読み取り専用モードを有効" />
     </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>
