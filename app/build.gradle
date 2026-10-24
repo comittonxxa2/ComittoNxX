@@ -10,7 +10,7 @@ def applicationName = "ComittoNxX"
 def versionMajor = 2
 def versionMinor = 4
 def versionPatch = 10
-def revision = "CM"
+def revision = "CN"
 
 // アプリに署名するため以下のファイルを作成して signingConfig の設定を記述してください
 apply from:'../signingConfigs/release.gradle', to: android
@@ -196,6 +196,9 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
+    packaging {
+        resources.excludes += "META-INF/LICENSE.md"
+    }
 }
 
 dependencies {
@@ -217,13 +220,13 @@ dependencies {
 
     // 文字コード判定用ライブラリ
     // 2.5.0と2.0.4は同時リリースのため、Android 5でも使用できる2.0.4を選択する
-    implementation 'com.github.albfernandez:juniversalchardet:2.5.0'
+    implementation 'com.github.albfernandez:juniversalchardet:2.5.1'
 
     implementation 'org.apache.commons:commons-compress:1.28.0'
     implementation 'org.tukaani:xz:1.12' // これがないと7zのLZMA解凍でエラーになる
 
     implementation 'com.sorrowblue.sevenzipjbinding:7-Zip-JBinding-4Android:16.02-2.4'
-    implementation 'androidx.webkit:webkit:1.17.1'
+    implementation 'androidx.webkit:webkit:1.18.0'
 
     implementation('io.documentnode:epub4j-core:4.2.3') {
         // 以下の2つがAndroid標準と衝突するため除外する
@@ -245,4 +248,7 @@ dependencies {
     }
 
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
+
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.86'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.86'
 }
