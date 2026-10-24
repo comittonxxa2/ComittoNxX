@@ -563,6 +563,7 @@
     <string name="toolbar04">登録</string>
     <string name="toolbar05">終了</string>
     <string name="toolbar06">同期</string>
+    <string name="toolbar07">Web共有</string>
     <string name="readPositionSyncDone">%1$d件の既読位置を同期しました</string>
     <string name="readPositionSyncUnavailable">栞同期の設定が未設定か、ローカルのファイル一覧です</string>
     <string name="listname00">ファイル</string>
@@ -1171,5 +1172,9 @@
     <string name="notificationWebServerText">Web共有中です</string>
     <string name="notificationChannel">Web Share Service Channel</string>
     <string name="notificationWebServer">バックグラウンドでWeb共有中</string>
+    <string name="WebShareDialogTitle">Web共有の開始・停止</string>
 
+    <string name="webserverauth00">無し</string>
+    <string name="webserverauth01">Basic認証</string>
+    <string name="webserverauth02">Digest認証</string>
 </resources>
