@@ -19,6 +19,11 @@
             android:key="Start/Stop Web Sharing"
             android:summary="Check this box to enable Web Sharing at startup."
             android:title="Enable Web Sharing at startup" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerIcon"
+            android:summary="Check this box if you want to display the icon for starting or stopping web sharing."
+            android:title="Display icons for starting and stopping web sharing" />
         <EditTextPreference
             android:key="WebServerPort"
             android:defaultValue="8080"
@@ -40,5 +45,34 @@
             android:key="PopupImage"
             android:summary="Check this box if you want to view the contents of the image file."
             android:title="Display a pop-up when a file is clicked or tapped" />
+        <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="Authentication mode"
+            android:entries="@array/webserverauth_name_list"
+            android:entryValues="@array/webserverauth_value_list"
+            android:key="WebServerAuth"
+            android:summary="dummy"
+            android:title="Authentication mode" />
+        <EditTextPreference
+            android:key="WebServerUser"
+            android:title="Username"
+            android:summary="Username for authentication"
+            android:dialogTitle="Username" />
+        <EditTextPreference
+            android:key="WebServerPass"
+            android:title="Password"
+            android:password="true"
+            android:summary="Password for authentication"
+            android:dialogTitle="Password" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerTls"
+            android:summary="Check this box to dynamically generate a self-signed certificate and enable TLS (HTTPS)."
+            android:title="Enable TLS (HTTPS) using a self-signed certificate" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="WebServerReadonly"
+            android:summary="Check this box to enable read-only mode."
+            android:title="Enable read-only mode" />
     </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>
