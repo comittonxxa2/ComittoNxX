@@ -67,6 +67,7 @@ public class DEF {
 	public static final int MESSAGE_FILE_RENAME = 1015;
 	public static final int MESSAGE_MOVE_PATH_EROOR = 1016;
 	public static final int MESSAGE_RESETLOCAL = 1017;
+	public static final int MESSAGE_WEBSHAREICON = 1018;
 
 	public static final int MESSAGE_IMAGE = 1;
 	public static final int MESSAGE_TEXT = 2;
@@ -463,8 +464,9 @@ public class DEF {
 	public static final int TOOLBAR_MARKER = 3;
 	//	public static final int TOOLBAR_SERVER = 4;
 	public static final int TOOLBAR_UPDATE_READPOSITION = 4;
-	public static final int TOOLBAR_ADDDIR = 5;
-	public static final int TOOLBAR_EXIT = 6;
+	public static final int TOOLBAR_WEB_SHARING = 5;
+	public static final int TOOLBAR_ADDDIR = 6;
+	public static final int TOOLBAR_EXIT = 7;
 
 	// ページめくり表示方向
 	public static final int PAGEWAY_RIGHT = 0; // 右から左
@@ -1023,9 +1025,21 @@ public class DEF {
 	public static final String KEY_WEBSERVER_START = "WebServerStart";
 	public static final String KEY_WEBSERVER_BULKDOWNLOAD = "BulkDownload";
 	public static final String KEY_WEBSERVER_POPUPIMAGE = "PopupImage";
+	public static final String KEY_WEBSERVER_ICON = "WebServerIcon";
+	public static final String KEY_WEBSERVER_TLS =  "WebServerTls";
+	public static final String KEY_WEBSERVER_AUTH =  "WebServerAuth";
+	public static final String KEY_WEBSERVER_USER =  "WebServerUser";
+	public static final String KEY_WEBSERVER_PASSWORD =  "WebServerPass";
+	public static final String KEY_WEBSERVER_READONLY =  "WebServerReadonly";
 
 	public static final String DEFAULT_WEBSERVER_PORT = "8080";
 	public static final String DEFAULT_WEBSERVER_BULKDOWNLOAD = "archive";
+	public static final String DEFAULT_WEBSERVER_USER = "";
+	public static final String DEFAULT_WEBSERVER_PASS = "";
+
+	public static final int WEBSERVER_AUTH_NONE = 0;
+	public static final int WEBSERVER_AUTH_BASIC = 1;
+	public static final int WEBSERVER_AUTH_DIGEST = 2;
 
 	public static final int HMSG_BOOKMARKSYNC_RESULT = 34;
 	public static final int HMSG_READPOSITION_PULL_RESULT = 35;
