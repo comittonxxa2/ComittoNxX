@@ -51,6 +51,7 @@ import src.comitton.config.SetCommonActivity;
 import src.comitton.config.SetWebServerActivity;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.dialog.CustomNoneProgressDialog;
+import src.comitton.dialog.WebShareIconDialog;
 import src.comitton.expandview.ExpandActivity;
 import src.comitton.fileaccess.SmbFileAccess;
 import src.comitton.fileaccess.EverythingClient;
@@ -58,6 +59,7 @@ import src.comitton.fileaccess.BookmarkSyncClient;
 import src.comitton.fileaccess.HistorySyncClient;
 import src.comitton.fileaccess.LibrarySyncClient;
 import src.comitton.fileaccess.ReadPositionSyncClient;
+import src.comitton.fileview.view.list.ToolbarArea;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.imageview.ImageManager;
 import src.comitton.imageview.TouchPanelView;
@@ -484,6 +486,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static boolean mLoadWithFallback;
 	private static boolean mWebServerStart;
 	private static boolean mWebServerEnable = false;
+	private static boolean mWebServerIcon = false;
+	private boolean isSelfRestarting = false;
 
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
@@ -581,6 +585,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			ed.remove("Resume");
 			ed.apply();
 		}
+		// 再起動のフラグをクリア
+		isSelfRestarting = false;
 		// Intentに保存されたデータを取り出す
 		Intent intent = getIntent();
 		// Intentからメインを起動(onCreate)
@@ -1009,6 +1015,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 			else {
 				// キーが一致しなかった場合はアクティビティを終了させる
+				isSelfRestarting = false;
 				finish();
 				return;
 			}
@@ -1048,6 +1055,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mInitialize = 0;
 			}
 		}
+		boolean isSelfRestart = getIntent().getBooleanExtra("IS_RESTART_KEY", false);
 		mResumeOff = intent.getBooleanExtra("ResumeOff", false);
 		// 起動時のIntentを保存する
 		mBackupIntent = intent;
@@ -1318,7 +1326,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// GitHubに新しいバージョンがリリースされているか確認する
 		mInformation.checkRecentRelease(mHandler, false);
 
-		if (mWebServerStart) startWebServerService();
+		if (mWebServerStart && !isSelfRestart) startWebServerService();
 	}
 
 	// タブを表示
@@ -2384,8 +2392,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mChangeTheme = false;
 					// 起動パラメータに追加する
 					mBackupIntent.putExtra("ResumeOff", true);
+					// 再起動のフラグをセット
+					isSelfRestarting = true;
 					// 現在のActivityを再生成する
 					Intent intent = getIntent();
+					intent.putExtra("IS_RESTART_KEY", true);
 					finish();
 					startActivity(intent);
 					if (mTabMode) {
@@ -3009,6 +3020,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mResolvePageKey = SetFileListActivity.getResolvePageKey(mSharedPreferences);
 		mLoadWithFallback = SetFileListActivity.getLoadWithFallback(mSharedPreferences);
 		mWebServerStart = SetWebServerActivity.getWebServerStart(mSharedPreferences);
+		mWebServerIcon = SetWebServerActivity.getWebServerIcon(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3727,7 +3739,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		threadstartcheck2 = true;
 		threadstartcheck3 = true;
 		threadstartcheck4 = true;
-		if (mWebServerEnable) stopWebServerService();
+		if (!isSelfRestarting) {
+			// アプリの終了でWeb共有が有効の場合はサービスを止める
+			if (mWebServerEnable) stopWebServerService();
+		}
 		return;
 	}
 
@@ -4233,6 +4248,38 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					}
 				});
 				mEditServerDialog.show();
+				break;
+			}
+			case DEF.MESSAGE_WEBSHAREICON: {
+				// Web共有の開始・停止
+				Resources res = getResources();
+				String title = res.getString(R.string.WebShareDialogTitle);
+				String message = SetWebServerActivity.getStatusinfo(this, mSharedPreferences);
+				String okmassage = (!getWebServerEnable()) ? res.getString(R.string.StartService) : res.getString(R.string.StopService);
+				// ダイアログのインスタンスを生成
+				WebShareIconDialog webshaicondialog = new WebShareIconDialog(this, R.style.MyDialog, title, message, okmassage, new WebShareIconDialog.MessageListener() {
+						@Override
+						public void onOk() {
+							// OKボタンが押されたときの処理
+							if (!getWebServerEnable()) {
+								// Web共有の開始
+								startWebServerService();
+							}
+							else {
+								// Web共有の停止
+								stopWebServerService();
+							}
+						}
+						@Override
+						public void onCancel() {
+						}
+						@Override
+						public void onClose() {
+						}
+					}
+				);
+				// ダイアログを表示
+				webshaicondialog.show();
 				break;
 			}
 		}
@@ -5046,9 +5093,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			if (mToolbarShow) {
 				// ボタン押下
 				int result = mListScreenView.mToolbarArea.sendTouchEvent(action, (int) x, (int) y);
-				// 既読位置を複数端末間で共有しない場合はスキップさせる
-				result = (result >= DEF.TOOLBAR_UPDATE_READPOSITION && !mReadPositionSyncSet) ? result + 1 : result;
-				switch (result) {
+				int[] toolbartypes = ToolbarArea.getToolbarTypes();
+				int select = (result < 0) ? result : toolbartypes[result];
+				switch (select) {
 					case DEF.TOOLBAR_ADDDIR:
 						// ディレクトリ登録
 						try {
@@ -5090,6 +5137,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					case DEF.TOOLBAR_UPDATE_READPOSITION:
 						// サーバー上の既読位置を取得し、現在の一覧に反映する
 						updateReadPositionFromServer();
+						break;
+					case DEF.TOOLBAR_WEB_SHARING:
+						showDialog(DEF.MESSAGE_WEBSHAREICON);
 						break;
 					case DEF.TOOLBAR_EXIT:
 						// アプリ終了
@@ -7121,6 +7171,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// }
 
 		// startActivityの後にfinishを実行するとアプリが終了してしまうので先にfinishを実行する
+		// 再起動のフラグをセット
+		isSelfRestarting = true;
 		finish();
 		// Activityを作り直す
 		startActivity(intent);
@@ -7132,6 +7184,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	 */
 	private void finishApplication() {
 		this.moveTaskToBack(true);
+		// 再起動のフラグをクリア
+		isSelfRestarting = false;
 		finish();
 		return;
 	}
@@ -10778,5 +10832,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public static void setWebServerEnable(boolean value) {
 		mWebServerEnable = value;
 	}
-
+	public static boolean getWebServerIcon() {
+		return mWebServerIcon;
+	}
 }
