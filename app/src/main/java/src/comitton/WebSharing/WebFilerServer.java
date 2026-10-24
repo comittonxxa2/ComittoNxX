@@ -3,7 +3,11 @@ package src.comitton.WebSharing;
 import static src.comitton.WebSharing.NetworkUtils.getWiFiIpAddress;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.util.Base64;
 import android.webkit.MimeTypeMap;
+
+import androidx.preference.PreferenceManager;
 
 import net.sf.sevenzipjbinding.IInArchive;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
@@ -13,6 +17,13 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
+
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -24,9 +35,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +55,21 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLServerSocketFactory;
+
+import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 
 import fi.iki.elonen.NanoHTTPD;
+import src.comitton.config.SetWebServerActivity;
 
 public class WebFilerServer extends NanoHTTPD {
 	private final Context mContext;
@@ -50,6 +77,14 @@ public class WebFilerServer extends NanoHTTPD {
 	private final String mDefaultTheme;
 	private final String mBulkdownload;
 	private final boolean mPopupImage;
+	private final boolean mReadonly;
+	private int mScrolly = 0;
+	private final SharedPreferences sharedPreferences;
+	// SecureRandom と nonce管理用の変数
+	private static final SecureRandom secureRandom = new SecureRandom();
+	private final ConcurrentHashMap<String, Long> activeNonces = new ConcurrentHashMap<>();
+	// nonceの有効期限(例: 5分 = 300,000ミリ秒)
+	private static final long NONCE_EXPIRE_TIME = 5 * 60 * 1000;
 	// strings.xmlで日本語と英語を別々に定義するのが面倒なので作成した
 	private Map<String, String> getMessages(boolean isEnglish) {
 		Map<String, String> m = new HashMap<>();
@@ -199,12 +234,56 @@ public class WebFilerServer extends NanoHTTPD {
 		mDefaultTheme = (defaultTheme != null && !defaultTheme.isEmpty()) ? defaultTheme : "light";
 		mBulkdownload = bulkdownload + ".zip";
 		mPopupImage = popupimage;
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+		mReadonly = SetWebServerActivity.getWebServerReadonly(sharedPreferences);
 
 		Logcat.v(logLevel, "IpAddress=" + getWiFiIpAddress(mContext) + ", port=" + port + ", rootPath=" + rootPath + ", defaultTheme=" + mDefaultTheme);
+		if (SetWebServerActivity.getWebServerTls(sharedPreferences)) {
+			// ここで動的自己署名証明書を生成してHTTPS化を有効化する
+			try {
+				initSecureServer();
+			}
+			catch (Exception e) {
+				Logcat.e(logLevel, "Failed to initialize HTTPS (SSL/TLS)", e);
+			}
+		}
 	}
 	// コンストラクタ
 	public WebFilerServer(int port, Context context, String rootPath) {
 		this(port, context, rootPath, "light", "archive", false);
+	}
+	// Bouncy Castleを使ってメモリ上で動的に自己署名証明書を生成し、NanoHTTPDに適用する
+	private void initSecureServer() throws Exception {
+		char[] password = "dynamic_secure_password".toCharArray();
+		// 空のKeyStoreをメモリ上に作成
+		KeyStore keyStore = KeyStore.getInstance("PKCS12");
+		keyStore.load(null, null);
+		// RSA鍵ペア(公開鍵・秘密鍵)を動的生成
+		KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
+		keyPairGen.initialize(2048);
+		KeyPair keyPair = keyPairGen.generateKeyPair();
+		// X.509 自己署名証明書のパラメータ設定
+		X500Name issuer = new X500Name("CN=localhost, O=ComittonAndroid, C=JP");
+		BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
+		 // 1時間前
+		Date notBefore = new Date(System.currentTimeMillis() - 1000L * 60L * 60L);
+		// 1年後
+		Date notAfter = new Date(System.currentTimeMillis() + 365L * 24L * 60L * 60L * 1000L);
+		// Bouncy Castleを使って証明書をビルド
+		JcaX509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(issuer, serialNumber, notBefore, notAfter, issuer, keyPair.getPublic());
+		ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
+		X509CertificateHolder certHolder = certBuilder.build(contentSigner);
+		X509Certificate certificate = new JcaX509CertificateConverter()
+				.getCertificate(certHolder);
+		// 生成した秘密鍵と証明書をKeyStoreに登録
+		keyStore.setKeyEntry("myserver", keyPair.getPrivate(), password, new Certificate[]{certificate});
+		// KeyManagerFactory を経由して KeyManager[] を生成
+		KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+		kmf.init(keyStore, password);
+		KeyManager[] keyManagers = kmf.getKeyManagers();
+		// NanoHTTPD の SSLソケットファクトリへ適用
+		SSLServerSocketFactory sslFactory = NanoHTTPD.makeSSLSocketFactory(keyStore, keyManagers);
+		makeSecure(sslFactory, null);
 	}
 	// ファイルアップロードや大容量ファイルのダウンロード時に通信が途中でタイムアウト(切断)してしまわないように、ソケットの制限時間を5分(300秒)に延長
 	@Override
@@ -266,6 +345,29 @@ public class WebFilerServer extends NanoHTTPD {
 	// スマホやPCのブラウザからリクエスト(アクセス)が送られてきたときに、どの画面を表示するか、どんなデータを返すかを判定して応答(Response)を生成する処理
 	@Override
 	public Response serve(IHTTPSession session) {
+		// アクセス制御のタイプが入る
+		int authType = SetWebServerActivity.getWebServerAuth(sharedPreferences);
+		if (authType == DEF.WEBSERVER_AUTH_BASIC) {
+			// Basic認証のチェック
+			if (!checkBasicAuthentication(session)) {
+				// 認証に失敗したらUnauthorizedを返す
+				Response response = newFixedLengthResponse(Response.Status.UNAUTHORIZED, "text/plain; charset=UTF-8", "Unauthorized");
+				response.addHeader("WWW-Authenticate", "Basic realm=\"WebFilerServer\"");
+				return response;
+			}
+		}
+		else if (authType == DEF.WEBSERVER_AUTH_DIGEST) {
+			// Digest認証のチェック
+			if (!checkDigestAuthentication(session)) {
+				// 認証に失敗したらUnauthorizedを返す
+				Response response = newFixedLengthResponse(Response.Status.UNAUTHORIZED, "text/plain; charset=UTF-8", "Unauthorized");
+				String nonce = generateNonce();
+				String realm = "WebFilerServer";
+				String authHeaderValue = String.format("Digest realm=\"%s\", qop=\"auth\", nonce=\"%s\", opaque=\"%s\"", realm, nonce, generateOpaque());
+				response.addHeader("WWW-Authenticate", authHeaderValue);
+				return response;
+			}
+		}
 		// 英語環境かどうかを判定
 		boolean isEn = isEnglish(session);
 		Map<String, String> lang = getMessages(isEn);
@@ -290,6 +392,26 @@ public class WebFilerServer extends NanoHTTPD {
 		// パスをサニタイズ
 		currentPath = sanitizePath(currentPath);
 		// 引数で処理を分岐
+		if ("/get-scroll".equals(uri)) {
+			// スクロール位置をブラウザに返す
+			return newFixedLengthResponse(Response.Status.OK, "text/plain", String.valueOf(mScrolly));
+		}
+		if ("/save-scroll".equals(uri)) {
+			// クエリパラメータからスクロール位置を取得
+			String yValue = "0";
+			String queryString = session.getQueryParameterString();
+			int idx = queryString.indexOf("y=");
+			if (idx != -1) {
+				yValue = queryString.substring(idx + 2);
+				// もし後ろに他のパラメータが続く場合の対策
+				int ampIdx = yValue.indexOf("&");
+				if (ampIdx != -1) {
+					yValue = yValue.substring(0, ampIdx);
+				}
+				// スクロール位置を保存
+				mScrolly = Integer.parseInt(yValue);
+			}
+			return newFixedLengthResponse(Response.Status.OK, "text/plain", "");		}
 		if ("/bulk-download".equals(uri)) {
 			return handleBulkDownload(session, lang);
 		}
@@ -336,6 +458,153 @@ public class WebFilerServer extends NanoHTTPD {
 		}
 		// Not Foundを返す
 		return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not Found");
+	}
+	// Basic認証の検証
+	private boolean checkBasicAuthentication(IHTTPSession session) {
+		Map<String, String> headers = session.getHeaders();
+		String authHeader = headers.get("authorization");
+		if (authHeader != null && authHeader.startsWith("Basic ")) {
+			try {
+				// 入力されたユーザー名とパスワードを取り出す
+				String base64Credentials = authHeader.substring("Basic ".length()).trim();
+				byte[] credBytes = Base64.decode(base64Credentials, Base64.DEFAULT);
+				String credentials = new String(credBytes, StandardCharsets.UTF_8);
+				String[] values = credentials.split(":", 2);
+				if (values.length == 2) {
+					// ユーザー名とパスワードの突き合わせ
+					String inputUsername = values[0];
+					String inputPassword = values[1];
+					String validUsername = SetWebServerActivity.getWebServerUser(sharedPreferences);
+					String validPassword = SetWebServerActivity.getWebServerPass(sharedPreferences);
+					if (validUsername == null || validUsername.trim().isEmpty() ||
+						validPassword == null || validPassword.trim().isEmpty()) {
+						// もしもサーバーのユーザー名とパスワードが空っぽだった場合は強制的に失敗にする
+						return false;
+					}
+					// 比較結果を返す
+					return validUsername.equals(inputUsername) && validPassword.equals(inputPassword);
+				}
+			}
+			catch (Exception e) {
+				// エラー時は弾く
+			}
+		}
+		return false;
+	}
+	// SecureRandom を使った安全な nonce 生成とサーバー側への保存
+	private String generateNonce() {
+		byte[] bytes = new byte[16];
+		secureRandom.nextBytes(bytes);
+		String nonce = Base64.encodeToString(bytes, Base64.URL_SAFE | Base64.NO_WRAP);
+		// 発行時刻を記録(古いものの掃除も兼ねる)
+		cleanExpiredNonces();
+		activeNonces.put(nonce, System.currentTimeMillis());
+		return nonce;
+	}
+	// SecureRandom を使った opaque 生成
+	private String generateOpaque() {
+		byte[] bytes = new byte[16];
+		secureRandom.nextBytes(bytes);
+		return Base64.encodeToString(bytes, Base64.URL_SAFE | Base64.NO_WRAP);
+	}
+	// 期限切れの nonce を自動で掃除するメソッド
+	private void cleanExpiredNonces() {
+		long currentTime = System.currentTimeMillis();
+		activeNonces.entrySet().removeIf(entry -> (currentTime - entry.getValue()) > NONCE_EXPIRE_TIME);
+	}
+	// Digest認証の検証
+	private boolean checkDigestAuthentication(IHTTPSession session) {
+		Map<String, String> headers = session.getHeaders();
+		String authHeader = headers.get("authorization");
+		if (authHeader != null && authHeader.startsWith("Digest ")) {
+			try {
+				// Digestパラメータのパース(分解)
+				Map<String, String> authParams = parseDigestHeader(authHeader.substring("Digest ".length()));
+				String username = authParams.get("username");
+				String realm = authParams.get("realm");
+				String nonce = authParams.get("nonce");
+				String uri = authParams.get("uri");
+				String responseHash = authParams.get("response");
+				String qop = authParams.get("qop");
+				String nc = authParams.get("nc");
+				String cnonce = authParams.get("cnonce");
+				if (username == null || responseHash == null) {
+					return false;
+				}
+				// この nonce は本当にこのサーバーが発行したものか?期限内か?をチェック
+				if (!activeNonces.containsKey(nonce)) {
+					// 発行した覚えのない、または不正な nonce
+					return false;
+				}
+				long issuedTime = activeNonces.get(nonce);
+				if ((System.currentTimeMillis() - issuedTime) > NONCE_EXPIRE_TIME) {
+					// 期限切れの nonce
+					activeNonces.remove(nonce);
+					return false;
+				}
+				// ユーザー名の突き合わせ
+				String validUsername = SetWebServerActivity.getWebServerUser(sharedPreferences);
+				String validPassword = SetWebServerActivity.getWebServerPass(sharedPreferences);
+				if (validUsername == null || validUsername.trim().isEmpty() ||
+					validPassword == null || validPassword.trim().isEmpty()) {
+					// もしもサーバーのユーザー名とパスワードが空っぽだった場合は強制的に失敗にする
+					return false;
+				}
+				if (!validUsername.equals(username)) {
+					return false;
+				}
+				// ハッシュ値(HA1とHA2)の計算
+				String ha1 = md5(username + ":" + realm + ":" + validPassword);
+				String method = session.getMethod().name();
+				String ha2 = md5(method + ":" + uri);
+				String expectedResponse;
+				// 最終的な応答ハッシュの計算と比較
+				if ("auth".equals(qop)) {
+					expectedResponse = md5(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2);
+				}
+				else {
+					expectedResponse = md5(ha1 + ":" + nonce + ":" + ha2);
+				}
+				// 比較結果を返す
+				return expectedResponse.equalsIgnoreCase(responseHash);
+			}
+			catch (Exception e) {
+				// パースエラー等
+			}
+		}
+		return false;
+	}
+	// Digestパラメータのパース(分解)
+	private Map<String, String> parseDigestHeader(String headerValue) {
+		Map<String, String> map = new HashMap<>();
+		String[] pairs = headerValue.split(",\\s*");
+		for (String pair : pairs) {
+			String[] keyValue = pair.split("=", 2);
+			if (keyValue.length == 2) {
+				String key = keyValue[0].trim();
+				String value = keyValue[1].trim();
+				if (value.startsWith("\"") && value.endsWith("\"")) {
+					value = value.substring(1, value.length() - 1);
+				}
+				map.put(key, value);
+			}
+		}
+		return map;
+	}
+	// MD5ハッシュを生成
+	private String md5(String text) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] digest = md.digest(text.getBytes(StandardCharsets.UTF_8));
+			StringBuilder sb = new StringBuilder();
+			for (byte b : digest) {
+				sb.append(String.format("%02x", b));
+			}
+			return sb.toString();
+		}
+		catch (Exception e) {
+			return "";
+		}
 	}
 	// パスをサニタイズする
 	private String sanitizePath(String path) {
@@ -541,24 +810,26 @@ public class WebFilerServer extends NanoHTTPD {
 		// 上部アクションボタン(フォルダ作成・アップロード・ソートUI)
 		html.append("<div class='top-actions'>");
 		html.append("<div class='action-group'>");
-		// フォルダ作成フォーム
-		html.append("<div class='action-box'>");
-		html.append("<form action='/mkdir?path=").append(URLEncoder.encode(currentPath)).append("&sort=").append(sortField).append("&order=").append(sortOrder).append("' method='POST' style='margin:0; display:flex; gap:4px;'>");
-		html.append("<input type='text' name='dirname' placeholder='").append(lang.get("folderName")).append("' required>");
-		html.append("<input type='submit' value='作成'>");
-		html.append("</form></div>");
-		// ドラッグアンドドロップエリア & アップロードUI
-		html.append("<div id='dropZone'>");
-		html.append("  <span>").append(lang.get("dropFile")).append("</span>");
-		html.append("  <div class='upload-box' style='margin:0; border:none; background:transparent; padding:0;'>");
-		html.append("	<div style='margin:0; display:flex; gap:6px; align-items:center;'>");
-		html.append("	  <input type='file' name='file' id='fileInput' multiple>");
-		html.append("	  <button type='button' id='uploadSubmitBtn' class='upload-submit-btn' disabled onclick='uploadFiles()' style='background:#28a745; padding:4px 10px; font-size:12px;'>").append(lang.get("Upload")).append("</button>");
-		html.append("	  <span id='fileSelectInfo' style='font-size:11px; color:#28a745; font-weight:bold;'></span>");
-		html.append("	  <span id='uploadStatus' style='font-size:11px; color:#007bff; display:none;'>").append(lang.get("Uploading")).append("</span>");
-		html.append("	</div>");
-		html.append("  </div>");
-		html.append("</div>");
+		if (!mReadonly) {
+			// フォルダ作成フォーム
+			html.append("<div class='action-box'>");
+			html.append("<form action='/mkdir?path=").append(URLEncoder.encode(currentPath)).append("&sort=").append(sortField).append("&order=").append(sortOrder).append("' method='POST' style='margin:0; display:flex; gap:4px;'>");
+			html.append("<input type='text' name='dirname' placeholder='").append(lang.get("folderName")).append("' required>");
+			html.append("<input type='submit' value='作成'>");
+			html.append("</form></div>");
+			// ドラッグアンドドロップエリア & アップロードUI
+			html.append("<div id='dropZone'>");
+			html.append("  <span>").append(lang.get("dropFile")).append("</span>");
+			html.append("  <div class='upload-box' style='margin:0; border:none; background:transparent; padding:0;'>");
+			html.append("	<div style='margin:0; display:flex; gap:6px; align-items:center;'>");
+			html.append("	  <input type='file' name='file' id='fileInput' multiple>");
+			html.append("	  <button type='button' id='uploadSubmitBtn' class='upload-submit-btn' disabled onclick='uploadFiles()' style='background:#28a745; padding:4px 10px; font-size:12px;'>").append(lang.get("Upload")).append("</button>");
+			html.append("	  <span id='fileSelectInfo' style='font-size:11px; color:#28a745; font-weight:bold;'></span>");
+			html.append("	  <span id='uploadStatus' style='font-size:11px; color:#007bff; display:none;'>").append(lang.get("Uploading")).append("</span>");
+			html.append("	</div>");
+			html.append("  </div>");
+			html.append("</div>");
+		}
 		// ソート選択UI
 		html.append("<div class='sort-box'>");
 		html.append("<select id='sortFieldSelect'>");
@@ -587,8 +858,10 @@ public class WebFilerServer extends NanoHTTPD {
 		html.append("<label style='cursor:pointer; display:flex; align-items:center; gap:4px; font-size:13px;'><input type='checkbox' id='selectAllCheckbox' onclick='toggleSelectAll(this)'> ").append(lang.get("selectAll")).append("</label>");
 		// 一括ダウンロードボタン
 		html.append("  <button type='button' id='bulkDownloadBtn' class='view-btn' style='background:#17a2b8;' disabled onclick='bulkDownload()'>").append(lang.get("downloadSelect")).append("</button>");
-		// 一括削除ボタン
-		html.append("  <button type='button' id='bulkDeleteBtn' class='view-btn' style='background:#dc3545;' disabled onclick='bulkDelete()'>").append(lang.get("removeSelect")).append("</button>");
+		if (!mReadonly) {
+			// 一括削除ボタン
+			html.append("  <button type='button' id='bulkDeleteBtn' class='view-btn' style='background:#dc3545;' disabled onclick='bulkDelete()'>").append(lang.get("removeSelect")).append("</button>");
+		}
 		// 更新ボタン
 		html.append("  <button type='button' id='reloadBtn' class='view-btn' style='background:#6c757d;' onclick='reloadPage()'>🔄 ").append(lang.get("reload")).append("</button>");
 		html.append("</div>");
@@ -750,8 +1023,10 @@ public class WebFilerServer extends NanoHTTPD {
 		html.append("<div id='contextMenu' class='context-menu'>");
 		html.append("<ul>");
 		html.append("<li id='menuDownload'>").append(lang.get("download")).append("</li>");
-		html.append("<li id='menuRename'>").append(lang.get("rename")).append("</li>");
-		html.append("<li id='menuDelete' style='color: #dc3545;'>").append(lang.get("delete")).append("</li>");
+		if (!mReadonly) {
+			html.append("<li id='menuRename'>").append(lang.get("rename")).append("</li>");
+			html.append("<li id='menuDelete' style='color: #dc3545;'>").append(lang.get("delete")).append("</li>");
+		}
 		html.append("</ul>");
 		html.append("</div>");
 		// ポップアップ用のHTML枠(画像)
@@ -1313,6 +1588,40 @@ public class WebFilerServer extends NanoHTTPD {
 		html.append("		}");
 		html.append("	}");
 		html.append("}");
+		// スクロール位置の保存と復元
+		html.append("  function restoreScroll() {");
+		html.append("	  fetch('/get-scroll' + window.location.search, { method: 'GET' })");
+		html.append("		  .then(function(res) { return res.text(); })");
+		html.append("		  .then(function(yStr) {");
+		html.append("			  var y = parseInt(yStr, 10);");
+		html.append("			  if (!isNaN(y) && y > 0) {");
+		html.append("				  setTimeout(function() {");
+		html.append("					  var mc = document.querySelector('.main-content');");
+		html.append("					  var fc = document.getElementById('fileContainer');");
+		html.append("					  if (fc && fc.scrollHeight > fc.clientHeight) { fc.scrollTop = y; }");
+		html.append("					  if (mc) { mc.scrollTop = y; }");
+		html.append("					  window.scrollTo(0, y);");
+		html.append("				  }, 50);");
+		html.append("			  }");
+		html.append("		  }).catch(function(err) {});");
+		html.append("  }");
+		html.append("  window.addEventListener('load', restoreScroll);");
+		html.append("  window.addEventListener('pageshow', function(e) { restoreScroll(); });");
+		html.append("  var timer = null;");
+		html.append("  window.addEventListener('scroll', function(e) {");
+		html.append("	  var t = e.target;");
+		html.append("	  var winY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;");
+		html.append("	  var mc = document.querySelector('.main-content');");
+		html.append("	  var mcY = (mc && mc.scrollTop) ? mc.scrollTop : 0;");
+		html.append("	  var targetY = (t && typeof t.scrollTop === 'number') ? t.scrollTop : 0;");
+		html.append("	  var yVal = Math.floor(Math.max(winY, mcY, targetY));");
+		html.append("	  if (yVal > 0) {");
+		html.append("		  clearTimeout(timer);");
+		html.append("		  timer = setTimeout(function() {");
+		html.append("			  fetch('/save-scroll?y=' + yVal, { method: 'GET' }).catch(function(err) {});");
+		html.append("		  }, 300);");
+		html.append("	  }");
+		html.append("  }, true);");
 		html.append("</script>");
 		// ここまでJavaScript
 		html.append("</body>");
