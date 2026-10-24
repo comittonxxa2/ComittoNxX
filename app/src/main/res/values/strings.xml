@@ -563,6 +563,7 @@
     <string name="toolbar04">Add</string>
     <string name="toolbar05">Exit</string>
     <string name="toolbar06">Sync</string>
+    <string name="toolbar07">Web sharing</string>
     <string name="readPositionSyncDone">Synced read position for %1$d file(s)</string>
     <string name="readPositionSyncUnavailable">Bookmark sync server is not configured, or this is a local file list</string>
     <string name="listname00">File</string>
@@ -1172,6 +1173,11 @@
     <string name="notificationWebServerText">Currently sharing on the web</string>
     <string name="notificationChannel">Web Share Service Channel</string>
     <string name="notificationWebServer">Web sharing in the background</string>
+    <string name="WebShareDialogTitle">Start/Stop Web Sharing</string>
+
+    <string name="webserverauth00">none</string>
+    <string name="webserverauth01">Basic authentication</string>
+    <string name="webserverauth02">Digest authentication</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

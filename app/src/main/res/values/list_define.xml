@@ -1002,5 +1002,15 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+    <string-array name="webserverauth_name_list">
+        <item>none</item>
+        <item>Basic authentication</item>
+        <item>Digest authentication</item>
+    </string-array>
+    <string-array name="webserverauth_value_list">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
 </resources>
