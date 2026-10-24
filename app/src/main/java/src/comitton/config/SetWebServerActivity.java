@@ -2,6 +2,7 @@ package src.comitton.config;
 
 import static src.comitton.WebSharing.NetworkUtils.getWiFiIpAddress;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -60,6 +61,16 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 	private DownloadPreference downloadPref;
 	private CheckBoxPreference mServerStartEnable;
 	private CheckBoxPreference mPopupEnable;
+	private CheckBoxPreference mWebShareIcon;
+	private CheckBoxPreference mWebserverTls;
+	private CheckBoxPreference mWebserverReadonly;
+	private EditTextPreference mWebserverUser;
+	private EditTextPreference mWebserverPass;
+	private ListPreference mWebserverauth;
+	private static final int[] mWebServerAuth =
+			{ R.string.webserverauth00	// 無し
+			, R.string.webserverauth01	// Basic認証
+			, R.string.webserverauth02 };	// Digest認証
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +131,12 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 		}
 		mServerStartEnable = (CheckBoxPreference) findPreference(DEF.KEY_WEBSERVER_START);
 		mPopupEnable = (CheckBoxPreference) findPreference(DEF.KEY_WEBSERVER_POPUPIMAGE);
+		mWebShareIcon = (CheckBoxPreference) findPreference(DEF.KEY_WEBSERVER_ICON);
+		mWebserverTls = (CheckBoxPreference) findPreference(DEF.KEY_WEBSERVER_TLS);
+		mWebserverReadonly = (CheckBoxPreference) findPreference(DEF.KEY_WEBSERVER_READONLY);
+		mWebserverauth = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_WEBSERVER_AUTH);
+		mWebserverUser = (EditTextPreference) getPreferenceScreen().findPreference(DEF.KEY_WEBSERVER_USER);
+		mWebserverPass = (EditTextPreference) getPreferenceScreen().findPreference(DEF.KEY_WEBSERVER_PASSWORD);
 
 		setStatus();
 
@@ -160,6 +177,15 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 			// Web共有サービス中は選択させない
 			setEnable(false);
 		}
+		mWebShareIcon.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// 親のActivityを再生成させる
+				FileSelectActivity.setChangeTheme();
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
 
 		// ListViewの位置を元に戻す
 		ListViewScrollUtils.restorePosition(this, getListView());
@@ -179,6 +205,12 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 				ed.putString(DEF.KEY_WEBSERVER_DIRECTORY, FileSelectActivity.getPath());
 				ed.putString(DEF.KEY_WEBSERVER_BULKDOWNLOAD, DEF.DEFAULT_WEBSERVER_BULKDOWNLOAD);
 				ed.putBoolean(DEF.KEY_WEBSERVER_POPUPIMAGE, false);
+				ed.putBoolean(DEF.KEY_WEBSERVER_ICON, false);
+				ed.putBoolean(DEF.KEY_WEBSERVER_TLS, false);
+				ed.putBoolean(DEF.KEY_WEBSERVER_READONLY, false);
+				ed.putString(DEF.KEY_WEBSERVER_AUTH, "0");
+				ed.putString(DEF.KEY_WEBSERVER_USER, DEF.DEFAULT_WEBSERVER_USER);
+				ed.putString(DEF.KEY_WEBSERVER_PASSWORD, DEF.DEFAULT_WEBSERVER_PASS);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
@@ -188,7 +220,7 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 		PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
 	}
 
-	private void SetService() {
+	public void SetService() {
 		// Web共有サービス開始/停止
 		if (FileSelectActivity.getWebServerEnable()) {
 			// Web共有サービス停止
@@ -231,7 +263,10 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 		mWebserverPort.setSummary(getWebserverPortSummary(sharedPreferences));
 		dirPreference.setSummary(getWebserverPathSummary(sharedPreferences));
-		mBulkdownload.setSummary(getBulkDownloadSummary(sharedPreferences));	}
+		mBulkdownload.setSummary(getBulkDownloadSummary(sharedPreferences));			mWebserverauth.setSummary(getWebServerAuthSummary(sharedPreferences));
+		mWebserverUser.setSummary(getWebServerUserSummary(sharedPreferences));
+		mWebserverPass.setSummary(getWebServerPassSummary(sharedPreferences));
+	}
 
 	@Override
 	protected void onPause() {
@@ -255,6 +290,7 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 					SharedPreferences.Editor ed = sharedPreferences.edit();
 					ed.putString(DEF.KEY_WEBSERVER_DIRECTORY, selectedPath);
 					ed.apply();
+					mStartpath = selectedPath;
 					dirPreference.setSummary(selectedPath);
 				}
 			}
@@ -266,7 +302,12 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 		mWebserverPort.setEnabled(value);
 		mBulkdownload.setEnabled(value);
 		mPopupEnable.setEnabled(value);
+		mWebserverTls.setEnabled(value);
+		mWebserverReadonly.setEnabled(value);
 		dirPreference.setEnabled(value);
+		mWebserverauth.setEnabled(value);
+		mWebserverUser.setEnabled(value);
+		mWebserverPass.setEnabled(value);
 	}
 
 	// バリデーション用ヘルパーメソッド
@@ -296,13 +337,27 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 		if(key.equals(DEF.KEY_WEBSERVER_BULKDOWNLOAD)){
 			mBulkdownload.setSummary(getBulkDownloadSummary(sharedPreferences));
 		}
+		if(key.equals(DEF.KEY_WEBSERVER_AUTH)){
+			mWebserverauth.setSummary(getWebServerAuthSummary(sharedPreferences));
+		}
+		if(key.equals(DEF.KEY_WEBSERVER_USER)){
+			mWebserverUser.setSummary(getWebServerUserSummary(sharedPreferences));
+		}
+		if(key.equals(DEF.KEY_WEBSERVER_PASSWORD)){
+			mWebserverPass.setSummary(getWebServerPassSummary(sharedPreferences));
+		}
 	}
 
 	private void setStatus() {
 		statusPreference = findPreference("status_info");
 		if (statusPreference != null) {
-			statusPreference.setSummary(getString(R.string.IPaddrtess) + " " + getWiFiIpAddress(this) + "\n" + getString(R.string.PortNumber) + " " + getWebserverPort(sharedPreferences) + "\n" + ((FileSelectActivity.getWebServerEnable()) ? getString(R.string.inoperation) : getString(R.string.Stopped)));
+			statusPreference.setSummary(getStatusinfo(this, sharedPreferences));
 		}
+	}
+	// ステータスの取得
+	public static String getStatusinfo(Activity activity, SharedPreferences sharedPreferences) {
+		String status = activity.getString(R.string.IPaddrtess) + " " + getWiFiIpAddress(activity) + "\n" + activity.getString(R.string.PortNumber) + " " + getWebserverPort(sharedPreferences) + "\n" + ((FileSelectActivity.getWebServerEnable()) ? activity.getString(R.string.inoperation) : activity.getString(R.string.Stopped));
+		return status;
 	}
 
 	// 設定の読込
@@ -328,6 +383,40 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_WEBSERVER_POPUPIMAGE, false);
 		return flag;
 	}
+	public static boolean getWebServerIcon(SharedPreferences sharedPreferences) {
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_WEBSERVER_ICON, false);
+		return flag;
+	}
+	public static boolean getWebServerTls(SharedPreferences sharedPreferences) {
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_WEBSERVER_TLS, false);
+		return flag;
+	}
+	public static int getWebServerAuth(SharedPreferences sharedPreferences){
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_WEBSERVER_AUTH, "0");
+		if (val < 0 || val >= mWebServerAuth.length){
+			val = 0;
+		}
+		return val;
+	}
+	public static boolean getWebServerReadonly(SharedPreferences sharedPreferences) {
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_WEBSERVER_READONLY, false);
+		return flag;
+	}
+	public static String getWebServerUser(SharedPreferences sharedPreferences) {
+		// ユーザー名
+		String user = sharedPreferences.getString(DEF.KEY_WEBSERVER_USER, DEF.DEFAULT_WEBSERVER_USER);
+		String userVal = user.isEmpty() ? "" : user;
+		return userVal;
+	}
+	public static String getWebServerPass(SharedPreferences sharedPreferences) {
+		// パスワード
+		String pass = sharedPreferences.getString(DEF.KEY_WEBSERVER_PASSWORD, DEF.DEFAULT_WEBSERVER_PASS);
+		String passVal = pass.isEmpty() ? "" : pass;
+		return passVal;
+	}
 	// 設定の読込(定義変更中)
 	private String getWebserverPortSummary(SharedPreferences sharedPreferences){
 		String val = getWebserverPort(sharedPreferences);
@@ -340,6 +429,20 @@ public class SetWebServerActivity extends PreferenceActivity implements OnShared
 	private String getBulkDownloadSummary(SharedPreferences sharedPreferences){
 		String val = getBulkDownload(sharedPreferences);
 		return val;
+	}
+	private String getWebServerAuthSummary(SharedPreferences sharedPreferences){
+		int val = getWebServerAuth(sharedPreferences);
+		Resources res = getResources();
+		return res.getString(mWebServerAuth[val]);
+	}
+	private String getWebServerUserSummary(SharedPreferences sharedPreferences){
+		String val = getWebServerUser(sharedPreferences);
+		return val;
+	}
+	private String getWebServerPassSummary(SharedPreferences sharedPreferences){
+		String val = getWebServerPass(sharedPreferences);
+		String passVal = val.isEmpty() ? "" : "********";
+		return passVal;
 	}
 
 }

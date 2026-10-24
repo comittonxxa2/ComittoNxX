@@ -27,7 +27,13 @@ public class PreferenceHelper {
 						@Override
 						public void onLayoutChange(View v, int left, int top, int right, int bottom,
 												   int oldLeft, int oldTop, int oldRight, int oldBottom) {
-							makeAllTitlesMultiline(v);
+							// レイアウトパス中の直接変更を避けるため、postで遅延実行する
+							v.post(new Runnable() {
+								@Override
+								public void run() {
+									makeAllTitlesMultiline(v);
+								}
+							});
 						}
 					});
 					list.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -35,7 +41,12 @@ public class PreferenceHelper {
 						public void onScrollStateChanged(AbsListView view, int scrollState) {
 							// スクロールが完全に停止したタイミングで再適用し、表示戻りを防止する
 							if (scrollState == SCROLL_STATE_IDLE) {
-								makeAllTitlesMultiline(view);
+								view.post(new Runnable() {
+									@Override
+									public void run() {
+										makeAllTitlesMultiline(view);
+									}
+								});
 							}
 						}
 						@Override
@@ -53,12 +64,12 @@ public class PreferenceHelper {
 		// IDがandroid.R.id.titleかつTextViewであれば設定変更
 		if (view.getId() == android.R.id.title && view instanceof TextView) {
 			TextView tv = (TextView) view;
-			// 1行制限を解除
-			tv.setSingleLine(false);
-			// 最大10行まで許可
-			tv.setMaxLines(10);
-			// 省略(...)を解除
-			tv.setEllipsize(null);
+			// 変更前後で状態が異なる場合のみ更新して無駄なレイアウト要求を減らす
+			if (tv.getMaxLines() != 10 || tv.getEllipsize() != null) {
+				tv.setSingleLine(false);
+				tv.setMaxLines(10);
+				tv.setEllipsize(null);
+			}
 		}
 		// 親ビュー(ViewGroup)の場合は子要素をすべて検索
 		else if (view instanceof ViewGroup) {
