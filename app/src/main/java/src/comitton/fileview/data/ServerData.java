@@ -13,9 +13,11 @@ public class ServerData {
 	private String mHost = "";
 	private String mUser = "";
 	private String mPass = "";
+	private String mPort = "";
 	private String mPath = "";
 	private String mProvider = "";
 	private String mDispName = "";
+	private boolean pasv = false;
 
 	public int getAccessType() {
 		return this.mAccessType;
@@ -57,6 +59,22 @@ public class ServerData {
 		this.mPass = pass;
 	}
 
+	public String getPort() {
+		return this.mPort;
+	}
+
+	public void setPort(String port) {
+		this.mPort = port;
+	}
+
+	public boolean getPasv() {
+		return this.pasv;
+	}
+
+	public void setPasv(boolean pasv) {
+		this.pasv = pasv;
+	}
+
 	public String getPath() {
 		return this.mPath;
 	}
@@ -89,6 +107,15 @@ public class ServerData {
 		}
 		else if (getAccessType() == DEF.ACCESS_TYPE_WEBDAV) {
 			return "http://" + getHost();
+		}
+		else if (getAccessType() == DEF.ACCESS_TYPE_FTP) {
+			return "ftp://" + getHost();
+		}
+		else if (getAccessType() == DEF.ACCESS_TYPE_FTPS) {
+			return "ftps://" + getHost();
+		}
+		else if (getAccessType() == DEF.ACCESS_TYPE_SFTP) {
+			return "sftp://" + getHost();
 		}
 		else {
 			return getProvider();

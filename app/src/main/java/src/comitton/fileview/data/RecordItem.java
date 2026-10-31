@@ -34,10 +34,17 @@ public class RecordItem {
 	private String host;
 	private String user;
 	private String pass;
+	private String port;
 	private String provider;
 	private String uri;
 	private int item;
 	private int icon;
+	private boolean pasv;
+	// 書庫管理タブ専用: 通常のファイル一覧(FileListArea)に合わせた既読状況表示・タイトル色分け。
+	// 他タブ(栞/履歴/検索等)では未設定のまま(それぞれnull/0)で、従来の表示を維持する。
+	private String readStatus;
+	private int titleColorOverride;
+	private String libraryFolderLabel;
 
 	public RecordItem() {
 		this.server = DEF.INDEX_LOCAL;
@@ -51,6 +58,7 @@ public class RecordItem {
 		this.host = null;
 		this.user = null;
 		this.pass = null;
+		this.port = null;
 		this.provider = null;
 		this.uri = null;
 	}
@@ -178,6 +186,22 @@ public class RecordItem {
 		this.pass = pass == null ? "" : pass;
 	}
 
+	public String getPort() {
+		return port;
+	}
+
+	public void setPort(String port) {
+		this.port = port == null ? "" : port;
+	}
+
+	public boolean getPasv() {
+		return pasv;
+	}
+
+	public void setPasv(boolean pasv) {
+		this.pasv = pasv;
+	}
+
 	public String getProvider() {
 		return provider;
 	}
@@ -208,6 +232,30 @@ public class RecordItem {
 
 	public void setIcon(int icon) {
 		this.icon = icon;
+	}
+
+	public String getReadStatus() {
+		return readStatus;
+	}
+
+	public void setReadStatus(String readStatus) {
+		this.readStatus = readStatus;
+	}
+
+	public int getTitleColorOverride() {
+		return titleColorOverride;
+	}
+
+	public void setTitleColorOverride(int titleColorOverride) {
+		this.titleColorOverride = titleColorOverride;
+	}
+
+	public String getLibraryFolderLabel() {
+		return libraryFolderLabel;
+	}
+
+	public void setLibraryFolderLabel(String libraryFolderLabel) {
+		this.libraryFolderLabel = libraryFolderLabel;
 	}
 
 	@SuppressLint("SimpleDateFormat")
