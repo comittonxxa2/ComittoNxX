@@ -96,7 +96,12 @@ import src.comitton.config.SetFileListActivity;
 import src.comitton.config.SetImageActivity;
 import src.comitton.config.SetServerMessageBlockActivity;
 import src.comitton.fileaccess.FileAccess;
+import src.comitton.fileaccess.FtpFileAccess;
+import src.comitton.fileaccess.FtpRandomAccessFile;
+import src.comitton.fileaccess.SftpFileAccess;
+import src.comitton.fileaccess.SftpRandomAccessFile;
 import src.comitton.fileaccess.SmbFileAccess;
+import src.comitton.fileaccess.WebDavFileAccess;
 import src.comitton.fileaccess.WebDavRandomAccessFile;
 import src.comitton.fileaccess.WebDavUtil;
 import src.comitton.fileview.FileSelectActivity;
@@ -114,6 +119,8 @@ import android.annotation.SuppressLint;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+
+import com.thegrizzlylabs.sardineandroid.Sardine;
 
 public class ImageManager extends InputStream implements Runnable {
 	private static final String TAG = "ImageManager";
@@ -313,6 +320,10 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mEnableContentsFile;
 
 	private IInArchive archive = null;
+	// archiveへ渡したIInStreamの実体への参照(SmbRandomAccessFile/RandomAccessFile/ParcelFileDescriptor等を保持).
+	// archive.close()はネイティブ側のハンドルのみ解放し、このストリームまでは閉じないため、
+	// cmpClose()で明示的に閉じないとSMB等のファイルハンドルが解放されない.
+	private IInStream mArchiveInStream = null;
 	private int numberOfItems = 0;
 	private String[] mItems;
 	private int mStart;
@@ -612,6 +623,9 @@ public class ImageManager extends InputStream implements Runnable {
 
 	// ストレージのアクセスのタイプを得る
 	private static int accessType(final String uri) {
+		if (uri == null) {
+			return DEF.ACCESS_TYPE_LOCAL;
+		}
 		if (uri.startsWith("/")) {
 			return DEF.ACCESS_TYPE_LOCAL;
 		}
@@ -623,6 +637,15 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 		else if (uri.startsWith("http://") || uri.startsWith("https://") || uri.startsWith("webdav://")) {
 			return DEF.ACCESS_TYPE_WEBDAV;
+		}
+		else if (uri.startsWith("sftp://") || uri.startsWith("sftp:/")) {
+			return DEF.ACCESS_TYPE_SFTP;
+		}
+		else if (uri.startsWith("ftp://") || uri.startsWith("ftp:/")) {
+			return DEF.ACCESS_TYPE_FTP;
+		}
+		else if (uri.startsWith("ftps://") || uri.startsWith("ftps:/")) {
+			return DEF.ACCESS_TYPE_FTPS;
 		}
 		return DEF.ACCESS_TYPE_LOCAL;
 	}
@@ -910,10 +933,105 @@ public class ImageManager extends InputStream implements Runnable {
 		@Override
 		public int read(byte[] data) throws SevenZipException {
 			try {
-				return file.read(data, 0, data.length);
+				int n = file.read(data, 0, data.length);
+				if (n < 0) {
+					// -1 (EOF) を 0 に変換してネイティブクラッシュを防ぐ
+					return 0;
+				}
+				return n;
 			}
 			catch (IOException e) {
 				throw new SevenZipException("WebDAV read error: " + e.getMessage());
+			}
+		}
+		@Override
+		public void close() throws IOException {
+			file.close();
+		}
+	}
+	// FTP/FTPSのストリームアクセス(7-Zip-JBinding-4Android専用)
+	public class FtpInStream implements IInStream {
+		private final FtpRandomAccessFile file;
+		public FtpInStream(FtpRandomAccessFile file) {
+			this.file = file;
+		}
+		@Override
+		public long seek(long offset, int origin) throws SevenZipException {
+			try {
+				switch (origin) {
+					case SEEK_SET:
+						file.seek(offset);
+						break;
+					case SEEK_CUR:
+						file.seek(file.getFilePointer() + offset);
+						break;
+					case SEEK_END:
+						file.seek(file.length() + offset);
+						break;
+				}
+				return file.getFilePointer();
+			}
+			catch (IOException e) {
+				throw new SevenZipException("FTP seek error: " + e.getMessage());
+			}
+		}
+		@Override
+		public int read(byte[] data) throws SevenZipException {
+			try {
+				int n = file.read(data, 0, data.length);
+				if (n < 0) {
+					// -1 (EOF) を 0 に変換してネイティブクラッシュを防ぐ
+					return 0;
+				}
+				return n;
+			}
+			catch (IOException e) {
+				throw new SevenZipException("FTP read error: " + e.getMessage());
+			}
+		}
+		@Override
+		public void close() throws IOException {
+			file.close();
+		}
+	}
+	// SFTPのストリームアクセス(7-Zip-JBinding-4Android専用)
+	public class SftpInStream implements IInStream {
+		private final SftpRandomAccessFile file;
+		public SftpInStream(SftpRandomAccessFile file) {
+			this.file = file;
+		}
+		@Override
+		public long seek(long offset, int origin) throws SevenZipException {
+			try {
+				switch (origin) {
+					case SEEK_SET:
+						file.seek(offset);
+						break;
+					case SEEK_CUR:
+						file.seek(file.getFilePointer() + offset);
+						break;
+					case SEEK_END:
+						file.seek(file.length() + offset);
+						break;
+				}
+				return file.getFilePointer();
+			}
+			catch (IOException e) {
+				throw new SevenZipException("SFTP seek error: " + e.getMessage());
+			}
+		}
+		@Override
+		public int read(byte[] data) throws SevenZipException {
+			try {
+				int n = file.read(data, 0, data.length);
+				if (n < 0) {
+					// -1 (EOF) を 0 に変換してネイティブクラッシュを防ぐ
+					return 0;
+				}
+				return n;
+			}
+			catch (IOException e) {
+				throw new SevenZipException("SFTP read error: " + e.getMessage());
 			}
 		}
 		@Override
@@ -1000,6 +1118,9 @@ public class ImageManager extends InputStream implements Runnable {
 	private void cmpFileList() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
+		// アーカイブのファイル一覧読み込みが遅いという報告の再発時に、再現させずとも
+		// ログだけで切り分けられるようにするための恒常的な計測(件数が多くなく、オーバーヘッドは軽微).
+		long perfScanStart = System.currentTimeMillis();
 
 		int thumbSortType = 0;
 		// 圧縮ファイル読み込み
@@ -1041,7 +1162,7 @@ public class ImageManager extends InputStream implements Runnable {
 		// ファイルリストを格納するディレクトリを作成する
 		new File(DEF.getBaseDirectory() + "filelist/").mkdirs();
 
-		int	readbytes;
+		int	readbytes = 0;
 		ZipInputStream zin = null;
 		ZipEntry zipEntry = null;
 		byte[] zbuff = new byte[14];
@@ -1057,92 +1178,124 @@ public class ImageManager extends InputStream implements Runnable {
 
 		if (!mFileListCacheOff) {
 			// ファイルリストのキャッシュが有効の場合
-			synchronized (mLock) {
-		        try {
-					// ZIP形式の圧縮ファイルを展開する
-					zin = new ZipInputStream(new FileInputStream(file));
-					// 最初のエントリを得る
-					zipEntry = zin.getNextEntry();
-					File entryfile = new File(zipEntry.getName());
-					Logcat.d(logLevel, "file:" + entryfile);
-					// ZIP形式の圧縮ファイルをメモリー上に展開する
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					while ((readbytes = zin.read(buffer)) != -1) {
-						baos.write(buffer, 0, readbytes);
+			File cacheFile = new File(file);
+			// キャッシュファイルが存在する場合のみ読み込みを試みる
+			if (cacheFile.exists() && cacheFile.canRead()) {
+				synchronized (mLock) {
+					try {
+						// ZIP形式の圧縮ファイルを展開する
+						zin = new ZipInputStream(new FileInputStream(file));
+						// 最初のエントリを得る
+						zipEntry = zin.getNextEntry();
+						File entryfile = new File(zipEntry.getName());
+						Logcat.d(logLevel, "file:" + entryfile);
+						if (zipEntry != null) {
+							// ZIP形式の圧縮ファイルをメモリー上に展開する
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							while ((readbytes = zin.read(buffer)) != -1) {
+								baos.write(buffer, 0, readbytes);
+							}
+							// 展開したデータを格納
+							readData = baos.toByteArray();
+							// 出力ストリームを閉じる
+							baos.close();
+						}
+						Logcat.d(logLevel, "readbytes=" + readbytes);
+						// エントリをクローズする
+						zin.closeEntry();
+						// 次のエントリを得る
+						zipEntry = zin.getNextEntry();
+						File nextfile = new File(zipEntry.getName());
+						Logcat.d(logLevel, "file:" + nextfile);
+						// ZIP形式の圧縮ファイルを展開する
+						readbytes = zin.read(zbuff);
+						Logcat.d(logLevel, "readbytes=" + readbytes);
+						// エントリをクローズする
+						zin.closeEntry();
+						// 入力ストリームを閉じる
+						zin.close();
+					} catch (Exception e) {
+						// ファイルの読み込みに失敗した場合は素通りしてファイルリストを再取得させる
+						Logcat.e(logLevel, "ZipInputStream error.", e);
+						// 失敗時は確実にnullにする
+						readData = null;
 					}
-					// 展開したデータを格納
-					readData = baos.toByteArray();
-		            // 出力ストリームを閉じる
-					baos.close();
-					Logcat.d(logLevel, "readbytes=" + readbytes);
-		            // エントリをクローズする
-		            zin.closeEntry();
-					// 次のエントリを得る
-					zipEntry = zin.getNextEntry();
-					File nextfile = new File(zipEntry.getName());
-					Logcat.d(logLevel, "file:" + nextfile);
-					// ZIP形式の圧縮ファイルを展開する
-		            readbytes = zin.read(zbuff);
-					Logcat.d(logLevel, "readbytes=" + readbytes);
-		            // エントリをクローズする
-		            zin.closeEntry();
-		            // 入力ストリームを閉じる
-					zin.close();
-		        } catch (Exception e) {
-					// ファイルの読み込みに失敗した場合は素通りしてファイルリストを再取得させる
-					Logcat.e(logLevel, "ZipInputStream error.", e);
-		        }
+					// null/空チェックと型安全性を追加したデシリアライズ処理
+					if (readData != null && readData.length > 0) {
+						try {
+							// シリアライズされたファイルリストを元に戻す
+							ByteArrayInputStream bais = new ByteArrayInputStream(readData);  
+							ObjectInputStream ois = new ObjectInputStream(bais);  
+							Object obj = ois.readObject();
+							if (obj instanceof FileListItem[]) {
+								mFileList = (FileListItem[]) obj;
+								// ファイルリストへの変換に成功したと判断
+								cachecheck = true;
+							}
+							else {
+								mFileList = null;
+							}
+						} catch (Exception e) {
+							// ファイルリストへの変換に失敗した場合は素通りしてファイルリストを再取得させる
+							mFileList = null;
+							Logcat.e(logLevel, "Deserializable error.", e);
+						}
+					}
+					else {
+						mFileList = null;
+					}
 
-				try {
-					// シリアライズされたファイルリストを元に戻す
-				    ByteArrayInputStream bais = new ByteArrayInputStream(readData);  
-				    ObjectInputStream ois = new ObjectInputStream(bais);  
-				    mFileList = (FileListItem[])ois.readObject();
-				    // ファイルリストへの変換に成功したと判断
-				    cachecheck = true;
-				} catch (Exception e) {
-					// ファイルリストへの変換に失敗した場合は素通りしてファイルリストを再取得させる
-					mFileList = null;
-					Logcat.e(logLevel, "Deserializable error.", e);
-				}
-
-				// RARのメモリ確保時のパラメータを読み込む
-				for	(int i = 0; i < 4; i++)	{
-					lbuff[i] = zbuff[i];
-				}
-		        maxcmplen = ByteBuffer.wrap(lbuff).getInt();
-				// RARのメモリ確保時のパラメータを読み込む
-				for	(int i = 0; i < 4; i++)	{
-					lbuff[i] = zbuff[i + 4];
-				}
-		        maxorglen = ByteBuffer.wrap(lbuff).getInt();
-		        // タイムスタンプを読み込む
-				for	(int i = 0; i < 4; i++)	{
-					lbuff[i] = zbuff[i + 8];
-				}
-				// ファイルのタイプを読み込む
-		        timestamp = ByteBuffer.wrap(lbuff).getInt();
-				for	(int i = 0; i < 2; i++)	{
-					bbuff[i] = zbuff[i + 12];
-				}
-		        mFileType = ByteBuffer.wrap(bbuff).getShort();
-		        if	(mTimestamp == 0)	{
-					// イメージビューアからの呼び出し以外でファイルのタイムスタンプが取得できない場合は保存していたタイムスタンプと同じにする
-					mTimestamp = timestamp;
-				}
-		        if	(timestamp == mTimestamp && cachecheck == true)	{
-					// ファイルリストの読み込みとタイムスタンプが同じだった場合はファイルリストの取得をキャンセルさせる
-					Logcat.d(logLevel, "stop.");
-				    stop = true;
-					// キャッシュには「生の格納順」で書き込まれる場合がある(サムネイル取得等、
-					// mFileSort=FILESORT_NONEでスキャンされた際にソートされないまま保存されるため)。
-					// 閲覧時は毎回、現在のソート設定を使って読み込み直したリストに適用する。
-					if (mFileSort != FILESORT_NONE && mFileList != null && mFileList.length > 0) {
-						List<FileListItem> cachedList = new ArrayList<FileListItem>(Arrays.asList(mFileList));
-						sort(cachedList);
-						mFileList = cachedList.toArray(new FileListItem[0]);
+					// RARのメモリ確保時のパラメータを読み込む
+					if (cachecheck && zbuff != null && zbuff.length >= 14) {
+						try {
+							for	(int i = 0; i < 4; i++)	{
+								lbuff[i] = zbuff[i];
+							}
+							maxcmplen = ByteBuffer.wrap(lbuff).getInt();
+							// RARのメモリ確保時のパラメータを読み込む
+							for	(int i = 0; i < 4; i++)	{
+								lbuff[i] = zbuff[i + 4];
+							}
+							maxorglen = ByteBuffer.wrap(lbuff).getInt();
+							// タイムスタンプを読み込む
+							for	(int i = 0; i < 4; i++)	{
+								lbuff[i] = zbuff[i + 8];
+							}
+							// ファイルのタイプを読み込む
+							timestamp = ByteBuffer.wrap(lbuff).getInt();
+							for	(int i = 0; i < 2; i++)	{
+								bbuff[i] = zbuff[i + 12];
+							}
+							mFileType = ByteBuffer.wrap(bbuff).getShort();
+							if	(mTimestamp == 0)	{
+								// イメージビューアからの呼び出し以外でファイルのタイムスタンプが取得できない場合は保存していたタイムスタンプと同じにする
+								mTimestamp = timestamp;
+							}
+							if	(timestamp == mTimestamp && cachecheck == true)	{
+								// ファイルリストの読み込みとタイムスタンプが同じだった場合はファイルリストの取得をキャンセルさせる
+								Logcat.d(logLevel, "stop.");
+								stop = true;
+								// キャッシュには「生の格納順」で書き込まれる場合がある(サムネイル取得等、
+								// mFileSort=FILESORT_NONEでスキャンされた際にソートされないまま保存されるため)。
+								// 閲覧時は毎回、現在のソート設定を使って読み込み直したリストに適用する。
+								if (mFileSort != FILESORT_NONE && mFileList != null && mFileList.length > 0) {
+									List<FileListItem> cachedList = new ArrayList<FileListItem>(Arrays.asList(mFileList));
+									sort(cachedList);
+									mFileList = cachedList.toArray(new FileListItem[0]);
+								}
+							}
+						}
+						catch (Exception e) {
+							Logcat.e(logLevel, "Cache parameter parse error.", e);
+							stop = false;
+							mFileList = null;
+						}
 					}
 				}
+			}
+			else {
+				Logcat.d(logLevel, "Cache file does not exist yet. Proceeding with fresh scan.");
+				mFileList = null;
 			}
 		}
 
@@ -1275,8 +1428,33 @@ public class ImageManager extends InputStream implements Runnable {
 						mainStream = new WebDavInStream(wrafMain);
 						break;
 					}
+					case DEF.ACCESS_TYPE_FTP:
+					case DEF.ACCESS_TYPE_FTPS: {
+						// FTP / FTPS の場合
+						try (FtpRandomAccessFile frafCheck = new FtpRandomAccessFile(mFilePath, mUser, mPass, mAccessType == DEF.ACCESS_TYPE_FTPS, FileAccess.getServerPort(), FileAccess.getPassiveMode())) {
+							byte[] b = new byte[262];
+							int n = frafCheck.read(b, 0, b.length);
+							detectedFormat = ArchiveDetector.detect(b, n);
+						}
+						FtpRandomAccessFile frafMain = new FtpRandomAccessFile(mFilePath, mUser, mPass, mAccessType == DEF.ACCESS_TYPE_FTPS, FileAccess.getServerPort(), FileAccess.getPassiveMode());
+						mainStream = new FtpInStream(frafMain);
+						break;
+					}
+					case DEF.ACCESS_TYPE_SFTP: {
+						// SFTPの場合
+						try (SftpRandomAccessFile srafCheck = new SftpRandomAccessFile(mFilePath, mUser, mPass, FileAccess.getServerPort())) {
+							byte[] b = new byte[262];
+							int n = srafCheck.read(b, 0, b.length);
+							detectedFormat = ArchiveDetector.detect(b, n);
+						}
+						SftpRandomAccessFile srafMain = new SftpRandomAccessFile(mFilePath, mUser, mPass, FileAccess.getServerPort());
+						mainStream = new SftpInStream(srafMain);
+						break;
+					}
 				}
 				if (mainStream != null) {
+					// cmpClose()で確実に閉じられるよう、archiveの成否に関わらず参照を保持しておく
+					mArchiveInStream = mainStream;
 			    // 判定したフォーマットを渡す(判定失敗時はnullが入っており自動判別される)
 				    if (!mArchiveCheck) detectedFormat = null;
 					archive = SevenZip.openInArchive(detectedFormat, mainStream);
@@ -1982,6 +2160,12 @@ public class ImageManager extends InputStream implements Runnable {
 		// 保存済みのテキストを読み出して解析を行う
 		CheckTextAnalysis();
 
+		long perfScanElapsed = System.currentTimeMillis() - perfScanStart;
+		// 1秒を超えた場合のみ記録(通常のキャッシュヒット時は数ms程度のため、ログを圧迫しない)
+		if (perfScanElapsed > 1000) {
+			Logcat.w(logLevel, "ファイル一覧の読み込みに時間がかかりました. elapsed=" + perfScanElapsed + "ms, count=" + count
+					+ ", mFileType=" + mFileType + ", mSkipSevenZip=" + mSkipSevenZip + ", mFilePath=" + mFilePath);
+		}
 		Logcat.d(logLevel, "終了します. mMaxCmpLength=" + mMaxCmpLength + ", mMaxOrgLength=" + mMaxOrgLength);
 	}
 
@@ -2868,82 +3052,124 @@ public class ImageManager extends InputStream implements Runnable {
 
 		Logcat.d(logLevel, "開始します. path=" + path + ", user=" + user + ", pass=" + pass);
 
+		if (mPdfExpand == -1) {
+			int type = FileAccess.accessType(path);
+			if (type != DEF.ACCESS_TYPE_LOCAL) {
+				// リモートアクセスなら対応する定数を強制代入
+				mPdfExpand = type;
+				Logcat.v(logLevel, "mPdfExpand が -1 だったため自動補正しました: " + mPdfExpand);
+			}
+		}
 		if (mPdfRenderer == null) {
 			Logcat.d(logLevel, "PdfRendererを取得します.");
-            AtomicReference<ParcelFileDescriptor> parcelFileDescriptor = new AtomicReference<>();
-            try {
+			AtomicReference<ParcelFileDescriptor> parcelFileDescriptor = new AtomicReference<>();
+			try {
 				if (mPdfExpand != -1) {
-					ParcelFileDescriptor sourcePfd = null;
-					// 実際の処理
+					File tempFile = null;
+					InputStream bis = null;
 					try {
-						// 元のソースを開く(既存のFileAccessを利用)
-						sourcePfd = FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler);
-						if (sourcePfd != null) {
-							sendProgress(0, 0, 0, 0);
-							AtomicInteger nowPercent = new AtomicInteger();
-							long totalSize = sourcePfd.getStatSize();
-							// キャッシュファイルの処理
-							String cachename = mFilePath;
-							// 区切りをアンダーバーへ変換
-							cachename = cachename.replace("\\", "_");
-							cachename = cachename.replace("/", "_");
-							// PDFファイルのヘッダーとタイムスタンプを追加
-							mCachePDFName = DEF.makeCode(cachename + "_pdffile_" + mTimestamp, 0, 0);
-							// キャッシュファイルの格納先を作成
-							File tempFile = new File(mActivity.getCacheDir(), mCachePDFName);
-							if (tempFile.exists()) {
-								// 既にキャッシュファイルが存在する場合はスキップ
+						// キャッシュファイルの処理
+						String cachename = mFilePath;
+						// 区切りをアンダーバーへ変換
+						cachename = cachename.replace("\\", "_");
+						cachename = cachename.replace("/", "_");
+						// PDFファイルのヘッダーとタイムスタンプを追加
+						mCachePDFName = DEF.makeCode(cachename + "_pdffile_" + mTimestamp, 0, 0);
+						tempFile = new File(mActivity.getCacheDir(), mCachePDFName);
+						if (!tempFile.exists()) {
+							long totalSize = 0;
+							// アクセス方式に応じて InputStream とファイルサイズを取得
+							if (mPdfExpand == DEF.ACCESS_TYPE_SMB) {
+								Logcat.v(logLevel, "SMBのストリームアクセス");
+								CIFSContext mSmbContext = SingletonContext.getInstance().withCredentials(new NtlmPasswordAuthenticator(null, user, pass));
+								SmbFile smbFile = new SmbFile(mFilePath, mSmbContext);
+								bis = smbFile.getInputStream();
+								totalSize = smbFile.length();
 							}
-							else {
-								// InputStreamを作成してキャッシュへコピー
-								InputStream bis = null;
-								// ParcelFileDescriptorを使うと不安定になるので直接操作する
-								if (mPdfExpand == DEF.ACCESS_TYPE_SMB) {
-									// SMBのストリームアクセス
-									Logcat.v(logLevel, "SMBのストリームアクセス");
-									CIFSContext mSmbContext = SingletonContext.getInstance().withCredentials(new NtlmPasswordAuthenticator(null, user, pass));
-									SmbFile smbFile = new SmbFile(mFilePath, mSmbContext);
-									bis = smbFile.getInputStream();
-								}
-								else if (mPdfExpand == DEF.ACCESS_TYPE_SAF) {
-									// ストレージアクセスフレームワークの場合
-									Logcat.v(logLevel, "ストレージアクセスフレームワーク");
-									// URIを得る
-									Uri uri = Uri.parse(mFilePath);
-									bis = mActivity.getContentResolver().openInputStream(uri);
-								}
-								copyToCache(bis, totalSize, tempFile);
+							else if (mPdfExpand == DEF.ACCESS_TYPE_SAF) {
+								Logcat.v(logLevel, "ストレージアクセスフレームワーク");
+								Uri uri = Uri.parse(mFilePath);
+								bis = mActivity.getContentResolver().openInputStream(uri);
 							}
-							// コピーしたキャッシュファイルからPdfRenderer用のPFDを開く
-							try {
-								parcelFileDescriptor.set(ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY));
-								sendProgress(0, 0, 0, 0);
-								mPdfRenderer = new PdfRenderer(parcelFileDescriptor.get());
-							}
-							catch (Exception e) {
-								// ファイルの読出しに失敗した場合はキャッシュの破損とみなして削除
+							else if (mPdfExpand == DEF.ACCESS_TYPE_WEBDAV) {
+								Logcat.v(logLevel, "WebDAVのストリームアクセス");
 								try {
-									if (tempFile.exists()) {
-										tempFile.delete();
+									Sardine sardine = WebDavFileAccess.getSardine(user, pass);
+									// プロトコル部分 (://) 以外の重複スラッシュ（//）を単一のスラッシュに正規化する
+									String targetUrl = mFilePath.replaceAll("(?<!:)//+", "/");
+									Logcat.d(logLevel, "WebDAV Sanitized URL: " + targetUrl);
+									bis = sardine.get(targetUrl);
+									// ファイルサイズの取得
+									try {
+										java.util.List<com.thegrizzlylabs.sardineandroid.DavResource> resources = sardine.list(targetUrl);
+										if (resources != null && !resources.isEmpty()) {
+											totalSize = resources.get(0).getContentLength();
+										}
+									}
+									catch (Exception e) {
+										totalSize = 0;
 									}
 								}
-								catch (Exception ex) {
+								catch (Exception e) {
+									// 詳細なエラー原因をログに出力する
+									Logcat.e(logLevel, "WebDAV stream acquisition failed: " + e.getMessage(), e);
+									throw new IOException("Failed to obtain WebDAV input stream: " + e.getMessage(), e);
 								}
 							}
+							else if (mPdfExpand == DEF.ACCESS_TYPE_FTP || mPdfExpand == DEF.ACCESS_TYPE_FTPS) {
+								Logcat.v(logLevel, "FTP/FTPSの一括ダウンロード処理");
+								boolean isFtps = (mPdfExpand == DEF.ACCESS_TYPE_FTPS);
+								boolean success = FtpFileAccess.downloadFile(
+									mFilePath, user, pass, isFtps,
+									FileAccess.getServerPort(), FileAccess.getPassiveMode(), tempFile
+								);
+								if (!success || !tempFile.exists() || tempFile.length() <= 0) {
+									if (tempFile != null && tempFile.exists()) {
+										tempFile.delete();
+									}
+									throw new IOException("Failed to download FTP/FTPS PDF file.");
+								}
+							}
+							else if (mPdfExpand == DEF.ACCESS_TYPE_SFTP) {
+								Logcat.v(logLevel, "SFTPのストリームアクセス");
+								bis = SftpFileAccess.getInputStream(mFilePath, user, pass, FileAccess.getServerPort());
+								totalSize = SftpFileAccess.length(mFilePath, user, pass, FileAccess.getServerPort());
+							}
+							if (bis != null) {
+								sendProgress(0, 0, 0, 0);
+								copyToCache(bis, totalSize, tempFile);
+							}
+							else if (mPdfExpand != DEF.ACCESS_TYPE_FTP && mPdfExpand != DEF.ACCESS_TYPE_FTPS) {
+								// FTP/FTPS以外で bis が取れなかった場合のみ例外にする
+								throw new IOException("Failed to obtain input stream for caching.");
+							}
 						}
+						// ダウンロード完了後、ローカルキャッシュファイルからシーク可能なPFDを開く
+						parcelFileDescriptor.set(ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY));
+						sendProgress(0, 0, 0, 0);
+						mPdfRenderer = new PdfRenderer(parcelFileDescriptor.get());
 					}
 					catch (Exception e) {
-						Logcat.e(logLevel, "error.",e);
+						Logcat.e(logLevel, "error.", e);
+						// 失敗した場合は破損したキャッシュファイルを削除
+						if (tempFile != null && tempFile.exists()) {
+							try { tempFile.delete(); } catch (Exception ignored) {}
+						}
+					}
+					finally {
+						if (bis != null) {
+							try { bis.close(); } catch (IOException ignored) {}
+						}
 					}
 				}
 				else {
-					// ParcelFileDescriptorインスタンスを作成する。
+					// mPdfExpand が -1 の場合のフォールバック
 					parcelFileDescriptor.set(FileAccess.openParcelFileDescriptor(mActivity, path, user, pass, mActivity, mHandler));
 					mPdfRenderer = new PdfRenderer(parcelFileDescriptor.get());
 				}
-            } catch (Exception e) {
+			} catch (Exception e) {
 				Logcat.e(logLevel, "PDFの読み込みに失敗しました.", e);
-            }
+			}
 		}
 		if (mPdfRenderer == null) {
 			Logcat.e(logLevel, "mPdfRendererがnullです.");
@@ -4521,14 +4747,42 @@ public class ImageManager extends InputStream implements Runnable {
 		}
 	}
 
-	public void cmpClose() throws IOException {
+	public synchronized void cmpClose() throws IOException {
 		if (mWorkStream != null) {
-			mWorkStream.close();
+			try {
+				mWorkStream.close();
+			}
+			catch (Exception ignored) {}
 			mWorkStream = null;
 		}
 		if (mFileType == FILETYPE_RAR) {
 			// RARの領域解放
-			CallJniLibrary.rarClose();
+			try {
+				CallJniLibrary.rarClose();
+			}
+			catch (Exception ignored) {}
+		}
+		if (archive != null) {
+			// ネイティブ側の7-Zip-JBindingのアーカイブハンドルを解放する
+			// (archive.close()はここで渡したIInStreamまでは閉じないため、下記で別途閉じる)
+			try {
+				archive.close();
+			}
+			catch (Exception ignored) {
+				// なにもしない
+			}
+			archive = null;
+		}
+		if (mArchiveInStream != null) {
+			// SMB/ローカル/SAF経由で開いたままになっているアーカイブ本体のストリームを閉じる.
+			// これを閉じないとSMB側ではファイルがオープンされたままになり、削除等ができなくなる.
+			try {
+				mArchiveInStream.close();
+			}
+			catch (Exception ignored) {
+				// なにもしない
+			}
+			mArchiveInStream = null;
 		}
 	}
 
