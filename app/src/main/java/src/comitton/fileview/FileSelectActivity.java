@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -39,15 +40,27 @@ import src.comitton.common.EpubWebViewSharedData;
 import src.comitton.common.CustomKeySharedData;
 import src.comitton.common.DialogSharedData;
 import src.comitton.common.TappatternSharedData;
+import src.comitton.config.PreferenceScannerHelper;
+import src.comitton.config.SetBookShelfActivity;
 import src.comitton.config.SetBookmarkSyncActivity;
+import src.comitton.config.SetCacheActivity;
+import src.comitton.config.SetCornerEndEpubWebViewActivity;
+import src.comitton.config.SetCornerEndImageViewerActivity;
+import src.comitton.config.SetCornerEndTextViewerActivity;
+import src.comitton.config.SetCustomUrlSchemeActivity;
 import src.comitton.config.SetEverythingActivity;
 import src.comitton.config.SetHardwareEpubWebViewKeyActivity;
 import src.comitton.config.SetHardwareFileListKeyActivity;
+import src.comitton.config.SetHardwareSelectKeyActivity;
+import src.comitton.config.SetImageDetailActivity;
 import src.comitton.config.SetImageTextColorActivity;
+import src.comitton.config.SetMarginCutActivity;
 import src.comitton.config.SetNoiseActivity;
+import src.comitton.config.SetSortActivity;
 import src.comitton.config.SetTextActivity;
 import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetCommonActivity;
+import src.comitton.config.SetThemeActivity;
 import src.comitton.config.SetWebServerActivity;
 import src.comitton.config.SetWebViewActivity;
 import src.comitton.dialog.CustomNoneProgressDialog;
@@ -201,7 +214,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 @SuppressLint("DefaultLocale")
-public class FileSelectActivity extends AppCompatActivity implements OnTouchListener, ListNoticeListener, BookmarkListenerInterface, Handler.Callback {
+public class FileSelectActivity extends AppCompatActivity implements OnTouchListener, ListNoticeListener, BookmarkListenerInterface, Handler.Callback, SharedPreferences.OnSharedPreferenceChangeListener {
 	private static final String TAG = "FileSelectActivity";
 
 	private static final int OPERATE_NONREAD = 0;
@@ -252,6 +265,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private ArrayList<LibraryEntry> mLibraryDrilldownVolumes;
 	// タイトル絞り込みキーワード(空文字は絞り込み無し)
 	private String mLibraryFilterText = "";
+	// onRequestUpdate()が直前にトップレベル一覧を実際に再構築した時点の
+	// (LibraryCache.buildWorkList()の参照, mLibraryFilterText)。この2つが変化していなければ
+	// 一覧の再構築・再レイアウトを省略できる(buildWorkList()はキャッシュ未変更時に同一参照を返す)。
+	private ArrayList<LibraryCache.LibraryWork> mLibraryBuiltWorks;
+	private String mLibraryBuiltFilterText;
+	// 既読集計の非同期更新(startLibraryReadSummaryUpdate())が必要かどうか。
+	// onSharedPreferenceChanged()でSharedPreferencesに何か書き込みがあった時だけ立て、
+	// 一覧の再構築を伴わない(=作品一覧が変化していない)onRequestUpdate()で一度だけ消費する。
+	// 「何か変わった可能性がある時だけ」に絞ることで、スワイプ開始のたびに飛んでくる
+	// updateRecordList()の一括発行や、単にアプリを行き来しただけの復帰では、数秒かかる
+	// 既読集計の再計算を起動しない(実機で無条件再計算の無駄が多いことを確認済み)。
+	private boolean mLibraryReadStatusDirty = true;
 	// 書庫管理タブから開いたファイルの「次/前ファイル」をアプリ全体の書庫一覧(作品を跨ぐ)に
 	// 広げるための仮想ファイルリスト。null以外の間はsearchNextFile()がこちらを優先する。
 	// 書庫管理タブ以外からの通常操作ではonItemClick()の先頭で毎回nullに戻す。
@@ -488,6 +513,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static boolean mWebServerEnable = false;
 	private static boolean mWebServerIcon = false;
 	private boolean isSelfRestarting = false;
+	private static boolean mSearchSettingIcon;
 
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
@@ -616,6 +642,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		applyAppTheme(mSharedPreferences);
 		SetOrientationEventListenerEnable(mSharedPreferences);
+		// 書庫管理タブの既読集計(onSharedPreferenceChanged参照)用。読書は別Activity
+		// (ImageActivity等)で行われ、既読位置はこちらがonPauseで裏に回っている間に書き込まれるため、
+		// onPauseでは登録解除せずonDestroyまで登録し続ける(重複登録は同一リスナーなら無害)。
+		mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
 	}
 
 	@Override
@@ -703,6 +733,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				// サーバー選択が有効だった場合
 				if (mServer.select(serverSelect)) {
 					mURI = mServer.getURI();
+					setServerPortPassiveMode(mServer);
 				}
 			}
 			else if (server != null && !server.isEmpty()) {
@@ -710,6 +741,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				if (mServer.select(server)) {
 					// サーバー名が有効だった場合
 					mURI = mServer.getURI();
+					setServerPortPassiveMode(mServer);
 				}
 				else {
 					// サーバー名が無効だった場合はファイルパスをnullにする
@@ -724,6 +756,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mServer.select(DEF.INDEX_LOCAL);
 				mPath = mServer.getPath();
 				mURI = mServer.getURI();
+				setServerPortPassiveMode(mServer);
 			}
 		}
 	}
@@ -838,6 +871,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						else if (data.mCode == null || data.mCode.length() <= 0) {
 							mServer.select(DEF.INDEX_LOCAL);
 							uri = "";
+							setServerPortPassiveMode(mServer);
 						}
 						else {
 							if (!mServer.select(data.mCode)) {
@@ -846,6 +880,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 								return;
 							}
 							uri = mServer.getURI();
+							setServerPortPassiveMode(mServer);
 						}
 						moveFileSelect(uri, data.mPath, data.mTopIndex, false);
 						mExitBackTimer = 0;
@@ -874,6 +909,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// 回転時など保存しておいた情報
 		mServer = new ServerSelect(mSharedPreferences, this);
 		mServer.select(DEF.INDEX_LOCAL);
+		setServerPortPassiveMode(mServer);
 		RecordList.setContext(this);
 
 		try {
@@ -916,6 +952,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mServer.select(DEF.INDEX_LOCAL);
 					mURI = mServer.getURI();
 					mPath = path.substring(0, path.lastIndexOf('/') + 1);
+					setServerPortPassiveMode(mServer);
 					FileData fileData = new FileData(mActivity, path.substring(path.lastIndexOf('/') + 1));
 					Logcat.d(logLevel, "Intent解析中. mPath=" + mPath + ", name=" + fileData.getName());
 
@@ -987,11 +1024,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// サーバー選択なし
 					serverSelect = -1;
 					mServer.select(DEF.INDEX_LOCAL);
+					setServerPortPassiveMode(mServer);
 				}
 				else {
 					// サーバー選択あり
 					serverSelect = Integer.parseInt(serverselect);
 					mServer.select(serverSelect);
+					setServerPortPassiveMode(mServer);
 				}
 				Logcat.d(logLevel, "fileopen カスタムURLスキームから起動. path=" + path + ", serverSelect=" + serverSelect);
 				if (path == null || path.isEmpty()) {
@@ -1081,12 +1120,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// サーバー選択が有効だった場合
 			if (mServer.select(serverSelect)) {
 				mURI = mServer.getURI();
+				setServerPortPassiveMode(mServer);
 			}
 		} else if (server != null && !server.isEmpty()) {
 			// サーバー名が設定されていれば
 			if (mServer.select(server)) {
 				// サーバー名が有効だった場合
 				mURI = mServer.getURI();
+				setServerPortPassiveMode(mServer);
 			} else {
 				// サーバー名が無効だった場合はファイルパスを空白にする
 				mPath = "";
@@ -1108,6 +1149,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			// URIとパスを選択
 			mPath = restorePaths.get(restoreCurrentItem);
 			mURI = restoreUris.get(restoreCurrentItem);
+			setServerPortPassiveMode(mServer);
 		}
 		else if (mTabMode && mTabRestore) {
 			// タブが有効で復元が有効の場合
@@ -1125,6 +1167,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					// URIとパスを選択
 					mPath = paths.optString(CurrentItem, "");
 					mURI = uris.optString(CurrentItem, "");
+					setServerPortPassiveMode(mServer);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -1160,6 +1203,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			mServer.select(DEF.INDEX_LOCAL);
 			mURI = mServer.getURI();
 			mPath = mServer.getPath();
+			setServerPortPassiveMode(mServer);
 		}
 
 		if (mServer.getSelect() == DEF.INDEX_LOCAL && "/".equals(mPath)) {
@@ -1624,6 +1668,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mServer.select(adapter.getTabServerSelect(currentPosition));
 				String path = adapter.getTabPath(currentPosition);
 				String uri = adapter.getTabUri(currentPosition);
+				setServerPortPassiveMode(mServer);
 				// タイトルを表示
 				mListScreenView.setListTitle(RecordList.TYPE_FILELIST, "[" + mServer.getName() + "]", mPath);
 				// ソート状態を設定
@@ -1817,6 +1862,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				mServer.select(adapter.getTabServerSelect(position));
 				String uri = adapter.getTabUri(position);
 				String path = adapter.getTabPath(position);
+				setServerPortPassiveMode(mServer);
 				if (path != null && !path.isEmpty()) {
 					// パスの移動
 					moveFileSelectProc(uri, path, false);
@@ -2654,20 +2700,29 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		// ファイルの検索のダイアログの表示を準備
 		Resources res = mActivity.getResources();
 		// ファイルの検索中はダイアログの表示をキャンセルさせないようにする
-		mNoneProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.searchTitle), res.getString(R.string.searchfile), mHandler);
+		// mNoneProgressDialogはstaticフィールドのため、nextOpenMain()がフォルダ移動(漫画⇔
+		// Aria2c_DL等)を伴い、その移動先リストの読込完了が(キャッシュヒット等で)この呼び出しの
+		// dismiss実行前に終わってnextFileOpen()が再帰的に呼ばれると、dismiss側がstaticフィールド
+		// を読み直した時点で既に次の呼び出しが上書きした「まだshow()されていない」新しいダイアログ
+		// を指してしまい、FragmentManagerに未追加のDialogFragmentをdismissしてクラッシュする。
+		// そのため、このローカル変数でこの呼び出し自身のダイアログを固定して参照する。
+		final CustomNoneProgressDialog noneProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.searchTitle), res.getString(R.string.searchfile), mHandler);
+		mNoneProgressDialog = noneProgressDialog;
 		supportFragmentManager = mActivity.getSupportFragmentManager();
 		// メイン画面で表示させるためハンドラを得る
 		mainHandler = new Handler(Looper.getMainLooper());
 		// メイン画面で表示
 		mainHandler.post(() -> {
 			// ダイアログの表示
-			mNoneProgressDialog.show(supportFragmentManager, TAG);
-		});
-		ExecutorService executor = Executors.newSingleThreadExecutor();
-		Handler handler = new Handler(Looper.getMainLooper());
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
+			try {
+				noneProgressDialog.show(supportFragmentManager, TAG);
+			}
+			catch (Exception e) {
+				Logcat.e(logLevel, "Failed to show progress dialog: " + e.getMessage(), e);
+			}
+			// ダイアログ表示後にバックグラウンドスレッドで検索を実行
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			executor.execute(() -> {
 				try {
 					// 次のファイル検索
 					nextfile[0] = searchNextFile(nextFileBaseList, file, nextopen);
@@ -2677,20 +2732,57 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				finally {
 					// 処理が完了したらメインスレッドに戻してダイアログを閉じる
-					handler.post(new Runnable() {
-						@Override
-						public void run() {
-							mainHandler.post(() -> {
-								mNoneProgressDialog.dismissAllowingStateLoss();
-							});
-							// 次のファイルを開く(メイン)
-							result[0] = nextOpenMain(nextopen, path, file, infile, type, page, nextfile[0]);
+					mainHandler.post(() -> {
+						try {
+							if (noneProgressDialog.isAdded() && noneProgressDialog.isVisible()) {
+								noneProgressDialog.dismissAllowingStateLoss();
+							}
+							else {
+								// 万が一isAddedがまだの場合のフォールバック
+								noneProgressDialog.dismissAllowingStateLoss();
+							}
 						}
+						catch (Exception e) {
+							Logcat.e(logLevel, "Failed to dismiss progress dialog: " + e.getMessage(), e);
+						}
+						// nextOpenMain(ネットワークアクセスを含む可能性があるため別スレッドで実行)
+						ExecutorService openExecutor = Executors.newSingleThreadExecutor();
+						openExecutor.execute(() -> {
+							try {
+								// バックグラウンドで安全に実行
+								boolean openResult = nextOpenMain(nextopen, path, file, infile, type, page, nextfile[0]);
+								mainHandler.post(() -> {
+									result[0] = openResult;
+								});
+							}
+							catch (Exception e) {
+								Logcat.e(logLevel, "Failed in nextOpenMain background execution: " + e.getMessage(), e);
+							}
+						});
 					});
 				}
-			}
+			});
 		});
 		return result[0];
+	}
+
+	// 「先頭ページで開く」指定のファイル名と指定時刻。ImageActivityが開く際に参照し、
+	// ローカル/サーバーの既読位置を無視して先頭ページから開く(既読記録自体は消さない)。
+	private static String sOpenFromTopFile;
+	private static long sOpenFromTopTime;
+
+	private static void markOpenFromTop(String fileName) {
+		sOpenFromTopFile = fileName;
+		sOpenFromTopTime = System.currentTimeMillis();
+	}
+
+	// 指定ファイルが「先頭ページで開く」指定されていれば true を返し、指定を解除する。
+	// 画像ビューア以外が開かれた場合に指定が残って後の別の操作に効かないよう、10秒で失効させる。
+	public static boolean consumeOpenFromTop(String fileName) {
+		boolean match = sOpenFromTopFile != null && sOpenFromTopFile.equals(fileName)
+				&& System.currentTimeMillis() - sOpenFromTopTime < 10000;
+		sOpenFromTopFile = null;
+		return match;
 	}
 
 	// 次のファイルを開く(メイン)
@@ -2726,7 +2818,21 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mLoadListNextFile = nextfile.getName();
 					mLoadListNextInFile = "";
 					mLoadListNextType = type;
-					mLoadListNextPage = page;
+					// CLICK_HISTORYでの再オープンは、ここで渡すページ番号がそのまま
+					// SharedPreferencesの既読位置として書き込まれる(下のCLICK_HISTORYケース参照)。
+					// 呼び出し元からのpageは常にDEF.PAGENUMBER_NONEであり、これをそのまま書き込むと
+					// ImageActivity側の「ページ番号が負=既読なので最終ページを開く」という
+					// フォールバックに引っかかり、常に最終ページが開いてしまう(実機で確認済み)。
+					// 元のnextopen(先頭ページ系/最終ページ系)の意味に応じて正しいページ番号を渡す。
+					switch (nextopen) {
+						case CloseDialog.CLICK_NEXTLAST:
+						case CloseDialog.CLICK_PREVLAST:
+							mLoadListNextPage = DEF.PAGENUMBER_READ; // 最終ページを開く
+							break;
+						default:
+							mLoadListNextPage = DEF.PAGENUMBER_UNREAD; // 先頭ページを開く
+							break;
+					}
 					// moveFileSelectFromServer()が既にリスト読み込みを開始させているため、
 					// 呼び出し元による二重のloadListView()/loadThumbnail()呼び出しを避けるためtrueを返す
 					// (非同期のリスト読み込み完了後、上のmLoadListNextOpenチェック経由で
@@ -2746,9 +2852,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			switch (nextopen) {
 				case CloseDialog.CLICK_PREVTOP:
 				case CloseDialog.CLICK_NEXTTOP:
-					ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, nextfile.getName()), user, pass) + "#maxpage");
-					ed.remove(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, nextfile.getName()), user, pass));
-					ed.apply();
+					// 既読位置は消さず、開く側(ImageActivity)で無視させて先頭ページから開く
+					markOpenFromTop(nextfile.getName());
 					break;
 
 				case CloseDialog.CLICK_PREVLAST:
@@ -2850,7 +2955,11 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 				case CloseDialog.CLICK_BOOKMARK:
 				case CloseDialog.CLICK_HISTORY:
-					if (!file.isEmpty()) {
+					if (page == DEF.PAGENUMBER_UNREAD && !file.isEmpty() && !FileData.isText(infile) && !FileData.isEpubSub(infile)) {
+						// 先頭ページから開く指定(書庫管理の巻またぎ等)。既読位置は書き換えず、開く側で無視させる
+						markOpenFromTop(file);
+					}
+					else if (!file.isEmpty()) {
 						if (FileData.isText(infile) || FileData.isEpubSub(infile)) {
 							ed.putInt(DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, file), user, pass) + infile, page);
 						}
@@ -3021,6 +3130,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mLoadWithFallback = SetFileListActivity.getLoadWithFallback(mSharedPreferences);
 		mWebServerStart = SetWebServerActivity.getWebServerStart(mSharedPreferences);
 		mWebServerIcon = SetWebServerActivity.getWebServerIcon(mSharedPreferences);
+		mSearchSettingIcon = SetFileListActivity.getSearchSettingIcon(mSharedPreferences);
 
 		if (!mListRotaChg) {
 			// 手動で切り替えていない
@@ -3404,6 +3514,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					else if (data.mCode == null || data.mCode.length() <= 0) {
 						mServer.select(DEF.INDEX_LOCAL);
 						uri = "";
+						setServerPortPassiveMode(mServer);
 					}
 					else {
 						if (!mServer.select(data.mCode)) {
@@ -3411,6 +3522,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							break;
 						}
 						uri = mServer.getURI();
+						setServerPortPassiveMode(mServer);
 					}
 					moveFileSelect(uri, data.mPath, data.mTopIndex, false);
 					mExitBackTimer = 0;
@@ -3617,6 +3729,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 							else if (data.mCode == null || data.mCode.length() <= 0) {
 								mServer.select(DEF.INDEX_LOCAL);
 								uri = "";
+								setServerPortPassiveMode(mServer);
 							}
 							else {
 								if (!mServer.select(data.mCode)) {
@@ -3624,6 +3737,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 									return true;
 								}
 								uri = mServer.getURI();
+								setServerPortPassiveMode(mServer);
 							}
 							moveFileSelect(uri, data.mPath, data.mTopIndex, false);
 							mExitBackTimer = 0;
@@ -3720,6 +3834,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	// Activityの破棄
 	protected void onDestroy() {
 		super.onDestroy();
+		mSharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			if (mainHandler != null) {
 				// 画面ロックのタイムアウト処理(timeoutRunnable)を取り除く
@@ -4219,7 +4334,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				int serverindex = mSelectRecord.getServer(); // サーバーのキーインデックス
 				mEditServerDialog = new EditServerDialog(mActivity, R.style.MyDialog, serverindex, new EditServerDialog.SearchListener() {
 					@Override
-					public void onSearch(int accessType, String name, String host, String user, String pass, String path, String provider, String dispName) {
+					public void onSearch(int accessType, String name, String host, String user, String pass, String path, String provider, String dispName, boolean pasv, String port) {
 						int listtype = RecordList.TYPE_SERVER;
 						// リストのデータを更新
 						mSelectRecord.setAccessType(accessType);
@@ -4230,6 +4345,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						mSelectRecord.setPath(path);
 						mSelectRecord.setProvider(provider);
 						mSelectRecord.setDispName(dispName);
+						mSelectRecord.setPasv(pasv);
+						mSelectRecord.setPort(port);
 
 						ArrayList<RecordItem> recordList = mListScreenView.getList(listtype);
 						RecordList.update(recordList, listtype);
@@ -5141,6 +5258,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					case DEF.TOOLBAR_WEB_SHARING:
 						showDialog(DEF.MESSAGE_WEBSHAREICON);
 						break;
+					case DEF.TOOLBAR_SEARCHSETTING:
+						// 設定を検索した結果でタップした項目へジャンプする
+						setPreferenceScannerHelper();
+						break;
 					case DEF.TOOLBAR_EXIT:
 						// アプリ終了
 						finishApplication();
@@ -5653,16 +5774,33 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 						break;
 
 					case OPERATE_DELCACHE: // サムネイルキャッシュ削除
-						ThumbnailLoader.deleteThumbnailCache(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mThumbSizeW, mThumbSizeH);
-						// イメージ取得をスキップさせるためのマーキング情報を解除
-						String path = DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mServer.getUser(), mServer.getPass());
-						Editor ed = mSharedPreferences.edit();
-						ed.remove(path + "#noimage");
-						ed.apply();
-						// サムネイル解放
-						releaseThumbnail();
-						// サムネイルを読み直す
-						loadThumbnail(true);
+						new Thread(new Runnable() {
+							@Override
+							public void run() {
+								try {
+									// キャッシュの削除
+									ThumbnailLoader.deleteThumbnailCache(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mThumbSizeW, mThumbSizeH);
+									// イメージ取得をスキップさせるためのマーキング情報の解除
+									String path = DEF.createUrl(DEF.relativePath(mActivity, mURI, mPath, mFileData.getName()), mServer.getUser(), mServer.getPass());
+									Editor ed = mSharedPreferences.edit();
+									ed.remove(path + "#noimage");
+									ed.apply();
+									// サムネイル解放と再読み込みはUIスレッド(またはスレッドセーフなハンドラー)経由で実行する
+									mActivity.runOnUiThread(new Runnable() {
+										@Override
+										public void run() {
+											// サムネイル解放
+											releaseThumbnail();
+											// サムネイルを読み直す
+											loadThumbnail(true);
+										}
+									});
+								}
+								catch (Exception e) {
+									Logcat.e(logLevel, "Delete cache error: " + e.getMessage());
+								}
+							}
+						}).start();
 						break;
 
 					case OPERATE_SETTHUMBASDIR:		// 親ディレクトリのサムネイルとして設定
@@ -6383,6 +6521,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		mServer = server;
 		mServer.select(serverindex);
+		setServerPortPassiveMode(mServer);
 
 		if (mTabMode) {
 			int currentPosition = viewPager.getCurrentItem();
@@ -6420,10 +6559,23 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			Logcat.v(logLevel, "return false");
 			return false;
 		}
+		if (server.getAccesType() == DEF.ACCESS_TYPE_FTP && uri.equalsIgnoreCase("ftp://")) {
+			Logcat.v(logLevel, "return false");
+			return false;
+		}
+		if (server.getAccesType() == DEF.ACCESS_TYPE_FTPS && uri.equalsIgnoreCase("ftps://")) {
+			Logcat.v(logLevel, "return false");
+			return false;
+		}
+		if (server.getAccesType() == DEF.ACCESS_TYPE_SFTP && uri.equalsIgnoreCase("sftp://")) {
+			Logcat.v(logLevel, "return false");
+			return false;
+		}
 		// 移動
 		moveFileSelectProc(uri, path, true);
 
 		mServer = server;
+		setServerPortPassiveMode(mServer);
 
 		// リスト再ロード
 		loadListView();
@@ -6607,6 +6759,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		ArrayList<RecordItem> list = new ArrayList<RecordItem>();
 		ArrayList<LibraryEntry> flat = LibraryCache.getEntries();
 		ArrayList<LibraryCache.LibraryWork> works = LibraryCache.buildWorkList(flat);
+		// onRequestUpdate()の再構築省略判定に使う、絞り込み前のキャッシュ参照(下でworksを絞り込み後の
+		// 一覧に差し替えるため、差し替わる前にここで控えておく)
+		ArrayList<LibraryCache.LibraryWork> unfilteredWorks = works;
 
 		if (mLibraryDrilldownWork != null) {
 			LibraryCache.LibraryWork work = null;
@@ -6642,20 +6797,50 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				list.add(back);
 
 				ArrayList<LibraryServerRoot> displayRoots = buildLibraryServerRoots();
+				// 既読状態(ページ/最大ページ)の照会に使う。verifyLibraryWork()と同様、
+				// ループ内で毎回ServerSelectを作り直すとSharedPreferences全読み込みの繰り返しで
+				// 重くなるため、この一覧の構築中は1つだけ作って使い回す。
+				ServerSelect servers = new ServerSelect(mSharedPreferences, this);
+				// 通常のファイル一覧/ビューアと同じ拡張子違いフォールバック(ZIP⇔RAR等)を
+				// 書庫管理タブでも適用するための事前インデックス(resolvePageKeyIndexed用)。
+				Map<String, String> pageKeyIndex = DEF.buildPageKeyIndex(mSharedPreferences);
 				for (LibraryEntry e : mLibraryDrilldownVolumes) {
 					RecordItem rd = new RecordItem();
 					rd.setType(RecordItem.TYPE_IMAGE);
 					rd.setServer(DEF.INDEX_LOCAL);
-					rd.setServerName(formatLibraryFileSize(e.getSize()));
 					// e.getPath()はEverythingXのサーバー側実パス(/srv/samba/...)のため、
 					// そのまま表示すると利用者には意味不明かつ実際のアクセス経路と食い違う。
 					// resolveLibraryFileLocation()と同じ変換を経たディレクトリパスを表示する。
 					LibraryResolvedFile displayResolved = resolveLibraryFileLocation(e, displayRoots, false);
-					rd.setPath(displayResolved != null ? displayResolved.dirPath : e.getPath());
+					String resolvedDirPath = displayResolved != null ? displayResolved.dirPath : e.getPath();
+					rd.setPath(resolvedDirPath);
 					rd.setFile(e.getName());
 					rd.setDispName(e.getName());
-					rd.setImage(formatLibraryDate(e.getDateModified()));
+					// 同じ作品の巻でも漫画⇔Aria2c_DL等、別フォルダに実在することがあるため、
+					// どのフォルダの巻かが分かるよう親フォルダ名を表示する。
+					rd.setLibraryFolderLabel(extractLibraryFolderLabel(resolvedDirPath));
+					rd.setImage(formatLibraryDateLine(e.getDateModified()));
+					rd.setServerName(formatLibrarySizeLine(e.getSize()));
 					rd.setDate(e.getDateModified());
+
+					// 通常のファイル一覧と同じ既読状態の色分け/文言を再現する。アーカイブを開いての
+					// 再スキャンは行わず、既にSharedPreferencesにキャッシュされている値だけを使う
+					// (巻数が多い作品で毎回SMBアクセスが発生するとANRの原因になるため)。
+					int state = DEF.PAGENUMBER_UNREAD;
+					int maxpage = DEF.PAGENUMBER_NONE;
+					if (displayResolved != null) {
+						String rootUri = servers.getURI(displayResolved.server);
+						String ruser = servers.getUser(displayResolved.server);
+						String rpass = servers.getPass(displayResolved.server);
+						String fileUri = DEF.relativePath(mActivity, rootUri, displayResolved.dirPath, displayResolved.fileName);
+						String key = (FileSelectActivity.getResolvePageKey())
+								? DEF.resolvePageKeyIndexed(mSharedPreferences, fileUri, ruser, rpass, pageKeyIndex)
+								: DEF.createUrl(fileUri, ruser, rpass);
+						maxpage = mSharedPreferences.getInt(key + "#maxpage", DEF.PAGENUMBER_NONE);
+						state = mSharedPreferences.getInt(key, DEF.PAGENUMBER_UNREAD);
+					}
+					rd.setReadStatus(formatLibraryReadStatus(state, maxpage));
+					rd.setTitleColorOverride(resolveLibraryTitleColor(state, maxpage));
 					list.add(rd);
 				}
 				return list;
@@ -6684,7 +6869,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			works = filtered;
 		}
 		mLibraryFilteredWorks = works;
+		mLibraryBuiltWorks = unfilteredWorks;
+		mLibraryBuiltFilterText = mLibraryFilterText;
 
+		ArrayList<RecordItem> workItems = new ArrayList<RecordItem>();
 		for (LibraryCache.LibraryWork w : works) {
 			RecordItem rd = new RecordItem();
 			rd.setType(RecordItem.TYPE_FOLDER);
@@ -6695,8 +6883,65 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			rd.setDispName(w.title);
 			rd.setDate(w.latestDate);
 			list.add(rd);
+			workItems.add(rd);
 		}
+		// タイトル毎の既読集計("既読: X/Y (Z%)")はバックグラウンドで計算する。実環境では
+		// 1700作品/1万巻超の規模になり、画面遷移の度に同期計算すると数秒かかりUIが固まるため
+		// (計測で確認済み)、計算が終わった分から非同期に反映する。
+		startLibraryReadSummaryUpdate(works, workItems);
 		return list;
+	}
+
+	// buildLibraryRecordList()が直近に発行したトークン。フィルタ変更やタブ切替で一覧が
+	// 作り直された後に古い非同期集計結果が反映されてしまわないようにするためのガード。
+	private int mLibraryReadSummaryToken = 0;
+
+	// 書庫管理タブの各タイトルの既読集計をバックグラウンドで計算し、終わり次第メインスレッドで
+	// 該当RecordItem(works/workItemsは同じ並び)へ反映して再描画を要求する。
+	private void startLibraryReadSummaryUpdate(final ArrayList<LibraryCache.LibraryWork> works, final ArrayList<RecordItem> workItems) {
+		final int logLevel = Logcat.LOG_LEVEL_WARN;
+		final int token = ++mLibraryReadSummaryToken;
+		final ArrayList<LibraryServerRoot> roots = buildLibraryServerRoots();
+		final ServerSelect servers = new ServerSelect(mSharedPreferences, this);
+		final Map<String, String> pageKeyIndex = DEF.buildPageKeyIndex(mSharedPreferences);
+		final boolean resolveKey = FileSelectActivity.getResolvePageKey();
+		final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				long perfStart = System.currentTimeMillis();
+				int perfVolumeCount = 0;
+				for (int i = 0; i < works.size(); i++) {
+					if (token != mLibraryReadSummaryToken) {
+						// 計算中に一覧が作り直された(フィルタ変更/タブ切替等)ので中断する
+						return;
+					}
+					LibraryCache.LibraryWork w = works.get(i);
+					RecordItem rd = workItems.get(i);
+					LibraryWorkReadSummary summary = computeLibraryWorkReadSummary(w, roots, servers, pageKeyIndex, resolveKey);
+					rd.setReadStatus(summary.status);
+					rd.setTitleColorOverride(summary.color);
+					perfVolumeCount += w.volumes.size();
+				}
+
+				long perfElapsed = System.currentTimeMillis() - perfStart;
+				// 通常は数十~数百ms程度のため、300msを超えた場合のみ記録してログを圧迫しない
+				if (perfElapsed > 300) {
+					Logcat.w(logLevel, "書庫管理: タイトル毎の既読集計(非同期)に時間がかかりました. elapsed=" + perfElapsed + "ms, works=" + works.size() + ", volumes=" + perfVolumeCount);
+				}
+
+				mainHandler.post(new Runnable() {
+					@Override
+					public void run() {
+						if (token != mLibraryReadSummaryToken) {
+							return;
+						}
+						mListScreenView.notifyUpdate(RecordList.TYPE_LIBRARY);
+					}
+				});
+			}
+		}).start();
 	}
 
 	// 書庫管理タブの表示を再構築して画面に反映する
@@ -6753,12 +6998,13 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	}
 
 	// 書庫管理タブ先頭のダミー項目タップ時のメニュー
-	// (サーバー側スキャン起動/端末側取得/タイトル検索/絞り込み解除)
+	// (サーバー側スキャン起動/端末側取得/既読位置更新/タイトル検索/絞り込み解除)
 	private void showLibraryOptionsDialog() {
 		Resources res = getResources();
 		final ArrayList<String> itemList = new ArrayList<String>();
 		itemList.add(res.getString(R.string.libraryMenuRescan));
 		itemList.add(res.getString(R.string.libraryMenuPull));
+		itemList.add(res.getString(R.string.libraryMenuReadPositionSync));
 		itemList.add(res.getString(R.string.libraryMenuSearch));
 		if (mLibraryFilterText != null && !mLibraryFilterText.isEmpty()) {
 			itemList.add(res.getString(R.string.libraryMenuClearFilter));
@@ -6775,6 +7021,9 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				else if (selected.equals(res.getString(R.string.libraryMenuPull))) {
 					pullLibraryFromServer();
+				}
+				else if (selected.equals(res.getString(R.string.libraryMenuReadPositionSync))) {
+					updateLibraryReadPositionFromServer();
 				}
 				else if (selected.equals(res.getString(R.string.libraryMenuSearch))) {
 					showLibrarySearchDialog();
@@ -6834,14 +7083,49 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		LibrarySyncClient.pullAll(mActivity, mHandler, mSharedPreferences);
 	}
 
+	// bookmark-sync-serverのread_positionエンドポイントから既読位置を取得し、
+	// 書庫管理タブの巻一覧(既読状況表示・色分け)に反映する。登録済みSMBサーバーのホスト単位で
+	// 問い合わせる(通常のファイル一覧の「同期」ボタンと同じAPI、既存のReadPositionSyncClientを再利用)。
+	// 結果はHMSG_LIBRARY_READPOSITION_PULL_RESULTで受信する。
+	private void updateLibraryReadPositionFromServer() {
+		if (!ReadPositionSyncClient.isConfigured(mSharedPreferences)) {
+			Toast.makeText(mActivity, R.string.readPositionSyncUnavailable, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		ServerSelect servers = new ServerSelect(mSharedPreferences, this);
+		java.util.LinkedHashSet<String> hosts = new java.util.LinkedHashSet<String>();
+		for (int s = 0; s < DEF.MAX_SERVER; s++) {
+			if (servers.getAccessType(s) != DEF.ACCESS_TYPE_SMB) {
+				continue;
+			}
+			String host = servers.getHost(s);
+			if (host != null && !host.isEmpty()) {
+				hosts.add(host);
+			}
+		}
+		if (hosts.isEmpty()) {
+			Toast.makeText(mActivity, R.string.readPositionSyncUnavailable, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "書庫管理: 既読位置の更新を開始します. ホスト数=" + hosts.size());
+		for (String host : hosts) {
+			ReadPositionSyncClient.pullAllForHost(mSharedPreferences, host, mHandler, DEF.HMSG_LIBRARY_READPOSITION_PULL_RESULT);
+		}
+	}
+
 	// 書庫管理タブの作品(またはドリルダウン中の巻)長押しメニュー。対象作品の存在確認を行う
 	private void showLibraryLongClickDialog(int listpos) {
 		final LibraryCache.LibraryWork target;
+		// ドリルダウン中に長押しされた巻(作品一覧からの長押しではnull)
+		final LibraryEntry volume;
 		if (mLibraryDrilldownWork != null) {
 			if (listpos <= 0) {
 				return;
 			}
 			target = mLibraryDrilldownWork;
+			int volIndex = listpos - 1;
+			volume = (mLibraryDrilldownVolumes != null && volIndex < mLibraryDrilldownVolumes.size())
+					? mLibraryDrilldownVolumes.get(volIndex) : null;
 		}
 		else {
 			int workIndex = listpos - 1;
@@ -6849,13 +7133,38 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				return;
 			}
 			target = mLibraryFilteredWorks.get(workIndex);
+			volume = null;
 		}
 		Resources res = getResources();
-		final String[] items = { res.getString(R.string.libraryMenuVerify) };
+		final ArrayList<String> itemList = new ArrayList<String>();
+		itemList.add(res.getString(R.string.libraryMenuVerify));
+		if (volume != null) {
+			itemList.add(res.getString(R.string.ope00)); // 未読にする
+			itemList.add(res.getString(R.string.ope01)); // 既読にする
+			itemList.add(res.getString(R.string.ope10)); // 先頭ページを開く
+		}
+		final String[] items = itemList.toArray(new String[0]);
 		mListDialog = new ListDialog(this, R.style.MyDialog, target.title, items, -1, new ListSelectListener() {
 			@Override
 			public void onSelectItem(int item) {
-				verifyLibraryWork(target);
+				switch (item) {
+					case 1:
+						setLibraryVolumeReadState(volume, false);
+						break;
+					case 2:
+						setLibraryVolumeReadState(volume, true);
+						break;
+					case 3:
+						LibraryResolvedFile first = resolveLibraryFileLocation(volume);
+						if (first != null) {
+							markOpenFromTop(first.fileName);
+						}
+						openLibraryVolume(volume);
+						break;
+					default:
+						verifyLibraryWork(target);
+						break;
+				}
 			}
 
 			@Override
@@ -6864,6 +7173,57 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			}
 		});
 		mListDialog.show();
+	}
+
+	// 書庫管理タブの巻1つを既読/未読にする(通常のファイル長押しメニューの「既読にする/未読にする」と
+	// 同じ保存形式)。SMBサーバー上のファイルは、開く際にサーバー側の既読位置が優先されて元に
+	// 戻ってしまうため、サーバーへも反映する(負のページは開く際に採用されないので未読は-1を送る)。
+	private void setLibraryVolumeReadState(LibraryEntry volume, boolean read) {
+		if (volume == null) {
+			return;
+		}
+		LibraryResolvedFile resolved = resolveLibraryFileLocation(volume);
+		if (resolved == null) {
+			Toast.makeText(mActivity, getResources().getString(R.string.everythingSearchNoServer), Toast.LENGTH_LONG).show();
+			return;
+		}
+		ServerSelect servers = new ServerSelect(mSharedPreferences, this);
+		String user = servers.getUser(resolved.server);
+		String pass = servers.getPass(resolved.server);
+		String fileUri = DEF.relativePath(mActivity, servers.getURI(resolved.server), resolved.dirPath, resolved.fileName);
+		String exactKey = DEF.createUrl(fileUri, user, pass);
+		// 表示側(拡張子違いフォールバック)が拾っている既存キー
+		String shownKey = DEF.resolvePageKey(mSharedPreferences, fileUri, user, pass);
+		int maxpage = mSharedPreferences.getInt(shownKey + "#maxpage", DEF.PAGENUMBER_NONE);
+
+		Editor ed = mSharedPreferences.edit();
+		int pushPage;
+		int pushMaxpage;
+		if (read) {
+			// 最大ページ数が分かっていれば最終ページ、不明なら既読フラグ(アーカイブを開く重い処理は避ける)
+			int value = (maxpage > 0) ? maxpage : DEF.PAGENUMBER_READ;
+			ed.putInt(exactKey, value);
+			ed.putInt(exactKey + "#maxpage", value);
+			ed.putInt(exactKey + "#date", (int) volume.getDateModified());
+			pushPage = value;
+			pushMaxpage = (maxpage > 0) ? maxpage : DEF.PAGENUMBER_NONE;
+		}
+		else {
+			for (String key : new String[] { exactKey, shownKey }) {
+				ed.remove(key);
+				ed.remove(key + "#maxpage");
+				ed.remove(key + "#date");
+			}
+			pushPage = DEF.PAGENUMBER_UNREAD;
+			pushMaxpage = DEF.PAGENUMBER_NONE;
+		}
+		ed.apply();
+
+		if (resolved.server != DEF.INDEX_LOCAL && mReadPositionSyncSet) {
+			ReadPositionSyncClient.pushPosition(mSharedPreferences, servers.getHost(resolved.server),
+					resolved.dirPath, resolved.fileName, pushPage, pushMaxpage, -1, -1f);
+		}
+		refreshLibraryList();
 	}
 
 	// 作品の各巻が実際にSMB上に存在するか確認し、存在しない巻をキャッシュから削除する。
@@ -7059,8 +7419,10 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		mLoadListNextFile = resolved.fileName;
 		mLoadListNextInFile = "";
 
-		// 書庫管理タブ発の「次/前ファイル」を書庫一覧全体に広げるための仮想リストを構築
-		mLibraryVirtualFileList = buildLibraryVirtualFileList();
+		// 書庫管理タブ発の「次/前ファイル」をこの作品の巻全体(フォルダをまたぐ場合を含む)に
+		// 広げるための仮想リストを構築する。他作品へは進ませない(作品の最後の巻で終了させる)ため
+		// mLibraryDrilldownWork(この巻が属する作品)の範囲だけに限定する。
+		mLibraryVirtualFileList = buildLibraryVirtualFileList(mLibraryDrilldownWork);
 		Logcat.w(logLevel, "書庫管理: 仮想ファイルリストを構築しました. " + mLibraryVirtualFileList.size() + "件");
 
 		// サムネイル解放
@@ -7085,70 +7447,164 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 	}
 
-	// 書庫一覧全体(作品一覧の並び=newest-first、各作品内はファイル名順)をフラット化し、
+	// 指定した1作品分の巻(ファイル名順、フォルダをまたぐ場合を含む)をフラット化し、
 	// nextFileOpen()の「次/前ファイル」探索対象として使えるArrayList<FileData>を組み立てる。
-	private ArrayList<FileData> buildLibraryVirtualFileList() {
+	// 他作品の巻は含めない(作品の最後の巻まで来たら次/前ファイルが見つからず終了する)。
+	private ArrayList<FileData> buildLibraryVirtualFileList(LibraryCache.LibraryWork work) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		ArrayList<FileData> list = new ArrayList<FileData>();
-		ArrayList<LibraryEntry> flat = LibraryCache.getEntries();
-		ArrayList<LibraryCache.LibraryWork> works = LibraryCache.buildWorkList(flat);
-		// ServerSelect(=SharedPreferences全読み込み)の構築は1回だけにする。全件分ループ内で
-		// 毎回作り直すと(以前実機ANRを引き起こした)メインスレッドの長時間ブロックにつながる。
+		if (work == null) {
+			return list;
+		}
+		ArrayList<LibraryEntry> volumes = new ArrayList<LibraryEntry>(work.volumes);
+		Collections.sort(volumes, new Comparator<LibraryEntry>() {
+			@Override
+			public int compare(LibraryEntry a, LibraryEntry b) {
+				return LibraryCache.compareVolumeName(a.getName(), b.getName());
+			}
+		});
+		// ServerSelect(=SharedPreferences全読み込み)の構築は1回だけにする。
 		ArrayList<LibraryServerRoot> roots = buildLibraryServerRoots();
 		int unresolved = 0;
-		for (LibraryCache.LibraryWork w : works) {
-			ArrayList<LibraryEntry> volumes = new ArrayList<LibraryEntry>(w.volumes);
-			Collections.sort(volumes, new Comparator<LibraryEntry>() {
-				@Override
-				public int compare(LibraryEntry a, LibraryEntry b) {
-					return LibraryCache.compareVolumeName(a.getName(), b.getName());
-				}
-			});
-			for (LibraryEntry e : volumes) {
-				// 各巻がどのサーバー/ディレクトリに実在するかをFileData.pathへ
-				// "<サーバー番号>|<ディレクトリパス>" の形で埋め込んでおく。
-				// 作品を跨いだ「次/前ファイル」が別フォルダ(漫画⇔Aria2c_DL等)を
-				// またぐ場合、nextFileOpen()側でこれを読み取ってフォルダを切り替える。
-				LibraryResolvedFile resolved = resolveLibraryFileLocation(e, roots, false);
-				if (resolved == null) {
-					// 登録済みSMBサーバーに一致しないエントリは次/前ファイル探索から除外する
-					unresolved++;
-					continue;
-				}
-				String encodedDir = resolved.server + "|" + resolved.dirPath;
-				list.add(new FileData(mActivity, e.getName(), encodedDir, null, e.getDateModified(), e.getSize(), false, null, null));
+		for (LibraryEntry e : volumes) {
+			// 各巻がどのサーバー/ディレクトリに実在するかをFileData.pathへ
+			// "<サーバー番号>|<ディレクトリパス>" の形で埋め込んでおく。
+			// 次/前ファイルが別フォルダ(漫画⇔Aria2c_DL等)をまたぐ場合、
+			// nextFileOpen()側でこれを読み取ってフォルダを切り替える。
+			LibraryResolvedFile resolved = resolveLibraryFileLocation(e, roots, false);
+			if (resolved == null) {
+				// 登録済みSMBサーバーに一致しないエントリは次/前ファイル探索から除外する
+				unresolved++;
+				continue;
 			}
+			String encodedDir = resolved.server + "|" + resolved.dirPath;
+			list.add(new FileData(mActivity, e.getName(), encodedDir, null, e.getDateModified(), e.getSize(), false, null, null));
 		}
-		Logcat.w(logLevel, "書庫管理: 仮想ファイルリスト構築完了. " + list.size() + "件解決, " + unresolved + "件は登録済みサーバー無しで除外");
+		Logcat.w(logLevel, "書庫管理: 仮想ファイルリスト構築完了(作品=" + work.title + "). " + list.size() + "件解決, " + unresolved + "件は登録済みサーバー無しで除外");
 		return list;
 	}
 
-	// バイト数を「12.3MB」のような表示用文字列に整形する
-	private static String formatLibraryFileSize(long bytes) {
-		if (bytes <= 0) {
-			return "0B";
+	// EverythingXのdate_modifiedはUNIX秒(ミリ秒ではない)で返るため変換する。
+	private static String formatLibraryDateLine(long epochSeconds) {
+		if (epochSeconds <= 0) {
+			return "[----/--/-- --:--:--]";
 		}
-		String[] units = {"B", "KB", "MB", "GB", "TB"};
-		int unitIndex = 0;
-		double size = bytes;
-		while (size >= 1024 && unitIndex < units.length - 1) {
-			size /= 1024;
-			unitIndex++;
-		}
-		if (unitIndex == 0) {
-			return (long) size + units[unitIndex];
-		}
-		return String.format(Locale.getDefault(), "%.1f%s", size, units[unitIndex]);
+		SimpleDateFormat sdf = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]", Locale.getDefault());
+		return sdf.format(new Date(epochSeconds * 1000L));
 	}
 
-	// EverythingXのdate_modifiedはUNIX秒(ミリ秒ではない)で返る(実機での表示検証で確認済み:
-	// ミリ秒として扱うと1970年扱いになる)。表示用の日付文字列に整形する際にミリ秒へ変換する。
-	private static String formatLibraryDate(long epochSeconds) {
-		if (epochSeconds <= 0) {
+	private static String formatLibrarySizeLine(long size) {
+		return NumberFormat.getNumberInstance().format(size) + "Bytes";
+	}
+
+	// resolveLibraryFileLocation()で解決したディレクトリパス(例: "/Aria2c_DL/"、
+	// "/漫画/[XX]作品名/")から、末尾の親フォルダ名だけを取り出す(どのフォルダの巻かの表示用)。
+	private static String extractLibraryFolderLabel(String dirPath) {
+		if (dirPath == null || dirPath.isEmpty()) {
 			return "";
 		}
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
-		return sdf.format(new Date(epochSeconds * 1000L));
+		String trimmed = dirPath;
+		while (trimmed.endsWith("/")) {
+			trimmed = trimmed.substring(0, trimmed.length() - 1);
+		}
+		int lastSlash = trimmed.lastIndexOf('/');
+		return lastSlash >= 0 ? trimmed.substring(lastSlash + 1) : trimmed;
+	}
+
+	// 書庫管理タブの各タイトルカードに表示する既読集計("既読: X/Y (Z%)"と色分け)の結果
+	private static class LibraryWorkReadSummary {
+		String status;
+		int color;
+	}
+
+	// 1作品分の巻一覧から既読集計を組み立てる。巻ごとの状態解決はドリルダウン時の
+	// ループ(buildLibraryRecordList())と同じロジック。ServerSelect/pageKeyIndex/roots は
+	// 作品ごとに作り直すと重くなるため呼び出し元(タイトル一覧構築時)で1回だけ構築して渡す。
+	private LibraryWorkReadSummary computeLibraryWorkReadSummary(LibraryCache.LibraryWork w,
+			ArrayList<LibraryServerRoot> roots, ServerSelect servers, Map<String, String> pageKeyIndex, boolean resolveKey) {
+		int total = 0;
+		int read = 0;
+		int unread = 0;
+		for (LibraryEntry e : w.volumes) {
+			total++;
+			LibraryResolvedFile resolved = resolveLibraryFileLocation(e, roots, false);
+			if (resolved == null) {
+				continue;
+			}
+			String rootUri = servers.getURI(resolved.server);
+			String ruser = servers.getUser(resolved.server);
+			String rpass = servers.getPass(resolved.server);
+			String fileUri = DEF.relativePath(mActivity, rootUri, resolved.dirPath, resolved.fileName);
+			String key = resolveKey
+					? DEF.resolvePageKeyIndexed(mSharedPreferences, fileUri, ruser, rpass, pageKeyIndex)
+					: DEF.createUrl(fileUri, ruser, rpass);
+			int maxpage = mSharedPreferences.getInt(key + "#maxpage", DEF.PAGENUMBER_NONE);
+			int state = mSharedPreferences.getInt(key, DEF.PAGENUMBER_UNREAD);
+			String status = formatLibraryReadStatus(state, maxpage);
+			if (status.equals("100% Read.")) {
+				read++;
+			}
+			else if (status.equals("Unread.")) {
+				unread++;
+			}
+		}
+
+		LibraryWorkReadSummary summary = new LibraryWorkReadSummary();
+		int percent = (total > 0) ? (int) ((read * 100L) / total) : 0;
+		summary.status = String.format(getResources().getString(R.string.libraryReadSummary), read, total, percent);
+		if (total == 0) {
+			summary.color = 0;
+		}
+		else if (read == total) {
+			summary.color = mAftColor;
+		}
+		else if (unread == total) {
+			summary.color = mBefColor;
+		}
+		else {
+			summary.color = mNowColor;
+		}
+		return summary;
+	}
+
+	// FileListArea.calcRowHeight()の既読文言判定と同じロジック(state/maxpageから
+	// "Unread."/"NN% Read."/"100% Read."を再現する)。
+	private static String formatLibraryReadStatus(int state, int maxpage) {
+		int margin = ImageActivity.isDualMode();
+		if (state == DEF.PAGENUMBER_READ || ((state >= maxpage - margin) && (state > 0) && (maxpage > 0))) {
+			return "100% Read.";
+		}
+		else if ((state >= 0) && (maxpage > 0)) {
+			float rate = (float) (state + 1) / (float) maxpage;
+			return (int) (rate * 100) + "% Read.";
+		}
+		else if (state == DEF.PAGENUMBER_UNREAD) {
+			return "Unread.";
+		}
+		else if (state != DEF.PAGENUMBER_UNREAD && maxpage == DEF.PAGENUMBER_NONE) {
+			return "??% Read.";
+		}
+		return "";
+	}
+
+	// FileListArea(通常のファイル一覧)のタイトル色分けロジックと同じ対応関係
+	// (未読=mBefColor、既読=mAftColor、不明=mNowColor、読書中=mNowColor/mAftColor)。
+	// 書庫管理タブの巻は常にアーカイブ系ファイルのため、ディレクトリ用の色分岐は不要。
+	private int resolveLibraryTitleColor(int state, int maxpage) {
+		int margin = ImageActivity.isDualMode();
+		switch (state) {
+			case DEF.PAGENUMBER_UNREAD:
+				return mBefColor;
+			case DEF.PAGENUMBER_READ:
+				return mAftColor;
+			case DEF.PAGENUMBER_NONE:
+				return mNowColor;
+			default:
+				if ((state >= maxpage - margin) && (state > 0) && (maxpage > 0)) {
+					return mAftColor;
+				}
+				return mNowColor;
+		}
 	}
 
 	/**
@@ -9005,6 +9461,50 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				}
 				return true;
 			}
+			case DEF.HMSG_LIBRARY_READPOSITION_PULL_RESULT: {
+				// 書庫管理タブ向け: サーバー上の既読位置一覧を、現在キャッシュされている全巻の
+				// 解決済みパス(サーバー/フォルダ/ファイル名)にマッチさせてローカルへ反映する。
+				// 通常のファイル一覧と違い「現在のフォルダ」が無いため、キャッシュ全件が対象。
+				@SuppressWarnings("unchecked")
+				ArrayList<ReadPositionSyncClient.Position> libPositions = (ArrayList<ReadPositionSyncClient.Position>) msg.obj;
+				int libUpdated = 0;
+				if (libPositions != null && !libPositions.isEmpty()) {
+					HashMap<String, ReadPositionSyncClient.Position> byPathFile = new HashMap<String, ReadPositionSyncClient.Position>();
+					for (ReadPositionSyncClient.Position p : libPositions) {
+						if (p.path != null && p.file != null) {
+							byPathFile.put(p.path + "\u0000" + p.file, p);
+						}
+					}
+					ArrayList<LibraryServerRoot> libRoots = buildLibraryServerRoots();
+					ServerSelect libServers = new ServerSelect(mSharedPreferences, this);
+					Editor libEd = mSharedPreferences.edit();
+					for (LibraryEntry e : LibraryCache.getEntries()) {
+						LibraryResolvedFile resolved = resolveLibraryFileLocation(e, libRoots, false);
+						if (resolved == null) {
+							continue;
+						}
+						ReadPositionSyncClient.Position match = byPathFile.get(resolved.dirPath + "\u0000" + DEF.stripArchiveExt(resolved.fileName));
+						if (match == null) {
+							continue;
+						}
+						String rootUri = libServers.getURI(resolved.server);
+						String libUser = libServers.getUser(resolved.server);
+						String libPass = libServers.getPass(resolved.server);
+						String fileUri = DEF.relativePath(mActivity, rootUri, resolved.dirPath, resolved.fileName);
+						String key = DEF.createUrl(fileUri, libUser, libPass);
+						libEd.putInt(key, match.page);
+						libEd.putInt(key + "#maxpage", match.maxpage);
+						libEd.putInt(key + "#date", (int) match.date);
+						libUpdated++;
+					}
+					libEd.apply();
+				}
+				if (libUpdated > 0 && mListScreenView.getListType() == RecordList.TYPE_LIBRARY) {
+					refreshLibraryList();
+				}
+				Toast.makeText(mActivity, getResources().getString(R.string.readPositionSyncDone, libUpdated), Toast.LENGTH_SHORT).show();
+				return true;
+			}
 			case DEF.HMSG_READPOSITION_PULL_RESULT: {
 				// サーバー上の既読位置一覧を受信し、現在の一覧に表示されているファイルにマッチする分だけ
 				// ローカルキャッシュ(既読/未読表示に使われるSharedPreferences)を上書きする。
@@ -9755,6 +10255,16 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 			threadstartcheck = true;
 			mNowItem = -1;
 		}
+		if (mNowItem != -1 && mOperate[mNowItem] == OPERATE_FIRST
+				&& (mFileData.getType() == FileData.FILETYPE_ARC || mFileData.getType() == FileData.FILETYPE_PDF)) {
+			// 先頭から読む(画像ビューアで開くファイル): 既読位置は消さず、開く側で無視させる
+			markOpenFromTop(mFileData.getName());
+			threadstartcheck = true;
+			releaseThumbnail();
+			openFile(mFileData, "");
+			mNowItem = -1;
+			return;
+		}
 		if (mNowItem != -1 && (mOperate[mNowItem] == OPERATE_NONREAD || mOperate[mNowItem] == OPERATE_FIRST)) {
 			// 未読/先頭ページを開く
 			if (mFileData.getType() == FileData.FILETYPE_EPUB && DEF.TEXT_VIEWER == mEpubViewer && !mEpubWebView) {
@@ -10250,6 +10760,14 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		}
 	}
 
+	// SharedPreferencesへの書き込みを検知する(onResume()から登録、onDestroy()まで解除しない)。
+	// 既読位置/栞/設定のどれが変わったかまでは区別せず、書庫管理タブの既読集計を「要再計算」に
+	// するだけの粗い合図として使う(キー単位で絞り込むより、無関係な書き込みを稀に拾う方が安全)。
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		mLibraryReadStatusDirty = true;
+	}
+
 	/**
 	 * 履歴系リストを最新状態にする
 	 */
@@ -10258,11 +10776,45 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (listtype == RecordList.TYPE_LIBRARY) {
 			// 書庫管理タブ: RecordList汎用の.dat機構は使わない(LibraryCacheが別途永続化する)ため、
 			// 他タブのcheckModified/load/BookmarkComparatorソートには乗せず専用に組み立てる。
-			Logcat.w(Logcat.LOG_LEVEL_WARN, "書庫管理タブを開きました. キャッシュ件数=" + LibraryCache.getEntries().size()
-					+ ", ドリルダウン中=" + (mLibraryDrilldownWork != null ? mLibraryDrilldownWork.title : "無し")
-					+ ", フィルタ=" + mLibraryFilterText);
-			ArrayList<RecordItem> recordList = buildLibraryRecordList();
-			mListScreenView.setRecordList(list, recordList);
+			//
+			// この呼び出しは「書庫管理タブを開いた時」だけでなく、updateRecordList()が
+			// タブ切替/スワイプ開始/onActivityResult復帰のたびに全タブへ一括で発行するため、
+			// 書庫管理タブを見ていない/操作していない時にも毎回飛んでくる。実環境(1700作品超)では
+			// 一覧の再構築・再レイアウト自体に130~230ms前後かかる(計測で確認済み)ため、
+			// 内容が前回から変化していない場合はこれを省略する。
+			// ドリルダウン中(1作品の巻一覧)は件数が少なく無視できるコストのため対象外。
+			if (mLibraryDrilldownWork != null) {
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "書庫管理タブを開きました(ドリルダウン中). title=" + mLibraryDrilldownWork.title);
+				ArrayList<RecordItem> recordList = buildLibraryRecordList();
+				mListScreenView.setRecordList(list, recordList);
+				mLibraryReadStatusDirty = false;
+				return;
+			}
+
+			ArrayList<LibraryCache.LibraryWork> currentWorks = LibraryCache.buildWorkList(LibraryCache.getEntries());
+			boolean catalogChanged = (currentWorks != mLibraryBuiltWorks);
+			boolean filterChanged = (mLibraryFilterText == null) ? (mLibraryBuiltFilterText != null) : !mLibraryFilterText.equals(mLibraryBuiltFilterText);
+			if (catalogChanged || filterChanged || list.getList() == null) {
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "書庫管理タブを開きました. キャッシュ件数=" + LibraryCache.getEntries().size() + ", フィルタ=" + mLibraryFilterText);
+				ArrayList<RecordItem> recordList = buildLibraryRecordList();
+				mListScreenView.setRecordList(list, recordList);
+				mLibraryReadStatusDirty = false;
+				return;
+			}
+
+			// 作品一覧自体は前回から変化していないため、重い再構築・再レイアウトは省略する。
+			// ただし既読状況は読書中に裏で変わりうるので、onResume()で立てたフラグがある時だけ
+			// 既読集計を再計算する(読了後に書庫管理タブへ戻ってきた際に反映させるため)。
+			// updateRecordList()はスワイプ開始のたびにも飛んでくるが、このフラグはonResume()でしか
+			// 立たないため、スクロール/スワイプ中に数秒かかる裏スレッドを連打することはない。
+			if (mLibraryReadStatusDirty) {
+				mLibraryReadStatusDirty = false;
+				ArrayList<RecordItem> current = list.getList();
+				if (mLibraryFilteredWorks != null && current != null && current.size() == mLibraryFilteredWorks.size() + 1) {
+					ArrayList<RecordItem> items = new ArrayList<RecordItem>(current.subList(1, current.size()));
+					startLibraryReadSummaryUpdate(mLibraryFilteredWorks, items);
+				}
+			}
 			return;
 		}
 		// 履歴系リストを最新状態にする
@@ -10835,4 +11387,23 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	public static boolean getWebServerIcon() {
 		return mWebServerIcon;
 	}
+	public static boolean getSearchSettingIcon() {
+		return mSearchSettingIcon;
+	}
+	private void setServerPortPassiveMode(ServerSelect server) {
+		FileAccess.setServerPort(server.getPort());
+		FileAccess.setPassiveMode(server.getPasv());
+	}
+	// 設定を検索した結果でタップした項目へスクロール移動させる
+	private void setPreferenceScannerHelper() {
+		PreferenceScannerHelper.showPreferenceScanDialog(this, (selectedKey, activityClass) -> {
+			Intent intent = new Intent(this, activityClass);
+			// どの項目にスクロール移動するかを渡す
+			if (intent != null) {
+				intent.putExtra("target_key", selectedKey);
+				startActivity(intent);
+			}
+		});
+	}
+
 }

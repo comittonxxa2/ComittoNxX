@@ -450,9 +450,17 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 				if (debug) {Log.d(TAG, "index=" + index + " loadBitmap3 中断されました. filename=" + filename);}
 				return true;
 			}
+			// ImageManagerをローカル変数で生成し、同期ブロック内で安全にアサイン
 			ImageManager imageManager = new ImageManager(mActivity, mUriPath, uri, mUser, mPass, mFileSort, mHandler, mHidden, openmode, 1);
 			synchronized (mImageMgrLock) {
-				mImageMgr  = imageManager;
+				if (mThreadBreak) {
+					try {
+						imageManager.close();
+					} catch (IOException ignored) {}
+					if (debug) {Log.d(TAG, "index=" + index + " loadBitmap3 生成直後の中断によりクローズしました.");}
+					return true;
+				}
+				mImageMgr = imageManager;
 			}
 			if (mThreadBreak) {
 				// 読み込み中断
@@ -463,14 +471,20 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 			if (debug) {Log.d(TAG, "index=" + index + " loadBitmap3 サムネイル取得します. filename=" + filename);}
 			try {
 				if (debug) {Log.d(TAG, "index=" + index + "loadBitmap3: mEpubThumb=" + mEpubThumb + ", filename=" + filename);}
-				if (mEpubThumb && type == FileData.FILETYPE_EPUB) {
-					if (debug) {Log.d(TAG, "index=" + index + "loadBitmap3: LoadEpubThumbnail を実行します. width=" + mThumbSizeW + ", height=" + mThumbSizeH + " filename=" + filename);}
-					bm = mImageMgr.LoadEpubThumbnail(mThumbSizeW, mThumbSizeH);
-				}
-				else {
-					if (debug) {Log.d(TAG, "index=" + index + "loadBitmap3: LoadThumbnail を実行します. page=0, width=" + mThumbSizeW + ", height=" + mThumbSizeH + " filename=" + filename);}
-					mImageMgr.setAccessMode(true);
-					bm = mImageMgr.LoadThumbnail(0, mThumbSizeW, mThumbSizeH);
+				// サムネイルロード処理を同期ブロックで完全に保護(外部からの予期せぬcloseを防ぐ)
+				synchronized (mImageMgrLock) {
+					if (mImageMgr == null || mThreadBreak) {
+						return false;
+					}
+					if (mEpubThumb && type == FileData.FILETYPE_EPUB) {
+						if (debug) {Log.d(TAG, "index=" + index + "loadBitmap3: LoadEpubThumbnail を実行します. width=" + mThumbSizeW + ", height=" + mThumbSizeH + " filename=" + filename);}
+						bm = mImageMgr.LoadEpubThumbnail(mThumbSizeW, mThumbSizeH);
+					}
+					else {
+						if (debug) {Log.d(TAG, "index=" + index + "loadBitmap3: LoadThumbnail を実行します. page=0, width=" + mThumbSizeW + ", height=" + mThumbSizeH + " filename=" + filename);}
+						mImageMgr.setAccessMode(true);
+						bm = mImageMgr.LoadThumbnail(0, mThumbSizeW, mThumbSizeH);
+					}
 				}
 				if (bm != null) {
 					if (debug) {Log.d(TAG, "index=" + index + " loadBitmap3: mImageMgr.LoadThumbnail() の実行に成功しました. filename=" + filename);}
@@ -482,9 +496,9 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 				Log.e(TAG, "index=" + index + " loadBitmap3 サムネイル取得でエラーになりました. filename=" + filename);
 				if (e.getLocalizedMessage() != null) {
 					Log.e(TAG, "index=" + index + " loadBitmap3 エラーメッセージ. " + e.getLocalizedMessage());
-					releaseManager();
-					return false;
 				}
+				releaseManager();
+				return false;
 			} finally {
 				if (debug) {Log.d(TAG, "index=" + index + " loadBitmap3 圧縮ファイルを開きました. filename=" + filename);}
 			}
