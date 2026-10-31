@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -36,7 +37,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 
 	private final int SELLIST_SERVER_TYPE = 0;
 
-	public static final int[] Servertype = { R.string.serverTypeSMB, R.string.serverTypeSAF, R.string.serverTypePicker, R.string.serverTypeWebDAV};
+	public static final int[] Servertype = { R.string.serverTypeSMB, R.string.serverTypeSAF, R.string.serverTypePicker, R.string.serverTypeWebDAV, R.string.serverTypeFTP, R.string.serverTypeFTPS, R.string.serverTypeSFTP};
 
 	private ListDialog mListDialog;
 	private int mSelectMode;
@@ -49,10 +50,13 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 	private TextView mTextHost;
 	private TextView mTextUser;
 	private TextView mTextPass;
+	private TextView mTextPort;
 	private TextView mTextProvider;
 	private EditText mEditName;
 	private EditText mEditHost;
 	private EditText mEditUser;
+	private EditText mEditPort;
+	private CheckBox mChkPasv;
 	private ViewGroup mLayoutPass;
 	private EditText mEditPass;
 	private Button mBtnProvider;
@@ -68,6 +72,8 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 	private String mUser;
 	private String mPass;
 	private String mProvider;
+	private String mPort;
+	private boolean mPasv;
 
 	SearchListener mListener;
 
@@ -88,6 +94,8 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 		mHost = mServer.getHost(index);
 		mUser = mServer.getUser(index);
 		mPass = mServer.getPass(index);
+		mPasv = mServer.getPasv(index);
+		mPort = mServer.getPort(index);
 		mProvider = mServer.getProvider(index);
 
 		Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + mName + ", host=" + mHost + ", user=" + mUser + ", pass=" + mPass + ", provider=" + mProvider);
@@ -113,10 +121,13 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 		mTextHost = (TextView) this.findViewById(R.id.text_host);
 		mTextUser = (TextView) this.findViewById(R.id.text_user);
 		mTextPass = (TextView) this.findViewById(R.id.text_pass);
+		mTextPort = (TextView) this.findViewById(R.id.text_port);
+		mChkPasv = (CheckBox) this.findViewById(R.id.chk_pasv);
 		mTextProvider = (TextView) this.findViewById(R.id.text_provider);
 		mEditName = (EditText) this.findViewById(R.id.edit_name);
 		mEditHost = (EditText) this.findViewById(R.id.edit_host);
 		mEditUser = (EditText) this.findViewById(R.id.edit_user);
+		mEditPort = (EditText) this.findViewById(R.id.edit_port);
 		mLayoutPass = (ViewGroup) this.findViewById(R.id.layout_pass);
 		mEditPass = (EditText) this.findViewById(R.id.edit_pass);
 		mBtnProvider  = (Button) this.findViewById(R.id.button_provider);
@@ -129,6 +140,8 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 		mEditHost.setText(mHost);
 		mEditUser.setText(mUser);
 		mEditPass.setText(mPass);
+		mEditPort.setText(mPort);
+		mChkPasv.setChecked(mPasv);
 		if (mProvider.isEmpty() || mAccessType == DEF.ACCESS_TYPE_PICKER) {
 			mBtnProvider.setText(R.string.svProviderUnselected);
 		}
@@ -163,7 +176,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 
 	public interface SearchListener extends EventListener {
 	    // 入力
-	    public void onSearch(int accessType, String name, String host, String user, String pass, String path, String provider, String dispName);
+	    public void onSearch(int accessType, String name, String host, String user, String pass, String path, String provider, String dispName, boolean pasv, String port);
 	    public void onCancel();
 	    public void onClose();
 	}
@@ -180,10 +193,12 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			String path = "";
 			String provider = "";
 			String dispName = "";
+			String port = "";
+			boolean pasv;
 			if (mEditName.getText() != null) {
 				name = mEditName.getText().toString().trim();
 			}
-			if (mAccessType == DEF.ACCESS_TYPE_SMB || mAccessType == DEF.ACCESS_TYPE_WEBDAV) {
+			if (mAccessType == DEF.ACCESS_TYPE_SMB || mAccessType == DEF.ACCESS_TYPE_WEBDAV || mAccessType == DEF.ACCESS_TYPE_FTP || mAccessType == DEF.ACCESS_TYPE_FTPS || mAccessType == DEF.ACCESS_TYPE_SFTP) {
 				if (mEditHost.getText() != null) {
 					host = mEditHost.getText().toString().trim();
 				}
@@ -193,9 +208,12 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 				if (mEditPass.getText() != null) {
 					pass = mEditPass.getText().toString().trim();
 				}
+				if (mEditPort.getText() != null) {
+					port = mEditPort.getText().toString().trim();
+				}
 				path = "/";
 
-				dispName = ServerSelect.dispName(host, user, pass, (mAccessType == DEF.ACCESS_TYPE_WEBDAV) ? true : false);
+				dispName = ServerSelect.dispName(host, user, pass, mAccessType);
 			}
 			else if (mAccessType == DEF.ACCESS_TYPE_SAF || mAccessType == DEF.ACCESS_TYPE_PICKER) {
 				provider = mProvider;
@@ -203,9 +221,10 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 				path = "/";
 				dispName = SafFileAccess.getPathName(mActivity, mProvider);
 			}
+			pasv = mChkPasv.isChecked();
 
-			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName);
-			mListener.onSearch(mAccessType, name, host, user, pass, path, provider, dispName);
+			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName + ", pasv=" + pasv + ", port=" + port);
+			mListener.onSearch(mAccessType, name, host, user, pass, path, provider, dispName, pasv, port);
 			dismiss();
 		}
 		else if (v == mBtnClear) {
@@ -217,6 +236,8 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			mEditPass.setText("");
 			mProvider = "";
 			mBtnProvider.setText(R.string.svProviderUnselected);
+			mEditPort.setText("");
+			mChkPasv.setChecked(true);
 		}
 		else if (v == mBtnCancel) {
 			Logcat.d(logLevel, "v == mBtnCancel");
@@ -275,13 +296,15 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			String user = "";
 			String pass = "";
 			String path = "";
+			String port = "";
 			String dispName = SafFileAccess.getPathName(mActivity, mProvider);
 			if (mEditName.getText() != null) {
 				name = mEditName.getText().toString().trim();
 			}
+			boolean pasv= false;
 
 			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName);
-			mListener.onSearch(mAccessType, name, host, user, pass, path, provider, dispName);
+			mListener.onSearch(mAccessType, name, host, user, pass, path, provider, dispName, pasv, port);
 			dismiss();
 		}
 
@@ -334,7 +357,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 	}
 
 	private void showItem(int serverType) {
-		if (serverType == DEF.ACCESS_TYPE_SMB || serverType == DEF.ACCESS_TYPE_WEBDAV) {
+		if (serverType == DEF.ACCESS_TYPE_SMB || serverType == DEF.ACCESS_TYPE_WEBDAV || serverType == DEF.ACCESS_TYPE_FTP || serverType == DEF.ACCESS_TYPE_FTPS || serverType == DEF.ACCESS_TYPE_SFTP) {
 			mTextName.setVisibility(View.VISIBLE);
 			mTextHost.setVisibility(View.VISIBLE);
 			mTextUser.setVisibility(View.VISIBLE);
@@ -346,19 +369,36 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			mLayoutPass.setVisibility(View.VISIBLE);
 			mEditPass.setVisibility(View.VISIBLE);
 			mBtnProvider.setVisibility(View.GONE);
+			if (serverType == DEF.ACCESS_TYPE_FTP || serverType == DEF.ACCESS_TYPE_FTPS || serverType == DEF.ACCESS_TYPE_SFTP) {
+				mTextPort.setVisibility(View.VISIBLE);
+				mEditPort.setVisibility(View.VISIBLE);
+			}
+			else {
+				mTextPort.setVisibility(View.GONE);
+				mEditPort.setVisibility(View.GONE);
+			}
+			if (serverType == DEF.ACCESS_TYPE_FTP || serverType == DEF.ACCESS_TYPE_FTPS) {
+				mChkPasv.setVisibility(View.VISIBLE);
+			}
+			else {
+				mChkPasv.setVisibility(View.GONE);
+			}
 		}
 		else {
 			mTextName.setVisibility(View.VISIBLE);
 			mTextHost.setVisibility(View.GONE);
 			mTextUser.setVisibility(View.GONE);
 			mTextPass.setVisibility(View.GONE);
+			mTextPort.setVisibility(View.GONE);
 			mTextProvider.setVisibility(View.VISIBLE);
 			mEditName.setVisibility(View.VISIBLE);
 			mEditHost.setVisibility(View.GONE);
 			mEditUser.setVisibility(View.GONE);
+			mEditPort.setVisibility(View.GONE);
 			mLayoutPass.setVisibility(View.GONE);
 			mEditPass.setVisibility(View.GONE);
 			mBtnProvider.setVisibility(View.VISIBLE);
+			mChkPasv.setVisibility(View.GONE);
 		}
 		if (serverType == DEF.ACCESS_TYPE_PICKER){
 			mBtnClear.setVisibility(View.GONE);
