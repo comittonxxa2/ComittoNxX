@@ -58,8 +58,13 @@ public class FileAccess {
 	private SmbRandomAccessFile mSmbRandomAccessFile;
 	private SafRandomAccessFile mSafRandomAccessFile;
 	private WebDavRandomAccessFile mWebDavRandomAccessFile;
+	private FtpRandomAccessFile mFtpRandomAccessFile;
+	private SftpRandomAccessFile mSftpRandomAccessFile;
+
 	private static Object mLock1 = new Object();
 	private static Object mLock2 = new Object();
+	private static String mPort;
+	private static boolean mPassive;
 
 	public FileAccess (@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @Nullable Handler handler) {
 		mActivity = activity;
@@ -81,6 +86,15 @@ public class FileAccess {
 		}
 		else if (uri.startsWith("http://")) {
 			return DEF.ACCESS_TYPE_WEBDAV;
+		}
+		else if (uri.startsWith("ftp://")) {
+			return DEF.ACCESS_TYPE_FTP;
+		}
+		else if (uri.startsWith("ftps://")) {
+			return DEF.ACCESS_TYPE_FTPS;
+		}
+		else if (uri.startsWith("sftp://")) {
+			return DEF.ACCESS_TYPE_SFTP;
 		}
 		else {
 			return DEF.ACCESS_TYPE_LOCAL;
@@ -109,6 +123,15 @@ public class FileAccess {
 				result = WebDavFileAccess.filename(uri);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				result = FtpFileAccess.filename(uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				result = SftpFileAccess.filename(uri);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -135,6 +158,15 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_WEBDAV: {
 				result = WebDavFileAccess.parent(uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				result = FtpFileAccess.parent(uri);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				result = SftpFileAccess.parent(uri);
 				break;
 			}
 		}
@@ -167,6 +199,15 @@ public class FileAccess {
 				result = WebDavFileAccess.relativePath(base, target);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				result = FtpFileAccess.relativePath(base, target);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				result = SftpFileAccess.relativePath(base, target);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -192,6 +233,15 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_WEBDAV: {
 				length = WebDavFileAccess.length(uri, user, pass);
+				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				length = FtpFileAccess.length(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				length = SftpFileAccess.length(uri, user, pass, mPort);
 				break;
 			}
 		}
@@ -255,6 +305,23 @@ public class FileAccess {
 				}
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				if (mFtpRandomAccessFile != null) {
+					length = mFtpRandomAccessFile.length();
+				} else {
+					length = FtpFileAccess.length(mURI, mUser, mPass, accessType(mURI) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+				}
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				if (mSftpRandomAccessFile != null) {
+					length = mSftpRandomAccessFile.length();
+				} else {
+					length = SftpFileAccess.length(mURI, mUser, mPass, mPort);
+				}
+				break;
+			}
 		}
 		Logcat.d(logLevel, MessageFormat.format("終了します. length={0}", new Object[]{length}));
 		return length;
@@ -285,6 +352,13 @@ public class FileAccess {
 			case DEF.ACCESS_TYPE_WEBDAV: {
 				parcelFileDescriptor = WebDavFileAccess.openParcelFileDescriptor(activity, uri, user, pass);
 				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				return FtpFileAccess.openParcelFileDescriptor(activity, uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				return SftpFileAccess.openParcelFileDescriptor(activity, uri, user, pass, mPort);
 			}
 		}
 		Logcat.d(logLevel, "終了します.");
@@ -333,6 +407,23 @@ public class FileAccess {
 				}
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				try {
+					mFtpRandomAccessFile = new FtpRandomAccessFile(mURI, mUser, mPass, accessType(mURI) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+				} catch (Exception e) {
+					throw new FileAccessException(TAG + " openRandomAccessFile: FTP: " + e.getMessage());
+				}
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				try {
+					mSftpRandomAccessFile = new SftpRandomAccessFile(mURI, mUser, mPass, mPort);
+				} catch (Exception e) {
+					throw new FileAccessException(TAG + " openRandomAccessFile: SFTP: " + e.getMessage());
+				}
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します.");
 	}
@@ -373,6 +464,15 @@ public class FileAccess {
 					throw new IOException("WebDavRandomAccessFile is not initialized.");
 				}
 				mWebDavRandomAccessFile.seek(pos);
+				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				if (mFtpRandomAccessFile != null) mFtpRandomAccessFile.seek(pos);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				if (mSftpRandomAccessFile != null) mSftpRandomAccessFile.seek(pos);
 				break;
 			}
 		}
@@ -424,6 +524,15 @@ public class FileAccess {
 				if (mWebDavRandomAccessFile != null) {
 					result = mWebDavRandomAccessFile.getFilePointer();
 				}
+				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				if (mFtpRandomAccessFile != null) result = mFtpRandomAccessFile.getFilePointer();
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				if (mSftpRandomAccessFile != null) result = mSftpRandomAccessFile.getFilePointer();
 				break;
 			}
 		}
@@ -479,6 +588,15 @@ public class FileAccess {
 				result = mWebDavRandomAccessFile.read(buf, off, size);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				if (mFtpRandomAccessFile != null) result = mFtpRandomAccessFile.read(buf, off, size);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				if (mSftpRandomAccessFile != null) result = mSftpRandomAccessFile.read(buf, off, size);
+				break;
+			}
 		}
 		Logcat.d(logLevel, MessageFormat.format("終了します. ret={0}, off={1}, mPos={2}, length={3}", new Object[]{result, off, getFilePointer(), length()}));
 		return result;
@@ -532,6 +650,15 @@ public class FileAccess {
 				mWebDavRandomAccessFile.write(buf, off, size);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				if (mFtpRandomAccessFile != null) mFtpRandomAccessFile.write(buf, off, size);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				if (mSftpRandomAccessFile != null) mSftpRandomAccessFile.write(buf, off, size);
+				break;
+			}
 		}
 		Logcat.d(logLevel,"終了します.");
 	}
@@ -568,6 +695,14 @@ public class FileAccess {
 					if (mWebDavRandomAccessFile != null) {
 						mWebDavRandomAccessFile.close();
 						mWebDavRandomAccessFile = null;
+					}
+					if (mFtpRandomAccessFile != null) {
+						mFtpRandomAccessFile.close();
+						mFtpRandomAccessFile = null;
+					}
+					if (mSftpRandomAccessFile != null) {
+						mSftpRandomAccessFile.close();
+						mSftpRandomAccessFile = null;
 					}
 					if (mSafFile != null) {
 						mSafFile = null;
@@ -611,6 +746,11 @@ public class FileAccess {
 				result = WebDavFileAccess.getInputStream(uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.getInputStream(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.getInputStream(uri, user, pass, mPort);
 		}
 		Logcat.d(logLevel, "終了します.");
 		return result;
@@ -644,6 +784,11 @@ public class FileAccess {
 				result = WebDavFileAccess.getOutputStream(uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.getOutputStream(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.getOutputStream(uri, user, pass, mPort);
 		}
 		Logcat.d(logLevel, "終了します.");
 		return result;
@@ -698,6 +843,11 @@ public class FileAccess {
 				result = WebDavFileAccess.exists(uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.exists(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.exists(uri, user, pass, mPort);
 		}
 		Logcat.d(logLevel, "終了します.");
 		return result;
@@ -729,6 +879,11 @@ public class FileAccess {
 				result = WebDavFileAccess.isDirectory(uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.isDirectory(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.isDirectory(uri, user, pass, mPort);
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -763,6 +918,11 @@ public class FileAccess {
 				result = WebDavFileAccess.listFiles(activity, uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.listFiles(activity, uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.listFiles(activity, uri, user, pass, mPort);
 		}
 		Logcat.d(logLevel, "終了します. result.size()=" + result.size());
 		return result;
@@ -791,6 +951,15 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_WEBDAV: {
 				result = WebDavFileAccess.renameTo(fromfile, tofile, user, pass);
+				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				result = FtpFileAccess.renameTo(uri, user, pass, fromfile, tofile, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				result = SftpFileAccess.renameTo(uri, user, pass, fromfile, tofile, mPort);
 				break;
 			}
 		}
@@ -847,6 +1016,15 @@ public class FileAccess {
 				result = WebDavFileAccess.date(uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				result = FtpFileAccess.date(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				result = SftpFileAccess.date(uri, user, pass, mPort);
+				break;
+			}
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -901,6 +1079,11 @@ public class FileAccess {
 				result = WebDavFileAccess.delete(uri, user, pass);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.delete(uri, user, pass, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.delete(uri, user, pass, mPort);
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -932,6 +1115,11 @@ public class FileAccess {
 				result = WebDavFileAccess.mkdir(uri, user, pass, item);
 				break;
 			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS:
+				return FtpFileAccess.mkdir(uri, user, pass, item, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+			case DEF.ACCESS_TYPE_SFTP:
+				return SftpFileAccess.mkdir(uri, user, pass, item, mPort);
 		}
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
@@ -957,6 +1145,15 @@ public class FileAccess {
 			}
 			case DEF.ACCESS_TYPE_WEBDAV: {
 				result = WebDavFileAccess.createFile(uri, user, pass, item);
+				break;
+			}
+			case DEF.ACCESS_TYPE_FTP:
+			case DEF.ACCESS_TYPE_FTPS: {
+				result = FtpFileAccess.createFile(uri, user, pass, item, accessType(uri) == DEF.ACCESS_TYPE_FTPS, mPort, mPassive);
+				break;
+			}
+			case DEF.ACCESS_TYPE_SFTP: {
+				result = SftpFileAccess.createFile(uri, user, pass, item, mPort);
 				break;
 			}
 		}
@@ -1060,4 +1257,19 @@ public class FileAccess {
 		}
 	}
 
+	public static void setServerPort(String port) {
+		mPort = port;
+	}
+
+	public static void setPassiveMode(boolean passive) {
+		mPassive = passive;
+	}
+
+	public static String getServerPort() {
+		return mPort;
+	}
+
+	public static boolean getPassiveMode() {
+		return mPassive;
+	}
 }

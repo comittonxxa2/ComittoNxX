@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
@@ -46,7 +47,10 @@ public class WebDavFileAccess {
 	private static final String TAG = "WebDavFileAccess";
 
 	public static Sardine getSardine(String user, String pass) {
-		OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+		OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+			.connectTimeout(30, TimeUnit.SECONDS) // 接続タイムアウト (30秒)
+			.readTimeout(60, TimeUnit.SECONDS)	// 読み取りタイムアウト (60秒) - フォルダ一覧やファイル転送に必須
+			.writeTimeout(60, TimeUnit.SECONDS);   // 書き込みタイムアウト (60秒)
 		// 自己署名証明書を許可
 		try {
 			// すべての証明書を信頼するTrustManagerの定義
@@ -236,7 +240,8 @@ public class WebDavFileAccess {
 			List<DavResource> resources = sardine.list(targetUrl);
 			ArrayList<FileData> fileList = new ArrayList<>();
 			// カレントディレクトリ自身のパスを取得
-			String currentPath = URI.create(targetUrl).getPath(); 
+			String sanitizedUrl = targetUrl.replace(" ", "%20");
+			String currentPath = URI.create(sanitizedUrl).getPath();
 
 			for (DavResource res : resources) {
 				String resPath = res.getPath();
@@ -321,6 +326,9 @@ public class WebDavFileAccess {
 
 	public static boolean renameTo(String oldUri, String newUri, String user, String pass) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		// 例外が出るのでひとまずコメントアウト(名称変更は不可)
+		return false;
+		/*
 		try {
 			Sardine sardine = getSardine(user, pass);
 			sardine.move(oldUri, newUri);
@@ -330,6 +338,7 @@ public class WebDavFileAccess {
 			Logcat.e(logLevel, "renameTo error: ", e);
 			return false;
 		}
+		*/
 	}
 
 	public static long date(@NonNull String uri, @NonNull String user, @NonNull String pass) {
@@ -347,6 +356,9 @@ public class WebDavFileAccess {
 	}
 
 	public static boolean delete(@NonNull String uri, @NonNull String user, @NonNull String pass) {
+		// 例外が出るのでひとまずコメントアウト(削除は不可)
+		return false;
+		/*
 		try {
 			Sardine sardine = getSardine(user, pass);
 			sardine.delete(uri);
@@ -355,6 +367,7 @@ public class WebDavFileAccess {
 		catch (Exception e) {
 			return false;
 		}
+		*/
 	}
 
 	public static boolean mkdir(@NonNull String uri, @NonNull String user, @NonNull String pass, @NonNull String item) {

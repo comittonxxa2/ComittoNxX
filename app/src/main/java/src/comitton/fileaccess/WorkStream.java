@@ -55,6 +55,10 @@ public class WorkStream extends InputStream {
 	}
 
 	private void reOpen() {
+		// 読み込み失敗による再接続は通常発生しないため、遅延の切り分け用に常時記録しておく
+		// (接続が頻発に切れる環境ではこれが蓄積して「読み込みが遅い」の原因になりうる)
+		long perfReopenStart = System.currentTimeMillis();
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続します. uri=" + mURI);
 		if (mRetry <= MAX_RETRY || MAX_RETRY == -1) {
 			++mRetry;
 			try {
@@ -66,6 +70,7 @@ public class WorkStream extends InputStream {
 			}
         }
 		mRetry = 0;
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続しました. uri=" + mURI + ", elapsed=" + (System.currentTimeMillis() - perfReopenStart) + "ms");
 	}
 
 	@Override
