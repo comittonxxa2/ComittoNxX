@@ -256,10 +256,13 @@
     <string name="svHostTitle">Host (Server/Shared Folder)</string>
     <string name="svUserTitle">Account Name (Anonymous is blank, guest is guest)</string>
     <string name="svPassTitle">Password</string>
+    <string name="svPortTitle">Port Number(Default is blank)</string>
+    <string name="svPasvTitle">Passive mode</string>
     <string name="svProviderTitle">URL</string>
     <string name="svNameHist">Comics Server</string>
     <string name="svHostHist">192.168.1.120/comics (Example)</string>
     <string name="svUserHist">Domain;User</string>
+    <string name="svPortHist">21/990/22</string>
     <string name="svPassHist">Password</string>
     <string name="svProviderUnselected">Please select</string>
     <string name="svProviderSelected">Selected</string>
@@ -564,6 +567,7 @@
     <string name="toolbar05">Exit</string>
     <string name="toolbar06">Sync</string>
     <string name="toolbar07">Web sharing</string>
+    <string name="toolbar08">Search settings</string>
     <string name="readPositionSyncDone">Synced read position for %1$d file(s)</string>
     <string name="readPositionSyncUnavailable">Bookmark sync server is not configured, or this is a local file list</string>
     <string name="listname00">File</string>
@@ -576,9 +580,11 @@
     <string name="listname07">Library</string>
     <string name="libraryTapToSearch">Tap to search Library titles</string>
     <string name="libraryVolumeCount">%1$d volume(s)</string>
+    <string name="libraryReadSummary">Read: %1$d/%2$d (%3$d%%)</string>
     <string name="librarySyncDone">Library updated: %1$d new item(s)</string>
     <string name="libraryMenuRescan">Scan server now</string>
     <string name="libraryMenuPull">Update from server</string>
+    <string name="libraryMenuReadPositionSync">Update read position</string>
     <string name="libraryRescanTriggered">Server scan started. Use \"Update from server\" once it finishes.</string>
     <string name="libraryRescanCooldown">A scan already ran recently. Use \"Update from server\" to fetch the current catalog.</string>
     <string name="libraryRescanError">Could not start the server scan.</string>
@@ -872,6 +878,9 @@
     <string name="serverTypeSAF">Storage Access Framework</string>
     <string name="serverTypePicker">File Picker</string>
     <string name="serverTypeWebDAV">WebDAV</string>
+    <string name="serverTypeFTP">FTP</string>
+    <string name="serverTypeFTPS">FTPS</string>
+    <string name="serverTypeSFTP">SFTP</string>
     <string name="SafChooseTitle">Select a folder.</string>
     <string name="permissionDenied">Permission denied.</string>
     <string name="noResponseProvider">No response from content provider.</string>
@@ -975,6 +984,7 @@
 
     <string name="selectEncryption">Encrypt the contents of the configuration file</string>
     <string name="selectIgnoreReadInfo">Ignore read information</string>
+    <string name="selectJsonFormat">Output in JSON format</string>
 
     <string name="ssort00">Follow the sort display settings</string>
     <string name="ssort01">File name (ascending)</string>
@@ -1178,6 +1188,43 @@
     <string name="webserverauth00">none</string>
     <string name="webserverauth01">Basic authentication</string>
     <string name="webserverauth02">Digest authentication</string>
+
+    <string name="searchPreferenceScanner">Enter search string</string>
+    <string name="untitle">Untitled</string>
+    <string name="notfound">not found</string>
+    <string name="history">History</string>
+    <string name="clearhistory">Clear history</string>
+    <string name="listPreferenceScanner">Searching and Listing Settings Items</string>
+    <string name="closePreferenceScanner">close</string>
+    <string name="search_summary">Include the summary in the search results.</string>
+
+    <string name="filelist">Settings for File List</string>
+    <string name="sort"></string>
+    <string name="recorder">Settings for Recoder</string>
+    <string name="filecolor">Color Settings for File List</string>
+    <string name="bookshelf">Bookshelf management</string>
+    <string name="themecolor">Switching themes</string>
+    <string name="image">Settings for Image Viewer</string>
+    <string name="margincut">Advanced settings for remove the margin</string>
+    <string name="cornerendimage">Assign actions to the corners or edges as tap areas(Image Viewer)</string>
+    <string name="imagedetail">Detail Settings for Image Viewer</string>
+    <string name="text">Settings for Text Viewer</string>
+    <string name="cornerendtext">Assign actions to the corners or edges as tap areas(Text Viewer)</string>
+    <string name="epub">Settings for EPUB</string>
+    <string name="cornerendepub">Assign actions to the corners or edges as tap areas(EPUB)</string>
+    <string name="imagetextdetail">Detail Settings for Image &amp; Text</string>
+    <string name="imagetextcolor">Color Settings for Image &amp; Text</string>
+    <string name="common">Settings for Common Operation</string>
+    <string name="noise">Settings for Noise Operation</string>
+    <string name="cache">Settings for memory cache</string>
+    <string name="customurlscheme">Setting for custom URL scheme</string>
+    <string name="setservermessageblock">Setting for SMB(Server Message Block)</string>
+    <string name="seteverything">Setting for Everything Search</string>
+    <string name="setbookmarksync">Setting for Bookmark Sync</string>
+    <string name="sethardwareselectkey">Managing hardware keys</string>
+    <string name="webview">Webview screen settings</string>
+    <string name="webserver">Setting for Web Sharing</string>
+    <string name="config">Setting</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
