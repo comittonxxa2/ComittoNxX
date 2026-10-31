@@ -477,6 +477,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="The limit on the number of pages to retrieve images from HTML and text links." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SearchSettingIcon"
+            android:summary="Check this box to search for settings items in Word."
+            android:title="Show settings search icon" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
