@@ -258,8 +258,10 @@ public class ToolbarArea {
 		int listnum = BUTTON_NUM;
 		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
 		boolean mWebServerIconSet = FileSelectActivity.getWebServerIcon();
+		boolean mSearchSettingIcon = FileSelectActivity.getSearchSettingIcon();
 		listnum = (mReadPositionSyncSet) ? (listnum + 1) : listnum;
 		listnum = (mWebServerIconSet) ? (listnum + 1) : listnum;
+		listnum = (mSearchSettingIcon) ? (listnum + 1) : listnum;
 		int[] listtype = new int[listnum];
 		int index = 0;
 		listtype[index] = R.string.toolbar00;
@@ -278,6 +280,10 @@ public class ToolbarArea {
 			listtype[index] = R.string.toolbar07;
 			index++;
 		}
+		if (mSearchSettingIcon) {
+			listtype[index] = R.string.toolbar08;
+			index++;
+		}
 		listtype[index] = R.string.toolbar04;
 		index++;
 		listtype[index] = R.string.toolbar05;
@@ -288,8 +294,10 @@ public class ToolbarArea {
 		int listnum = BUTTON_NUM;
 		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
 		boolean mWebServerIconSet = FileSelectActivity.getWebServerIcon();
+		boolean mSearchSettingIcon = FileSelectActivity.getSearchSettingIcon();
 		listnum = (mReadPositionSyncSet) ? (listnum + 1) : listnum;
 		listnum = (mWebServerIconSet) ? (listnum + 1) : listnum;
+		listnum = (mSearchSettingIcon) ? (listnum + 1) : listnum;
 		int[] listtype = new int[listnum];
 		int index = 0;
 		listtype[index] = R.drawable.toolbar_back;
@@ -308,6 +316,10 @@ public class ToolbarArea {
 			listtype[index] = R.drawable.websharingicon;
 			index++;
 		}
+		if (mSearchSettingIcon) {
+			listtype[index] = android.R.drawable.ic_menu_search;
+			index++;
+		}
 		listtype[index] = R.drawable.add_directory;
 		index++;
 		listtype[index] = R.drawable.toolbar_exit;
@@ -318,8 +330,10 @@ public class ToolbarArea {
 		int listnum = BUTTON_NUM;
 		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
 		boolean mWebServerIconSet = FileSelectActivity.getWebServerIcon();
+		boolean mSearchSettingIcon = FileSelectActivity.getSearchSettingIcon();
 		listnum = (mReadPositionSyncSet) ? (listnum + 1) : listnum;
 		listnum = (mWebServerIconSet) ? (listnum + 1) : listnum;
+		listnum = (mSearchSettingIcon) ? (listnum + 1) : listnum;
 		int[] listtype = new int[listnum];
 		int index = 0;
 		listtype[index] = DEF.TOOLBAR_PARENT;
@@ -336,6 +350,10 @@ public class ToolbarArea {
 		}
 		if (mWebServerIconSet) {
 			listtype[index] = DEF.TOOLBAR_WEB_SHARING;
+			index++;
+		}
+		if (mSearchSettingIcon) {
+			listtype[index] = DEF.TOOLBAR_SEARCHSETTING;
 			index++;
 		}
 		listtype[index] = DEF.TOOLBAR_ADDDIR;

@@ -9,6 +9,7 @@ import src.comitton.common.Logcat;
 import src.comitton.common.TextFormatter;
 import src.comitton.fileview.data.FileData;
 import src.comitton.fileview.data.RecordItem;
+import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.view.DrawNoticeListener;
 
 import android.content.Context;
@@ -27,6 +28,9 @@ public class RecordListArea extends ListArea {
 	private int mBakColor;
 	private int mCurColor;
 	private int mSepColor;
+	private int mTitleColor;
+	// 書庫管理タブ専用: 項目毎のタイトル色(0の場合はmTitleColorを使う。他タブでは常に0)
+	private int[] mTitleColorOverride;
 
 	private ArrayList<RecordItem> mRecordList;
 	private long mLastModified;
@@ -158,6 +162,11 @@ public class RecordListArea extends ListArea {
 			x = baseX + mItemMargin;
 			y = baseY + ypos + mItemMargin;
 
+			// 書庫管理タブは項目毎に既読状態に応じたタイトル色を使う(他タブは常にデフォルト色)
+			int itemTitleColor = (mTitleColorOverride != null && index >= 0 && index < mTitleColorOverride.length && mTitleColorOverride[index] != 0)
+					? mTitleColorOverride[index] : mTitleColor;
+			mTitlePaint.setColor(itemTitleColor);
+
 			// タイトル描画
 			if (rd != null && rd.getType() == RecordItem.TYPE_MENU) {
 				// アイコン描画
@@ -222,6 +231,7 @@ public class RecordListArea extends ListArea {
 
 	// 描画設定
 	public void setDrawColor(int clr_txt, int clr_inf, int clr_bak, int clr_cur, int clr_frm) {
+		mTitleColor = clr_txt;
 		mTitlePaint.setColor(clr_txt);
 		mInfoPaint.setColor(clr_inf);
 		mBakColor = clr_bak;
@@ -308,6 +318,7 @@ public class RecordListArea extends ListArea {
 	 */
 	private void requestLayout(boolean isRefresh) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		long perfStart = System.currentTimeMillis();
 
 		int width = mAreaWidth;
 		int listSize = 0;
@@ -322,11 +333,14 @@ public class RecordListArea extends ListArea {
 			mTitleSep = new String[listSize][][];
 			mInfoSep = new String[listSize][][];
 			mBitmap = new Bitmap[listSize];
+			mTitleColorOverride = new int[listSize];
 
 			// 各項目の行数分割
 			for (int index = 0; index < listSize; index++) {
 				RecordItem rd = mRecordList.get(index);
 				Resources res = mContext.getResources();
+				mTitleColorOverride[index] = rd.getTitleColorOverride();
+				boolean isLibraryVolume = (mListType == RecordList.TYPE_LIBRARY && rd.getType() == RecordItem.TYPE_IMAGE);
 
 				String work;
 				if (rd.getType() == RecordItem.TYPE_FOLDER) {
@@ -348,6 +362,13 @@ public class RecordListArea extends ListArea {
 					mTitleSep[index] = new String[1][];
 					mTitleSep[index][0] = TextFormatter.getMultiLine(rd.getDispName(), tcx, mTitlePaint, 1);
 				}
+				else if (isLibraryVolume) {
+					// 書庫管理タブの巻: 通常のファイル一覧(FileListArea)に合わせ、タイトルは
+					// ファイル名のみ(2行目は使わない)にするが、省略されないよう複数行まで許可する
+					// (FileListArea.MAXLINE_TITLE=3に合わせる)。
+					mTitleSep[index] = new String[1][];
+					mTitleSep[index][0] = TextFormatter.getMultiLine(rd.getDispName(), tcx, mTitlePaint, 3);
+				}
 				else {
 					String name = rd.getDispName();
 					mTitleSep[index] = new String[2][];
@@ -361,7 +382,13 @@ public class RecordListArea extends ListArea {
 					mTitleSep[index][1] = TextFormatter.getMultiLine(work, tcx, mTitlePaint, 99);
 				}
 
-				if (rd.getType() == RecordItem.TYPE_FOLDER) {
+				if (rd.getType() == RecordItem.TYPE_FOLDER && mListType == RecordList.TYPE_LIBRARY) {
+					// 書庫管理タブのタイトルカード: そのタイトルの既読集計を1行で表示する
+					String status = rd.getReadStatus();
+					mInfoSep[index] = new String[1][];
+					mInfoSep[index][0] = TextFormatter.getMultiLine(status != null ? status : "", tcx, mInfoPaint, 1);
+				}
+				else if (rd.getType() == RecordItem.TYPE_FOLDER) {
 					mInfoSep[index] = new String[0][];
 				}
 				else if (rd.getType() == RecordItem.TYPE_SERVER) {
@@ -385,6 +412,16 @@ public class RecordListArea extends ListArea {
 					// ビットマップリソースを読み込み
 					mBitmap[index] = ImageAccess.createIcon(res, icon, mBitmapSize, mBitmapColor);
 				}
+				else if (isLibraryVolume) {
+					// 書庫管理タブの巻: 親フォルダ名(漫画⇔Aria2c_DL等) / 日付 / サイズ / 既読状況の4行
+					mInfoSep[index] = new String[4][];
+					String folder = rd.getLibraryFolderLabel();
+					mInfoSep[index][0] = TextFormatter.getMultiLine(folder != null ? folder : "", tcx, mInfoPaint, 1);
+					mInfoSep[index][1] = TextFormatter.getMultiLine(rd.getImage(), tcx, mInfoPaint, 1);
+					mInfoSep[index][2] = TextFormatter.getMultiLine(rd.getServerName(), tcx, mInfoPaint, 1);
+					String status = rd.getReadStatus();
+					mInfoSep[index][3] = TextFormatter.getMultiLine(status != null ? status : "", tcx, mInfoPaint, 1);
+				}
 				else {
 					mInfoSep[index] = new String[3][];
 					mInfoSep[index][0] = TextFormatter.getMultiLine("[" + rd.getServerName() + "]", tcx, mInfoPaint, 1);
@@ -396,9 +433,15 @@ public class RecordListArea extends ListArea {
 			}
 		}
 
-		int disprange = mAreaHeight / (mTitleSize + mTitleDescent + mInfoSize + mInfoDescent + mItemMargin * 2); 
+		int disprange = mAreaHeight / (mTitleSize + mTitleDescent + mInfoSize + mInfoDescent + mItemMargin * 2);
 		// リストサイズ
 		super.setListSize(listSize, 1, listSize, disprange, isRefresh);
+
+		long perfElapsed = System.currentTimeMillis() - perfStart;
+		// 通常は数十ms未満のため、100msを超えた場合のみ記録してログを圧迫しない
+		if (perfElapsed > 100) {
+			Logcat.w(logLevel, "requestLayout: 項目のレイアウト計算に時間がかかりました. elapsed=" + perfElapsed + "ms, listSize=" + listSize + ", mListType=" + mListType);
+		}
 	}
 
 	/**
