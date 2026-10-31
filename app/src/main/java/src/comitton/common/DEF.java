@@ -4,7 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.text.Normalizer;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.text.SimpleDateFormat;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
@@ -68,6 +70,7 @@ public class DEF {
 	public static final int MESSAGE_MOVE_PATH_EROOR = 1016;
 	public static final int MESSAGE_RESETLOCAL = 1017;
 	public static final int MESSAGE_WEBSHAREICON = 1018;
+	public static final int MESSAGE_SETTINGSEARCHICON = 1019;
 
 	public static final int MESSAGE_IMAGE = 1;
 	public static final int MESSAGE_TEXT = 2;
@@ -442,6 +445,9 @@ public class DEF {
 	public static final int ACCESS_TYPE_SAF = 1;
 	public static final int ACCESS_TYPE_PICKER = 2;
 	public static final int ACCESS_TYPE_WEBDAV = 3;
+	public static final int ACCESS_TYPE_FTP = 4;
+	public static final int ACCESS_TYPE_FTPS = 5;
+	public static final int ACCESS_TYPE_SFTP = 6;
 
 	public static final int VIEWPT_RIGHTTOP = 0;
 	public static final int VIEWPT_LEFTTOP = 1;
@@ -465,8 +471,9 @@ public class DEF {
 	//	public static final int TOOLBAR_SERVER = 4;
 	public static final int TOOLBAR_UPDATE_READPOSITION = 4;
 	public static final int TOOLBAR_WEB_SHARING = 5;
-	public static final int TOOLBAR_ADDDIR = 6;
-	public static final int TOOLBAR_EXIT = 7;
+	public static final int TOOLBAR_SEARCHSETTING = 6;
+	public static final int TOOLBAR_ADDDIR = 7;
+	public static final int TOOLBAR_EXIT = 8;
 
 	// ページめくり表示方向
 	public static final int PAGEWAY_RIGHT = 0; // 右から左
@@ -850,6 +857,8 @@ public class DEF {
 	public static final String KEY_TAP_PATTERN_MENU = "tapPatternMenu";
 	public static final String KEY_TAP_SETUP_MENU = "tapSettingMenu";
 	public static final String KEY_CHGPAGENEXT = "ChgPageNext";
+	public static final String KEY_SEARCHSETTINGICON =  "SearchSettingIcon";
+	public static final String KEY_EXPORT_FORMAT =  "ExportFormat";
 
 	public static final String KEY_MarginAspectMask = "MarginAspectMask";
 	public static final String KEY_MarginForceIgnoreAspect = "MarginForceIgnoreAspect";
@@ -1050,6 +1059,8 @@ public class DEF {
 	public static final int HMSG_LIBRARYSYNC_RESULT = 38;
 	// 書庫管理タブ(bookmark-sync-server /library/rescan)のスキャン起動結果
 	public static final int HMSG_LIBRARYSYNC_RESCAN_RESULT = 39;
+	// 書庫管理タブ向けの既読位置更新(ReadPositionSyncClient.pullAllForHost)の結果
+	public static final int HMSG_LIBRARY_READPOSITION_PULL_RESULT = 40;
 
 	public static final String KEY_FLOATINGICONSIZE = "FloatingIconSize";
 	public static final String KEY_FLOATINGICONDIRECTIONMODE = "FloatingIconDirectionMode";
@@ -4800,13 +4811,13 @@ public class DEF {
 		if (url.length() <= 6) {
 			return url;
 		}
-		if (!url.startsWith("smb://") && !url.startsWith("http://") && !url.startsWith("https://") || user == null || user.isEmpty()) {
+		if (!url.startsWith("smb://") && !url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("ftp://") && !url.startsWith("ftps://") && !url.startsWith("sftp://") || user == null || user.isEmpty()) {
 			return url;
 		}
 		// サーバ名
 		String ret = "";
 		try {
-			String host = (url.startsWith("smb://")) ? "smb://" : "http://";
+			String host = (url.startsWith("smb://")) ? "smb://" : (url.startsWith("http://")) ? "http://" : (url.startsWith("ftp://")) ? "ftp://" : (url.startsWith("ftps://")) ? "ftps://" : (url.startsWith("sftp://")) ? "sftp://" : "";
 			ret = host + URLEncoder.encode(user, "UTF-8");
 			if (pass != null && !pass.isEmpty()) {
 				ret += ":" + URLEncoder.encode(pass, "UTF-8");
@@ -4922,6 +4933,62 @@ public class DEF {
 	public static int getPageWithFallback(SharedPreferences prefs, String url, String user, String pass) {
 		return prefs.getInt(resolvePageKey(prefs, url, user, pass), PAGENUMBER_UNREAD);
 	}
+
+	/**
+	 * {@link #resolvePageKey}のフォールバック検索を、ファイル一覧表示のように大量のファイルへ
+	 * 繰り返し適用する場合向けに高速化するための事前インデックス。
+	 * (サーバールート + 拡張子除去ベース名) -> 最新の候補キー、という対応を全SharedPreferences
+	 * エントリを1回だけ走査して構築しておくことで、ファイル数 x 全エントリ数のスキャンを
+	 * 「全エントリを1回スキャン + ファイル数分のO(1)参照」に削減できる。
+	 * (一覧の全件を未読から既読に変えるような書き込みはこのインデックス構築後に反映されないため、
+	 * 1回のファイル一覧読み込みの間だけ使い捨てること。)
+	 */
+	public static Map<String, String> buildPageKeyIndex(SharedPreferences prefs) {
+		Map<String, String> index = new HashMap<String, String>();
+		Map<String, Integer> bestDate = new HashMap<String, Integer>();
+		Map<String, ?> all = prefs.getAll();
+		for (String key : all.keySet()) {
+			if (key.endsWith("#maxpage") || key.endsWith("#date")) {
+				// 付随データのキーは対象外
+				continue;
+			}
+			Object val = all.get(key);
+			if (!(val instanceof Integer)) {
+				continue;
+			}
+			String base = stripArchiveExt(fileNameOfUrl(key));
+			if (base.isEmpty()) {
+				continue;
+			}
+			String indexKey = rootOfUrl(key) + "\u0000" + base;
+			Object dateObj = all.get(key + "#date");
+			int date = (dateObj instanceof Integer) ? (Integer) dateObj : 0;
+			Integer prevDate = bestDate.get(indexKey);
+			if (prevDate == null || date > prevDate) {
+				bestDate.put(indexKey, date);
+				index.put(indexKey, key);
+			}
+		}
+		return index;
+	}
+
+	/**
+	 * {@link #buildPageKeyIndex}で事前構築したインデックスを使い、{@link #resolvePageKey}と
+	 * 同じ結果をO(1)で求める(フォールバック時の全件スキャンを避ける)。
+	 */
+	public static String resolvePageKeyIndexed(SharedPreferences prefs, String url, String user, String pass, Map<String, String> index) {
+		String exactKey = createUrl(url, user, pass);
+		if (prefs.contains(exactKey)) {
+			return exactKey;
+		}
+		String targetBase = stripArchiveExt(fileNameOfUrl(url));
+		if (targetBase.isEmpty()) {
+			return exactKey;
+		}
+		String found = index.get(rootOfUrl(exactKey) + "\u0000" + targetBase);
+		return found != null ? found : exactKey;
+	}
+
 
 
 	public static boolean CHAR_DETECT = true;
