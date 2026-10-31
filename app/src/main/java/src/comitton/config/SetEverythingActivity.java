@@ -8,6 +8,7 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ListAdapter;
 import android.widget.Toast;
 
 import android.preference.CheckBoxPreference;
@@ -119,6 +120,31 @@ public class SetEverythingActivity extends PreferenceActivity implements OnShare
 		}
 		// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
 		PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
+		// ダイアログから渡された target_key を受け取る
+		String targetKey = getIntent().getStringExtra("target_key");
+		if (targetKey != null && !targetKey.isEmpty()) {
+			// リストの描画が完了した後に該当の位置までスクロールさせる
+			getListView().post(() -> {
+				scrollToPreferenceInActivity(targetKey);
+			});
+		}
+	}
+	// PreferenceActivityのListViewからKeyを探してスクロールする
+	private void scrollToPreferenceInActivity(String targetKey) {
+		ListAdapter adapter = getListView().getAdapter();
+		if (adapter != null) {
+			for (int i = 0; i < adapter.getCount(); i++) {
+				Object item = adapter.getItem(i);
+				if (item instanceof Preference) {
+					Preference pref = (Preference) item;
+					if (targetKey.equals(pref.getKey())) {
+						// 一致するKeyが見つかったらその位置へスクロール
+						getListView().setSelection(i);
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	@Override

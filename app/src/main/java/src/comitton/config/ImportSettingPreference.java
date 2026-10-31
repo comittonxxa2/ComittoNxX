@@ -10,11 +10,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.json.JSONObject;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
@@ -258,7 +261,7 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 				Map<String, ?> keys = mSp.getAll();
 				if (keys != null) {
 					for (String key : keys.keySet()) {
-						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://") || key.length() >= 7 && key.startsWith("http://"))) {
+						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://") || key.length() >= 7 && key.startsWith("http://") || key.length() >= 6 && key.startsWith("ftp://") || key.length() >= 7 && key.startsWith("ftps://") || key.length() >= 7 && key.startsWith("sftp://"))) {
 							// 既読情報を読み込まない場合は削除しない
 						}
 						else if (DEF.checkExportKey(key)) {
@@ -270,70 +273,110 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 
 				// ファイル読み込み
 				String line;
-				boolean first = false;
+				boolean isFirstLine = true;
+				boolean isEncrypted = false;
+				List<String> contentLines = new ArrayList<>();
+
 				while ((line = br.readLine()) != null) {
 					// 復号化
-					if (!first) {
-						first = true;
-						// 設定ファイルの先頭の文字列をデコード
-						if (!DecAesKey(line)) {
-							// 先頭の文字列のデコードに失敗した場合は次の処理を行わせる
-							line = DecAes(line);
+					if (isFirstLine) {
+						isFirstLine = false;
+						// 1行目がAESキーのBase64エンコードとして復元できるか確認
+						if (DecAesKey(line)) {
+							isEncrypted = true;
+							continue; // 2行目以降のボディへ
 						}
 					}
-					else {
+
+					if (isEncrypted) {
 						// 先頭以外の場合
 						line = DecAes(line);
 					}
-					// 種別取得
-					char valuetype = line.charAt(0);
-					// '='の前後をキーと値にする
-					int index = line.indexOf('=', 2);
-					if (index <= 0) {
-						continue;
+					contentLines.add(line);
+				}
+
+				// 読み込んだ中身を結合
+				StringBuilder sb = new StringBuilder();
+				for (String l : contentLines) {
+					sb.append(l);
+				}
+				String fileContent = sb.toString().trim();
+
+				// 自動判別パース処理
+				if (fileContent.startsWith("{") && fileContent.endsWith("}")) {
+					// JSON形式のパース処理
+					JSONObject jsonRoot = new JSONObject(fileContent);
+					Iterator<String> jsonKeys = jsonRoot.keys();
+
+					while (jsonKeys.hasNext()) {
+						// キーと値を取得
+						String key = jsonKeys.next();
+						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://") || key.length() >= 7 && key.startsWith("http://") || key.length() >= 6 && key.startsWith("ftp://") || key.length() >= 7 && key.startsWith("ftps://") || key.length() >= 7 && key.startsWith("sftp://"))) {
+							// 既読情報を読み込まない場合は何もしない
+							continue;
+						}
+						Object value = jsonRoot.get(key);
+						if (value instanceof String) {
+							ed.putString(key, (String) value);
+						}
+						else if (value instanceof Boolean) {
+							ed.putBoolean(key, (Boolean) value);
+						}
+						else if (value instanceof Integer) {
+							ed.putInt(key, (Integer) value);
+						}
+						else if (value instanceof Long) {
+							ed.putLong(key, (Long) value);
+						}
+						else if (value instanceof Double) {
+							ed.putFloat(key, ((Double) value).floatValue());
+						}
+						else if (value instanceof Float) {
+							ed.putFloat(key, (Float) value);
+						}
 					}
-					// キーと値を取得
-					String key = line.substring(2, index);
-					String value = line.substring(index + 1);
-					switch (valuetype) {
-						case 'S':
-						case 's': // NxT専用キー
-						{
-							ed.putString(key, value);
-							break;
+				}
+				else {
+					// 従来形式(行ごとの key=value)のパース処理
+					for (String l : contentLines) {
+						if (l.length() < 2) {
+							continue;
 						}
-						case 'B':
-						case 'b': // NxT専用キー
-						{
-							boolean work = Boolean.parseBoolean(value);
-							ed.putBoolean(key, work);
-							break;
+						// 種別取得
+						char valuetype = l.charAt(0);
+						int index = l.indexOf('=', 2);
+						if (index <= 0) {
+							continue;
 						}
-						case 'F':
-						case 'f': // NxT専用キー
-						{
-							float work = Float.parseFloat(value);
-							ed.putFloat(key, work);
-							break;
-						}
-						case 'I':
-						case 'i': // NxT専用キー
-						{
-							int work = Integer.parseInt(value);
-							if (mIgnoreReadInfo && (line.length() >= 3 && line.startsWith("i:/") || line.length() >= 8 && line.startsWith("i:smb://") || line.length() >= 9 && line.startsWith("i:http://"))) {
-								// 既読情報を読み込まない場合は何もしない
-							}
-							else {
-								ed.putInt(key, work);
-							}
-							break;
-						}
-						case 'L':
-						case 'l': // NxT専用キー
-						{
-							long work = Long.parseLong(value);
-							ed.putLong(key, work);
-							break;
+						// キーと値を取得
+						String key = l.substring(2, index);
+						String value = l.substring(index + 1);
+						switch (valuetype) {
+							case 'S':
+							case 's': // NxT専用キー
+								ed.putString(key, value);
+								break;
+							case 'B':
+							case 'b': // NxT専用キー
+								ed.putBoolean(key, Boolean.parseBoolean(value));
+								break;
+							case 'F':
+							case 'f': // NxT専用キー
+								ed.putFloat(key, Float.parseFloat(value));
+								break;
+							case 'I':
+							case 'i':
+								int workInt = Integer.parseInt(value);
+								if (mIgnoreReadInfo && (l.length() >= 3 && l.startsWith("i:/") || l.length() >= 8 && l.startsWith("i:smb://") || l.length() >= 9 && l.startsWith("i:http://") || l.length() >= 8 && l.startsWith("i:ftp://") || l.length() >= 9 && l.startsWith("i:ftps://") || l.length() >= 9 && l.startsWith("i:sftp://"))) {
+									// 既読情報を読み込まない場合は何もしない
+								} else {
+									ed.putInt(key, workInt);
+								}
+								break;
+							case 'L':
+							case 'l': // NxT専用キー
+								ed.putLong(key, Long.parseLong(value));
+								break;
 						}
 					}
 				}

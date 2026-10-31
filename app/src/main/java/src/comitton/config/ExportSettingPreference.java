@@ -19,6 +19,8 @@ import java.util.TreeSet;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.json.JSONObject;
+
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 
@@ -62,12 +64,14 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 	private EditText mEditView;
 	private TextView mMsgView;
 	private ListView mListView;
-	private CheckBox mCheckbox;
+	private CheckBox mCheckboxEncryption;
+	private CheckBox mCheckboxJsonFormat;
 	private ExportSettingPreference.ItemArrayAdapter mItemArrayAdapter;
 	private static String androidId;
 	private static byte[] mAesKey = null;
 	private static String mStrAesKey;
 	private static boolean mEncryption;
+	private static boolean mIsJsonFormat;
 
 	private static final int LAYOUT_PADDING = 10;
 
@@ -83,6 +87,8 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 	@Override
 	protected View onCreateDialogView() {
 		mEncryption = DEF.getBoolean(mSp, DEF.KEY_ENCRYPTION, false);
+		mIsJsonFormat = DEF.getBoolean(mSp, DEF.KEY_EXPORT_FORMAT, false);
+
 		LinearLayout layout = new LinearLayout(mContext);
 		layout.setOrientation(LinearLayout.VERTICAL);
 
@@ -94,25 +100,44 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 		mListView = new ListView(mContext);
 		mListView.setScrollingCacheEnabled(false);
 		mListView.setOnItemClickListener(this);
-		mCheckbox = new CheckBox(mContext);
-		mCheckbox.setText(R.string.selectEncryption);
-		mCheckbox.setChecked(mEncryption);
+
+		// 暗号化チェックボックス
+		mCheckboxEncryption = new CheckBox(mContext);
+		mCheckboxEncryption.setText(R.string.selectEncryption);
+		mCheckboxEncryption.setChecked(mEncryption);
+
+		// JSON形式書き出しチェックボックス
+		mCheckboxJsonFormat = new CheckBox(mContext);
+		mCheckboxJsonFormat.setText(R.string.selectJsonFormat);
+		mCheckboxJsonFormat.setChecked(mIsJsonFormat);
+
 		updateImportList();
 
 		layout.addView(mMsgView, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		layout.addView(mEditView, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-		layout.addView(mListView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-		layout.addView(mCheckbox, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		layout.addView(mListView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		layout.addView(mCheckboxEncryption, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		layout.addView(mCheckboxJsonFormat, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
 		String str = (String) getDialogMessage();
 		mMsgView.setText(str);
 
-		mCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+		mCheckboxEncryption.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 			@Override
 			public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
 				mEncryption = isChecked;
 				SharedPreferences.Editor editor = mSp.edit();
 				editor.putBoolean(DEF.KEY_ENCRYPTION, isChecked);
+				editor.apply();
+			}
+		});
+
+		mCheckboxJsonFormat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+			@Override
+			public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+				mIsJsonFormat = isChecked;
+				SharedPreferences.Editor editor = mSp.edit();
+				editor.putBoolean(DEF.KEY_EXPORT_FORMAT, isChecked);
 				editor.apply();
 			}
 		});
@@ -210,7 +235,7 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 				SecretKeySpec sks = new SecretKeySpec(mAesKey,0,16,"AES");
 				Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
 				c.init(Cipher.ENCRYPT_MODE, sks);
-				byte input[] = encstr.getBytes();
+				byte input[] = encstr.getBytes(StandardCharsets.UTF_8);
 				byte encrypted[] = c.doFinal(input);
 				Charset charset = StandardCharsets.UTF_8;
 				// BASE64エンコード
@@ -238,7 +263,7 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 		}
 	}
 
-//	@Override
+	@Override
 	public void onClick(View v) {
 		if (v == mButtonOk) {
 			// OKボタン処理
@@ -282,31 +307,52 @@ public class ExportSettingPreference extends DialogPreference implements OnItemC
 						bw.write(mStrAesKey);
 						bw.newLine();
 					}
-					for (String key : keys) {
-						if (!DEF.checkExportKey(key)) {
-							continue;
+					if (mIsJsonFormat) {
+						// JSON形式で書き出し
+						JSONObject jsonRoot = new JSONObject();
+						for (String key : keys) {
+							if (!DEF.checkExportKey(key)) {
+								continue;
+							}
+							Object value = keyMap.get(key);
+							if (value != null) {
+								jsonRoot.put(key, value);
+							}
 						}
-						// NxT専用キーチェック
-						boolean ex = DEF.checkTonlyExportKey(key);
+						// 区切りで改行させるため一旦2文字の空白で出力
+						String jsonString = jsonRoot.toString(2);
+						// 先頭の空白を削除
+						jsonString = jsonString.replaceAll("(?m)^[ \t]+", "");
+						bw.write(EncAes(jsonString));
+					}
+					else {
+						// 従来形式(行ごとの key=value)で書き出し
+						for (String key : keys) {
+							if (!DEF.checkExportKey(key)) {
+								continue;
+							}
+							// NxT専用キーチェック
+							boolean ex = DEF.checkTonlyExportKey(key);
 
-						Object value = keyMap.get(key);
-						String className = value.getClass().getName();
-						if (className.equals("java.lang.String")) {
-							line = (ex ? "s:" : "S:") + key + "=" + value;
-						} else if (className.equals("java.lang.Boolean")) {
-							line = (ex ? "b:" : "B:") + key + "=" + value;
-						} else if (className.equals("java.lang.Float")) {
-							line = (ex ? "f:" : "F:") + key + "=" + value;
-						} else if (className.equals("java.lang.Integer")) {
-							line = (ex ? "i:" : "I:") + key + "=" + value;
-						} else if (className.equals("java.lang.Long")) {
-							line = (ex ? "l:" : "L:") + key + "=" + value;
-						} else {
-							continue;
+							Object value = keyMap.get(key);
+							String className = value.getClass().getName();
+							if (className.equals("java.lang.String")) {
+								line = (ex ? "s:" : "S:") + key + "=" + value;
+							} else if (className.equals("java.lang.Boolean")) {
+								line = (ex ? "b:" : "B:") + key + "=" + value;
+							} else if (className.equals("java.lang.Float")) {
+								line = (ex ? "f:" : "F:") + key + "=" + value;
+							} else if (className.equals("java.lang.Integer")) {
+								line = (ex ? "i:" : "I:") + key + "=" + value;
+							} else if (className.equals("java.lang.Long")) {
+								line = (ex ? "l:" : "L:") + key + "=" + value;
+							} else {
+								continue;
+							}
+							// 暗号化
+							bw.write(EncAes(line));
+							bw.newLine();
 						}
-						// 暗号化
-						bw.write(EncAes(line));
-						bw.newLine();
 					}
 				}
 			} catch (Exception e) {

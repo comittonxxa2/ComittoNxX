@@ -33,6 +33,8 @@ import android.view.View;
 import android.view.WindowManager;
 
 import android.preference.CheckBoxPreference;
+import android.widget.ListAdapter;
+
 import androidx.preference.PreferenceManager;
 
 public class SetFileListActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
@@ -80,6 +82,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 
 	private LimitDownloadImageSeekbar mMemLimit;
 	private CheckBoxPreference mMemLimitEnable;
+	private CheckBoxPreference mSearchSettingIcon;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -232,6 +235,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mTabRestore = (CheckBoxPreference) findPreference(DEF.KEY_TABRESTORE);
 		mMemLimit  = (LimitDownloadImageSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MEMLIMIT);
 		mMemLimitEnable = (CheckBoxPreference) findPreference(DEF.KEY_MEMLIMITENABLE);
+		mSearchSettingIcon = (CheckBoxPreference) findPreference(DEF.KEY_SEARCHSETTINGICON);
 
 		if (!getThumbnailGrid(sharedPreferences)) {
 			mListThumbRatioSeek.setEnabled(false);
@@ -308,6 +312,16 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 				intent.putExtra("Url", url);
 				startActivity(intent);
+				return true;
+			}
+		});
+
+		mSearchSettingIcon.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// 親のActivityを再生成させる
+				FileSelectActivity.setChangeTheme();
+				// trueを返すと設定値が保存される
 				return true;
 			}
 		});
@@ -393,12 +407,38 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				ed.putBoolean(DEF.KEY_LOADWITHFALLBACK, false);
 				ed.putBoolean(DEF.KEY_MEMLIMITENABLE, false);
 				ed.putInt(DEF.KEY_MEMLIMIT, DEF.DEFAULT_MEMLIMIT);
+				ed.putBoolean(DEF.KEY_SEARCHSETTINGICON, false);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
 			});
 			// 画面の描画準備が終わった直後に画面内の全タイトル部品を探して制限を解除する
 			PreferenceHelper.enableMultilineTitles(getWindow().getDecorView());
+			// ダイアログから渡された target_key を受け取る
+			String targetKey = getIntent().getStringExtra("target_key");
+			if (targetKey != null && !targetKey.isEmpty()) {
+				// リストの描画が完了した後に該当の位置までスクロールさせる
+				getListView().post(() -> {
+					scrollToPreferenceInActivity(targetKey);
+				});
+			}
+		}
+	}
+	// PreferenceActivityのListViewからKeyを探してスクロールする
+	private void scrollToPreferenceInActivity(String targetKey) {
+		ListAdapter adapter = getListView().getAdapter();
+		if (adapter != null) {
+			for (int i = 0; i < adapter.getCount(); i++) {
+				Object item = adapter.getItem(i);
+				if (item instanceof Preference) {
+					Preference pref = (Preference) item;
+					if (targetKey.equals(pref.getKey())) {
+						// 一致するKeyが見つかったらその位置へスクロール
+						getListView().setSelection(i);
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -1153,6 +1193,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static int getMemLimit(SharedPreferences sharedPreferences){
 		int num =  DEF.getInt(sharedPreferences, DEF.KEY_MEMLIMIT, DEF.DEFAULT_MEMLIMIT);
 		return num;
+	}
+
+	public static boolean getSearchSettingIcon(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_SEARCHSETTINGICON, false);
+		return flag;
 	}
 
 	// 設定を保存
