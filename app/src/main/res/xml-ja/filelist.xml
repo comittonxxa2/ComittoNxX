@@ -479,6 +479,11 @@
             android:negativeButtonText="@null"
             android:summary="dummy"
             android:title="HTMLとテキストのリンク先の画像の取得ページ数の制限サイズ" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SearchSettingIcon"
+            android:summary="ワードで設定の項目検索する場合はチェックを入れる"
+            android:title="設定の検索アイコンを表示" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
