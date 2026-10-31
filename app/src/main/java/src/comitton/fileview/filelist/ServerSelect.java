@@ -63,15 +63,17 @@ public class ServerSelect {
 			String path = sharedPreferences.getString("smb-path" + i, "");
 			String user = sharedPreferences.getString("smb-user" + i, "");
 			String pass = sharedPreferences.getString("smb-pass" + i, "");
+			String port = sharedPreferences.getString("smb-port" + i, "");
+			boolean pasv = sharedPreferences.getBoolean("smb-pasv" + i, true);
 			String provider = sharedPreferences.getString("smb-provider" + i, "");
 			String dispName = sharedPreferences.getString("smb-dispname" + i, "");
 			if (dispName.isEmpty()) {
-				dispName = dispName(host, user, pass, (accessType == DEF.ACCESS_TYPE_WEBDAV) ? true : false);
+				dispName = dispName(host, user, pass, accessType);
 			}
 //			if (accessType < DEF.ACCESS_TYPE_SMB || accessType > DEF.ACCESS_TYPE_PICKER) {
 //				accessType = DEF.ACCESS_TYPE_SMB;
 //			}
-			Logcat.d(logLevel, "i=" + i + ", accessType=" + accessType + ", name=" + name + ", host=" + host + ", path=" + path + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName);
+			Logcat.d(logLevel, "i=" + i + ", accessType=" + accessType + ", name=" + name + ", host=" + host + ", path=" + path + ", user=" + user + ", pass=" + pass + ", port=" + port + ", provider=" + provider + ", dispName=" + dispName + ", pasv=" + pasv);
 			mServer[i].setAccessType(accessType);
 			mServer[i].setName(name);
 			mServer[i].setPath(path);
@@ -80,6 +82,8 @@ public class ServerSelect {
 				mServer[i].setUser(user);
 				mServer[i].setPass(pass);
 			}
+			mServer[i].setPort(port);
+			mServer[i].setPasv(pasv);
 			if (!provider.isEmpty()) {
 				mServer[i].setProvider(provider);
 			}
@@ -209,6 +213,38 @@ public class ServerSelect {
 		}
 	}
 
+	// ポート番号
+	public String getPort() {
+		return(getPort(mSelect));
+	}
+
+	public String getPort(int index) {
+		if (index == DEF.INDEX_LOCAL) {
+			// ポート番号
+			return "";
+		}
+		else{
+			// ポート番号
+			return mServer[index].getPort();
+		}
+	}
+
+	// パッシブモード
+	public boolean getPasv() {
+		return(getPasv(mSelect));
+	}
+
+	public boolean getPasv(int index) {
+		if (index == DEF.INDEX_LOCAL) {
+			// パッシブモード
+			return false;
+		}
+		else{
+			// パッシブモード
+			return mServer[index].getPasv();
+		}
+	}
+
 	// パスワード取得
 	public String getPass() {
 		return(getPass(mSelect));
@@ -319,7 +355,7 @@ public class ServerSelect {
 		}
 		else{
 			// サーバ名
-			String ret = (mServer[index].getAccessType() == DEF.ACCESS_TYPE_WEBDAV) ? "http://" : "smb://";
+			String ret = (mServer[index].getAccessType() == DEF.ACCESS_TYPE_SMB) ? "smb://" : (mServer[index].getAccessType() == DEF.ACCESS_TYPE_WEBDAV) ? "http://" : (mServer[index].getAccessType() == DEF.ACCESS_TYPE_FTP) ? "ftp://" : (mServer[index].getAccessType() == DEF.ACCESS_TYPE_FTPS) ? "ftps://" : (mServer[index].getAccessType() == DEF.ACCESS_TYPE_SFTP) ? "sftp://" : "";
 			String user = URLEncoder.encode(mServer[index].getUser());
 			String pass = URLEncoder.encode(mServer[index].getPass());
 			if (!user.equals("")) {
@@ -339,7 +375,7 @@ public class ServerSelect {
 	 */
 	public void setData(int index, ServerData data) {
 		if (0 <= index && index < DEF.MAX_SERVER) {
-			setData(index, data.getAccessType(), data.getName(), data.getHost(), data.getUser(), data.getPass(), data.getPath(), data.getProvider(), data.getDispName());
+			setData(index, data.getAccessType(), data.getName(), data.getHost(), data.getUser(), data.getPass(), data.getPort(), data.getPasv(), data.getPath(), data.getProvider(), data.getDispName());
 			save(index);
 		}
 	}
@@ -350,19 +386,21 @@ public class ServerSelect {
 	public void setData(int index, RecordItem record) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		if (0 <= index && index < DEF.MAX_SERVER) {
-			Logcat.d(logLevel, "index=" + index + ", accessType=" + record.getAccessType() + ", name=" + record.getServerName() + ", host=" + record.getHost() + ", path=" + record.getPath() + ", user=" + record.getUser() + ", pass=" + record.getPass() + ", provider=" + record.getProvider() + ", dispName=" + record.getDispName());
-			setData(index, record.getAccessType(), record.getServerName(), record.getHost(), record.getUser(), record.getPass(), record.getPath(), record.getProvider(), record.getDispName());
+			Logcat.d(logLevel, "index=" + index + ", accessType=" + record.getAccessType() + ", name=" + record.getServerName() + ", host=" + record.getHost() + ", path=" + record.getPath() + ", user=" + record.getUser() + ", pass=" + record.getPass() + ", port=" + record.getPort() + ", provider=" + record.getProvider() + ", dispName=" + record.getDispName());
+			setData(index, record.getAccessType(), record.getServerName(), record.getHost(), record.getUser(), record.getPass(), record.getPort(), record.getPasv(), record.getPath(), record.getProvider(), record.getDispName());
 			save(index);
 		}
 	}
 
-	public void setData(int index, int accessType, String name, String host, String user, String pass, String path, String provider, String dispName) {
+	public void setData(int index, int accessType, String name, String host, String user, String pass, String port, boolean pasv, String path, String provider, String dispName) {
 		if (0 <= index && index < DEF.MAX_SERVER) {
 			mServer[index].setAccessType(accessType);
 			mServer[index].setName(name);
 			mServer[index].setHost(host);
 			mServer[index].setUser(user);
 			mServer[index].setPass(pass);
+			mServer[index].setPort(port);
+			mServer[index].setPasv(pasv);
 			mServer[index].setPath(path);
 			mServer[index].setProvider(provider);
 			mServer[index].setDispName(dispName);
@@ -377,13 +415,15 @@ public class ServerSelect {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Editor ed = mSharedPrefer.edit();
 		// サーバ情報
-		Logcat.d(logLevel, "index=" + index + ", accessType=" + mServer[index].getAccessType() + ", name=" + mServer[index].getName() + ", host=" + mServer[index].getHost() + ", path=" + mServer[index].getPath() + ", user=" + mServer[index].getUser() + ", pass=" + mServer[index].getPass() + ", provider=" + mServer[index].getProvider());
+		Logcat.d(logLevel, "index=" + index + ", accessType=" + mServer[index].getAccessType() + ", name=" + mServer[index].getName() + ", host=" + mServer[index].getHost() + ", path=" + mServer[index].getPath() + ", user=" + mServer[index].getUser() + ", pass=" + mServer[index].getPass() + ", port=" + mServer[index].getPort() + ", provider=" + mServer[index].getProvider());
 		if (mServer[index].getProvider().equals("user")) {DEF.StackTrace(TAG , "save:");}
 		ed.putInt("smb-access-type" + index, mServer[index].getAccessType());
 		ed.putString("smb-name" + index, mServer[index].getName());
 		ed.putString("smb-host" + index, mServer[index].getHost());
 		ed.putString("smb-user" + index, mServer[index].getUser());
 		ed.putString("smb-pass" + index, mServer[index].getPass());
+		ed.putString("smb-port" + index, mServer[index].getPort());
+		ed.putBoolean("smb-pasv" + index, mServer[index].getPasv());
 		ed.putString("smb-path" + index, mServer[index].getPath());
 		ed.putString("smb-provider" + index, mServer[index].getProvider());
 		ed.putString("smb-dispname" + index, mServer[index].getDispName());
@@ -411,11 +451,28 @@ public class ServerSelect {
 		ed.apply();
 	}
 
-	public static String dispName(String host, String user, String pass, boolean type) {
+	public static String dispName(String host, String user, String pass, int type) {
 		if (host.isEmpty()) {
 			return "";
 		}
-		String dispName = (type) ? "http://" : "smb://";
+		String dispName = "";
+		switch (type) {
+			case DEF.ACCESS_TYPE_SMB:
+				dispName = "smb://";
+				break;
+			case DEF.ACCESS_TYPE_WEBDAV:
+				dispName = "http://";
+				break;
+			case DEF.ACCESS_TYPE_FTP:
+				dispName = "ftp://";
+				break;
+			case DEF.ACCESS_TYPE_FTPS:
+				dispName = "ftps://";
+				break;
+			case DEF.ACCESS_TYPE_SFTP:
+				dispName = "sftp://";
+				break;
+		}
 		if (!user.isEmpty()) {
 			dispName += user;
 			if (!pass.isEmpty()) {
