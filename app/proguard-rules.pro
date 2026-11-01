@@ -49,3 +49,8 @@
 -keep class src.comitton.common.ExternalFilterData {
     *;
 }
+# commons-net/jschの全クラス・全メソッドをそのまま保持する
+-keep class org.apache.commons.net.** { *; }
+-dontwarn org.apache.commons.net.**
+-keep class com.jcraft.jsch.** { *; }
+-dontwarn com.jcraft.jsch.**
