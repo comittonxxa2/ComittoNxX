@@ -450,11 +450,21 @@ public class WebFilerServer extends NanoHTTPD {
 		}
 		else if (Method.GET.equals(method)) {
 			if ("/download".equals(uri)) {
-				return handleDownload(lang, parms);
+				return handleDownload(session, lang, parms);
 			}
-			else {
-				return handleBrowse(lang, currentPath, parms);
+			// リクエストされたURIからサーバー上の実ファイルパスを組み立てる
+			// ※セキュリティのため必ずサニタイズを通す
+			String candidatePath = sanitizePath(mRootPath + uri);
+			File targetFile = new File(candidatePath);
+			// ファイルが存在し、かつディレクトリでは無い場合
+			if (targetFile.exists() && targetFile.isFile()) {
+				// pathパラメータにそのファイルのフルパスを擬似的に設定してhandleDownloadを呼び出す
+				Map<String, String> newParms = new HashMap<>(parms);
+				newParms.put("path", candidatePath);
+				return handleDownload(session, lang, newParms);
 			}
+			// ファイルが存在しない場合は、従来のフォルダブラウズ等へ流す
+			return handleBrowse(lang, currentPath, parms);
 		}
 		// Not Foundを返す
 		return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not Found");
@@ -1971,7 +1981,7 @@ public class WebFilerServer extends NanoHTTPD {
 		}
 	}
 	// ダウンロードのコードを作成してWebブラウザへレスポンスを返す
-	private Response handleDownload(Map<String, String> lang, Map<String, String> parms) {
+	private Response handleDownload(IHTTPSession session, Map<String, String> lang, Map<String, String> parms) {
 		try {
 			String filePath = parms.get("path");
 			if (filePath == null) {
@@ -1985,12 +1995,78 @@ public class WebFilerServer extends NanoHTTPD {
 				// File not foundを返す
 				return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "File not found");
 			}
+
+			long fileLength = file.length();
+			// リクエストヘッダーから"Range"を取得
+			Map<String, String> headers = session.getHeaders();
+			String rangeHeader = headers.get("range");
+
+			long startFrom = 0;
+			long endAt = fileLength - 1;
+			boolean isRangeRequest = false;
+
+			if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+				isRangeRequest = true;
+				String rangeValue = rangeHeader.substring("bytes=".length());
+				int dashIdx = rangeValue.indexOf('-');
+
+				if (dashIdx > 0) {
+					try {
+						startFrom = Long.parseLong(rangeValue.substring(0, dashIdx));
+						String endStr = rangeValue.substring(dashIdx + 1);
+						if (!endStr.isEmpty()) {
+							endAt = Long.parseLong(endStr);
+						}
+					} catch (NumberFormatException e) {
+						// パース失敗時はデフォルト値にフォールバック
+					}
+				}
+				else if (dashIdx == 0) {
+					try {
+						long suffixLength = Long.parseLong(rangeValue.substring(1));
+						startFrom = Math.max(0, fileLength - suffixLength);
+					}
+					catch (NumberFormatException e) {
+						// パース失敗
+					}
+				}
+				// 範囲の検証
+				if (startFrom >= fileLength) {
+					Response res = newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, "text/plain", "");
+					res.addHeader("Content-Range", "bytes */" + fileLength);
+					return res;
+				}
+				if (endAt >= fileLength) {
+					endAt = fileLength - 1;
+				}
+			}
+			// 送信するデータサイズ
+			long contentLength = endAt - startFrom + 1;
 			// Mimeタイプを得る
 			String mimeType = getMimeType(file);
-			// ファイルのストリームを開く
+			// ファイルのストリームを開き、指定位置までスキップする
 			FileInputStream fis = new FileInputStream(file);
-			Response response = newChunkedResponse(Response.Status.OK, mimeType, fis);
-			// ファイル名をURLエンコード
+			long skipped = fis.skip(startFrom);
+			while (skipped < startFrom) {
+				long s = fis.skip(startFrom - skipped);
+				if (s <= 0) break;
+				skipped += s;
+			}
+
+			Response response;
+			if (isRangeRequest) {
+				// Rangeリクエストの場合は206 Partial Contentと指定範囲のストリームを返す
+				response = newFixedLengthResponse(Response.Status.PARTIAL_CONTENT, mimeType, fis, contentLength);
+				response.addHeader("Content-Range", "bytes " + startFrom + "-" + endAt + "/" + fileLength);
+			}
+			else {
+				// 通常のリクエストの場合は200 OKと全ファイルのストリームを返す
+				response = newFixedLengthResponse(Response.Status.OK, mimeType, fis, fileLength);
+			}
+			// 共通ヘッダー(Accept-Ranges, Content-Disposition)の設定
+			// ※ Content-LengthはnewFixedLengthResponseが自動設定するためaddHeaderしない
+			response.addHeader("Accept-Ranges", "bytes");
+
 			String encodedName = URLEncoder.encode(file.getName(), "UTF-8").replaceAll("\\+", "%20");
 			String contentDisposition = "attachment; filename=\"" + file.getName() + "\"; filename*=UTF-8''" + encodedName;
 			// Webブラウザへレスポンスを返す(ストリーム送信)
