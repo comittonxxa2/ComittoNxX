@@ -1226,6 +1226,14 @@
     <string name="webserver">Setting for Web Sharing</string>
     <string name="config">Setting</string>
 
+    <string name="loadfile">Load file</string>
+    <string name="loadingfile">Loading...</string>
+    <string name="loadfileerror">File loading failed.</string>
+    <string name="launchviewer">Starting the viewer</string>
+    <string name="startingviewer">Starting...</string>
+    <string name="loaded">KB Loaded</string>
+    <string name="timeout">A timeout has occurred.</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
