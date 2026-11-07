@@ -85,7 +85,30 @@ public class FileThumbnailLoader extends ThumbnailLoader implements Runnable {
 	// スレッド停止
 	public void breakThread() {
 		super.breakThread();
-		releaseManager();
+		// スレッドに中断フラグを即座に立てる(ブロックしない)
+		super.breakThread();
+		// メインスレッドをブロックしないよう、非同期でマネージャーを解放する
+		releaseManagerAsync();
+	}
+	// 非同期でのマネージャー解放(メインスレッドをブロックしない)
+	public void releaseManagerAsync() {
+		// 別スレッドで安全にクローズ処理を行う
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (mImageMgrLock) {
+					if (mImageMgr != null) {
+						try {
+							mImageMgr.close();
+						}
+						catch (IOException e) {
+							// ignore
+						}
+						mImageMgr = null;
+					}
+				}
+			}
+		}).start();
 	}
 
 	// スレッド停止

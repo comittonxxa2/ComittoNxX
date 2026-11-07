@@ -290,6 +290,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	EditServerDialog mEditServerDialog;
 	private static CustomProgressDialog mProgressDialog;
 	private static CustomNoneProgressDialog mNoneProgressDialog;
+	private static CustomNoneProgressDialog mNoneViewProgressDialog;
 	private static FragmentManager supportFragmentManager;
 	private static int old_progress;
 	private static int progress;
@@ -514,6 +515,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 	private static boolean mWebServerIcon = false;
 	private boolean isSelfRestarting = false;
 	private static boolean mSearchSettingIcon;
+	private Runnable mShowDialogRunnable;
+	private boolean mIsViewerLaunched = false;
 
 	public static final int FILESORT_NONE = 0;
 	public static final int FILESORT_NAME_UP = 1;
@@ -819,75 +822,85 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					mainHandler.removeCallbacks(timeoutRunnable);
 					// メインスレッドで画面ロックのタイムアウト処理(timeoutRunnable)を実行
 					mainHandler.postDelayed(timeoutRunnable, UI_LOCK_TIMEOUT_MS);
-					int listtype = mListScreenView.getListType();
-					if(listtype != RecordList.TYPE_FILELIST){
-						// サムネイルを読み込ませる
-						loadThumbnail(true);
-						switchFileList(); // ファイルリストをアクティブ化
-						return;
+					// 画面が切り替わる/戻る前に、現在動いているサムネイルローダーを即座に中断・破棄する
+					if (mThumbnailLoader != null) {
+						mThumbnailLoader.breakThread();
+						mThumbnailLoader = null;
 					}
 
-					// ジェスチャーナビゲーションのBack操作中に長押し判定が発生していた場合にキャンセルする
-					if (mTouchArea == ListScreenView.AREATYPE_FILELIST) {
-						mListScreenView.mFileListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_DIRLIST) {
-						mListScreenView.mDirListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_SERVERLIST) {
-						mListScreenView.mServerListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_FAVOLIST) {
-						mListScreenView.mFavoListArea.cancelOperation();
-					} else if (mTouchArea == ListScreenView.AREATYPE_HISTLIST) {
-						mListScreenView.mHistListArea.cancelOperation();
-					}
+					// 重いディレクトリ移動や画面遷移の処理をメインスレッドから外し、描画(インジケーター表示)が1フレーム挟まるようにポストして実行する
+					mainHandler.post(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								int listtype = mListScreenView.getListType();
+								if(listtype != RecordList.TYPE_FILELIST){
+									// サムネイルを読み込ませる
+									loadThumbnail(true);
+									switchFileList(); // ファイルリストをアクティブ化
+									return;
+								}
 
-					if (mBackMode == BACKMODE_EXIT) {
-						checkExitTimer();
-						onOperationFinishedImmediate();
-						return;
-					}
-					else if (mBackMode == BACKMODE_PARENT) {
-						// 親ディレクトリに移動
-						if (mPath.equals("/")) {
-							// アプリ終了
-							checkExitTimer();
-							onOperationFinishedImmediate();
-							return;
-						}
-						moveParentDir();
-						mExitBackTimer = 0;
+								// ジェスチャーナビゲーションのBack操作中に長押し判定が発生していた場合にキャンセルする
+								if (mTouchArea == ListScreenView.AREATYPE_FILELIST) {
+									mListScreenView.mFileListArea.cancelOperation();
+								} else if (mTouchArea == ListScreenView.AREATYPE_DIRLIST) {
+									mListScreenView.mDirListArea.cancelOperation();
+								} else if (mTouchArea == ListScreenView.AREATYPE_SERVERLIST) {
+									mListScreenView.mServerListArea.cancelOperation();
+								} else if (mTouchArea == ListScreenView.AREATYPE_FAVOLIST) {
+									mListScreenView.mFavoListArea.cancelOperation();
+								} else if (mTouchArea == ListScreenView.AREATYPE_HISTLIST) {
+									mListScreenView.mHistListArea.cancelOperation();
+								}
 
-						switchFileList(); // ファイルリストをアクティブ化
-						return;
-					}
-					else if (mBackMode == BACKMODE_HISTORY) {
-						HistoryData data = mPathHistory.pop();
-						String uri;
-						if (data == null) {
-							// 最初のディレクトリ
-							checkExitTimer();
-							onOperationFinishedImmediate();
-							return;
-						}
-						else if (data.mCode == null || data.mCode.length() <= 0) {
-							mServer.select(DEF.INDEX_LOCAL);
-							uri = "";
-							setServerPortPassiveMode(mServer);
-						}
-						else {
-							if (!mServer.select(data.mCode)) {
-								mExitBackTimer = 0;
-								onOperationFinishedImmediate();
-								return;
+								if (mBackMode == BACKMODE_EXIT) {
+									checkExitTimer();
+									onOperationFinishedImmediate();
+								}
+								else if (mBackMode == BACKMODE_PARENT) {
+									// 親ディレクトリに移動
+									if (mPath.equals("/")) {
+										checkExitTimer();
+										onOperationFinishedImmediate();
+										return;
+									}
+									moveParentDir();
+									mExitBackTimer = 0;
+									switchFileList(); // ファイルリストをアクティブ化
+								}
+								else if (mBackMode == BACKMODE_HISTORY) {
+									HistoryData data = mPathHistory.pop();
+									String uri;
+									if (data == null) {
+										// 最初のディレクトリ
+										checkExitTimer();
+										onOperationFinishedImmediate();
+										return;
+									}
+									else if (data.mCode == null || data.mCode.length() <= 0) {
+										mServer.select(DEF.INDEX_LOCAL);
+										uri = "";
+										setServerPortPassiveMode(mServer);
+									}
+									else {
+										if (!mServer.select(data.mCode)) {
+											mExitBackTimer = 0;
+											onOperationFinishedImmediate();
+											return;
+										}
+										uri = mServer.getURI();
+										setServerPortPassiveMode(mServer);
+									}
+									moveFileSelect(uri, data.mPath, data.mTopIndex, false);
+									mExitBackTimer = 0;
+									switchFileList(); // ファイルリストをアクティブ化
+								}
+							} finally {
+								// 必要に応じて処理完了後にプログレス解除などを呼ぶ
 							}
-							uri = mServer.getURI();
-							setServerPortPassiveMode(mServer);
 						}
-						moveFileSelect(uri, data.mPath, data.mTopIndex, false);
-						mExitBackTimer = 0;
-
-						switchFileList(); // ファイルリストをアクティブ化
-						return;
-					}
+					});
 				}
 			});
 		}
@@ -2434,6 +2447,24 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 			default:
 
+				mIsViewerLaunched = true;
+				if (mShowDialogRunnable != null) {
+					// まだ500ms経っていなくて予約が走る前なら、予約自体を取り消す
+					mainHandler.removeCallbacks(mShowDialogRunnable);
+					mShowDialogRunnable = null;
+				}
+				if (mNoneViewProgressDialog != null) {
+					try {
+						if (mNoneViewProgressDialog.isAdded()) {
+							// もし既に500ms以上経っていてダイアログが表示されてしまっている場合は、安全に消す
+							mNoneViewProgressDialog.dismissAllowingStateLoss();
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+					mNoneViewProgressDialog = null;
+				}
 				if (mChangeTheme) {
 					mChangeTheme = false;
 					// 起動パラメータに追加する
@@ -7802,6 +7833,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+		setCustomDialog();
 
 		if (mEpubWebView) {
 			// WebベースのEPUBビューアの場合
@@ -7867,6 +7899,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+		setCustomDialog();
 
 		String filename = "";
 		if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
@@ -7939,6 +7972,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+		setCustomDialog();
 
 		String filename = "";
 		if (FileAccess.accessType(mURI) == DEF.ACCESS_TYPE_SAF) {
@@ -7975,6 +8009,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+		setCustomDialog();
 
 		finalFiles = null;
 		if (mOpenImageHtmlFile) {
@@ -8049,6 +8084,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+		setCustomDialog();
 
 		// Intentをつかって画面遷移する
 		Intent intent = new Intent(FileSelectActivity.this, ImageActivity.class);
@@ -8079,6 +8115,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 
 		// 描画停止
 		setDrawEnable();
+		setCustomDialog();
 
 		String mUriPath = DEF.relativePath(mActivity, mURI, mPath);
 		final String mFilePath = (name != null) ? DEF.relativePath(mActivity, mUriPath, name) : mUriPath;
@@ -9304,8 +9341,33 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (mListScreenView != null) {
 			mListScreenView.setDrawEnable(false);
 		}
+		if (mThumbnailLoader != null) {
+			mThumbnailLoader.breakThread();
+			mThumbnailLoader = null;
+		}
 		// Message msg = mHandler.obtainMessage(DEF.HMSG_DRAWENABLE);
 		// mHandler.sendMessage(msg);
+	}
+
+	private void setCustomDialog() {
+		mIsViewerLaunched = false;
+		Resources res = mActivity.getResources();
+		mNoneViewProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.launchviewer), res.getString(R.string.startingviewer), mHandler);
+		// ダイアログを表示するためのRunnableを定義
+		mShowDialogRunnable = () -> {
+			// まだビューアが起動していなくて、かつアクティビティが破棄されていない場合のみ表示
+			if (!mIsViewerLaunched && !mActivity.isFinishing() && !mActivity.isDestroyed()) {
+				try {
+					mNoneViewProgressDialog.show(supportFragmentManager, TAG);
+				}
+				catch (Exception e) {
+					// 万が一のFragmentTransaction関連のエラー対策
+					e.printStackTrace();
+				}
+			}
+		};
+		// 500ミリ秒遅延させて予約を入れる
+		mainHandler.postDelayed(mShowDialogRunnable, 500);
 	}
 
 	// Bitmap読込のスレッドからの通知取得
