@@ -742,6 +742,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private Handler mWaitHandler;
 	private Runnable mWaitRunnable;
 	private int mReloadPage;
+	private CustomNoneProgressDialog mNoneProgressDialog;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -2209,6 +2210,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// Thread を停止
 				if (mImageMgr != null) {
 					mImageMgr.setBreakTrigger();
+				}
+				if (mNoneProgressDialog != null) {
+					mNoneProgressDialog.dismissAllowingStateLoss();
+					mNoneProgressDialog = null;
 				}
 				mTerminate = true;
 				mReadBreak = true;
@@ -7561,10 +7566,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// イメージビューア終了のダイアログの表示を準備
 		Handler mainHandler = new Handler(Looper.getMainLooper());
 		Resources res = mActivity.getResources();
-		CustomNoneProgressDialog mNoneProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.ExitImageViewer), res.getString(R.string.ExitImageViewerEnding), mHandler);
+		mNoneProgressDialog = new CustomNoneProgressDialog(res.getString(R.string.ExitImageViewer), res.getString(R.string.ExitImageViewerEnding), mHandler);
 		supportFragmentManager = mActivity.getSupportFragmentManager();
 		mWaitHandler = new Handler(Looper.getMainLooper());
 		final boolean[] isDialogShown = {false};
+		// 30秒のタイムアウト管理用(開始時間を記録)
+		final long startTime = System.currentTimeMillis();
+		final long TIMEOUT_MS = 30000;
 		// 500ms後にダイアログ表示を試みる処理
 		Runnable showDialogRunnable = () -> {
 			// すでに終了条件を満たしている場合やActivity破棄時は表示しない
@@ -7586,15 +7594,27 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				if (isFinishing() || isDestroyed()) {
 					return;
 				}
+				boolean isTimeout = (System.currentTimeMillis() - startTime) >= TIMEOUT_MS;
 				if (!mImageMgr.checkCacheSleep()) {
 					// バックグラウンドでのキャッシュ読み込み停止
 					mImageMgr.setCacheSleep(true);
 				}
-        		if (mImageMgr.checkTerminate()) {
+        		if (mImageMgr.checkTerminate() || isTimeout) {
+					if (isTimeout) {
+						Toast.makeText(mActivity, R.string.timeout, Toast.LENGTH_SHORT).show();
+					}
 					mWaitHandler.removeCallbacksAndMessages(null);
 					// ダイアログが実際に表示されていた場合のみ閉じる処理を行う
 					if (isDialogShown[0] && mNoneProgressDialog != null) {
-						mNoneProgressDialog.dismissAllowingStateLoss();
+						try {
+							if (mNoneProgressDialog.isAdded()) {
+								mNoneProgressDialog.dismissAllowingStateLoss();
+							}
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+						mNoneProgressDialog = null;
 					}
 					// 条件を満たしたらfinishActivityMainを実行
 					finishActivityMain(select, resume, mark);

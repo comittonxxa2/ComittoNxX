@@ -352,6 +352,7 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mDownload;
 	private boolean mMemLimitEnable;
 	private int mMemLimit;
+	private final java.util.concurrent.atomic.AtomicBoolean mIsCancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -3118,10 +3119,11 @@ public class ImageManager extends InputStream implements Runnable {
 							}
 							else if (mPdfExpand == DEF.ACCESS_TYPE_FTP || mPdfExpand == DEF.ACCESS_TYPE_FTPS) {
 								Logcat.v(logLevel, "FTP/FTPSの一括ダウンロード処理");
+								mIsCancelled.set(false);
 								boolean isFtps = (mPdfExpand == DEF.ACCESS_TYPE_FTPS);
 								boolean success = FtpFileAccess.downloadFile(
 									mFilePath, user, pass, isFtps,
-									FileAccess.getServerPort(), FileAccess.getPassiveMode(), tempFile
+									FileAccess.getServerPort(), FileAccess.getPassiveMode(), tempFile, mIsCancelled
 								);
 								if (!success || !tempFile.exists() || tempFile.length() <= 0) {
 									if (tempFile != null && tempFile.exists()) {
@@ -3269,6 +3271,7 @@ public class ImageManager extends InputStream implements Runnable {
 	// 読み込み処理中断
 	public void setBreakTrigger() {
 		mRunningFlag = false;
+		mIsCancelled.set(true);
 	}
 
 	// 読み込み処理中断
@@ -3321,6 +3324,18 @@ public class ImageManager extends InputStream implements Runnable {
 			int idx = strPath.indexOf("@");
 			if (idx >= 0) {
 				strPath = "http://" + strPath.substring(idx + 1);
+			}
+		}
+		else if (mHostType == DEF.ACCESS_TYPE_FTP || mHostType == DEF.ACCESS_TYPE_FTPS) {
+			int idx = strPath.indexOf("@");
+			if (idx >= 0) {
+				strPath = "ftp://" + strPath.substring(idx + 1);
+			}
+		}
+		else if (mHostType == DEF.ACCESS_TYPE_SFTP) {
+			int idx = strPath.indexOf("@");
+			if (idx >= 0) {
+				strPath = "sftp://" + strPath.substring(idx + 1);
 			}
 		}
 
