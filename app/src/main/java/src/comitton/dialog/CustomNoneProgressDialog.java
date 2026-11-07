@@ -32,6 +32,10 @@ public class CustomNoneProgressDialog extends DialogFragment {
 		mTitle = title;
 		mHandler = handler;
 	}
+	// FragmentManagerが自動復元する際に使用する引数なしのデフォルトコンストラクタ
+	public CustomNoneProgressDialog() {
+		super();
+	}
 
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -55,4 +59,14 @@ public class CustomNoneProgressDialog extends DialogFragment {
 		// ダイアログを返す
 		return dialog;
     }
+	@Override
+	public void onCancel(DialogInterface dialog) {
+		super.onCancel(dialog);
+		if (mHandler != null) {
+			// ハンドラーへ通知を送る
+			Message msg = Message.obtain();
+			msg.what = DEF.HMSG_PROGRESS_CANCEL;
+			mHandler.sendMessage(msg);
+		}
+	}
 }
