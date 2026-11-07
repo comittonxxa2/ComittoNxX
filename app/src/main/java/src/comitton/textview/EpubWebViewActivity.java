@@ -79,6 +79,7 @@ import src.comitton.config.SetImageTextDetailActivity;
 import src.comitton.config.SetNoiseActivity;
 import src.comitton.dialog.BookmarkDialog;
 import src.comitton.dialog.CloseDialog;
+import src.comitton.dialog.CustomSingleProgressDialog;
 import src.comitton.dialog.EpubWebViewConfigDialog;
 import src.comitton.dialog.Information;
 import src.comitton.dialog.ListDialog;
@@ -96,6 +97,9 @@ import androidx.activity.OnBackPressedCallback;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPSClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -110,6 +114,7 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 
@@ -119,18 +124,21 @@ import io.documentnode.epub4j.epub.EpubReader;
 import io.documentnode.epub4j.domain.SpineReference;
 
 import com.google.gson.Gson;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -155,7 +163,10 @@ import src.comitton.dialog.TabDialogFragment;
 import src.comitton.dialog.ToolbarEditDialog;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileaccess.BookmarkSyncClient;
+import src.comitton.fileaccess.FtpRandomAccessFile;
 import src.comitton.fileaccess.HistorySyncClient;
+import src.comitton.fileaccess.SftpRandomAccessFile;
+import src.comitton.fileaccess.WebDavRandomAccessFile;
 import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.fileview.FileSelectActivity;
 import src.comitton.fileview.data.FileData;
@@ -169,8 +180,10 @@ import src.comitton.imageview.TouchPanelView;
 import src.comitton.noise.NoiseSwitch;
 
 import android.widget.Toast;
+import android.util.Base64;
 
 import net.sf.sevenzipjbinding.IInStream;
+import net.sf.sevenzipjbinding.SevenZipException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -496,6 +509,11 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private String jsonDialogString;
 	private String jsonTappatternString;
 	private String jsonCustomkeyString;
+	private static CustomSingleProgressDialog mSingleViewProgressDialog;
+	private Runnable mShowDialogRunnable;
+	private boolean mIsViewerLaunched = false;
+	private final java.util.concurrent.atomic.AtomicBoolean mIsCancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
+	private Thread mLoadThread = null;
 
 	public class PageMetadata {
 		// 判定項目
@@ -2662,10 +2680,16 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	public String createPageStr(int page, String filename) {
 
 		String strPath = filename;
-		if (strPath.indexOf("smb://") == 0) {
-			int idx = strPath.indexOf("@");
-			if (idx >= 0) {
-				strPath = "smb://" + strPath.substring(idx + 1);
+		// 対応するプロトコルのプレフィックスリスト
+		String[] protocols = {"smb://", "webdav://", "http://", "https://", "ftp://", "ftps://", "sftp://"};
+		for (String proto : protocols) {
+			if (strPath.indexOf(proto) == 0) {
+				String sub = strPath.substring(proto.length());
+				int idx = sub.indexOf("@");
+				if (idx >= 0) {
+					strPath = proto + sub.substring(idx + 1);
+				}
+				break;
 			}
 		}
 
@@ -2830,6 +2854,14 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				// 全文検索のクリアを受信
 				Logcat.v(logLevel, "全文検索のクリアを受信");
 				clearSearchWord();
+				break;
+			case DEF.HMSG_PROGRESS_CANCEL:
+				// Thread を停止
+				Logcat.v(logLevel, "Thread を停止");
+				mIsCancelled.set(true);
+				// トースト表示させる
+				Resources res = mActivity.getResources();
+				Toast.makeText(this, res.getString(R.string.cancelloadpage), Toast.LENGTH_SHORT).show();
 				break;
 
 		}
@@ -3881,6 +3913,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	public static InputStream getStream(Context context, String path, String user, String pass) throws Exception {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.v(logLevel, "path=" + path);
+		// URL内の二重スラッシュを完全に正規化する
+		if (path != null && path.contains("://")) {
+			int idx = path.indexOf("://");
+			 // "http://" などを保持
+			String scheme = path.substring(0, idx + 3);
+			// ホスト名以降のパス
+			String body = path.substring(idx + 3);
+			// body 部分にある連続するスラッシュをすべて 1つ の "/" に置き換える
+			body = body.replaceAll("/+", "/");
+			path = scheme + body;
+		}
+		Logcat.v(logLevel, "Normalized path=" + path);
 		if (path.startsWith("content://")) {
 			// SAF
 			return context.getContentResolver().openInputStream(Uri.parse(path));
@@ -3890,6 +3934,119 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			CIFSContext mSmbContext = SingletonContext.getInstance()
 				.withCredentials(new NtlmPasswordAuthenticator(null, user, pass));
 			return new SmbFile(path, mSmbContext).getInputStream();
+		}
+		else if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("webdav://")) {
+			// WebDAV / HTTP(S)
+			String targetUrl = path;
+			if (targetUrl.startsWith("webdav://")) {
+				// 必要に応じて http:// または https:// に変更
+				targetUrl = targetUrl.replace("webdav://", "https://");
+			}
+			// WebDavRandomAccessFile のインスタンスを生成
+			final WebDavRandomAccessFile webDavRandomAccessFile = new WebDavRandomAccessFile(targetUrl, user, pass);
+			return new java.io.InputStream() {
+				private final byte[] singleByteBuf = new byte[1];
+				@Override
+				public int read() throws java.io.IOException {
+					int n = read(singleByteBuf, 0, 1);
+					return (n != -1) ? (singleByteBuf[0] & 0xFF) : -1;
+				}
+				@Override
+				public int read(byte[] b, int off, int len) throws java.io.IOException {
+					return webDavRandomAccessFile.read(b, off, len);
+				}
+				@Override
+				public long skip(long n) throws java.io.IOException {
+					if (n <= 0) return 0;
+					long pos = webDavRandomAccessFile.getFilePointer();
+					long newPos = Math.min(pos + n, webDavRandomAccessFile.length());
+					webDavRandomAccessFile.seek(newPos);
+					return newPos - pos;
+				}
+				@Override
+				public int available() throws java.io.IOException {
+					long remaining = webDavRandomAccessFile.length() - webDavRandomAccessFile.getFilePointer();
+					return remaining > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) remaining;
+				}
+				@Override
+				public void close() throws java.io.IOException {
+					webDavRandomAccessFile.close();
+				}
+			};
+		}
+		else if (path.startsWith("ftp://") || path.startsWith("ftps://")) {
+			// FTP / FTPS
+			boolean isFtps = path.startsWith("ftps://");
+			// ホストやポート、パッシブモードなどの設定を取得
+			String port = FileAccess.getServerPort();
+			boolean passive = FileAccess.getPassiveMode();
+			// FtpRandomAccessFile のインスタンスを生成
+			final FtpRandomAccessFile ftpRandomAccessFile = new FtpRandomAccessFile(path, user, pass, isFtps, port, passive);
+			return new java.io.InputStream() {
+				private final byte[] singleByteBuf = new byte[1];
+				@Override
+				public int read() throws java.io.IOException {
+					int n = read(singleByteBuf, 0, 1);
+					return (n != -1) ? (singleByteBuf[0] & 0xFF) : -1;
+				}
+				@Override
+				public int read(byte[] b, int off, int len) throws java.io.IOException {
+					return ftpRandomAccessFile.read(b, off, len);
+				}
+				@Override
+				public long skip(long n) throws java.io.IOException {
+					if (n <= 0) return 0;
+					long pos = ftpRandomAccessFile.getFilePointer();
+					long newPos = Math.min(pos + n, ftpRandomAccessFile.length());
+					ftpRandomAccessFile.seek(newPos);
+					return newPos - pos;
+				}
+				@Override
+				public int available() throws java.io.IOException {
+					long remaining = ftpRandomAccessFile.length() - ftpRandomAccessFile.getFilePointer();
+					return remaining > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) remaining;
+				}
+				@Override
+				public void close() throws java.io.IOException {
+					ftpRandomAccessFile.close();
+				}
+			};
+		}
+		else if (path.startsWith("sftp://")) {
+			// SFTP
+			// ポート番号を取得
+			String port = FileAccess.getServerPort();
+			// SftpRandomAccessFile のインスタンスを生成
+			final SftpRandomAccessFile sftpRandomAccessFile = new SftpRandomAccessFile(path, user, pass, port);
+			return new java.io.InputStream() {
+				private final byte[] singleByteBuf = new byte[1];
+				@Override
+				public int read() throws java.io.IOException {
+					int n = read(singleByteBuf, 0, 1);
+					return (n != -1) ? (singleByteBuf[0] & 0xFF) : -1;
+				}
+				@Override
+				public int read(byte[] b, int off, int len) throws java.io.IOException {
+					return sftpRandomAccessFile.read(b, off, len);
+				}
+				@Override
+				public long skip(long n) throws java.io.IOException {
+					if (n <= 0) return 0;
+					long pos = sftpRandomAccessFile.getFilePointer();
+					long newPos = Math.min(pos + n, sftpRandomAccessFile.length());
+					sftpRandomAccessFile.seek(newPos);
+					return newPos - pos;
+				}
+				@Override
+				public int available() throws java.io.IOException {
+					long remaining = sftpRandomAccessFile.length() - sftpRandomAccessFile.getFilePointer();
+					return remaining > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) remaining;
+				}
+				@Override
+				public void close() throws java.io.IOException {
+					sftpRandomAccessFile.close();
+				}
+			};
 		}
 		else {
 			// Local
@@ -3932,6 +4089,85 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 			}
 		});
+	}
+
+	private class ProgressInputStream extends FilterInputStream {
+		private final long totalBytes;
+		private long readBytes = 0;
+		private long lastReportedBytes = 0;
+		// 16KBごとに通知して負荷を軽減
+		private static final long REPORT_INTERVAL = 16 * 1024;
+		private final ProgressListener listener;
+
+		private interface ProgressListener {
+			void onProgress(long readBytes, long totalBytes, int percent);
+		}
+		private ProgressInputStream(InputStream in, long totalBytes, ProgressListener listener) {
+			super(in);
+			this.totalBytes = totalBytes;
+			this.listener = listener;
+		}
+		@Override
+		public int read() throws IOException {
+			int b = super.read();
+			if (b != -1) {
+				readBytes++;
+				reportProgress(false);
+			}
+			return b;
+		}
+		@Override
+		public int read(byte[] b) throws IOException {
+			int read = super.read(b);
+			if (read != -1) {
+				readBytes += read;
+				reportProgress(false);
+			}
+			return read;
+		}
+		@Override
+		public int read(byte[] buf, int off, int len) throws IOException {
+			int read = super.read(buf, off, len);
+			if (read != -1) {
+				readBytes += read;
+				reportProgress(false);
+			}
+			return read;
+		}
+		@Override
+		public long skip(long n) throws IOException {
+			long skipped = super.skip(n);
+			if (skipped > 0) {
+				readBytes += skipped;
+				reportProgress(false);
+			}
+			return skipped;
+		}
+		@Override
+		public boolean markSupported() {
+			return in.markSupported();
+		}
+		@Override
+		public synchronized void mark(int readlimit) {
+			in.mark(readlimit);
+		}
+		@Override
+		public synchronized void reset() throws IOException {
+			in.reset();
+		}
+		private void reportProgress(boolean force) {
+			if (listener == null) return;
+			// 一定バイト数進んだ場合、または強制（完了時など）の場合のみ通知
+			if (force || (readBytes - lastReportedBytes >= REPORT_INTERVAL) || (totalBytes > 0 && readBytes >= totalBytes)) {
+				lastReportedBytes = readBytes;
+				int percent = totalBytes > 0 ? (int) ((readBytes * 100) / totalBytes) : -1;
+				listener.onProgress(readBytes, totalBytes, percent);
+			}
+		}
+		// 読み込み完了時に強制的に100%を通知するためのメソッド
+		private void flushFinalProgress() {
+			reportProgress(true);
+		}
 	}
 
 	// EPUBファイルを読み出す
@@ -3992,18 +4228,100 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			return;
 		}
 
+		// ダイアログを表示
+		mIsCancelled.set(false);
+		mIsViewerLaunched = false;
+		Resources res = mActivity.getResources();
+		mSingleViewProgressDialog = new CustomSingleProgressDialog(res.getString(R.string.loadfile), res.getString(R.string.loadingfile), mHandler);
+		mShowDialogRunnable = () -> {
+			// まだビューアが起動していなくて、かつアクティビティが破棄されていない場合のみ表示
+			if (!mIsCancelled.get() && !mIsViewerLaunched && !mActivity.isFinishing() && !mActivity.isDestroyed()) {
+				try {
+					mSingleViewProgressDialog.show(getSupportFragmentManager(), TAG);
+				}
+				catch (Exception ex) {
+					// 万が一のFragmentTransaction関連のエラー対策
+					ex.printStackTrace();
+				}
+			}
+		};
+		// 500ミリ秒遅延させて予約を入れる
+		mainHandler.postDelayed(mShowDialogRunnable, 500);
+		long totalSize = -1;
 		new Thread(() -> {
+			File tempFile = null;
 			try {
+				// キャンセルチェック
+				if (mIsCancelled.get()) {
+					// アクティビティを終了させる
+					finish();
+					return;
+				}
 				epub4jis = getStream(mActivity, path, mUser, mPass);
+				ProgressInputStream progressStream = new ProgressInputStream(epub4jis, totalSize, (readBytes, total, percent) -> {
+					// コールバック内でもキャンセルを検知できるようにする
+					if (mIsCancelled.get()) {
+						// 強制的に例外を発生させて処理を中断
+						throw new RuntimeException("Cancelled by user");
+					}
+					// メインスレッドでUI(プログレスバー)を更新
+					mActivity.runOnUiThread(() -> {
+						// キャンセルチェック
+						if (mIsCancelled.get()) {
+							// アクティビティを終了させる
+							finish();
+							return;
+						}
+						Logcat.v(logLevel, "readBytes=" + readBytes);
+						String value = (readBytes / 1024) + res.getString(R.string.loaded);
+						mSingleViewProgressDialog.setProgress(value);
+					});
+				});
 				// 1MBバッファ
-				BufferedInputStream bis = new BufferedInputStream(epub4jis, 1024 * 1024); 
+				BufferedInputStream bis = new BufferedInputStream(progressStream, 1024 * 1024); 
+				// キャンセルチェック
+				if (mIsCancelled.get()) {
+					// アクティビティを終了させる
+					finish();
+					return;
+				}
 				Book book = new EpubReader().readEpub(bis);
+				// キャンセルチェック
+				if (mIsCancelled.get()) {
+					// アクティビティを終了させる
+					finish();
+					return;
+				}
 				java.util.Map<String, Resource> tempCache = new java.util.HashMap<>();
 				for (Resource r : book.getResources().getAll()) {
 					if (r.getHref() != null) tempCache.put(r.getHref(), r);
 				}
 				// UIスレッドに戻して判定と表示を行う
 				runOnUiThread(() -> {
+					// キャンセルチェック
+					if (mIsCancelled.get()) {
+						// アクティビティを終了させる
+						finish();
+						return;
+					}
+					mIsViewerLaunched = true;
+					if (mShowDialogRunnable != null) {
+						// まだ500ms経っていなくて予約が走る前なら、予約自体を取り消す
+						mainHandler.removeCallbacks(mShowDialogRunnable);
+						mShowDialogRunnable = null;
+					}
+					if (mSingleViewProgressDialog != null) {
+						try {
+							if (mSingleViewProgressDialog.isAdded()) {
+								// もし既に500ms以上経っていてダイアログが表示されてしまっている場合は、安全に消す
+								mSingleViewProgressDialog.dismissAllowingStateLoss();
+							}
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+						mSingleViewProgressDialog = null;
+					}
 					currentBook = book;
 					initTotalPage();
 					// バックグラウンドでスキャン開始
@@ -4024,8 +4342,46 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 					updateLayout();
 				});
 			}
-			catch (Exception e) { 
-				Log.e(TAG, "Load error", e); 
+			catch (Exception e) {
+				// キャンセルチェック
+				if (mIsCancelled.get()) {
+					Logcat.v(logLevel, "Load cancelled by user.");
+					// アクティビティを終了させる
+					finish();
+					return;
+				}
+				Logcat.e(logLevel, "Load error (Session or Download failed)", e);
+				if (tempFile != null && tempFile.exists()) {
+					tempFile.delete();
+				}
+				// 失敗時(エラー時)も必ずUIスレッドでダイアログを閉じ、ユーザーに通知
+				runOnUiThread(() -> {
+					try {
+						mIsViewerLaunched = true;
+						if (mShowDialogRunnable != null) {
+							// まだ500ms経っていなくて予約が走る前なら、予約自体を取り消す
+							mainHandler.removeCallbacks(mShowDialogRunnable);
+							mShowDialogRunnable = null;
+						}
+						if (mSingleViewProgressDialog != null) {
+							try {
+								if (mSingleViewProgressDialog.isAdded()) {
+									// もし既に500ms以上経っていてダイアログが表示されてしまっている場合は、安全に消す
+									mSingleViewProgressDialog.dismissAllowingStateLoss();
+								}
+							}
+							catch (Exception exx) {
+								exx.printStackTrace();
+							}
+							mSingleViewProgressDialog = null;
+						}
+					}
+					catch (Exception ignored) {}
+						Toast.makeText(mActivity, res.getString(R.string.loadfileerror), Toast.LENGTH_SHORT).show();
+				});
+				finish();
+			}
+			finally {
 			}
 		}).start();
 	}
@@ -5497,6 +5853,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		catch (Exception e) {
 			Toast.makeText(this, "読み込みに失敗しました", Toast.LENGTH_SHORT).show();
 			mInternaerror = true;
+			// アクティビティを終了させる
+			finish();
 			return;
 		}
 		byte[] data;
