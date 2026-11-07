@@ -1222,7 +1222,15 @@
     <string name="setbookmarksync">栞(ブックマーク)同期の設定</string>
     <string name="sethardwareselectkey">ハードウェアキーの管理</string>
     <string name="webview">Webview画面の設定</string>
-    <string name="webserver">Webview画面の設定</string>
+    <string name="webserver">Web共有の設定</string>
     <string name="config">設定</string>
+
+    <string name="loadfile">ファイルの読み込み</string>
+    <string name="loadingfile">読み込み中...</string>
+    <string name="loadfileerror">ファイルの読み込みに失敗しました</string>
+    <string name="launchviewer">ビューアの起動</string>
+    <string name="startingviewer">起動中...</string>
+    <string name="loaded">KB 読み込みました</string>
+    <string name="timeout">タイムアウトが発生しました</string>
 
 </resources>
