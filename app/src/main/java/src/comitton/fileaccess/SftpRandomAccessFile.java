@@ -48,6 +48,10 @@ public class SftpRandomAccessFile implements Closeable {
 			Object[] sc = SftpFileAccess.connectAndOpenChannel(uri, user, pass, portnumber);
 			this.session = (Session) sc[0];
 			this.channelSftp = (ChannelSftp) sc[1];
+			// セッションのタイムアウトを4秒に設定(上位の5秒より短くしてANR対策)
+			if (this.session != null) {
+				this.session.setTimeout(4000);
+			}
 			String remotePath = SftpFileAccess.parsePath(uri);
 			SftpATTRS attrs = channelSftp.lstat(remotePath);
 			this.fileLength = attrs.getSize();
@@ -148,6 +152,10 @@ public class SftpRandomAccessFile implements Closeable {
 				Object[] sc = SftpFileAccess.connectAndOpenChannel(uri, user, pass, portnumber);
 				this.session = (Session) sc[0];
 				this.channelSftp = (ChannelSftp) sc[1];
+				// 再接続時もセッションのタイムアウトを4秒に設定(上位の5秒より短くしてANR対策)
+				if (this.session != null) {
+					this.session.setTimeout(4000);
+				}
 			}
 			catch (Exception e) {
 				throw new IOException("Failed to reconnect SFTP server: " + e.getMessage(), e);

@@ -9,6 +9,8 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.SftpATTRS;
 
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,6 +25,69 @@ import src.comitton.fileview.data.FileData;
 import src.comitton.common.Logcat;
 
 public class SftpFileAccess {
+	// クローズ時に自動で SFTPチャネル と Session を切断する InputStream ラッパー
+	public static class SftpInputStream extends FilterInputStream {
+		private final ChannelSftp sftp;
+		private final Session session;
+
+		public SftpInputStream(InputStream in, ChannelSftp sftp, Session session) {
+			super(in);
+			this.sftp = sftp;
+			this.session = session;
+		}
+		@Override
+		public void close() throws IOException {
+			try {
+				super.close();
+			}
+			finally {
+				if (sftp != null) {
+					try {
+						sftp.exit();
+					}
+					catch (Exception ignored) {}
+				}
+				if (session != null) {
+					try {
+						session.disconnect();
+					}
+					catch (Exception ignored) {}
+				}
+			}
+		}
+	}
+	// クローズ時に自動で SFTPチャネル と Session を切断する OutputStream ラッパー
+	public static class SftpOutputStream extends FilterOutputStream {
+		private final ChannelSftp sftp;
+		private final Session session;
+
+		public SftpOutputStream(OutputStream out, ChannelSftp sftp, Session session) {
+			super(out);
+			this.sftp = sftp;
+			this.session = session;
+		}
+		@Override
+		public void close() throws IOException {
+			try {
+				super.flush();
+				super.close();
+			}
+			finally {
+				if (sftp != null) {
+					try {
+						sftp.exit();
+					}
+					catch (Exception ignored) {}
+				}
+				if (session != null) {
+					try {
+						session.disconnect();
+					}
+					catch (Exception ignored) {}
+				}
+			}
+		}
+	}
 	// SFTPのURIからホスト名を抽出
 	public static String parseHost(String uriString) {
 		if (uriString == null || uriString.isEmpty()) {
@@ -127,6 +192,8 @@ public class SftpFileAccess {
 		// SFTPチャネルオープン&接続
 		ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
 		channelSftp.connect(10000);
+		// 文字化け防止としてファイル名エンコーディングを明示的にUTF-8に設定
+		channelSftp.setFilenameEncoding("UTF-8");
 		return new Object[]{session, channelSftp};
 	}
 	// URIからファイル名のみを抽出
@@ -282,27 +349,49 @@ public class SftpFileAccess {
 		}
 		return result;
 	}
-	// 読み込み用 InputStream を取得
+	// 読み込み用 InputStream を取得(自動切断ラッパーストリーム適用)
 	public static InputStream getInputStream(String uri, String user, String pass, String port) throws FileAccessException {
+		Session session = null;
+		ChannelSftp sftp = null;
 		try {
 			Object[] sc = connectAndOpenChannel(uri, user, pass, port);
-			Session session = (Session) sc[0];
-			ChannelSftp sftp = (ChannelSftp) sc[1];
-			return sftp.get(parsePath(uri));
+			session = (Session) sc[0];
+			sftp = (ChannelSftp) sc[1];
+			String remotePath = parsePath(uri);
+			InputStream rawIn = sftp.get(remotePath);
+			if (rawIn == null) {
+				sftp.exit();
+				session.disconnect();
+				throw new IOException("Failed to retrieve file stream.");
+			}
+			return new SftpInputStream(rawIn, sftp, session);
 		}
 		catch (Exception e) {
+			if (sftp != null) { try { sftp.exit(); } catch (Exception ignored) {} }
+			if (session != null) { try { session.disconnect(); } catch (Exception ignored) {} }
 			throw new FileAccessException("SFTP getInputStream error: " + e.getMessage());
 		}
 	}
-	// 書き込み用 OutputStream を取得
+	// 書き込み用 OutputStream を取得(自動切断ラッパーストリーム適用)
 	public static OutputStream getOutputStream(String uri, String user, String pass, String port) throws FileAccessException {
+		Session session = null;
+		ChannelSftp sftp = null;
 		try {
 			Object[] sc = connectAndOpenChannel(uri, user, pass, port);
-			Session session = (Session) sc[0];
-			ChannelSftp sftp = (ChannelSftp) sc[1];
-			return sftp.put(parsePath(uri));
+			session = (Session) sc[0];
+			sftp = (ChannelSftp) sc[1];
+			String remotePath = parsePath(uri);
+			OutputStream rawOut = sftp.put(remotePath);
+			if (rawOut == null) {
+				sftp.exit();
+				session.disconnect();
+				throw new IOException("Failed to store file stream.");
+			}
+			return new SftpOutputStream(rawOut, sftp, session);
 		}
 		catch (Exception e) {
+			if (sftp != null) { try { sftp.exit(); } catch (Exception ignored) {} }
+			if (session != null) { try { session.disconnect(); } catch (Exception ignored) {} }
 			throw new FileAccessException("SFTP getOutputStream error: " + e.getMessage());
 		}
 	}

@@ -665,17 +665,38 @@ public class FtpFileAccess {
 		}
 	}
 	// 指定したリモートファイルをローカルの宛先ファイルへ一括で安全にダウンロードする
-	public static boolean downloadFile(String uri, String user, String pass, boolean isFtps, String portNumber, boolean isPassive, java.io.File destFile) {
+	public static boolean downloadFile(String uri, String user, String pass, boolean isFtps, String portNumber, boolean isPassive, java.io.File destFile, java.util.concurrent.atomic.AtomicBoolean cancelFlag) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		FTPClient client = null;
+		if (cancelFlag != null && cancelFlag.get()) return false;
 		try {
 			String remotePath = parsePath(uri);
 			Logcat.d(logLevel, "FTP Download Target URI: " + uri);
 			Logcat.d(logLevel, "FTP Download Parsed RemotePath: " + remotePath);
 			client = connectAndLogin(uri, user, pass, isFtps, portNumber, isPassive);
+			if (cancelFlag != null && cancelFlag.get()) return false;
+			// 転送中のストリームを監視し、キャンセルされていたらFTP転送を強制中断する
+			FTPClient finalClient = client;
+			client.setCopyStreamListener(new org.apache.commons.net.io.CopyStreamListener() {
+				@Override
+				public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
+					if (cancelFlag != null && cancelFlag.get()) {
+						try {
+							// retrieveFile()を即座に中断
+							finalClient.abort();
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				@Override
+				public void bytesTransferred(org.apache.commons.net.io.CopyStreamEvent event) {}
+			});
 			try (OutputStream out = new java.io.FileOutputStream(destFile)) {
 				boolean success = client.retrieveFile(remotePath, out);
 				out.flush();
+				if (cancelFlag != null && cancelFlag.get()) return false;
 				int replyCode = client.getReplyCode();
 				String replyString = client.getReplyString();
 				Logcat.d(logLevel, "FTP retrieveFile result: " + success + ", ReplyCode: " + replyCode + ", Reply: " + replyString.trim());
@@ -683,7 +704,12 @@ public class FtpFileAccess {
 			}
 		}
 		catch (Exception e) {
-			Logcat.e(logLevel, "FTP downloadFile error: " + e.getMessage(), e);
+			if (cancelFlag != null && cancelFlag.get()) {
+				Logcat.d(logLevel, "FTP downloadFile cancelled by user.");
+			}
+			else {
+				Logcat.e(logLevel, "FTP downloadFile error: " + e.getMessage(), e);
+			}
 			return false;
 		}
 		finally {

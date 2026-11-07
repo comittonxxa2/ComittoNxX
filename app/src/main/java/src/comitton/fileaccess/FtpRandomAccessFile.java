@@ -42,6 +42,11 @@ public class FtpRandomAccessFile implements Closeable {
 
 	private synchronized void connectAndInit() throws IOException {
 		this.ftpClient = FtpFileAccess.connectAndLogin(uri, user, pass, isFtps, port, passive);
+		if (ftpClient != null) {
+			// 4秒(上位の5秒より短くしてANR対策)
+			ftpClient.setDefaultTimeout(4000);
+			ftpClient.setSoTimeout(4000);
+		}
 		String remotePath = FtpFileAccess.parsePath(uri);
 		this.fileLength = FtpFileAccess.getFileSize(ftpClient, remotePath);
 		if (this.fileLength < 0) {
@@ -138,6 +143,11 @@ public class FtpRandomAccessFile implements Closeable {
 					catch (Exception ignored) {}
 				}
 				ftpClient = FtpFileAccess.connectAndLogin(uri, user, pass, isFtps, port, passive);
+				if (ftpClient != null) {
+					// 4秒(上位の5秒より短くしてANR対策)
+					ftpClient.setDefaultTimeout(4000);
+					ftpClient.setSoTimeout(4000);
+				}
 			}
 			catch (Exception e) {
 				throw new IOException("Failed to reconnect FTP server: " + e.getMessage());
@@ -147,8 +157,9 @@ public class FtpRandomAccessFile implements Closeable {
 		if (blockStart > 0) {
 			ftpClient.setRestartOffset(blockStart);
 		}
-		// 10秒タイムアウト
-		ftpClient.setSoTimeout(10000);
+		// 4秒(上位の5秒より短くする)
+		ftpClient.setDefaultTimeout(4000);
+		ftpClient.setSoTimeout(4000);
 		String remotePath = FtpFileAccess.parsePath(uri);
 		InputStream in = null;
 		boolean streamOpened = false;
