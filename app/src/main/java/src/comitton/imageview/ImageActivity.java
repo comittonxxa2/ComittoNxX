@@ -1981,6 +1981,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 					// ビットマップを設定
 					synchronized (mImageView) {
+						mImageView.setPageBack(mPageBack);
 						mImageView.setImageBitmap(mSourceImage);
 						// 2011/11/18 ルーペ機能
 						this.updateOverSize(false);
