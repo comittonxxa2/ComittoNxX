@@ -1866,6 +1866,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			case DEF.HMSG_EVENT_EFFECT:
 			case DEF.HMSG_EVENT_EFFECT_NEXT:
+				if (msg.arg1 != mEffectGen) {
+					// 新しいめくりが始まっているので、古い効果のタイマーは捨てる
+					break;
+				}
 				// 稼働中のみ次のイベント登録
 				if (logLevel <= Logcat.LOG_LEVEL_DEBUG) {
 					String now_ms = (new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())).format(now);
@@ -1882,7 +1886,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				if (mEffectRate == 0.0f) {
 					// エフェクトの終わりには以前のページ表示をしない
-					mImageView.createBackground(false);
+					if (!mBitmapLoading) {
+						// 次のページを読み込み中(連続めくり)なら、旧ページの背景はそのまま残す
+						mImageView.createBackground(false);
+					}
 				}
 				// エフェクト位置
 				mImageView.setEffectRate(mEffectRate);
@@ -7387,6 +7394,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		return (true);
 	}
 
+	// ページめくり効果のタイマーの世代。めくりのたびに増やし、古いタイマーのメッセージは無視する
+	// (連続めくりで効果のタイマーが重なって動き、古い方の終了で背景が消えるのを防ぐ)
+	private int mEffectGen = 0;
+
 	// タイマー開始
 	public void startViewTimer(int event) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -7394,6 +7405,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		Message msg = mHandler.obtainMessage(event);
 		long NextTime = SystemClock.uptimeMillis();
+
+		if (event == DEF.HMSG_EVENT_EFFECT) {
+			msg.arg1 = ++mEffectGen;
+		}
+		else if (event == DEF.HMSG_EVENT_EFFECT_NEXT) {
+			msg.arg1 = mEffectGen;
+		}
 
 		if (event == DEF.HMSG_EVENT_EFFECT) {
 			// エフェクト開始
