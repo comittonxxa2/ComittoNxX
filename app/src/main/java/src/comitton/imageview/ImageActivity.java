@@ -1087,6 +1087,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 				@Override
 				public void handleOnBackPressed() {
+					// 戻るジェスチャーに横取りされたタッチの押下状態を解除する
+					cancelTouchState();
 					// 既存の operationBack() を呼び出す
 					operationBack();
 				}
@@ -1377,6 +1379,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (mClickGuard) {
 			mClickGuard = false;
 		}
+		if (!hasFocus && mTapOnOff) {
+			// フォーカスを失ったら指を離す通知が届かないことがあるので、押下状態を解除する
+			cancelTouchState();
+		}
 		/*
 		 * if (hasFocus) { if (mInitFlg == 0) { // 起動直後のみ呼び出し mInitFlg = 1;
 		 *
@@ -1546,6 +1552,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "開始します.");
 
 		int code = event.getKeyCode();
+
+		if (code == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN && mTapOnOff) {
+			// 画面端からの戻るジェスチャーでは、指を離した通知が届かないまま戻るキーが届く。
+			// 押下状態が残ると長押しルーペが出たままになるので、ここで解除する
+			cancelTouchState();
+		}
 
 		int found_code = -1;
 		int data;
@@ -1810,7 +1822,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				if (mLongTouchCount == msg.arg1 && !mDoubleTapGuardOn && !mZoomOff) {
 					// 最新のタイマーの時だけ処理
 					// ダブルタップの処理があった場合は長押しと判断されてしまうので無視する
-					if (mTouchFirst) {
+					if (mTouchFirst && mTapOnOff && !mBitmapLoading) {
+						// 指が触れている間だけルーペを出す(離した後や読み込み中には出さない)
 						if (mVibFlag) {
 							// 振動
 							mVibrator.vibrate(TIME_VIB_RANGE);
@@ -2936,6 +2949,19 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	}
 
 	/**
+	 * タッチイベントの入口。システムにタッチを横取りされたとき(ACTION_CANCEL)に押下状態を解除する。
+	 */
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		if (ev.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+			// 画面端の戻るジェスチャーなどでタッチを横取りされた。
+			// この通知は途中の View に消費されて onTouchEvent まで届かないことがあるので、入口で押下状態を解除する
+			cancelTouchState();
+		}
+		return super.dispatchTouchEvent(ev);
+	}
+
+	/**
 	 * View がタッチされた時に発生します。
 	 *
 	 * @param v
@@ -2985,6 +3011,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
 			// エフェクト中であればタッチを無視する
+			int droppedAction = event.getActionMasked();
+			if (droppedAction == MotionEvent.ACTION_UP || droppedAction == MotionEvent.ACTION_CANCEL) {
+				// 指が離れたことまで捨てると「押したまま」の状態が残り、
+				// 長押しルーペが指を離した後に出て消えなくなるので、ここで押下状態を解除する
+				cancelTouchState();
+			}
 			return true;
 		}
 
@@ -3574,9 +3606,52 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mClickGuard = false;
 			}
 			Action_Up_Sub(event);
+			// 押してる間のフラグクリア(ここを通ると長押しタイマーが指を離した後に発動していた)
+			mLongTouchCount ++;
+			mTouchFirst = false;
+			mOperation = TOUCH_NONE;
+			this.mTouchMove = false;
 			mTapOnOff = false;
 		}
+		if (action == MotionEvent.ACTION_CANCEL) {
+			// GestureDetector は ACTION_CANCEL で false を返すので、上の switch の ACTION_CANCEL には来ない
+			cancelTouchState();
+		}
 		return super.onTouchEvent(event);
+	}
+
+	/**
+	 * 押下中の状態をすべて解除する(指を離す操作を受け取れなかったとき用)。
+	 * 待機中の長押しタイマーを無効にし、ルーペが出ていれば消す。
+	 */
+	private void cancelTouchState() {
+		mLongTouchCount ++;
+		if (mLongTouchMode) {
+			// ズーム表示解除
+			if (mImageView != null) {
+				mImageView.setZoomMode(false);
+			}
+			mLongTouchMode = false;
+			// バックグラウンドでのキャッシュ読み込み再開
+			if (mBackgroundPause) {
+				startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+			}
+		}
+		mTouchFirst = false;
+		mOperation = TOUCH_NONE;
+		this.mTouchMove = false;
+		mPinchOn = false;
+		mPinchDown = false;
+		mDoubleTapGuardOn = false;
+		mTapOnOff = false;
+		mClickGuard = false;
+		mImmCancel = false;
+		if (mGuideView != null) {
+			// 上部/下部選択中の状態解除
+			mGuideView.eventTouchCancel();
+			// ページ選択中解除
+			mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
+		}
 	}
 
 	// タップの解除の部分をイベント処理から分離
