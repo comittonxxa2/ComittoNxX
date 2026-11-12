@@ -1996,8 +1996,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						startViewTimer(DEF.HMSG_EVENT_EFFECT);
 					}
 					else {
-						// 以前のページ表示を終了
-						mImageView.createBackground(false);
+						if (mEffectRate == 0.0f) {
+							// 以前のページ表示を終了
+							mImageView.createBackground(false);
+						}
+						// 前のめくり効果がまだ続いている(連続めくりで、効果の途中に次のページの読み込みが終わった)ときは、
+						// ここで背景を消すと効果の残りのコマが旧ページなしで描かれる.
+						// 背景はその効果の終了時(HMSG_EVENT_EFFECT_NEXTで割合が0になったとき)に消える
 
 						// エフェクト無しのときはそのまま終了
 						mLoadingNext = true;
