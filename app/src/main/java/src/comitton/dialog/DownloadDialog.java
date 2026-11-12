@@ -203,6 +203,16 @@ public class DownloadDialog extends ImmersiveDialog implements Runnable, Handler
 						}
 						catch (Exception e) {
 							writeError[0] = e;
+							// 書き込みに失敗した後も、読み込み側がキュー満杯のput()で待ち続けないよう、
+							// 終わりの印が来るまで残りを読み捨てる
+							try {
+								while (writeQueue.take() != EOF_MARKER) {
+									;
+								}
+							}
+							catch (InterruptedException ie) {
+								;
+							}
 						}
 					}
 				});

@@ -685,9 +685,16 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 				items[i] = ope6;
 				mOperate[i] = OPERATE_READHERE;
 				i++;
-				items[i] = ope7;
-				mOperate[i] = OPERATE_SETTHUMBNAIL;
-				i++;
+				if (mThumbnailLoader != null) {
+					// サムネイル表示が無効のときは、コピー元のサムネイルが無いので出さない
+					items[i] = ope7;
+					mOperate[i] = OPERATE_SETTHUMBNAIL;
+					i++;
+				}
+			}
+			if (i < items.length) {
+				// 出さなかった項目の分を詰める
+				items = java.util.Arrays.copyOf(items, i);
 			}
 
 			mListDialog = new ListDialog(mActivity, R.style.MyDialog, res.getString(R.string.opeTitle), items, -1, new ListDialog.ListSelectListener() {
@@ -743,7 +750,9 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 							FileData data = mFileList.get(datapos);
 							String path2 = DEF.relativePath(mActivity, mURI, mPath, mFileName);
 							String path1 = path2 + ":" + data.getName();
-							mThumbnailLoader.setThumbnailCache(path1, path2);
+							if (mThumbnailLoader != null) {
+								mThumbnailLoader.setThumbnailCache(path1, path2);
+							}
 							break;
 						}
 					}
@@ -817,9 +826,16 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 				items[i] = ope6;
 				mOperate[i] = OPERATE_READHERE;
 				i++;
-				items[i] = ope7;
-				mOperate[i] = OPERATE_SETTHUMBNAIL;
-				i++;
+				if (mThumbnailLoader != null) {
+					// サムネイル表示が無効のときは、コピー元のサムネイルが無いので出さない
+					items[i] = ope7;
+					mOperate[i] = OPERATE_SETTHUMBNAIL;
+					i++;
+				}
+			}
+			if (i < items.length) {
+				// 出さなかった項目の分を詰める
+				items = java.util.Arrays.copyOf(items, i);
 			}
 
 			dialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
@@ -864,7 +880,9 @@ public class ExpandActivity extends AppCompatActivity implements Handler.Callbac
 							FileData data = mFileList.get(datapos);
 							String filepath = mUri + mPath + mFileName + ":" + data.getName();
 							String filepath2 = mUri + mPath + mFileName;
-							mThumbnailLoader.setThumbnailCache(filepath, filepath2);
+							if (mThumbnailLoader != null) {
+								mThumbnailLoader.setThumbnailCache(filepath, filepath2);
+							}
 							break;
 						}
 					}

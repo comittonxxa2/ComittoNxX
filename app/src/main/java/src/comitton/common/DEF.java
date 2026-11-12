@@ -4238,6 +4238,13 @@ public class DEF {
 			if (SORT_BY_NATURAL_NUMBERS && ct1 == CHTYPE_NUM) {
 				String num1 = getNumbers(n1, i1);
 				String num2 = getNumbers(n2, i2);
+				if (num1.isEmpty() || num2.isEmpty()) {
+					// "." と "," は数字の仲間として扱うが、数字列としては切り出されない(0文字).
+					// そのままだと位置が進まずに無限ループになるので、1文字ずつ比べて進める
+					if (ch1 != ch2) return ch1 - ch2;
+					i1++; i2++;
+					continue;
+				}
 				int res = compareAsNumeric(num1, num2);
 				if (res != 0) return res;
 				i1 += num1.length(); i2 += num2.length();
