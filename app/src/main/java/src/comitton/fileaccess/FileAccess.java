@@ -895,7 +895,7 @@ public class FileAccess {
 
 	public static ArrayList<FileData> listFiles(@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @Nullable Handler handler) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 
 		ArrayList<FileData> result = new ArrayList<FileData>(0);
 		switch (accessType(uri)) {

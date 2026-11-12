@@ -628,8 +628,8 @@ public class MyTextView extends SurfaceView implements Handler.Callback, Surface
 				break;
 			case 2: // ct->cb
 			case 6: // cb->ct
-				rc.left = (r - l) / 2;
-				rc.right = (r - l) / 2;
+				rc.left = l + (r - l) / 2;
+				rc.right = l + (r - l) / 2;
 				break;
 		}
 		switch (gradation) {

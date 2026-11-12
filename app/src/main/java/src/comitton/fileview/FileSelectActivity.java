@@ -3251,9 +3251,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (mListRota != SetFileListActivity.getListRota(mSharedPreferences)) {
 			return true;
 		}
-		if (mToolbarShow != SetFileListActivity.getShowToolbar(mSharedPreferences)) { // ツールバー表示
-			return true;
-		}
+		// ツールバー表示(mToolbarShow)は常に true で設定値を読んでいないため比べない.
+		// 比べると、設定をオフにしているとき一覧に戻るたびに「変更あり」となり、スクロール位置が先頭に戻っていた
 		if (mToolbarSize != DEF.calcToolbarPix(SetFileListActivity.getToolbarSize(mSharedPreferences), mDensity)) { // ツールバーサイズ(px)
 			return true;
 		}
@@ -3287,9 +3286,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		if (mRotateBtn != DEF.RotateBtnList[SetCommonActivity.getRotateBtn(mSharedPreferences)]) {
 			return true;
 		}
-		if (mToolbarShow != SetFileListActivity.getShowToolbar(mSharedPreferences)) {
-			return true;
-		}
+		// ツールバー表示は比べない(上と同じ理由)
 		if (mHidden != SetCommonActivity.getHiddenFile(mSharedPreferences)) {
 			return true;
 		}
