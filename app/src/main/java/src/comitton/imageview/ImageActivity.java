@@ -2470,10 +2470,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 			}
 
+			// bm[0]に入っているのが2ページ目(mCurrentPage+1)か
+			boolean secondPageOnly = false;
 			if (bm[1] != null && bm[0] == null) {
 				// 片側しか読み込んでいない場合はbm[0]に移す
 				bm[0] = bm[1];
 				bm[1] = null;
+				secondPageOnly = true;
 			}
 
 			boolean isSingle = false; // 現在ページが単ページか
@@ -2545,8 +2548,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mHalfPos = HALFPOS_1ST;
 					mSourceImage[0] = bm[0];
 					mSourceImage[1] = null;
-					if (mPageBack) {
-						// 戻りの場合は2ページ目にする
+					if (mPageBack && secondPageOnly) {
+						// 戻りで2ページ目だけを表示する場合は2ページ目にする
+						// (2ページ目が範囲外で1ページ目だけを読んだときに加算すると、ページ数と同じ番号になって範囲外になる)
 						mCurrentPage++;
 					}
 					isSingle = true;
