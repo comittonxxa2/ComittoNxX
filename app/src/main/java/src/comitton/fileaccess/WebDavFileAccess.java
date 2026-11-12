@@ -104,7 +104,7 @@ public class WebDavFileAccess {
 			String path = u.getPath();
 			if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
 			int idx = path.lastIndexOf('/');
-			return idx >= 0 ? URLDecoder.decode(path.substring(idx + 1), "UTF-8") : path;
+			return idx >= 0 ? URLDecoder.decode(path.substring(idx + 1).replace("+", "%2B"), "UTF-8") : path;
 		}
 		catch (Exception e) {
 			return uri;
@@ -248,7 +248,8 @@ public class WebDavFileAccess {
 				if (resPath == null) continue;
 				// URLデコード(日本語対策)
 				try {
-					resPath = URLDecoder.decode(resPath, StandardCharsets.UTF_8.name());
+					// URLDecoder は "+" を空白に変えるので、ファイル名の "+" が残るよう先に %2B にしておく
+					resPath = URLDecoder.decode(resPath.replace("+", "%2B"), StandardCharsets.UTF_8.name());
 				}
 				catch (Exception ignored) {
 				}
@@ -313,7 +314,7 @@ public class WebDavFileAccess {
 			if (path.startsWith("http://") || path.startsWith("https://")) {
 				path = new URI(path).getPath();
 			}
-			path = URLDecoder.decode(path, "UTF-8");
+			path = URLDecoder.decode(path.replace("+", "%2B"), "UTF-8");
 			if (path.endsWith("/")) {
 				path = path.substring(0, path.length() - 1);
 			}

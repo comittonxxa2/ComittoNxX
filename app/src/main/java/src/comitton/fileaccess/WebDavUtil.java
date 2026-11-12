@@ -30,7 +30,8 @@ public class WebDavUtil {
 		// 事前にURLエンコードされている場合のためにデコード(二重エンコード防止)
 		String decodedUri;
 		try {
-			decodedUri = URLDecoder.decode(normalized, StandardCharsets.UTF_8.name());
+			// URLDecoder は "+" を空白に変える(フォームの書式)ので、ファイル名の "+" が残るよう先に %2B にしておく
+			decodedUri = URLDecoder.decode(normalized.replace("+", "%2B"), StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e) {
 			decodedUri = normalized;
