@@ -98,7 +98,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 		mPort = mServer.getPort(index);
 		mProvider = mServer.getProvider(index);
 
-		Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + mName + ", host=" + mHost + ", user=" + mUser + ", pass=" + mPass + ", provider=" + mProvider);
+		Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + mName + ", host=" + mHost + ", user=" + mUser + ", pass=" + Logcat.mask(mPass) + ", provider=" + mProvider);
 
 		mListener = listener;
 
@@ -223,7 +223,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			}
 			pasv = mChkPasv.isChecked();
 
-			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName + ", pasv=" + pasv + ", port=" + port);
+			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + Logcat.mask(pass) + ", provider=" + provider + ", dispName=" + dispName + ", pasv=" + pasv + ", port=" + port);
 			mListener.onSearch(mAccessType, name, host, user, pass, path, provider, dispName, pasv, port);
 			dismiss();
 		}
@@ -303,7 +303,7 @@ public class EditServerDialog extends ImmersiveDialog implements OnClickListener
 			}
 			boolean pasv= false;
 
-			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + pass + ", provider=" + provider + ", dispName=" + dispName);
+			Logcat.d(logLevel, "index=" + mIndex + ", accessType=" + mAccessType + ", name=" + name + ", host=" + host + ", user=" + user + ", pass=" + Logcat.mask(pass) + ", provider=" + provider + ", dispName=" + dispName);
 			mListener.onSearch(mAccessType, name, host, user, pass, path, provider, dispName, pasv, port);
 			dismiss();
 		}

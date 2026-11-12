@@ -19,6 +19,11 @@ public class Logcat {
      * @param msg ログメッセージ
      * @return クラス名: メソッド名: {@code msg} (ファイル名:行番号) エラー名: エラーメッセージ
      */
+    /** ログに出すパスワードを伏せる(空なら空のまま). */
+    public static String mask(@Nullable String s) {
+        return (s == null || s.isEmpty()) ? "" : "***";
+    }
+
     public static String msg(@Nullable String msg, @Nullable Throwable e) {
         Throwable throwable = new Throwable("msg");
         StackTraceElement[] ste = throwable.getStackTrace();

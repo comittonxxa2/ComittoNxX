@@ -1,6 +1,7 @@
 package src.comitton.dialog;
 
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -197,6 +198,16 @@ public class TabDialogFragment extends ImmersiveDialogFragment implements View.O
     }
 
     private MenuItemView mSelectView;
+    @Override
+    public void onDismiss(@NonNull DialogInterface dialog) {
+        super.onDismiss(dialog);
+        // 項目を選ばずに閉じた場合(戻るキー・画面の外のタップ)も、呼び出し元に閉じたことを知らせる.
+        // 呼び出し元はこれでメニューの参照を消し、次にメニューを開けるようにする(旧 MenuDialog と同じ動き)
+        if (mListener != null) {
+            mListener.onCloseMenuDialog();
+        }
+    }
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         int logLevel = Logcat.LOG_LEVEL_WARN;

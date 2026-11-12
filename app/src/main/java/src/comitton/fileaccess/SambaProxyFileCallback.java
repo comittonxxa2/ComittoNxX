@@ -29,7 +29,7 @@ public class SambaProxyFileCallback extends StorageManagerCompat.ProxyFileDescri
 
 	public SambaProxyFileCallback(@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		mActivity = activity;
 
 		if (!SmbFileAccess.getSmbAccessSwitch()) {

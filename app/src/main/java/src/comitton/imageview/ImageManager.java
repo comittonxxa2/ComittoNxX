@@ -1766,7 +1766,7 @@ public class ImageManager extends InputStream implements Runnable {
 													if ((length = fis.read(buff)) > 0) {
 														// ファイルが読み込めた場合
 														// 文字列に変換
-														String str = new String(buff, StandardCharsets.UTF_8);
+														String str = new String(buff, 0, length, StandardCharsets.UTF_8);
 														// テキストを解析
 														TextAnalysis(str);
 														if (GetContentsLegnth() > 0) {
@@ -1917,7 +1917,7 @@ public class ImageManager extends InputStream implements Runnable {
 										if ((length = inputStream.read(buff)) > 0) {
 											// ファイルが読み込めた場合
 											// 文字列に変換
-											String str = new String(buff, StandardCharsets.UTF_8);
+											String str = new String(buff, 0, length, StandardCharsets.UTF_8);
 											// テキストを解析
 											TextAnalysis(str);
 											if (GetContentsLegnth() > 0) {
@@ -3051,7 +3051,7 @@ public class ImageManager extends InputStream implements Runnable {
 		int maxPage = 0;
 		mMaxOrgLength = 0;
 
-		Logcat.d(logLevel, "開始します. path=" + path + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "開始します. path=" + path + ", user=" + user + ", pass=" + Logcat.mask(pass));
 
 		if (mPdfExpand == -1) {
 			int type = FileAccess.accessType(path);

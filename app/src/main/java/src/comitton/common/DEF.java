@@ -1009,8 +1009,6 @@ public class DEF {
 	public static final String DEFAULT_EVERYTHING_REPLACE_TO = "";
 
 	public static final int HMSG_EVERYTHING_RESULT = 33;
-	public static final int TOOLBAR_EVERYTHING = 1041;
-	public static final int TOOLBAR_EVENT_EVERYTHING = 38;
 
 	public static final String KEY_BOOKMARKSYNC_HOST = "BookmarkSyncHost";
 	public static final String KEY_BOOKMARKSYNC_PORT = "BookmarkSyncPort";
@@ -3400,7 +3398,7 @@ public class DEF {
 	public static final int[] RotateBtnList = {0, KeyEvent.KEYCODE_FOCUS // フォーカスキー
 			, KeyEvent.KEYCODE_CAMERA // シャッターキー
 	};
-	public static final String[] CharsetList = {"UTF-8", "Shift_JIS", "EUC-JP", "EUC-KR", "Big5", "CB2312", "GB18030", "Big5-HKSCS"};
+	public static final String[] CharsetList = {"UTF-8", "Shift_JIS", "EUC-JP", "EUC-KR", "Big5", "GB2312", "GB18030", "Big5-HKSCS"};
 
 	public static final int ROTATE_AUTO = 0;
 	public static final int ROTATE_PORTRAIT = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;

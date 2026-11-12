@@ -273,7 +273,7 @@ public class CropImageView extends ImageView{
                         if (mMoveY + mFrameRect.top < 0)
                             mMoveY = 0 - mFrameRect.top;
                         if (mFrameRect.height() - mMoveY < mMinHeight)
-                            mMoveY = mFrameRect.width() - mMinHeight;
+                            mMoveY = mFrameRect.height() - mMinHeight;
                         mFrameRect.top += mMoveY;
                         mTouchY += mMoveY;
                     } else if ((mTouchState & TS_BOTTOM) != 0) {
