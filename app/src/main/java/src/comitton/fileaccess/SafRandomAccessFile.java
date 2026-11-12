@@ -77,7 +77,7 @@ public class SafRandomAccessFile {
         }
 
         try {
-            mPos += off;
+            // off は配列の書き込み位置で、ファイル上の位置ではないので mPos には足さない
             int ret = mFileInputStream.read(b, off, size);
             if (ret != -1) {
                 mPos += ret;
@@ -108,7 +108,12 @@ public class SafRandomAccessFile {
         try {
             Logcat.d(logLevel, MessageFormat.format("セットします. mPos={0}, length={1}", new Object[]{mPos, length()}));
             mPos = position(pos);
-            mPos = position();
+            try {
+                // lseek が使えるときは実際の位置で確かめる(使えないときは読み飛ばした結果のまま)
+                mPos = position();
+            } catch (Exception e) {
+                ;
+            }
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -119,41 +124,40 @@ public class SafRandomAccessFile {
     long position(final long pos) throws Exception {
         int logLevel = Logcat.LOG_LEVEL_WARN;
         Logcat.d(logLevel, MessageFormat.format("開始します. pos={0}, mPos={1}, length={2}", new Object[]{pos, mPos, length()}));
-        long result = 0;
+        long result;
         try {
-            while (result != pos) {
-                result += Os.lseek(pfd.getFileDescriptor(), pos, OsConstants.SEEK_SET);
-            }
+            // lseek は移動後の絶対位置を返す
+            result = Os.lseek(pfd.getFileDescriptor(), pos, OsConstants.SEEK_SET);
             if (pos != position()) {
                 // マイナスシークをすると正しく見える値を返すのに実際にはシークされていないのでオープンからやり直す
                 Open();
-                while (result != pos) {
-                    result += Os.lseek(pfd.getFileDescriptor(), pos, OsConstants.SEEK_SET);
-                }
+                result = Os.lseek(pfd.getFileDescriptor(), pos, OsConstants.SEEK_SET);
             }
         } catch (Exception e) {
             // pfd が lseek をサポートしてない場合
             // ESPIPE (Illegal seek) エラーが返される
-            Logcat.w(logLevel, "エラーが発生しました.", e);
-            try {
-                // スキップを実行する
-                result = mPos;
-                while (result != pos) {
-                    result += mFileInputStream.skip(pos - mPos);
-                }
-            } catch (Exception ex) {
-                // pos - mPos がマイナスかつ skip がマイナス方向をサポートしてない場合
-                Logcat.w(logLevel, "エラーが発生しました.", e);
-                // FileInputStream を再作成してからスキップを実行する
-                mFileInputStream.close();
-                mFileInputStream = new FileInputStream(pfd.getFileDescriptor());
-                result = 0;
-                while (result != pos) {
-                    result += mFileInputStream.skip(pos);
-                }
+            Logcat.w(logLevel, "lseekが使えないので読み飛ばしで移動します.", e);
+            long cur = mPos;
+            if (pos < cur) {
+                // 後ろへは戻れないので、開き直して先頭から読み飛ばす
+                Open();
+                cur = 0;
             }
+            long remain = pos - cur;
+            while (remain > 0) {
+                long skipped = mFileInputStream.skip(remain);
+                if (skipped <= 0) {
+                    // skip が進まないときは1バイト読んで進める(終端なら打ち切る)
+                    if (mFileInputStream.read() < 0) {
+                        break;
+                    }
+                    skipped = 1;
+                }
+                remain -= skipped;
+            }
+            result = pos - remain;
         }
-        Logcat.d(logLevel, MessageFormat.format("終了します. pos={0}, mPos={1}, length={2}", new Object[]{pos, mPos, length()}));
+        Logcat.d(logLevel, MessageFormat.format("終了します. pos={0}, result={1}, length={2}", new Object[]{pos, result, length()}));
         return result;
     }
 

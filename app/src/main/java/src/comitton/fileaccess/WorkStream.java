@@ -101,7 +101,8 @@ public class WorkStream extends InputStream {
 		}
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "READ");
 
-		mPos += off;
+		// off は配列の書き込み位置で、ファイル上の位置ではないので mPos には足さない
+		// (mPos は再接続したときのシーク先に使う)
 		int ret = 0;
 		try {
 			ret = mFileAccess.read(b, off, size);
