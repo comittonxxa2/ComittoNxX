@@ -7719,7 +7719,7 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 					if (FileData.isEpubSub(infile)) {
 						openEpubFile(fd.getName());
 					}
-					if (FileData.isText(infile)) {
+					else if (FileData.isText(infile)) {
 						// zip内テキストファイルオープン
 						expandCompFile(fd.getName(), infile, fd.getType());
 					}

@@ -5485,17 +5485,22 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		);
 	}
 
+	// スクロール位置の誤差(WebView の丸めで1〜2px ずれることがある)を、次のページと数えないための余裕
+	private static final int PAGE_TOLERANCE = 2;
+
+	// 章のページ数. 整数どうしで割ると先に切り捨てられ、最後の端数のページが数えられなかったので切り上げる
 	private int calcCurrentPageMax(int height, int step, boolean mode) {
-		int total = 0;
 		int calcstep = (mDoubleMode && mode) ? step * 2 : step;
-		if (calcstep == 0) calcstep = height;
-		return (int)Math.ceil(height / calcstep);
+		if (calcstep <= 0) calcstep = Math.max(height, 1);
+		return Math.max(1, (int)Math.ceil((double)(height - PAGE_TOLERANCE) / calcstep));
 	}
 
+	// 章の中の今のページ(0始まり). 最後の端数のページはスクロール位置が1ページ分の倍数の途中で止まるので、
+	// 切り捨てると1つ前のページと同じ番号になっていた. ページ数と同じく切り上げる
 	private int calcCurrentPageNow(int height, int step, boolean topbottom, boolean leftright) {
 		int calcstep = (mDoubleMode && leftright) ? step * 2 : step;
-		if (calcstep == 0) calcstep = height;
-		return (int)Math.ceil(height / calcstep);
+		if (calcstep <= 0) calcstep = Math.max(height, 1);
+		return Math.max(0, (int)Math.ceil((double)(height - PAGE_TOLERANCE) / calcstep));
 	}
 
 	private void applyReflowStyle(WebView view) {
