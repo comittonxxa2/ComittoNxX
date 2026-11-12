@@ -412,6 +412,11 @@ public class WebFilerServer extends NanoHTTPD {
 				mScrolly = Integer.parseInt(yValue);
 			}
 			return newFixedLengthResponse(Response.Status.OK, "text/plain", "");		}
+		if (mReadonly && ("/bulk-delete".equals(uri)
+				|| (Method.POST.equals(method) && ("/upload".equals(uri) || "/mkdir".equals(uri) || "/delete".equals(uri) || "/rename".equals(uri))))) {
+			// 読み取り専用のときは、画面のボタンを隠すだけでなく要求そのものを断る
+			return forbidden();
+		}
 		if ("/bulk-download".equals(uri)) {
 			return handleBulkDownload(session, lang);
 		}
@@ -425,11 +430,18 @@ public class WebFilerServer extends NanoHTTPD {
 			if (archivePath == null || archivePath.isEmpty()) {
 				return newFixedLengthResponse(Response.Status.BAD_REQUEST, "text/plain; charset=UTF-8", lang.get("ArchivePathInvalid"));
 			}
+			archivePath = resolveInside(archivePath);
+			if (archivePath == null) {
+				return forbidden();
+			}
 			return generateArchiveViewResponse(lang, archivePath, sortField, sortOrder);
 		}
 		if ("/archivefile".equals(uri)) {
-			String archivePath = parms.get("archive");
+			String archivePath = resolveInside(parms.get("archive"));
 			String entryName = parms.get("entry");
+			if (archivePath == null) {
+				return forbidden();
+			}
 			return serveArchiveEntryResponse(lang, archivePath, entryName);
 		}
 		if (Method.POST.equals(method)) {
@@ -618,18 +630,39 @@ public class WebFilerServer extends NanoHTTPD {
 	}
 	// パスをサニタイズする
 	private String sanitizePath(String path) {
+		String inside = resolveInside(path);
+		return (inside != null) ? inside : mRootPath;
+	}
+	// 共有フォルダの正規化したパス
+	private String canonicalRoot() throws IOException {
+		return new File(mRootPath).getCanonicalPath();
+	}
+	// 共有フォルダの中(ルート自身を含む)なら正規化したパスを、外なら null を返す.
+	// startsWith だけだと /root と /rootX を区別できないので、区切り文字まで含めて比べる
+	private String resolveInside(String path) {
+		if (path == null || path.isEmpty()) {
+			return null;
+		}
 		try {
-			File targetFile = new File(path);
-			String canonicalTarget = targetFile.getCanonicalPath();
-			String canonicalRoot = new File(mRootPath).getCanonicalPath();
-			if (!canonicalTarget.startsWith(canonicalRoot)) {
-				return mRootPath;
+			String target = new File(path).getCanonicalPath();
+			String root = canonicalRoot();
+			String rootPrefix = root.endsWith(File.separator) ? root : root + File.separator;
+			if (target.equals(root) || target.startsWith(rootPrefix)) {
+				return target;
 			}
-			return canonicalTarget;
 		}
 		catch (Exception e) {
-			return mRootPath;
+			;
 		}
+		return null;
+	}
+	// フォルダ名・ファイル名として1つの名前になっているか(パスの区切りや .. を含まない)
+	private static boolean isSafeName(String name) {
+		return name != null && !name.isEmpty() && !name.equals(".") && !name.equals("..")
+				&& name.indexOf('/') < 0 && name.indexOf('\\') < 0 && name.indexOf('\0') < 0;
+	}
+	private Response forbidden() {
+		return newFixedLengthResponse(Response.Status.FORBIDDEN, "text/plain; charset=UTF-8", "Forbidden");
 	}
 	// コードを作成してWebブラウザへレスポンスを返す
 	private Response handleBrowse(Map<String, String> lang, String currentPath, Map<String, String> parms) {
@@ -1913,7 +1946,13 @@ public class WebFilerServer extends NanoHTTPD {
 			String dirname = params.get("dirname");
 			// フォルダ名があれば作成
 			if (dirname != null && !dirname.isEmpty()) {
+				if (!isSafeName(dirname)) {
+					return forbidden();
+				}
 				File newDir = new File(currentPath, dirname);
+				if (resolveInside(newDir.getPath()) == null) {
+					return forbidden();
+				}
 				if (!newDir.exists()) {
 					newDir.mkdirs();
 				}
@@ -1934,8 +1973,12 @@ public class WebFilerServer extends NanoHTTPD {
 			String targetPath = params.get("targetPath");
 			// パスが存在すればフォルダ以下のファイルを一括で削除
 			if (targetPath != null) {
-				// パスをサニタイズ
-				targetPath = sanitizePath(targetPath);
+				// 共有フォルダの中だけ。範囲外のときに共有フォルダ(ルート)を返すsanitizePathを使うと、
+				// ルートごと削除してしまうので、範囲外とルート自身は断る
+				targetPath = resolveInside(targetPath);
+				if (targetPath == null || targetPath.equals(canonicalRoot())) {
+					return forbidden();
+				}
 				deleteRecursive(new File(targetPath));
 			}
 			// Webブラウザへレスポンスを返す
@@ -1967,8 +2010,11 @@ public class WebFilerServer extends NanoHTTPD {
 			String newName = params.get("newName");
 			// パスが存在すれば名称変更
 			if (oldPath != null && newName != null && !newName.isEmpty()) {
-				// パスをサニタイズ
-				oldPath = sanitizePath(oldPath);
+				// 共有フォルダの中だけ。新しい名前は1つの名前に限る(../ で外へ移動できないように)
+				oldPath = resolveInside(oldPath);
+				if (oldPath == null || oldPath.equals(canonicalRoot()) || !isSafeName(newName)) {
+					return forbidden();
+				}
 				File oldFile = new File(oldPath);
 				File newFile = new File(oldFile.getParent(), newName);
 				oldFile.renameTo(newFile);
@@ -2161,6 +2207,13 @@ public class WebFilerServer extends NanoHTTPD {
 						Logcat.e(logLevel, "Filename decode error", e);
 					}
 				}
+				// フォルダの部分を除いた名前だけを使う(../ や / で保存先の外へ書けないように)
+				if (originalFileName != null) {
+					originalFileName = new File(originalFileName.replace('\\', '/')).getName();
+					if (!isSafeName(originalFileName)) {
+						originalFileName = null;
+					}
+				}
 				// 最終的にも空の場合はタイムスタンプ名
 				if (originalFileName == null || originalFileName.isEmpty()) {
 					originalFileName = "uploaded_" + System.currentTimeMillis() + "_" + i + ".zip";
@@ -2255,8 +2308,15 @@ public class WebFilerServer extends NanoHTTPD {
 			}
 			Logcat.v(logLevel, "Bulk Delete total paths to delete: " + pathsToDel.size());
 			// 取得したパスのファイル/フォルダを再帰的に削除
+			String rootForDel = canonicalRoot();
 			for (String pathStr : pathsToDel) {
-				File target = new File(pathStr);
+				// 共有フォルダの中だけ(ルート自身は消さない)
+				String safePath = resolveInside(pathStr);
+				if (safePath == null || safePath.equals(rootForDel)) {
+					Logcat.w(logLevel, "Delete target is outside the shared folder: " + pathStr);
+					continue;
+				}
+				File target = new File(safePath);
 				if (target.exists()) {
 					Logcat.v(logLevel, "Deleting target: " + target.getAbsolutePath());
 					deleteRecursive(target);
@@ -2335,7 +2395,13 @@ public class WebFilerServer extends NanoHTTPD {
 					zos = new ZipOutputStream(new BufferedOutputStream(pipedOut), java.nio.charset.Charset.forName("MS932"));
 
 					for (String pStr : pathsToZip) {
-						File target = new File(pStr);
+						// 共有フォルダの中だけ
+						String safePath = resolveInside(pStr);
+						if (safePath == null) {
+							Logcat.w(logLevel, "Download target is outside the shared folder: " + pStr);
+							continue;
+						}
+						File target = new File(safePath);
 						if (target.exists()) {
 							// ファイルまたはディレクトリを再帰的に追加
 							addFileToZip(zos, target, target.getParentFile(), "");
