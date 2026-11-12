@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -251,25 +252,13 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 			FileInputStream is = null;
 			InputStreamReader sr = null;
 			BufferedReader br = null;
-			Editor ed = mSp.edit();
+			// 読み込んだ設定はいったんここにためる。ファイルを最後まで読めて1件以上あったときだけ
+			// 既存の設定を消して書き込む(途中で失敗したときに、既存の設定だけが消えないようにする)
+			LinkedHashMap<String, Object> imported = new LinkedHashMap<>();
 			try {
 				is = new FileInputStream(filepath);
 				sr = new InputStreamReader(is, "UTF-8");
 				br = new BufferedReader(sr, 8192);
-
-				// 既存の設定を削除
-				Map<String, ?> keys = mSp.getAll();
-				if (keys != null) {
-					for (String key : keys.keySet()) {
-						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://") || key.length() >= 7 && key.startsWith("http://") || key.length() >= 6 && key.startsWith("ftp://") || key.length() >= 7 && key.startsWith("ftps://") || key.length() >= 7 && key.startsWith("sftp://"))) {
-							// 既読情報を読み込まない場合は削除しない
-						}
-						else if (DEF.checkExportKey(key)) {
-							// 出力対象
-							ed.remove(key);
-						}
-					}
-				}
 
 				// ファイル読み込み
 				String line;
@@ -291,6 +280,9 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 					if (isEncrypted) {
 						// 先頭以外の場合
 						line = DecAes(line);
+						if (line == null) {
+							throw new IllegalStateException("復号に失敗しました.");
+						}
 					}
 					contentLines.add(line);
 				}
@@ -311,28 +303,16 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 					while (jsonKeys.hasNext()) {
 						// キーと値を取得
 						String key = jsonKeys.next();
-						if (mIgnoreReadInfo && (key.length() >= 1 && key.startsWith("/") || key.length() >= 6 && key.startsWith("smb://") || key.length() >= 7 && key.startsWith("http://") || key.length() >= 6 && key.startsWith("ftp://") || key.length() >= 7 && key.startsWith("ftps://") || key.length() >= 7 && key.startsWith("sftp://"))) {
+						if (mIgnoreReadInfo && isReadInfoKey(key)) {
 							// 既読情報を読み込まない場合は何もしない
 							continue;
 						}
 						Object value = jsonRoot.get(key);
-						if (value instanceof String) {
-							ed.putString(key, (String) value);
-						}
-						else if (value instanceof Boolean) {
-							ed.putBoolean(key, (Boolean) value);
-						}
-						else if (value instanceof Integer) {
-							ed.putInt(key, (Integer) value);
-						}
-						else if (value instanceof Long) {
-							ed.putLong(key, (Long) value);
+						if (value instanceof String || value instanceof Boolean || value instanceof Integer || value instanceof Long || value instanceof Float) {
+							imported.put(key, value);
 						}
 						else if (value instanceof Double) {
-							ed.putFloat(key, ((Double) value).floatValue());
-						}
-						else if (value instanceof Float) {
-							ed.putFloat(key, (Float) value);
+							imported.put(key, ((Double) value).floatValue());
 						}
 					}
 				}
@@ -354,35 +334,35 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 						switch (valuetype) {
 							case 'S':
 							case 's': // NxT専用キー
-								ed.putString(key, value);
+								imported.put(key, value);
 								break;
 							case 'B':
 							case 'b': // NxT専用キー
-								ed.putBoolean(key, Boolean.parseBoolean(value));
+								imported.put(key, Boolean.parseBoolean(value));
 								break;
 							case 'F':
 							case 'f': // NxT専用キー
-								ed.putFloat(key, Float.parseFloat(value));
+								imported.put(key, Float.parseFloat(value));
 								break;
 							case 'I':
 							case 'i':
 								int workInt = Integer.parseInt(value);
-								if (mIgnoreReadInfo && (l.length() >= 3 && l.startsWith("i:/") || l.length() >= 8 && l.startsWith("i:smb://") || l.length() >= 9 && l.startsWith("i:http://") || l.length() >= 8 && l.startsWith("i:ftp://") || l.length() >= 9 && l.startsWith("i:ftps://") || l.length() >= 9 && l.startsWith("i:sftp://"))) {
+								if (mIgnoreReadInfo && isReadInfoKey(key)) {
 									// 既読情報を読み込まない場合は何もしない
 								} else {
-									ed.putInt(key, workInt);
+									imported.put(key, workInt);
 								}
 								break;
 							case 'L':
 							case 'l': // NxT専用キー
-								ed.putLong(key, Long.parseLong(value));
+								imported.put(key, Long.parseLong(value));
 								break;
 						}
 					}
 				}
 			} catch (Exception ex) {
-				Logcat.e(logLevel, "", ex);
-				return;
+				Logcat.e(logLevel, "設定ファイルを読み込めませんでした. 設定は変更しません. " + filepath, ex);
+				imported.clear();
 			} finally {
 				try {
 					if (br != null) {
@@ -397,10 +377,47 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 				} catch (Exception e) {
 					;
 				}
-				if (ed != null) {
-					ed.apply();
+			}
+			if (imported.isEmpty()) {
+				// 読み込みに失敗したか、設定が1件も無いファイルだった
+				Toast.makeText(mContext, mContext.getResources().getString(R.string.LoadConfigError) + "\n" + filepath, Toast.LENGTH_LONG).show();
+				return;
+			}
+
+			Editor ed = mSp.edit();
+			// 既存の設定を削除
+			Map<String, ?> keys = mSp.getAll();
+			if (keys != null) {
+				for (String key : keys.keySet()) {
+					if (mIgnoreReadInfo && isReadInfoKey(key)) {
+						// 既読情報を読み込まない場合は削除しない
+					}
+					else if (DEF.checkExportKey(key)) {
+						// 出力対象
+						ed.remove(key);
+					}
 				}
 			}
+			// 読み込んだ設定を書き込む(同じキーはremoveより後のputが優先される)
+			for (Map.Entry<String, Object> e : imported.entrySet()) {
+				Object value = e.getValue();
+				if (value instanceof String) {
+					ed.putString(e.getKey(), (String) value);
+				}
+				else if (value instanceof Boolean) {
+					ed.putBoolean(e.getKey(), (Boolean) value);
+				}
+				else if (value instanceof Integer) {
+					ed.putInt(e.getKey(), (Integer) value);
+				}
+				else if (value instanceof Long) {
+					ed.putLong(e.getKey(), (Long) value);
+				}
+				else if (value instanceof Float) {
+					ed.putFloat(e.getKey(), (Float) value);
+				}
+			}
+			ed.apply();
 			Logcat.d(logLevel, " 設定を読み込みました. " + filepath);
 			Toast.makeText(mContext, mContext.getResources().getString(R.string.LoadConfig) + "\n" + filepath, Toast.LENGTH_SHORT).show();
 			Dialog dialog = getDialog();
@@ -408,6 +425,11 @@ public class ImportSettingPreference extends DialogPreference implements OnItemC
 				dialog.dismiss();
 			}
 		}
+	}
+
+	// 既読情報(ファイルのURLをキーにした値)か
+	private static boolean isReadInfoKey(String key) {
+		return key.startsWith("/") || key.startsWith("smb://") || key.startsWith("http://") || key.startsWith("ftp://") || key.startsWith("ftps://") || key.startsWith("sftp://");
 	}
 
 	public class ItemArrayAdapter extends ArrayAdapter<String>

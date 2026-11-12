@@ -646,7 +646,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// 読書の情報を読みこむ
 		String id = (isAozora) ? "#aozora" : "#newepub";
 		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName + ", id=" + id);
-		String mRestoreValue = intent.getStringExtra("Value");
+		// フィールドに入れる(閉じるときに「しおりを保存しない」を選ぶと、この値を開いたときの位置として返す)
+		mRestoreValue = intent.getStringExtra("Value");
 		mFirstRead = false;
 		mAozoraDirText = 0;
 		if (mRestoreValue != null) {
