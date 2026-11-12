@@ -653,6 +653,7 @@
     <string name="selectOrEnterFile">ファイルを選択または入力してください.</string>
     <string name="SaveConfig">設定を保存しました.</string>
     <string name="LoadConfig">設定ファイルを適用しました.</string>
+    <string name="LoadConfigError">設定ファイルを読み込めませんでした. 設定は変更していません.</string>
     <string name="SaveServerCode">ローカルフォルダに保存しました.</string>
     <string name="SaveErrorServerCode">保存に失敗しました.</string>
     <string name="LoadErrorServerCode">読み込みに失敗しました.</string>
