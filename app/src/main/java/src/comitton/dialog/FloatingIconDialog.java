@@ -44,6 +44,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	public static final int CLICK_APPLY    = 2;
 
 	private final int SELLIST_VIEW_MODE  = 1;
+	private final int SELLIST_WRAPVIEW_MODE  = 2;
 
 	private FloatingIconListenerInterface mListener = null;
 
@@ -51,9 +52,12 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 	private int mDirectionModeTemp;
 	private int mDirectionMode;
+	private int mWrapDirectionTemp;
+	private int mWrapDirection;
 
 	private CheckBox mChkEnable;
 	private CheckBox mChkBarGrip;
+	private CheckBox mChkWrap;
 
 	private Button mBtnRevert;
 	private Button mBtnApply;
@@ -61,13 +65,16 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private Button mBtnEditFloatingIcon;
 	private Button mBtnDirectionFloatingIcon;
 	private Button mBtnCursorFloatingIcon;
+	private Button mBtnWrapDirectionFloatingIcon;
 
 	private String mDirectionModeTitle;
+	private String mWrapDirectionTitle;
 	private TextView mDummyText1;
 	private TextView mDummyText2;
 
 	private boolean mEnable;
 	private boolean mBarGrip;
+	private boolean mWrap;
 	private int mSize;
 	private static int mHorizontal;
 	private static int mVertical;
@@ -91,6 +98,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private SeekBar mSkbTransparency;
 
 	private String[] mDirectionModeItems;
+	private String[] mWrapDirectionItems;
 
 	private int mSelectMode;
 	private AppCompatActivity mActivity;
@@ -99,6 +107,12 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	private static final int[] Direction =
 		{ R.string.floatingicondir00
 		, R.string.floatingicondir01 };
+	private static final int[] WrapHDirection =
+		{ R.string.floatingiconwraphdir00
+		, R.string.floatingiconwraphdir01 };
+	private static final int[] WrapVDirection =
+		{ R.string.floatingiconwrapvdir00
+		, R.string.floatingiconwrapvdir01 };
 
 	public FloatingIconDialog(AppCompatActivity activity, @StyleRes int themeResId, int command_id, boolean isclose, MenuDialog.MenuSelectListener listener, Handler handler) {
 		super(activity, themeResId, isclose, false, false, true, listener);
@@ -111,10 +125,16 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 		// 向きの設定
 		mDirectionModeTitle = res.getString(R.string.directionfloatingicon);
+		mWrapDirectionTitle = res.getString(R.string.wrapdirectionfloatingicon);
 		nItem = Direction.length;
 		mDirectionModeItems = new String[nItem];
 		for (int i = 0; i < nItem; i++) {
 			mDirectionModeItems[i] = res.getString(Direction[i]);
+		}
+		nItem = WrapHDirection.length;
+		mWrapDirectionItems = new String[nItem];
+		for (int i = 0; i < nItem; i++) {
+			mWrapDirectionItems[i] = res.getString(WrapHDirection[i]);
 		}
 
 		LayoutInflater inflater = LayoutInflater.from(mActivity);
@@ -123,7 +143,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		addItem(inflater.inflate(R.layout.floatingiconconfig, null, false));
 	}
 
-	public void setConfig(int directionmode, int size, int horizontal, int vertical, int transparency, boolean enable, boolean bargrip) {
+	public void setConfig(int directionmode, int size, int horizontal, int vertical, int transparency, boolean enable, boolean bargrip, boolean wrap, int wrapdirection) {
 
 		mDirectionModeTemp  = mDirectionMode  = directionmode;
 		mSize = size;
@@ -132,6 +152,14 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		mTransparency = transparency;
 		mEnable = enable;
 		mBarGrip = bargrip;
+		mWrap = wrap;
+		mWrapDirectionTemp = mWrapDirection = wrapdirection;
+
+		int nItem = (directionmode == 0) ? WrapVDirection.length : WrapHDirection.length;
+		Resources res = mActivity.getResources();
+		for (int i = 0; i < nItem; i++) {
+			mWrapDirectionItems[i] = res.getString((directionmode == 0) ? WrapVDirection[i] : WrapHDirection[i]);
+		}
 	}
 
 	public static void SetFloatingIconCursor(int horizontal, int vertical) {
@@ -160,6 +188,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 			mChkEnable = mChkEnable != null ? mChkEnable : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_enablefloatingicon);
 			mChkBarGrip = mChkBarGrip != null ? mChkBarGrip : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_enablebargrip);
+			mChkWrap = mChkWrap != null ? mChkWrap : (CheckBox) mViewArray.get(i).findViewById(R.id.chk_enablewrap);
 
 			mDummyText1 = mDummyText1 != null ? mDummyText1 : (TextView) mViewArray.get(i).findViewById(R.id.label_editfloatingicon);
 			mDummyText2 = mDummyText2 != null ? mDummyText2 : (TextView) mViewArray.get(i).findViewById(R.id.label_directionfloatingicon);
@@ -177,11 +206,13 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 			mBtnEditFloatingIcon = mBtnEditFloatingIcon != null ? mBtnEditFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_editfloatingicon);
 			mBtnDirectionFloatingIcon = mBtnDirectionFloatingIcon != null ? mBtnDirectionFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_directionfloatingicon);
 			mBtnCursorFloatingIcon = mBtnCursorFloatingIcon != null ? mBtnCursorFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_cursorfloatingicon);
+			mBtnWrapDirectionFloatingIcon = mBtnWrapDirectionFloatingIcon != null ? mBtnWrapDirectionFloatingIcon : (Button) mViewArray.get(i).findViewById(R.id.btn_wrapdirectionfloatingicon);
 
 		}
 
 		if (mChkEnable != null) mChkEnable.setChecked(mEnable);
 		if (mChkBarGrip != null) mChkBarGrip.setChecked(mBarGrip);
+		if (mChkWrap != null) mChkWrap.setChecked(mWrap);
 
 		if (mTxtSize != null) mSizeStr = mTxtSize.getText().toString();
 		if (mTxtSize != null) mTxtSize.setText(mSizeStr.replaceAll("%", getSizeStr(mSize)));
@@ -211,10 +242,12 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		if (mBtnEditFloatingIcon != null) mBtnEditFloatingIcon.setText(R.string.openfloatingiconsetting);
 		if (mBtnDirectionFloatingIcon != null) mBtnDirectionFloatingIcon.setText(mDirectionModeItems[mDirectionMode]);
 		if (mBtnCursorFloatingIcon != null) mBtnCursorFloatingIcon.setText(R.string.openfloatingiconcursor);
+		if (mBtnWrapDirectionFloatingIcon != null) mBtnWrapDirectionFloatingIcon.setText(mWrapDirectionItems[mWrapDirection]);
 
 		if (mBtnEditFloatingIcon != null) mBtnEditFloatingIcon.setOnClickListener(this);
 		if (mBtnDirectionFloatingIcon != null) mBtnDirectionFloatingIcon.setOnClickListener(this);
 		if (mBtnCursorFloatingIcon != null) mBtnCursorFloatingIcon.setOnClickListener(this);
+		if (mBtnWrapDirectionFloatingIcon != null) mBtnWrapDirectionFloatingIcon.setOnClickListener(this);
 
 		mBtnOK = (Button) mView.findViewById(R.id.btn_ok);
 		mBtnApply = (Button) mView.findViewById(R.id.btn_apply);
@@ -261,6 +294,14 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 		boolean val = DEF.getBoolean(sharedPreferences, DEF.KEY_FLOATINGICONBARGRIP, false);
 		return val;
 	}
+	public static boolean getWrap(SharedPreferences sharedPreferences) {
+		boolean val = DEF.getBoolean(sharedPreferences, DEF.KEY_FLOATINGICONWRAP, false);
+		return val;
+	}
+	public static int getWrapDirection(SharedPreferences sharedPreferences) {
+		int val = DEF.getInt(sharedPreferences, DEF.KEY_FLOATINGICONWRAPDIRECTION, DEF.DEFAULT_FLOATINGICONWRAPDIRECTION);
+		return val;
+	}
 
 	public void setFloatingIconListner(FloatingIconListenerInterface listener) {
 		mListener = listener;
@@ -269,7 +310,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 	public interface FloatingIconListenerInterface extends EventListener {
 
 	    // メニュー選択された
-	    public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable, boolean bargrip);
+	    public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable, boolean bargrip, boolean wrap, int wrapdirection);
 	    public void onClose();
 	}
 
@@ -293,6 +334,11 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 				items = mDirectionModeItems;
 				selIndex = mDirectionModeTemp;
 				break;
+			case SELLIST_WRAPVIEW_MODE:
+				title = mWrapDirectionTitle;
+				items = mWrapDirectionItems;
+				selIndex = mWrapDirectionTemp;
+				break;
 			default:
 				return;
 		}
@@ -304,6 +350,16 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 						// 向き
 						mDirectionModeTemp = index;
 						mBtnDirectionFloatingIcon.setText(mDirectionModeItems[index]);
+						int nItem = (index == 0) ? WrapVDirection.length : WrapHDirection.length;
+						Resources res = mActivity.getResources();
+						for (int i = 0; i < nItem; i++) {
+							mWrapDirectionItems[i] = res.getString((index == 0) ? WrapVDirection[i] : WrapHDirection[i]);
+						}
+						mBtnWrapDirectionFloatingIcon.setText(mWrapDirectionItems[mWrapDirectionTemp]);
+						break;
+					case SELLIST_WRAPVIEW_MODE:
+						mWrapDirectionTemp = index;
+						mBtnWrapDirectionFloatingIcon.setText(mWrapDirectionItems[index]);
 						break;
 				}
 			}
@@ -340,6 +396,11 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 			mHandler.sendMessage(message);
 			return;
 		}
+		if (mBtnWrapDirectionFloatingIcon == v) {
+			// 向き
+			showSelectList(SELLIST_WRAPVIEW_MODE);
+			return;
+		}
 
 		int select = CLICK_REVERT;
 
@@ -353,7 +414,7 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 
 		if (select == CLICK_REVERT) {
 			// 戻す場合は元の値を通知
-			mListener.onButtonSelect(select, mSize, mHorizontal, mVertical, mTransparency, mDirectionMode, mEnable, mBarGrip);
+			mListener.onButtonSelect(select, mSize, mHorizontal, mVertical, mTransparency, mDirectionMode, mEnable, mBarGrip, mWrap, mWrapDirection);
 		}
 		else {
 			// OK/適用は設定された値を通知
@@ -363,7 +424,8 @@ public class FloatingIconDialog extends TabDialogFragment implements OnClickList
 			int transparency = mSkbTransparency.getProgress();
 			boolean enable = mChkEnable.isChecked();
 			boolean bargrip = mChkBarGrip.isChecked();
-			mListener.onButtonSelect(select, size, horizontal, vertical, transparency, mDirectionModeTemp, enable, bargrip);
+			boolean wrap = mChkWrap.isChecked();
+			mListener.onButtonSelect(select, size, horizontal, vertical, transparency, mDirectionModeTemp, enable, bargrip, wrap, mWrapDirectionTemp);
 		}
 
 		if (select != CLICK_APPLY) {
