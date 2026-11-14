@@ -166,7 +166,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 			mSummary1 = mContext.getString(R.string.unitSumm1);
 			mSummary2 = "";
 		}
-		else if (mKey.equals(DEF.KEY_EP_FONTTEXT) || mKey.equals(DEF.KEY_EP_FONTBODY)) {
+		else if (mKey.equals(DEF.KEY_EP_FONTTEXT) || mKey.equals(DEF.KEY_EP_FONTBODY) || mKey.equals(DEF.KEY_CORNERTOUCHHLIMIT)) {
 			mSummary1 = mContext.getString(R.string.srngSumm2);
 			mSummary2 = "";
 		}
@@ -237,7 +237,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		else if (mKey.equals(DEF.KEY_PAGERANGE)) {
 			strSummary = DEF.getPageRangeStr(num, mSummary1);
 		}
-		else if (mKey.equals(DEF.KEY_MARGIN)) {
+		else if (mKey.equals(DEF.KEY_MARGIN) || mKey.equals(DEF.KEY_CORNERTOUCHHLIMIT)) {
 			strSummary = DEF.getMarginStr(num, mSummary1);
 		}
 		else if (mKey.equals(DEF.KEY_SCROLL)) {
