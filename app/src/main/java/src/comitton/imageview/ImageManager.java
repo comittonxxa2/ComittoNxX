@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,8 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -51,6 +54,8 @@ import java.nio.ByteBuffer;
 import net.sf.sevenzipjbinding.ExtractAskMode;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.IArchiveOpenCallback;
+import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
 import net.sf.sevenzipjbinding.IInArchive;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.PropID;
@@ -58,9 +63,13 @@ import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.IInStream;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -89,6 +98,7 @@ import jcifs.context.SingletonContext;
 import jcifs.smb.NtlmPasswordAuthenticator;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbRandomAccessFile;
+import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.DEF;
 import src.comitton.common.ExternalFilterData;
 import src.comitton.common.Logcat;
@@ -116,6 +126,9 @@ import src.comitton.fileaccess.RarInputStream;
 import src.comitton.textview.TextManager;
 
 import android.annotation.SuppressLint;
+import android.text.InputType;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
@@ -353,6 +366,13 @@ public class ImageManager extends InputStream implements Runnable {
 	private boolean mMemLimitEnable;
 	private int mMemLimit;
 	private final java.util.concurrent.atomic.AtomicBoolean mIsCancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
+	private static String mArchivePassword = "";
+	private static final int PASSWORD_RETRY_MAX = 3;
+	private static int mPasswordRetryCount = 0;
+	private boolean mSetArchivePassword;
+	private boolean mSaveArchivePassword;
+	private static final Object extractionLock = new Object();
+	private static volatile boolean isExtractingNow = false;
 
 	@SuppressLint("SuspiciousIndentation")
     public ImageManager(AppCompatActivity activity, String path, String cmpfile, String user, String pass, int sort, Handler handler, boolean hidden, int openmode, int maxthread) {
@@ -396,6 +416,8 @@ public class ImageManager extends InputStream implements Runnable {
 		mDownload = SetFileListActivity.getBackgroundDownloadImageFile(sp) && ImageActivity.getPrevNextMask();
 		mMemLimitEnable = SetFileListActivity.getMemLimitEnable(sp);
 		mMemLimit = SetFileListActivity.getMemLimit(sp);
+		mSetArchivePassword = SetFileListActivity.getSetArchivePassword(sp);
+		mSaveArchivePassword = SetFileListActivity.getSaveArchivePassword(sp);
 
  		// スレッド数
  		mMaxThreadNum = maxthread;
@@ -1456,8 +1478,10 @@ public class ImageManager extends InputStream implements Runnable {
 				if (mainStream != null) {
 					// cmpClose()で確実に閉じられるよう、archiveの成否に関わらず参照を保持しておく
 					mArchiveInStream = mainStream;
-			    // 判定したフォーマットを渡す(判定失敗時はnullが入っており自動判別される)
+				    // 判定したフォーマットを渡す(判定失敗時はnullが入っており自動判別される)
 				    if (!mArchiveCheck) detectedFormat = null;
+				    // パスワードのキャッシュをクリアしておく
+					ArchiveExtractCallbackWithPassword.clearPasswordCache();
 					archive = SevenZip.openInArchive(detectedFormat, mainStream);
 				}
 			}
@@ -3277,6 +3301,11 @@ public class ImageManager extends InputStream implements Runnable {
 	// 読み込み処理中断
 	public void unsetBreakTrigger() {
 		mRunningFlag = true;
+	}
+
+	// 読み込み処理が実行中かどうかを返す(イメージビューア終了のダイアログでチェックさせる目的のために入れた)
+	public boolean getRunningFlag() {
+		return mRunningFlag;
 	}
 
 	// ファイル数を返す
@@ -5444,6 +5473,12 @@ public class ImageManager extends InputStream implements Runnable {
 						File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
 						if (!cacheFile.exists() || cacheFile.length() == 0) {
 							LoadFileToCache(targetIndex);
+							if (!mRunningFlag) {
+								Message message = new Message();
+								message.what = DEF.HMSG_PROGRESS_CANCEL;
+								mHandler.sendMessage(message);
+								return -1;
+							}
 						}
 						// キャッシュファイルファイルから直接ストリームを作成
 						InputStream fileStream = new FileInputStream(cacheFile);
@@ -5800,6 +5835,12 @@ public class ImageManager extends InputStream implements Runnable {
 					File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
 					if (!cacheFile.exists() || cacheFile.length() == 0) {
 						LoadFileToCache(targetIndex);
+						if (!mRunningFlag) {
+							Message message = new Message();
+							message.what = DEF.HMSG_PROGRESS_CANCEL;
+							mHandler.sendMessage(message);
+							return null;
+						}
 					}
 					// キャッシュファイルファイルから直接ストリームを作成
 					InputStream fileStream = new FileInputStream(cacheFile);
@@ -5918,6 +5959,12 @@ public class ImageManager extends InputStream implements Runnable {
 					File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
 					if (!cacheFile.exists() || cacheFile.length() == 0) {
 						LoadFileToCache(targetIndex);
+						if (!mRunningFlag) {
+							Message message = new Message();
+							message.what = DEF.HMSG_PROGRESS_CANCEL;
+							mHandler.sendMessage(message);
+							return null;
+						}
 					}
 					// キャッシュファイルから直接ストリームを作成
 					try (InputStream fileStream = new FileInputStream(cacheFile);
@@ -6059,6 +6106,12 @@ public class ImageManager extends InputStream implements Runnable {
 					File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
 					if (!cacheFile.exists() || cacheFile.length() == 0) {
 						LoadFileToCache(targetIndex);
+						if (!mRunningFlag) {
+							Message message = new Message();
+							message.what = DEF.HMSG_PROGRESS_CANCEL;
+							mHandler.sendMessage(message);
+							return null;
+						}
 					}
 					// キャッシュファイルファイルから直接ストリームを作成
 					InputStream fileStream = new FileInputStream(cacheFile);
@@ -6228,6 +6281,9 @@ public class ImageManager extends InputStream implements Runnable {
 						File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
 						if (!cacheFile.exists() || cacheFile.length() == 0) {
 							LoadFileToCache(targetIndex);
+							if (!mRunningFlag) {
+								return null;
+							}
 						}
 						// キャッシュファイルファイルから直接ストリームを作成
 						InputStream fileStream = new FileInputStream(cacheFile);
@@ -7616,6 +7672,9 @@ public class ImageManager extends InputStream implements Runnable {
 							File cacheFile = new File(mCacheDir, mCacheName + targetIndex);
 							if (!cacheFile.exists() || cacheFile.length() == 0) {
 								LoadFileToCache(targetIndex);
+								if (!mRunningFlag) {
+									return null;
+								}
 							}
 							// キャッシュファイルファイルから直接ストリームを作成
 							InputStream fileStream = new FileInputStream(cacheFile);
@@ -7731,6 +7790,20 @@ public class ImageManager extends InputStream implements Runnable {
 	}
 	// 圧縮ファイルからキャッシュファイルへ書き出す
 	public void LoadFileToCache(int currentPage) {
+		// パスワードに対応している圧縮ファイルをチェック
+		boolean isPasswordType = mFilePath != null && (mFilePath.toLowerCase().endsWith(".zip") || mFilePath.toLowerCase().endsWith(".rar") || mFilePath.toLowerCase().endsWith(".7z"));
+		// パスワード対応版はパスワード未対応の圧縮ファイルで誤動作する場合があるので処理を分けた
+		if (mSetArchivePassword && isPasswordType) {
+			// パスワードに対応させる場合
+			LoadFileToCachePassword(currentPage);
+		}
+		else {
+			// 通常の場合
+			LoadFileToCacheMain(currentPage);
+		}
+	}
+	// 圧縮ファイルからキャッシュファイルへ書き出す
+	public void LoadFileToCacheMain(int currentPage) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 		int[] indices;
@@ -7911,5 +7984,512 @@ public class ImageManager extends InputStream implements Runnable {
 			mMessageMode = DEF.MESSAGE_IMAGE_END;
 			sendProgress(0, 0, 0, 0);
 		}
+	}
+	// 圧縮ファイルからキャッシュファイルへ書き出す(パスワード対応)
+	public void LoadFileToCachePassword(int currentPage) {
+		int logLevel = Logcat.LOG_LEVEL_WARN;
+		// 前の解凍が終わるまでここで順番待ち(ブロック)させる(これを入れないとサムネイル画像の大量リクエストで溢れる可能性があるため)
+		synchronized (extractionLock) {
+			while (isExtractingNow) {
+				try {
+					// 前の処理が終わる(notifyされる)のを待つ
+					extractionLock.wait();
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+			}
+			isExtractingNow = true;
+		}
+		try {
+			Logcat.d(logLevel, "開始します.");
+			// この書庫固有のパスワードをSharedPreferencesから最初に読み込む
+			if (mArchivePassword == null || mArchivePassword.isEmpty()) {
+				mArchivePassword = (mSetArchivePassword && mSaveArchivePassword) ? loadPasswordFromPreferences(mFilePath) : "";
+			}
+
+			int[] indices;
+			boolean[] checklist;
+			// ここで登録(リトライ中に変更されておかしな動きになるのを防ぐ)
+			boolean mode = !mAccessMode;
+			int mStart = 0;
+			int countmax = 0;
+			int count = 0;
+			int fileseek_max = 0;
+			int error_retry_max;
+			int error_delay_max;
+			final int[] countstart = {0};
+			if (archive == null) {
+				Logcat.d(logLevel, "アーカイブが既に閉じられています.");
+				return;
+			}
+			if (mAccessType == DEF.ACCESS_TYPE_SMB) {
+				// SMBのアクセスは特別にリトライ回数と時間待ちを工夫する
+				error_retry_max = FILEERROR_RETRY_SMB;
+				error_delay_max = FILEERROR_DELAY_SMB;
+			}
+			else {
+				// ローカルパス/ストレージアクセスフレームワークの場合はリトライの必要はないがもしものために設定する
+				error_retry_max = FILEERROR_RETRY;
+				error_delay_max = FILEERROR_DELAY;
+			}
+			boolean errorcheck = false;
+			int errorcount = 0;
+			mPasswordRetryCount = 0;
+			// エラーメッセージ表示用フラグ
+			boolean hasErrorOccurred = false;
+			do {
+				// 中断フラグをクリア(7-Zip-JBinding-4Androidが実行を中断しないようにする)
+				if (Thread.interrupted()) {
+					Logcat.d(logLevel, "中断フラグが立っていたためクリアしました.");
+				}
+				if (mSolid && mode) {
+					// ソリッド書庫でサムネイル画像の作成以外の場合
+					int total = 0;
+					int fileseek;
+					// ソリッド書庫の場合は先読みの範囲を前後に広げる
+					fileseek = FILESEEK_MAX_SOLID;
+					fileseek_max = fileseek * 2;
+					// 先読みの先頭位置を設定
+					if (currentPage < fileseek) {
+						mStart = 0;
+					}
+					else {
+						mStart = currentPage - fileseek;
+					}
+					// 圧縮ファイルのエントリー数を得る
+					total = numberOfItems;
+					for (int i = 0; i < fileseek_max; i++) {
+						// ソリッド書庫の場合は必ず先頭から連続する必要がある
+						if ((mStart + i) >= total) {
+							// 圧縮ファイルのエントリー数を超えた場合はループ終了
+							break;
+						}
+						countmax++;
+
+					}
+					// ページの前後を先読みさせるためのリストを作成
+					indices = new int[countmax];
+					for (int i = 0; i < countmax; i++) {
+						// 登録
+						indices[count] = mStart + i;
+						count++;
+					}
+					// ソートを行う
+					indices = IntStream.of(indices).distinct().sorted().toArray();
+				}
+				else {
+					// 通常の書庫の場合は1ファイル毎に解凍する
+					indices = new int[1];
+					indices[0] = currentPage;
+				}
+				// 解凍処理を実行
+				errorcheck = false;
+				try {
+					int finalMStart = mStart;
+					int finalCount = count;
+					// 圧縮ファイルからの解凍を行う(7-Zip-JBinding-4Android)
+					archive.extract(indices, false, new ArchiveExtractCallbackWithPassword(
+						mArchivePassword, mFilePath, hasErrorOccurred, finalCount, finalMStart, countstart,
+						new Runnable() {
+							@Override
+							public void run() {
+								// パスワード認証および検証が完了し、実際のデータ書き込みがスタートする直前のタイミングで進捗開始を通知
+								mMessageMode = DEF.MESSAGE_IMAGE_START;
+								sendProgress(0, 0, 0, finalMStart);
+							}
+						}
+					));
+					// 成功したら次回のためにカウンタやエラーフラグをリセット(mArchivePasswordは同一書庫内での利便性のため保持)
+					mPasswordRetryCount = 0;
+					hasErrorOccurred = false;
+					// 解凍に成功したら、この書庫専用のパスワードとして保存する
+					if (mArchivePassword != null && !mArchivePassword.isEmpty() && mSetArchivePassword && mSaveArchivePassword) {
+						savePasswordToPreferences(mFilePath, mArchivePassword);
+					}
+
+					Logcat.d(logLevel, "ファイルの解凍に成功しました。");
+					break; // 正常終了
+				}
+				catch (Exception e) {
+					if (!mSetArchivePassword) {
+						mRunningFlag = false;
+						break;
+					}
+					// ユーザーがキャンセルした場合
+					if (e.getMessage() != null && (e.getMessage().contains("Password input cancelled") || e.getMessage().contains("cancelled"))) {
+						Logcat.d(logLevel, "ユーザーによってパスワード入力がキャンセルされました。");
+						mRunningFlag = false;
+						break;
+					}
+					// エラー内容から「パスワード間違い・暗号化エラー」なのか「ネットワーク/I/Oエラー」なのかを判定
+					String errorMsg = e.getMessage() != null ? e.getMessage() : "";
+					boolean isPasswordError = errorMsg.contains("Password") || errorMsg.contains("password") || errorMsg.contains("CRC");
+
+					if (isPasswordError) {
+						// パスワード間違い・解凍エラーの処理
+						Logcat.e(logLevel, "解凍エラー（パスワード間違いの可能性）", e);
+						mPasswordRetryCount++;
+						// パスワード間違い・エラー時はこの書庫用の保存データをクリア
+						clearPasswordFromPreferences(mFilePath);
+						mArchivePassword = "";
+
+						// 試行回数上限を超えた場合
+						if (mPasswordRetryCount >= PASSWORD_RETRY_MAX) {
+							Logcat.e(logLevel, "パスワードの試行回数が上限に達しました。");
+							mActivity.runOnUiThread(() -> 
+								Toast.makeText(mActivity, R.string.inputpasswordabort, Toast.LENGTH_SHORT).show()
+							);
+							mRunningFlag = false;
+							break;
+						}
+					}
+					else {
+						// ネットワーク共有(SMB)やファイルIOなどのエラーの場合
+						Logcat.e(logLevel, "ネットワークまたはファイルI/Oエラーによるリトライ", e);
+					}
+					// 次回ループ時は「エラー発生状態(パスワード間違い)」としてダイアログを出す
+					hasErrorOccurred = true;
+					errorcheck = true;
+					errorcount++;
+					Logcat.e(logLevel, "", e);
+					// 中断フラグをクリア
+					Thread.interrupted();
+					// リトライ前に時間待ちを入れる
+					if (mAccessType == DEF.ACCESS_TYPE_SMB && mSmbRetryMode) {
+						// SMBのリトライ回数に応じて段階的に待ち時間を延ばしてNASの制限に引っかかりにくくする
+						long dynamicDelay = (long) FILEERROR_DELAY_SMB_LONG * errorcount; 
+						try {
+							// 最大30秒
+							Thread.sleep(Math.min(dynamicDelay, 30000));
+						}
+						catch (Exception ex) {
+						}
+					}
+					else {
+						// ローカル/SAFの場合は定数通りのウェイト
+						try {
+							Thread.sleep(error_delay_max); 
+						}
+						catch (Exception ex) {
+						}
+					}
+				}
+				// もしもエラーになった場合はリトライを行う
+			} while (errorcheck && errorcount < error_retry_max && mRunningFlag);
+			if (errorcount > 0) {
+				Logcat.v(logLevel, "errorcount=" + errorcount);
+			}
+			// 処理終了時(成功・キャンセル・上限到達いずれの場合も)に進捗ダイアログを閉じるシグナルを送る
+			mMessageMode = DEF.MESSAGE_IMAGE_END;
+			sendProgress(0, 0, 0, 0);
+		}
+		finally {
+			// 処理が成功・失敗・キャンセルいずれの場合でも、必ずフラグを解除して次を受け付けられるようにする
+			synchronized (extractionLock) {
+				isExtractingNow = false;
+				extractionLock.notifyAll();
+			}
+		}
+	}
+	// 圧縮ファイルからの解凍を行うコールバック(7-Zip-JBinding-4Android)
+	private class ArchiveExtractCallbackWithPassword implements IArchiveExtractCallback, ICryptoGetTextPassword {
+		private final String initialPassword;
+		private final String archivePath;
+		private final boolean showErrorMessage;
+		private final int finalCount;
+		private final int finalMStart;
+		private final int[] countstartRef;
+		private final Runnable onStarted;
+		private BufferedOutputStream currentBufferedStream = null;
+		// パスワードが入力され準備完了したかどうか
+		private boolean isPasswordReady = false;
+		// 進捗ダイアログの開始シグナルが送出されたかどうか
+		private boolean hasProgressStarted = false;
+		// 暗号化書庫でパスワード要求が発生したかどうか
+		private boolean isCryptoRequested = false;
+		// 全ての抽出・クリーンアップが完了したかどうか
+		private boolean isFinished = false;
+		private static String cachedPassword = "";
+
+		public ArchiveExtractCallbackWithPassword(String password, String archivePath, boolean showErrorMessage, int finalCount, int finalMStart, int[] countstartRef, Runnable onStarted) {
+			this.archivePath = archivePath;
+
+			String validPassword = password;
+			// 静的キャッシュまたはSharedPreferencesを確認
+			if (validPassword == null || validPassword.isEmpty()) {
+				validPassword = (mSetArchivePassword) ? cachedPassword : "";
+			}
+			if (validPassword == null || validPassword.isEmpty()) {
+				validPassword = (mSetArchivePassword && mSaveArchivePassword) ? loadPasswordFromPreferences(archivePath) : "";
+			}
+
+			if (validPassword != null && !validPassword.isEmpty() && mSetArchivePassword) {
+				this.initialPassword = validPassword;
+				cachedPassword = validPassword;
+				this.isPasswordReady = true;
+			}
+			else {
+				this.initialPassword = "";
+			}
+			this.showErrorMessage = showErrorMessage;
+			this.finalCount = finalCount;
+			this.finalMStart = finalMStart;
+			this.countstartRef = countstartRef;
+			this.onStarted = onStarted;
+		}
+		// 安全に一度だけ進捗開始を呼び出すヘルパーメソッド
+		private void triggerStartIfNeeded() {
+			// 既に終了している場合は何もしない
+			if (isFinished || !mSetArchivePassword) return;
+			// 暗号化書庫でありながらパスワードが未入力の段階では、ダイアログのかぶりを防ぐため進捗を開始しない
+			if (isCryptoRequested && !isPasswordReady) {
+				return;
+			}
+			if (!hasProgressStarted) {
+				hasProgressStarted = true;
+				if (onStarted != null) {
+					onStarted.run();
+				}
+			}
+		}
+
+		@Override
+		public String cryptoGetTextPassword() throws SevenZipException {
+			// パスワードが要求された＝暗号化ファイルであると記録
+			isCryptoRequested = true;
+			// すでにキャンセルされている、または処理フラグが折れている場合はダイアログを出さずに即座に終了する
+			if (!mRunningFlag || isFinished) {
+				throw new SevenZipException("Password input cancelled by user.");
+			}
+			// 静的キャッシュまたはSharedPreferencesを確認
+			if (cachedPassword == null || cachedPassword.trim().isEmpty()) {
+				cachedPassword = (mSetArchivePassword && mSaveArchivePassword) ? loadPasswordFromPreferences(archivePath) : "";
+			}
+			if (cachedPassword != null && !cachedPassword.trim().isEmpty() && mSetArchivePassword) {
+				isPasswordReady = true;
+				return cachedPassword;
+			}
+			if (!mSetArchivePassword) return null;
+			final String[] enteredPassword = new String[1];
+			final boolean[] isCancelled = {false};
+			final CountDownLatch latch = new CountDownLatch(1);
+			// UIスレッドでパスワード入力ダイアログを表示する
+			mActivity.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					AlertDialog.Builder builder = new AlertDialog.Builder(mActivity, R.style.MyAlertDialogStyle);
+					builder.setTitle(R.string.inputpassword);
+					if (showErrorMessage) {
+						builder.setMessage(R.string.inputpasswordnext);
+					}
+					else {
+						builder.setMessage(R.string.inputpasswordfirst);
+					}
+					// 入力用EditTextの作成
+					final EditText input = new EditText(mActivity);
+					input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+					builder.setView(input);
+					// OKボタン
+					builder.setPositiveButton(R.string.btnOK, new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							String rawInput = input.getText().toString();
+							// 前後の空白を自動削除して空文字チェックに備える
+							enteredPassword[0] = rawInput != null ? rawInput.trim() : "";
+							// 待機を解除
+							latch.countDown();
+						}
+					});
+					// キャンセルボタン
+					builder.setNegativeButton(R.string.btnCancel, new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							enteredPassword[0] = "";
+							isCancelled[0] = true;
+							// キャンセル時に全体の実行フラグをオフにする
+							mRunningFlag = false;
+							// 待機を解除
+							latch.countDown();
+						}
+					});
+					// ダイアログ外タップや戻るキーでキャンセルされた場合
+					builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+						@Override
+						public void onCancel(DialogInterface dialog) {
+							enteredPassword[0] = "";
+							isCancelled[0] = true;
+							// キャンセル時に全体の実行フラグをオフにする
+							mRunningFlag = false;
+							latch.countDown();
+						}
+					});
+					builder.show();
+				}
+			});
+			try {
+				// ユーザーが入力し終わるまでバックグラウンドスレッドをここで一時停止して待つ
+				latch.await();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new SevenZipException("Password input interrupted", e);
+			}
+			if (isCancelled[0] || !mRunningFlag || enteredPassword[0] == null) {
+				throw new SevenZipException("Password input cancelled by user.");
+			}
+			// 空白のみ(空文字)が入力された場合は無効なパスワードとして例外を投げる
+			if (enteredPassword[0].isEmpty()) {
+				throw new SevenZipException("Password cannot be empty.");
+			}
+			cachedPassword = enteredPassword[0];
+			mArchivePassword = cachedPassword;
+			if (mSetArchivePassword && mSaveArchivePassword) savePasswordToPreferences(archivePath, cachedPassword);
+			isPasswordReady = true;
+			return cachedPassword;
+		}
+		@Override
+		public ISequentialOutStream getStream(int index, ExtractAskMode mode) throws SevenZipException {
+			if (!mRunningFlag || isFinished) {
+				// 外部から中断させる場合
+				// 例外を投げて全体の処理を強制終了させる
+				throw new SevenZipException("User cancelled extraction.");
+			}
+			if (mode != ExtractAskMode.EXTRACT) {
+				// 処理中なら
+				return null;
+			}
+			// パスワード要求があるのにまだ入力・準備ができていない検証段階では、進捗を開始せずストリームだけ返す(ダイアログかぶり防止)
+			if (isCryptoRequested && !isPasswordReady) {
+				// パスワード入力待ちの裏で呼ばれた場合はストリームだけ返して進捗はスキップ
+				try {
+					File tempFile = new File(mCacheDir, mCacheName + index);
+					currentBufferedStream = new BufferedOutputStream(new FileOutputStream(tempFile), 32768);
+					final BufferedOutputStream fos = currentBufferedStream;
+					return data -> {
+						try {
+							fos.write(data, 0, data.length);
+							return data.length;
+						}
+						catch (IOException e) {
+							throw new SevenZipException("Write error", e);
+						}
+					};
+				}
+				catch (IOException e) {
+					throw new SevenZipException("Failed to open stream for index " + index, e);
+				}
+			}
+			try {
+				// キャッシュファイルを開く
+				File tempFile = new File(mCacheDir, mCacheName + index);
+				currentBufferedStream = new BufferedOutputStream(new FileOutputStream(tempFile), 32768);
+		        // 毎回新しくストリームを開く(EMFILEエラー対策)
+				final BufferedOutputStream fos = currentBufferedStream;
+				// ラムダ式を返す
+				return data -> {
+					try {
+						// すでに完了している場合は進捗を送らない
+						if (isFinished) {
+							fos.write(data, 0, data.length);
+							return data.length;
+						}
+						// 実際のデータ書き込みが始まった瞬間に初めて進捗開始を許可する
+						triggerStartIfNeeded();
+						// 進捗が 100% を超えないように安全にクランプする
+						int progressPercent = (finalCount > 0) ? (int)((float) countstartRef[0] / (float)finalCount * 100) : 100;
+						if (progressPercent > 100) progressPercent = 100;
+						
+						sendProgress(0, progressPercent, index, finalMStart + finalCount);
+						
+						fos.write(data, 0, data.length);
+						return data.length;
+					}
+					catch (IOException e) {
+						throw new SevenZipException("Write error", e);
+					}
+				};
+			}
+			catch (IOException e) {
+				// エラーが発生した場合もSevenZipExceptionを投げて中断させる
+				throw new SevenZipException("Failed to open stream for index " + index, e);
+			}
+		}
+		@Override
+		public void setOperationResult(ExtractOperationResult result) {
+			// ストリームの後処理・クローズ
+			if (currentBufferedStream != null) {
+				try {
+					currentBufferedStream.flush();
+					currentBufferedStream.close();
+				}
+				catch (IOException ignored) {
+				}
+				finally {
+					// 参照をクリア
+					currentBufferedStream = null;
+				}
+			}
+			// 結果をチェックし、OK以外(パスワード間違いなど)の場合の処理を行う
+			if (result != ExtractOperationResult.OK) {
+				// 間違ったパスワードをキャッシュから即座に削除する
+				cachedPassword = ""; 
+				mArchivePassword = "";
+				clearPasswordFromPreferences(archivePath);
+				isPasswordReady = false;
+			}
+			else {
+				// ファイルが1つ正常に抽出されるごとにカウントを進める
+				countstartRef[0]++;
+				// すべてのカウント(あるいは最終目標)に達したら完了フラグを立てて、以後の無関係な進捗イベントをブロックする
+				if (countstartRef[0] >= finalCount) {
+					isFinished = true;
+				}
+			}
+		}
+
+		@Override
+		public void setTotal(long total) {}
+
+		@Override
+		public void prepareOperation(ExtractAskMode mode) {}
+
+		@Override
+		public void setCompleted(long complete) {}
+		// パスワード入力のキャッシュをクリア(これを入れないと同じパスワードのファイルがあると無条件で通ってしまうため)
+		public static void clearPasswordCache() {
+			cachedPassword = "";
+			mArchivePassword = "";
+			mPasswordRetryCount = 0;
+		}
+	}
+	// archivePath が空でないかチェックするヘルパー
+	private String getValidKey(String archivePath) {
+		if (archivePath == null || archivePath.isEmpty()) {
+			return "default_archive_password";
+		}
+		return archivePath + "_password";
+	}
+	// パスワードを保存
+	private void savePasswordToPreferences(String archivePath, String password) {
+		if (mActivity == null) return;
+		String key = getValidKey(archivePath);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		prefs.edit().putString(key, password).apply();
+	}
+	// パスワードを読み込み
+	private String loadPasswordFromPreferences(String archivePath) {
+		if (mActivity == null) return "";
+		String key = getValidKey(archivePath);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		return prefs.getString(key, "");
+	}
+	// パスワードを削除
+	private void clearPasswordFromPreferences(String archivePath) {
+		if (mActivity == null) return;
+		String key = getValidKey(archivePath);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
+		prefs.edit().remove(key).apply();
 	}
 }

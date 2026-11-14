@@ -708,6 +708,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private static int mFloatingIconDirectionMode;
 	private static boolean mFloatingIconEnable;
 	private static boolean mFloatingIconBarGrip;
+	private static boolean mFloatingIconWrap;
+	private static int mFloatingIconWrapDirection;
 
 	private static ImageButton[] imageButtons = null;
 
@@ -743,6 +745,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private Runnable mWaitRunnable;
 	private int mReloadPage;
 	private CustomNoneProgressDialog mNoneProgressDialog;
+	private boolean mCornerTouchLimitEnable;
+	private int mCornerTouchHLimit;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -1843,7 +1847,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				return true;
 			case DEF.HMSG_EVENT_LONG_TAP:
-				if (mLongTouchCount == msg.arg1) {
+				// 誤動作防止のためmsg.arg1 + 1も対象とした
+				if (mLongTouchCount == msg.arg1 || mLongTouchCount == msg.arg1 + 1) {
 					if (mTouchFirst) {
 						// タッチ位置が範囲内の時だけ処理
 						Logcat.v(logLevel, "HMSG_EVENT_LONG_TAP");
@@ -3220,6 +3225,12 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				return true;
 			}
 		}
+		boolean mTouchGuard = false;
+		if (mCornerTouchLimitEnable) {
+			float limitmax = ((float)cx * (float)(100 - mCornerTouchHLimit)) / 100;
+			float limitmin = ((float)cx * (float)mCornerTouchHLimit) / 100;
+			if ((x >= limitmax) || (x <= limitmin)) mTouchGuard = true;
+		}
 		// タッチパネルの座標を設定する
 		TouchPanelView.SetTouchPosition((int)x, (int)y, cx, cy);
 
@@ -3267,7 +3278,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					}
 					if (mClickGuard) {
 					}
-					else if (mTapEditMode || mFloatingIconCursorSw) {
+					else if (mTapEditMode || mFloatingIconCursorSw || mTouchGuard) {
 					}
 					else {
 						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, true);
@@ -3283,7 +3294,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (y >= cy - mClickArea && !mTapEditMode || mTapEditMode && y >= cy + statusbar_height - navibar_height) {
 						if (mClickGuard) {
 						}
-						else if (mTapEditMode || mFloatingIconCursorSw) {
+						else if (mTapEditMode || mFloatingIconCursorSw || mTouchGuard) {
 						}
 						else if (mPageSelect == PAGE_SLIDE) {
 							if (mClickArea <= x && x <= cx - mClickArea) {
@@ -3302,7 +3313,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// 下部押下
 						if (mClickGuard) {
 						}
-						else if (mTapEditMode || mFloatingIconCursorSw) {
+						else if (mTapEditMode || mFloatingIconCursorSw || mTouchGuard) {
 						}
 						else {
 							if (!mClickGuard) {
@@ -3330,7 +3341,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 								TouchPanelView.InitTapPattern();
 							}
 						}
-						else if (mFloatingIconCursorSw) {
+						else if (mFloatingIconCursorSw || mTouchGuard) {
 						}
 						else {
 							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
@@ -3340,7 +3351,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					else {
 						// 操作モード
 						mOperation = TOUCH_OPERATION;
-						if (mTapEditMode || mFloatingIconCursorSw) {
+						if (mTapEditMode || mFloatingIconCursorSw || mTouchGuard) {
 						}
 						else {
 							if (TouchPanelView.GetTouchPositionData(3) > 0) {
@@ -3384,7 +3395,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						// 十字アイコンを表示
 						SetViewFloatingIconCursor(x, y);
 					}
-					else if (mTapEditMode) {
+					else if (mTapEditMode || mTouchGuard) {
 					}
 					else if (t < 100) {
 						// タップによるページめくりとスクロールを優先させるため100ミリ秒未満はアクション操作をスキップさせる
@@ -3438,6 +3449,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						else if (mTapEditMode) {
 							// タップ操作の設定ダイアログを表示させる
 							TouchPanelView.SetAlertDialog(mActivity);
+						}
+						else if (mTouchGuard) {
 						}
 						else if (!this.mTouchMove && (TouchPanelView.GetTouchPositionData(1) > 0 || TouchPanelView.GetTouchPositionData(2) > 0)) {
 							// シングルタップまたはダブルタップが有効の場合
@@ -3562,7 +3575,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		action = event.getAction();
 		if (action == MotionEvent.ACTION_MOVE) {
 			// タップのスクロール
-			if (mClickGuard) {
+			if (mClickGuard || mTouchGuard) {
 			}
 			else {
 				Action_Move_Sub(event);
@@ -6994,6 +7007,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mFloatingIconDirectionMode = FloatingIconDialog.getDirectionMode(sharedPreferences);
 			mFloatingIconEnable = FloatingIconDialog.getEnable(sharedPreferences);
 			mFloatingIconBarGrip = FloatingIconDialog.getBarGrip(sharedPreferences);
+			mFloatingIconWrap = FloatingIconDialog.getWrap(sharedPreferences);
+			mFloatingIconWrapDirection = FloatingIconDialog.getWrapDirection(sharedPreferences);
 			mBackgroundPause = SetImageActivity.getBackgroundPause(sharedPreferences);
 			mAnimationEnable = SetImageActivity.getAnimationEnable(sharedPreferences);
 			mAnimationScan = SetImageActivity.getAnimationScan(sharedPreferences);
@@ -7030,6 +7045,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			LoadExtFilter(sharedPreferences, DEF.KEY_EXTERNALFILTERDATA);
 			mStatusAreaRange = (int)(getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getStatusArea(sharedPreferences));
 			mNavigationAreaRange = (int)(getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getNavigationArea(sharedPreferences));
+			mCornerTouchLimitEnable = SetImageActivity.getCornerTouchLimitEnable(sharedPreferences);
+			mCornerTouchHLimit = SetImageActivity.getCornerTouchHLimit(sharedPreferences);
 		}
 		catch (Exception e) {
 			Logcat.e(logLevel, "error.");
@@ -7599,7 +7616,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					// バックグラウンドでのキャッシュ読み込み停止
 					mImageMgr.setCacheSleep(true);
 				}
-        		if (mImageMgr.checkTerminate() || isTimeout) {
+        		if (mImageMgr.checkTerminate() || isTimeout || !mImageMgr.getRunningFlag()) {
 					if (isTimeout) {
 						Toast.makeText(mActivity, R.string.timeout, Toast.LENGTH_SHORT).show();
 					}
@@ -9163,14 +9180,14 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mFloatingIconSetting = true;
 		mFloatingIconDialog = new FloatingIconDialog(this, R.style.MyDialog, command_id, false, this, mHandler);
 
-		mFloatingIconDialog.setConfig(mFloatingIconDirectionMode, mFloatingIconSize, mFloatingIconHorizontal, mFloatingIconVertical, mFloatingIconTransparency, mFloatingIconEnable, mFloatingIconBarGrip);
+		mFloatingIconDialog.setConfig(mFloatingIconDirectionMode, mFloatingIconSize, mFloatingIconHorizontal, mFloatingIconVertical, mFloatingIconTransparency, mFloatingIconEnable, mFloatingIconBarGrip, mFloatingIconWrap, mFloatingIconWrapDirection);
 		mFloatingIconDialog.setFloatingIconListner(new FloatingIconListenerInterface() {
 			@Override
-			public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable, boolean bargrip) {
+			public void onButtonSelect(int select, int size, int horizontal, int vertical, int transparency, int directionmode, boolean enable, boolean bargrip, boolean wrap, int wrapdirection) {
 				// 選択状態を通知
 				boolean ischange = false;
 				// 変更があるかを確認(適用後のキャンセルの場合も含む)
-				if (mFloatingIconSize != size || mFloatingIconHorizontal != horizontal || mFloatingIconVertical != vertical || mFloatingIconTransparency != transparency || mFloatingIconDirectionMode != directionmode || mFloatingIconEnable != enable || mFloatingIconBarGrip != bargrip) {
+				if (mFloatingIconSize != size || mFloatingIconHorizontal != horizontal || mFloatingIconVertical != vertical || mFloatingIconTransparency != transparency || mFloatingIconDirectionMode != directionmode || mFloatingIconEnable != enable || mFloatingIconBarGrip != bargrip || mFloatingIconWrap != wrap || mFloatingIconWrapDirection != wrapdirection) {
 					ischange = true;
 				}
 				mFloatingIconSize = size;
@@ -9180,6 +9197,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mFloatingIconDirectionMode = directionmode;
 				mFloatingIconEnable = enable;
 				mFloatingIconBarGrip = bargrip;
+				mFloatingIconWrap = wrap;
+				mFloatingIconWrapDirection = wrapdirection;
 				// 戻す場合にも表示更新を適用
 				AddButton(layout, mActivity);
 				if (ischange) {
@@ -9193,6 +9212,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					ed.putInt(DEF.KEY_FLOATINGICONDIRECTIONMODE, mFloatingIconDirectionMode);
 					ed.putBoolean(DEF.KEY_FLOATINGICONENABLE, mFloatingIconEnable);
 					ed.putBoolean(DEF.KEY_FLOATINGICONBARGRIP, mFloatingIconBarGrip);
+					ed.putBoolean(DEF.KEY_FLOATINGICONWRAP, mFloatingIconWrap);
+					ed.putInt(DEF.KEY_FLOATINGICONWRAPDIRECTION, mFloatingIconWrapDirection);
 					ed.apply();
 				}
 			}
@@ -9215,6 +9236,134 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		return (int) (dpValue * density + 0.5f);
 	}
 
+	// 折り返しと位置を計算する共通ヘルパーメソッド
+	private int[] calculateIconPosition(int i, int baseLeft, int baseTop, int sizeInPx, int handleThickness, int cx, int cy) {
+		int targetLeft = baseLeft;
+		int targetTop = baseTop;
+		// ナビゲーションバー等の安全マージン
+		int safeMarginBottom = dpToPx(48);
+		int effectiveCy = Math.max(cy - safeMarginBottom, sizeInPx);
+
+		if (mFloatingIconDirectionMode == 0) {
+			// 縦方向モード
+			if (mFloatingIconWrap) {
+				// 折り返しが有効な場合
+				int availableHeightForCols = effectiveCy - baseTop;
+				int maxPerCol = Math.max(1, availableHeightForCols / sizeInPx);
+				if (mFloatingIconBarGrip) {
+					// グリップがある場合
+					if (i == 0) {
+						targetLeft = baseLeft;
+						targetTop = baseTop;
+					}
+					else {
+						// 画面下端を超える場合の折り返し計算
+						int itemIndex = i - 1;
+						int colIndex = itemIndex / maxPerCol;
+						int rowIndex = itemIndex % maxPerCol;
+						targetTop = baseTop + handleThickness + (rowIndex * sizeInPx);
+						// 列の折り返し方向(0: 右側へ新しい列, 1: 左側へ新しい列)
+						if (mFloatingIconWrapDirection == 0) {
+							targetLeft = baseLeft + (colIndex * sizeInPx);
+						}
+						else {
+							targetLeft = baseLeft - (colIndex * sizeInPx);
+						}
+					}
+				}
+				else {
+					// 画面下端を超える場合の折り返し計算
+					int colIndex = i / maxPerCol;
+					int rowIndex = i % maxPerCol;
+					targetTop = baseTop + (rowIndex * sizeInPx);
+					// 列の折り返し方向(0: 右側へ新しい列, 1: 左側へ新しい列)
+					if (mFloatingIconWrapDirection == 0) {
+						targetLeft = baseLeft + (colIndex * sizeInPx);
+					}
+					else {
+						targetLeft = baseLeft - (colIndex * sizeInPx);
+					}
+				}
+			}
+			else {
+				// 折り返しが無効な場合(一直線に縦に並べる)
+				if (mFloatingIconBarGrip) {
+					if (i == 0) {
+						targetTop = baseTop;
+						targetLeft = baseLeft;
+					}
+					else {
+						targetTop = baseTop + handleThickness + (i - 1) * sizeInPx;
+						targetLeft = baseLeft;
+					}
+				}
+				else {
+					targetTop = baseTop + i * sizeInPx;
+					targetLeft = baseLeft;
+				}
+			}
+		}
+		else {
+			// 横方向モード
+			if (mFloatingIconWrap) {
+				// 折り返しが有効な場合
+				int availableWidthForRows = cx - baseLeft;
+				int maxPerRow = Math.max(1, availableWidthForRows / sizeInPx);
+				if (mFloatingIconBarGrip) {
+					// グリップがある場合
+					if (i == 0) {
+						targetLeft = baseLeft;
+						targetTop = baseTop;
+					}
+					else {
+						// 画面右端を超える場合の折り返し計算
+						int itemIndex = i - 1;
+						int rowIndex = itemIndex / maxPerRow;
+						int colIndex = itemIndex % maxPerRow;
+						targetLeft = baseLeft + handleThickness + (colIndex * sizeInPx);
+						// 行の折り返し方向(0: 下側へ新しい行, 1: 上側へ新しい行)
+						if (mFloatingIconWrapDirection == 0) {
+							targetTop = baseTop + (rowIndex * sizeInPx);
+						}
+						else {
+							targetTop = baseTop - (rowIndex * sizeInPx);
+						}
+					}
+				}
+				else {
+					// 画面右端を超える場合の折り返し計算
+					int rowIndex = i / maxPerRow;
+					int colIndex = i % maxPerRow;
+					targetLeft = baseLeft + (colIndex * sizeInPx);
+					// 行の折り返し方向(0: 下側へ新しい行, 1: 上側へ新しい行)
+					if (mFloatingIconWrapDirection == 0) {
+						targetTop = baseTop + (rowIndex * sizeInPx);
+					}
+					else {
+						targetTop = baseTop - (rowIndex * sizeInPx);
+					}
+				}
+			}
+			else {
+				// 折り返しが無効な場合(一直線に横に並べる)
+				if (mFloatingIconBarGrip) {
+					if (i == 0) {
+						targetLeft = baseLeft;
+						targetTop = baseTop;
+					}
+					else {
+						targetLeft = baseLeft + handleThickness + (i - 1) * sizeInPx;
+						targetTop = baseTop;
+					}
+				}
+				else {
+					targetLeft = baseLeft + i * sizeInPx;
+					targetTop = baseTop;
+				}
+			}
+		}
+		return new int[] { targetLeft, targetTop };
+	}
 	// フローティングアイコンをセット
 	public void AddButton(FrameLayout layout, AppCompatActivity activity) {
 		if (mFloatingIconCursorSw) {
@@ -9280,50 +9429,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					FrameLayout.LayoutParams.WRAP_CONTENT,
 					FrameLayout.LayoutParams.WRAP_CONTENT
 				);
-				// 左上に配置
-		        iconParamsAll[i].gravity = Gravity.TOP | Gravity.LEFT;
-				if (mFloatingIconDirectionMode == 0) {
-					// 縦方向
-					// アイコンのサイズだけ座標をずらす
-					if (mFloatingIconBarGrip) {
-						// グリップが有効の場合
-						if (i == 0) {
-							// 移動用つまみ(高さを細くする)
-							iconParamsAll[i].topMargin = heightmargin;
-							iconParamsAll[i].leftMargin = widthmargin;
-						}
-						else {
-							// 2つ目以降の機能アイコン(移動ボタンの高さ+残りのアイコンサイズ分ずらす)
-							iconParamsAll[i].topMargin = heightmargin + handleThickness + (i - 1) * sizeInPx;
-							iconParamsAll[i].leftMargin = widthmargin;
-						}
-					}
-					else {
-						iconParamsAll[i].topMargin = heightmargin + i * sizeInPx;
-						iconParamsAll[i].leftMargin = widthmargin;
-					}
-				}
-				else {
-					// 横方向
-					// アイコンのサイズだけ座標をずらす
-					if (mFloatingIconBarGrip) {
-						// グリップが有効の場合
-						if (i == 0) {
-							// 移動用つまみ(幅を細くする)
-							iconParamsAll[i].topMargin = heightmargin;
-							iconParamsAll[i].leftMargin = widthmargin;
-						}
-						else {
-							// 2つ目以降の機能アイコン(移動ボタンの幅+残りのアイコンサイズ分ずらす)
-							iconParamsAll[i].topMargin = heightmargin;
-							iconParamsAll[i].leftMargin = widthmargin + handleThickness + (i - 1) * sizeInPx;
-						}
-					}
-					else {
-						iconParamsAll[i].topMargin = heightmargin;
-						iconParamsAll[i].leftMargin = widthmargin + i * sizeInPx;
-					}
-				}
+				iconParamsAll[i].gravity = Gravity.TOP | Gravity.LEFT;
+				// 共通の折り返し位置計算メソッドを利用
+				int[] coords = calculateIconPosition(i, widthmargin, heightmargin, sizeInPx, handleThickness, cx, cy);
+				iconParamsAll[i].leftMargin = coords[0];
+				iconParamsAll[i].topMargin = coords[1];
 				imageButtons[i] = new ImageButton(activity);
 				// 色と座標を設定
 				imageButtons[i].setColorFilter(forecolor);
@@ -9457,10 +9567,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	private void updateAllIconPositions(int newLeft, int newTop) {
 		// 基準座標を更新
-		int heightmargin;
-		int widthmargin;
-		widthmargin = newLeft;
-		heightmargin = newTop;
+		int cx = mImageView.getWidth();
+		int cy = mImageView.getHeight();
 		int sizeInPx = dpToPx(mFloatingIconSize + 10 + 16);
 		 // つまみの太さ(通常サイズの1/2)
 		int handleThickness = sizeInPx / 2;
@@ -9468,33 +9576,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		for (int i = 0; i < imageButtons.length; i++) {
 			if (imageButtons[i] == null) continue;
 			FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) imageButtons[i].getLayoutParams();
-			if (mFloatingIconDirectionMode == 0) {
-				// 縦方向モード
-				if (i == 0) {
-					// 先頭：つまみアイコン
-					params.leftMargin = newLeft;
-					params.topMargin = newTop;
-				}
-				else {
-					// 2つ目以降：つまみの高さ+直前の機能アイコン分シフト
-					params.leftMargin = newLeft;
-					params.topMargin = newTop + handleThickness + (i - 1) * sizeInPx;
-				}
-			}
-			else {
-				// 横方向モード
-				if (i == 0) {
-					// 先頭：つまみアイコン
-					params.leftMargin = newLeft;
-					params.topMargin = newTop;
-				}
-				else {
-					// 2つ目以降：つまみの幅+直前の機能アイコン分シフト
-					params.leftMargin = newLeft + handleThickness + (i - 1) * sizeInPx;
-					params.topMargin = newTop;
-				}
-			}
-			// レイアウトに適用
+			// 共通の折り返し位置計算メソッドを利用して座標を再計算
+			int[] coords = calculateIconPosition(i, newLeft, newTop, sizeInPx, handleThickness, cx, cy);
+			params.leftMargin = coords[0];
+			params.topMargin = coords[1];
 			imageButtons[i].setLayoutParams(params);
 		}
 	}
