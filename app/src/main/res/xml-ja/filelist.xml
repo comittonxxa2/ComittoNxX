@@ -484,6 +484,16 @@
             android:key="SearchSettingIcon"
             android:summary="ワードで設定の項目検索する場合はチェックを入れる"
             android:title="設定の検索アイコンを表示" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SetArchivePassword"
+            android:summary="パスワード入力を有効にする場合はチェックを入れる\n※パスワード付きのZIPファイルの時は「ZIPファイルの読み込みを旧方式で行う」のチェックを外す\n※パスワード付きのRARファイルの時は「RARファイルの読み込みを旧方式で行う」のチェックを外す"
+            android:title="パスワード付きの圧縮ファイルを、パスワードを入力して開けるようにする" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SaveArchivePassword"
+            android:summary="パスワード保存を有効にする場合はチェックを入れる"
+            android:title="一度入力した圧縮ファイルのパスワードを保存し、次回以降の入力を省略できるようにする" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen

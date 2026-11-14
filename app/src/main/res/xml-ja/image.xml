@@ -381,6 +381,18 @@
             android:key="AdjustZoomSameAsPinch"
             android:summary="ズームのイン/アウト/リセット操作後に続けて長押しルーペ機能を使う場合にチェックを入れる"
             android:title="ズーム処理をピンチインアウトに合わせる" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="CornerTouchLimitEnable"
+            android:summary="タッチの範囲を画面の端から制限する場合はチェックを入れる"
+            android:title="タッチの範囲を画面の端から制限する＊" />
+        <src.comitton.config.seekbar.CornerTouchHLimitSeekbar
+            android:dialogMessage="タッチの範囲を画面の左右の端から無効にする割合"
+            android:dialogTitle="画面の左右の端から無効にする割合をパーセントで設定する"
+            android:key="CornerTouchHLimit"
+            android:negativeButtonText="@null"
+            android:summary="dummy"
+            android:title="タッチの範囲を画面の左右の端から無効にする割合＊" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
         <PreferenceScreen
