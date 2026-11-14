@@ -1528,6 +1528,18 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		rootLayout.addView(containerLayout);
 		// 画面にセット
 		setContentView(rootLayout);
+		// ヘッダー(タブ)の領域をシステムジェスチャーから除外する
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+			headerLayout.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+				@Override
+				public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+					List<android.graphics.Rect> exclusionRects = new ArrayList<>();
+					// 画面の端であってもこのエリア内での横スワイプがOSに戻るジェスチャーとして奪われないようにする
+					exclusionRects.add(new android.graphics.Rect(0, 0, v.getWidth(), v.getHeight()));
+					v.setSystemGestureExclusionRects(exclusionRects);
+				}
+			});
+		}
 		Resources res = getResources();
 		List<String> restoreTitles = new ArrayList<>();
 		List<String> restoreUris = new ArrayList<>();
@@ -11242,6 +11254,8 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 		bigData.mRBSort = sharedPreferences.getInt("RBSort", 0);
 		bigData.mStatusAreaRange = (int)(mActivity.getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getStatusArea(sharedPreferences));
 		bigData.mNavigationAreaRange = (int)(mActivity.getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getNavigationArea(sharedPreferences));
+		bigData.mCornerTouchLimitEnable = SetEpubActivity.getCornerTouchLimitEnable(sharedPreferences);
+		bigData.mCornerTouchHLimit = SetEpubActivity.getCornerTouchHLimit(sharedPreferences);
 		// JSON(文字列)に変換
 		jsonEpubWebviewString = new Gson().toJson(bigData);
 	}
