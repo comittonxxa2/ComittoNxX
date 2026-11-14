@@ -1024,10 +1024,16 @@
     <string name="verticalfloatingicon">縦の位置(%)</string>
     <string name="transparencyfloatingicon">背景の透明度(%)</string>
     <string name="enablebargrip">グリップ(ドラッグハンドル)を有効</string>
+    <string name="enablewrap">画面端の自動折り返しを有効</string>
+    <string name="wrapdirectionfloatingicon">画面端の折り返し方向</string>
 
     <string name="floatingicondir00">縦方向</string>
     <string name="floatingicondir01">横方向</string>
     <string name="floatingdot">ドット</string>
+    <string name="floatingiconwraphdir00">下へ展開</string>
+    <string name="floatingiconwraphdir01">上へ展開</string>
+    <string name="floatingiconwrapvdir00">右へ展開</string>
+    <string name="floatingiconwrapvdir01">左へ展開</string>
 
     <string name="openfloatingiconsetting">設定ダイアログを開く</string>
     <string name="openfloatingiconcursor">十字アイコンを表示</string>
@@ -1232,5 +1238,10 @@
     <string name="startingviewer">起動中...</string>
     <string name="loaded">KB 読み込みました</string>
     <string name="timeout">タイムアウトが発生しました</string>
+
+    <string name="inputpassword">パスワード入力</string>
+    <string name="inputpasswordnext">パスワードが正しくありません。\nもう一度入力してください。</string>
+    <string name="inputpasswordfirst">暗号化されているためパスワードが必要です。</string>
+    <string name="inputpasswordabort">パスワードの入力ミスが続いたため、処理を中止しました。</string>
 
 </resources>
