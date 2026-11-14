@@ -1024,10 +1024,16 @@
     <string name="verticalfloatingicon">Vertical position(%)</string>
     <string name="transparencyfloatingicon">Background Transparency(%)</string>
     <string name="enablebargrip">Enable the grip(drag handle).</string>
+    <string name="enablewrap">Enable automatic line wrapping at the screen edge</string>
+    <string name="wrapdirectionfloatingicon">Wrapping direction at the screen edge</string>
 
     <string name="floatingicondir00">Vertical direction</string>
     <string name="floatingicondir01">Horizontal direction</string>
     <string name="floatingdot">dot</string>
+    <string name="floatingiconwraphdir00">Expand downward</string>
+    <string name="floatingiconwraphdir01">Expand upward</string>
+    <string name="floatingiconwrapvdir00">Expand to the right</string>
+    <string name="floatingiconwrapvdir01">Expand to the left</string>
 
     <string name="openfloatingiconsetting">Open settings dialog</string>
     <string name="openfloatingiconcursor">Show cross icon</string>
@@ -1233,6 +1239,11 @@
     <string name="startingviewer">Starting...</string>
     <string name="loaded">KB Loaded</string>
     <string name="timeout">A timeout has occurred.</string>
+
+    <string name="inputpassword">Password input</string>
+    <string name="inputpasswordnext">The password is incorrect.\nType it again.</string>
+    <string name="inputpasswordfirst">A password is required because it is encrypted.</string>
+    <string name="inputpasswordabort">The process was terminated due to repeated incorrect password entries.</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
