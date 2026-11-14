@@ -20,6 +20,7 @@ import androidx.preference.PreferenceManager;
 
 import java.io.File;
 
+import src.comitton.config.seekbar.CornerTouchHLimitSeekbar;
 import src.comitton.config.seekbar.EpubFontBodySeekbar;
 import src.comitton.config.seekbar.EpubFontTextSeekbar;
 import src.comitton.config.seekbar.EpubFontInfoSeekbar;
@@ -47,6 +48,8 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 	private ListPreference mLastPage;
 	private OperationPreference mTapPattern;
 	private TimeAndBatteryPreference mTimeAndBattery;
+	private CheckBoxPreference mCornerTouchLimitEnable;
+	private CornerTouchHLimitSeekbar mCornerTouchHLimit;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -129,6 +132,8 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		mLastPage = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LASTPAGE);
 
 		mTimeAndBattery = (TimeAndBatteryPreference) getPreferenceScreen().findPreference(DEF.KEY_TIMEANDBATTERY);
+		mCornerTouchLimitEnable = (CheckBoxPreference) findPreference(DEF.KEY_CORNERTOUCHLIMITENABLE);
+		mCornerTouchHLimit = (CornerTouchHLimitSeekbar)getPreferenceScreen().findPreference(DEF.KEY_CORNERTOUCHHLIMIT);
 
 
 		if (!getTextSizeVariable(sharedPreferences)) {
@@ -192,6 +197,19 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		// ListViewの位置を元に戻す
 		ListViewScrollUtils.restorePosition(this, getListView());
 
+		if (!getCornerTouchLimitEnable(sharedPreferences)) {
+			mCornerTouchHLimit.setEnabled(false);
+		}
+		mCornerTouchLimitEnable.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// newValue には新しいチェック状態(Boolean)が入ってくる
+				boolean isChecked = (Boolean) newValue;
+				mCornerTouchHLimit.setEnabled(isChecked);
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
 		ButtonPreferenceCategory viewerCategory = (ButtonPreferenceCategory) findPreference("viewer_category");
 		if (viewerCategory != null) {
 			viewerCategory.setOnButtonClickListener(() -> {
@@ -300,6 +318,7 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		mTapPattern.setSummary(SetImageText.getTapPatternSummary(mResources, sharedPreferences));	// 操作パターン
 		mVolKey.setSummary(SetImageText.getVolKeySummary(mResources, sharedPreferences));		// Volキー動作
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 確認メッセージ
+		mCornerTouchHLimit.setSummary(getCornerTouchHLimitSummary(sharedPreferences));
 
 
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
@@ -361,6 +380,9 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		else if(key.equals(DEF.KEY_TIMEDISP) || key.equals(DEF.KEY_TIMEFORMAT) || key.equals(DEF.KEY_TIMEPOS) || key.equals(DEF.KEY_TIMESIZE) || key.equals(DEF.KEY_TIMECOLOR)){
 			//
 			mTimeAndBattery.setSummary(getTimeSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_CORNERTOUCHHLIMIT)){
+			mCornerTouchHLimit.setSummary(getCornerTouchHLimitSummary(sharedPreferences));
 		}
 	}
 
@@ -527,6 +549,17 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 		return flag;
 	}
 
+	public static boolean getCornerTouchLimitEnable(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CORNERTOUCHLIMITENABLE, false);
+		return flag;
+	}
+
+	public static int getCornerTouchHLimit(SharedPreferences sharedPreferences){
+		int num =  DEF.getInt(sharedPreferences, DEF.KEY_CORNERTOUCHHLIMIT, DEF.DEFAULT_CORNERTOUCHHLIMIT);
+		return num;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getInitViewSummary(SharedPreferences sharedPreferences){
 		int val = getInitView(sharedPreferences);
@@ -608,5 +641,12 @@ public class SetEpubActivity extends PreferenceActivity implements OnSharedPrefe
 			summ = res.getString(R.string.pnumnodisp);
 		}
 		return summ;
+	}
+
+	private String getCornerTouchHLimitSummary(SharedPreferences sharedPreferences){
+		int size = getCornerTouchHLimit(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.srngSumm2);
+		return	DEF.getMarginStr(size, summ1);
 	}
 }

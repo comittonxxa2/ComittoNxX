@@ -1,5 +1,6 @@
 package src.comitton.config;
 
+import src.comitton.config.seekbar.CornerTouchHLimitSeekbar;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ListAdapter;
 
+import android.preference.CheckBoxPreference;
 import androidx.preference.PreferenceManager;
 
 public class SetImageActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
@@ -40,6 +42,9 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference mLastPage;
 	private ListPreference mPageSel;
 	private ListPreference mScrollMode;
+
+	private CheckBoxPreference mCornerTouchLimitEnable;
+	private CornerTouchHLimitSeekbar mCornerTouchHLimit;
 
 	private OperationPreference mTapPattern;
 	private PageNumberPreference mPageNumber;
@@ -239,6 +244,8 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		mLastPage = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_LASTPAGE);
 		mPageSel = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_PAGESELECT);
 		mScrollMode = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_SCROLLMODE);
+		mCornerTouchLimitEnable = (CheckBoxPreference) findPreference(DEF.KEY_CORNERTOUCHLIMITENABLE);
+		mCornerTouchHLimit = (CornerTouchHLimitSeekbar)getPreferenceScreen().findPreference(DEF.KEY_CORNERTOUCHHLIMIT);
 
 		mResources = getResources();
 
@@ -262,6 +269,19 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 			}
 		});
 
+		if (!getCornerTouchLimitEnable(sharedPreferences)) {
+			mCornerTouchHLimit.setEnabled(false);
+		}
+		mCornerTouchLimitEnable.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// newValue には新しいチェック状態(Boolean)が入ってくる
+				boolean isChecked = (Boolean) newValue;
+				mCornerTouchHLimit.setEnabled(isChecked);
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
 		ButtonPreferenceCategory startupCategory = (ButtonPreferenceCategory) findPreference("startup_category");
 		if (startupCategory != null) {
 			startupCategory.setOnButtonClickListener(() -> {
@@ -346,6 +366,8 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 				ed.putBoolean(DEF.KEY_CHGPAGENEXT, false);
 				ed.putBoolean(DEF.KEY_MAKEZOOMSAMEASPINCH, false);
 				ed.putBoolean(DEF.KEY_ADJUSTZOOMSAMEASPINCH, false);
+				ed.putBoolean(DEF.KEY_CORNERTOUCHLIMITENABLE, false);
+				ed.putInt(DEF.KEY_CORNERTOUCHHLIMIT, DEF.DEFAULT_CORNERTOUCHHLIMIT);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
@@ -416,6 +438,7 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 最終ページでの確認
 		mPageSel.setSummary(SetImageText.getPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
 		mScrollMode.setSummary(getScrollModeSummary(sharedPreferences));
+		mCornerTouchHLimit.setSummary(getCornerTouchHLimitSummary(sharedPreferences));
 
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 	}
@@ -507,6 +530,9 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		else if(key.equals(DEF.KEY_SCROLLMODE)){
 			//
 			mScrollMode.setSummary(getScrollModeSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_CORNERTOUCHHLIMIT)){
+			mCornerTouchHLimit.setSummary(getCornerTouchHLimitSummary(sharedPreferences));
 		}
 	}
 
@@ -934,6 +960,17 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		return flag;
 	}
 
+	public static boolean getCornerTouchLimitEnable(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CORNERTOUCHLIMITENABLE, false);
+		return flag;
+	}
+
+	public static int getCornerTouchHLimit(SharedPreferences sharedPreferences){
+		int num =  DEF.getInt(sharedPreferences, DEF.KEY_CORNERTOUCHHLIMIT, DEF.DEFAULT_CORNERTOUCHHLIMIT);
+		return num;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getViewRotaSummary(SharedPreferences sharedPreferences){
 		int val = getViewRota(sharedPreferences);
@@ -1055,5 +1092,12 @@ public class SetImageActivity extends PreferenceActivity implements OnSharedPref
 		int val = getScrollMode(sharedPreferences);
 		Resources res = getResources();
 		return res.getString(ScrollMode[val]);
+	}
+
+	private String getCornerTouchHLimitSummary(SharedPreferences sharedPreferences){
+		int size = getCornerTouchHLimit(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.srngSumm2);
+		return	DEF.getMarginStr(size, summ1);
 	}
 }

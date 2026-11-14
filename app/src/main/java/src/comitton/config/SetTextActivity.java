@@ -2,6 +2,7 @@ package src.comitton.config;
 
 import java.io.File;
 
+import src.comitton.config.seekbar.CornerTouchHLimitSeekbar;
 import src.comitton.config.seekbar.TextFontBodySeekbar;
 import src.comitton.config.seekbar.TextFontInfoSeekbar;
 import src.comitton.config.seekbar.TextFontRubiSeekbar;
@@ -23,6 +24,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
@@ -58,6 +60,9 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 	private ListPreference mVolKey;
 	private ListPreference mLastPage;
 	private ListPreference mPageSel;
+
+	private CheckBoxPreference mCornerTouchLimitEnable;
+	private CornerTouchHLimitSeekbar mCornerTouchHLimit;
 
 	private OperationPreference mTapPattern;
 	private TimeAndBatteryPreference mTimeAndBattery;
@@ -175,6 +180,8 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		mPageSel = (ListPreference)getPreferenceScreen().findPreference(DEF.KEY_TX_PAGESELECT);
 
 		mTimeAndBattery = (TimeAndBatteryPreference) getPreferenceScreen().findPreference(DEF.KEY_TIMEANDBATTERY);
+		mCornerTouchLimitEnable = (CheckBoxPreference) findPreference(DEF.KEY_CORNERTOUCHLIMITENABLE);
+		mCornerTouchHLimit = (CornerTouchHLimitSeekbar)getPreferenceScreen().findPreference(DEF.KEY_CORNERTOUCHHLIMIT);
 
 
 		mResources = getResources();
@@ -243,6 +250,19 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 			}
 		});
 
+		if (!getCornerTouchLimitEnable(sharedPreferences)) {
+			mCornerTouchHLimit.setEnabled(false);
+		}
+		mCornerTouchLimitEnable.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// newValue には新しいチェック状態(Boolean)が入ってくる
+				boolean isChecked = (Boolean) newValue;
+				mCornerTouchHLimit.setEnabled(isChecked);
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
 		ButtonPreferenceCategory displaystatusatstartupCategory = (ButtonPreferenceCategory) findPreference("displaystatusatstartup_category");
 		if (displaystatusatstartupCategory != null) {
 			displaystatusatstartupCategory.setOnButtonClickListener(() -> {
@@ -304,6 +324,8 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 				ed.putBoolean(DEF.KEY_SORTCHGPAGE, DEF.DEFAULT_SORTCHGPAGE);
 				ed.putBoolean(DEF.KEY_DISABLEPAGEBUTTON, false);
 				ed.putBoolean(DEF.KEY_TX_DISABLETEXTINFO, false);
+				ed.putBoolean(DEF.KEY_CORNERTOUCHLIMITENABLE, false);
+				ed.putInt(DEF.KEY_CORNERTOUCHHLIMIT, DEF.DEFAULT_CORNERTOUCHHLIMIT);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
@@ -390,6 +412,7 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		mLastPage.setSummary(SetImageText.getLastPageSummary(mResources, sharedPreferences));	// 確認メッセージ
 		mPageSel.setSummary(SetImageText.getTxPageSelectSummary(mResources, sharedPreferences));		// ページ選択方法
 		mTimeAndBattery.setSummary(getTimeSummary(sharedPreferences));	// 時刻と充電表示
+		mCornerTouchHLimit.setSummary(getCornerTouchHLimitSummary(sharedPreferences));
 		SetCommonActivity.SetOrientationEventListenerEnable(sharedPreferences);
 
 	}
@@ -492,6 +515,9 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		else if(key.equals(DEF.KEY_TIMEDISP) || key.equals(DEF.KEY_TIMEFORMAT) || key.equals(DEF.KEY_TIMEPOS) || key.equals(DEF.KEY_TIMESIZE) || key.equals(DEF.KEY_TIMECOLOR)){
 			//
 			mTimeAndBattery.setSummary(getTimeSummary(sharedPreferences));
+		}
+		else if(key.equals(DEF.KEY_CORNERTOUCHHLIMIT)){
+			mCornerTouchHLimit.setSummary(getCornerTouchHLimitSummary(sharedPreferences));
 		}
 	}
 
@@ -679,6 +705,17 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 		return flag;
 	}
 
+	public static boolean getCornerTouchLimitEnable(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_CORNERTOUCHLIMITENABLE, false);
+		return flag;
+	}
+
+	public static int getCornerTouchHLimit(SharedPreferences sharedPreferences){
+		int num =  DEF.getInt(sharedPreferences, DEF.KEY_CORNERTOUCHHLIMIT, DEF.DEFAULT_CORNERTOUCHHLIMIT);
+		return num;
+	}
+
 	// 設定の読込(定義変更中)
 	private String getViewRotaSummary(SharedPreferences sharedPreferences){
 		int val = getViewRota(sharedPreferences);
@@ -826,5 +863,12 @@ public class SetTextActivity extends PreferenceActivity implements OnSharedPrefe
 			summ = res.getString(R.string.pnumnodisp);
 		}
 		return summ;
+	}
+
+	private String getCornerTouchHLimitSummary(SharedPreferences sharedPreferences){
+		int size = getCornerTouchHLimit(sharedPreferences);
+		Resources res = getResources();
+		String summ1 = res.getString(R.string.srngSumm2);
+		return	DEF.getMarginStr(size, summ1);
 	}
 }
