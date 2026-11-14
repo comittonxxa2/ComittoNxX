@@ -68,6 +68,8 @@ public class EpubWebViewSharedData{
 	public int mRBSort;
 	public int mStatusAreaRange;
 	public int mNavigationAreaRange;
+	public boolean mCornerTouchLimitEnable;
+	public int mCornerTouchHLimit;
 
 	public EpubWebViewSharedData() {}
 }
