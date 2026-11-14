@@ -380,6 +380,8 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 	private boolean mHideNavigationBar = false;
 	private boolean mReduced;
 	private boolean mDisableTextInfo;
+	private boolean mCornerTouchLimitEnable;
+	private int mCornerTouchHLimit;
 
 	/**
 	 * ImageManager/TextManagerの構築とテキスト整形(formatTextFile経由でのファイル読み込みを含む)を
@@ -1628,6 +1630,12 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 				return true;
 			}
 		}
+		boolean mTouchGuard = false;
+		if (mCornerTouchLimitEnable) {
+			float limitmax = ((float)cx * (float)(100 - mCornerTouchHLimit)) / 100;
+			float limitmin = ((float)cx * (float)mCornerTouchHLimit) / 100;
+			if ((x >= limitmax) || (x <= limitmin)) mTouchGuard = true;
+		}
 		// タッチパネルの座標を設定する
 		TouchPanelView.SetTouchPosition((int)x, (int)y, cx, cy);
 
@@ -1676,7 +1684,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					}
 					if (mClickGuard) {
 					}
-					else if (mTapEditMode) {
+					else if (mTapEditMode || mTouchGuard) {
 					}
 					else {
 						mGuideView.eventTouchDown((int)x, (int)y, cx, cy, true);
@@ -1691,7 +1699,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					if (y >= cy - mClickArea && !mTapEditMode || mTapEditMode && y >= cy + statusbar_height - navibar_height) {
 						if (mClickGuard) {
 						}
-						else if (mTapEditMode) {
+						else if (mTapEditMode || mTouchGuard) {
 						}
 						else if (mPageSelect == PAGE_SLIDE) {
 							if (mClickArea <= x && x <= cx - mClickArea) {
@@ -1710,7 +1718,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 						// 下部押下
 						if (mClickGuard) {
 						}
-						else if (mTapEditMode) {
+						else if (mTapEditMode || mTouchGuard) {
 						}
 						else {
 							if (!mClickGuard) {
@@ -1738,6 +1746,8 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 								TouchPanelView.InitTapPattern();
 							}
 						}
+						else if (mTouchGuard) {
+						}
 						else {
 							startLongTouchTimer(DEF.HMSG_EVENT_TOUCH_TOP); // ロングタッチのタイマー開始
 							mOperation = TOUCH_COMMAND;
@@ -1746,7 +1756,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					else {
 						// 操作モード
 						mOperation = TOUCH_OPERATION;
-						if (mTapEditMode) {
+						if (mTapEditMode || mTouchGuard) {
 						}
 						else {
 
@@ -1778,7 +1788,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					// 移動位置設定
 					if (mClickGuard) {
 					}
-					else if (mTapEditMode) {
+					else if (mTapEditMode || mTouchGuard) {
 					}
 					else {
 						// タップのスクロール
@@ -1814,6 +1824,8 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							Logcat.v(logLevel, "タップ操作の設定ダイアログを表示させる");
 							// タップ操作の設定ダイアログを表示させる
 							TouchPanelView.SetAlertDialog(mActivity);
+						}
+						else if (mTouchGuard) {
 						}
 						else if (!this.mTouchMove && (TouchPanelView.GetTouchPositionData(1) > 0 || TouchPanelView.GetTouchPositionData(2) > 0)) {
 							// シングルタップまたはダブルタップが有効の場合
@@ -1914,7 +1926,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		action = event.getAction();
 		if (action == MotionEvent.ACTION_MOVE) {
 			// タップのスクロール
-			if (mClickGuard) {
+			if (mClickGuard || mTouchGuard) {
 			}
 			else {
 				Action_Move_Sub(event);
@@ -3731,6 +3743,8 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		mReduced = SetTextActivity.getReduced(sharedPreferences);
 		mStatusAreaRange = (int)(getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getStatusArea(sharedPreferences));
 		mNavigationAreaRange = (int)(getResources().getDisplayMetrics().density * SetImageTextDetailActivity.getNavigationArea(sharedPreferences));
+		mCornerTouchLimitEnable = SetTextActivity.getCornerTouchLimitEnable(sharedPreferences);
+		mCornerTouchHLimit = SetTextActivity.getCornerTouchHLimit(sharedPreferences);
 	}
 
 	private void setConfig() {

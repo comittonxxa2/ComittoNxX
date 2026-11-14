@@ -514,6 +514,10 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private boolean mIsViewerLaunched = false;
 	private final java.util.concurrent.atomic.AtomicBoolean mIsCancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
 	private Thread mLoadThread = null;
+	private boolean mCornerTouchLimitEnable;
+	private int mCornerTouchHLimit;
+	private boolean isEdgeTouch = false;
+	private boolean mLongtap = false;
 
 	public class PageMetadata {
 		// 判定項目
@@ -770,12 +774,16 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		if (requestCode == DEF.REQUEST_SETTING) {
 			// ダブルタップ検出のリスナーを有効にする(これを入れないとタップ操作ができなくなる)
 			mDetector.setOnDoubleTapListener(this);
-			// JSONデータを取り出す
-			jsonEpubWebViewString = data.getStringExtra("EpubWebview_Data");
-			// 設定の読込
-			ReadSetting();
-			// JSONデータを破棄する
-			data.removeExtra("EpubWebview_Data");
+			try {
+				// JSONデータを取り出す
+				jsonEpubWebViewString = data.getStringExtra("EpubWebview_Data");
+				// 設定の読込
+				ReadSetting();
+				// JSONデータを破棄する
+				data.removeExtra("EpubWebview_Data");
+			}
+			catch (Exception e) {
+			}
 			// 直前に設定したページに関する内容を復元する
 			restoreSetting();
 			// 本文のフォントの拡大率を変更
@@ -1194,6 +1202,36 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			// 画面が裏に入った場合にリスト一覧へ戻す(Android13の一部の機種でフリーズしてしまうための対策)
 			finish();
 		}
+	}
+
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent event) {
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				// スクロールのブロックの範囲をチェック
+				isEdgeTouch = false;
+				if (mCornerTouchLimitEnable) {
+					int cx = rootContainer.getWidth();
+					float x = event.getX();
+					float limitmax = ((float)cx * (float)(100 - mCornerTouchHLimit)) / 100;
+					float limitmin = ((float)cx * (float)mCornerTouchHLimit) / 100;
+					if ((x >= limitmax) || (x <= limitmin)) {
+						isEdgeTouch = true;
+					}
+				}
+				break;
+			case MotionEvent.ACTION_MOVE:
+				// スクロールのブロック中はこのタッチイベントをWebViewに渡さない(消費して無視する)
+				if (isEdgeTouch) {
+					return true;
+				}
+				break;
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL:
+				isEdgeTouch = false;
+				break;
+		}
+		return super.dispatchTouchEvent(event);
 	}
 
 	@Override
@@ -2029,8 +2067,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 			}
 		}
-		// タッチパネルの座標を設定する
-		TouchPanelView.SetTouchPosition((int)x, (int)y, cx, cy);
+		boolean mTouchGuard = false;
+		if (mCornerTouchLimitEnable) {
+			float limitmax = ((float)cx * (float)(100 - mCornerTouchHLimit)) / 100;
+			float limitmin = ((float)cx * (float)mCornerTouchHLimit) / 100;
+			if ((x >= limitmax) || (x <= limitmin)) mTouchGuard = true;
+		}
+		if (mTouchGuard) {
+		}
+		else {
+			// タッチパネルの座標を設定する
+			TouchPanelView.SetTouchPosition((int)x, (int)y, cx, cy);
+		}
 
 		this.mTouchMove = false;
 		this.mTouchFirst = true;
@@ -2230,12 +2278,18 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		}
 		if (mOperation == TOUCH_OPERATION) {
 			Logcat.v(logLevel, "通常タップ");
+			boolean mTouchGuard = false;
+			if (mCornerTouchLimitEnable) {
+				float limitmax = ((float)cx * (float)(100 - mCornerTouchHLimit)) / 100;
+				float limitmin = ((float)cx * (float)mCornerTouchHLimit) / 100;
+				if ((x >= limitmax) || (x <= limitmin)) mTouchGuard = true;
+			}
 			if (mTapEditMode) {
 				Logcat.v(logLevel, "タップ操作の設定ダイアログを表示させる");
 				// タップ操作の設定ダイアログを表示させる
 				TouchPanelView.SetAlertDialog(mActivity);
 			}
-			else if (mOnflingMode) {
+			else if (mOnflingMode || mTouchGuard || mLongtap) {
 			}
 			else if (!this.mTouchMove && (TouchPanelView.GetTouchPositionData(1) > 0 || TouchPanelView.GetTouchPositionData(2) > 0)) {
 				// シングルタップまたはダブルタップが有効の場合
@@ -2283,6 +2337,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		mTouchFirst = false;
 		mOperation = TOUCH_NONE;
 		this.mTouchMove = false;
+		mLongtap = false;
 	}
 
 	private float oldx = 0;
@@ -2775,6 +2830,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 						// タッチ位置が範囲内の時だけ処理
 						Logcat.v(logLevel, "HMSG_EVENT_LONG_TAP");
 						SetTouchPanelCommand(3);
+						// UPイベントで誤動作防止
+						mLongtap = true;
 					}
 				}
 				return true;
@@ -3783,6 +3840,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			mRBSort = bigData.mRBSort;
 			mStatusAreaRange = bigData.mStatusAreaRange;
 			mNavigationAreaRange = bigData.mNavigationAreaRange;
+			mCornerTouchLimitEnable = bigData.mCornerTouchLimitEnable;
+			mCornerTouchHLimit = bigData.mCornerTouchHLimit;
 		}
 		if (mSdkVersion >= 19) {
 			// KitKat以降のみ設定読み込み
