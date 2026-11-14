@@ -482,6 +482,16 @@
             android:key="SearchSettingIcon"
             android:summary="Check this box to search for settings items in Word."
             android:title="Show settings search icon" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SetArchivePassword"
+            android:summary="Check this box to enable password entry.\nWhen using a password-protected ZIP file, uncheck the 'Read ZIP files using the old method' option.\nWhen dealing with password-protected RAR files, uncheck the 'Read RAR files using the old method' option."
+            android:title="Make password-protected compressed files openable by entering the password." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="SaveArchivePassword"
+            android:summary="Check this box to enable password saving."
+            android:title="Save the password for a compressed file that you've entered once, so you don't have to enter it again next time." />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
