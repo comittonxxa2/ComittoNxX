@@ -610,15 +610,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						ty = Math.max(cy * effectRate * -1 + mLastOverScrollX, 0);
 					}
 				}
-				// ページ番号の変化をチェック
-				if (mImage[0] != null && mImage[0].Page != mOldPage) {
-					if (mImage[0].Page > mOldPage) {
-						mMove = true;
-					}
-					else {
-						mMove = false;
-					}
-				}
+				// めくる向き(mMove)は setImageBitmap() で画像を差し替えた時点で決めている.
+				// ここで「最後に効果なしで描いたページ(mOldPage)」と比べると、連続めくりや
+				// 同じページ番号の分割表示で古い向きが残り、スライドが逆向きになっていた
 //					if (mScrlNext == false || mOverScrollX == 0) {
 				if (effect == 1) {	// ページめくりフリップ
 					canvas.save();
@@ -1530,7 +1524,30 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		updateNotify();
 	}
 
+	private int mSetPage = -1;			// 最後に setImageBitmap() で設定したページ番号
+	private boolean mPageBackHint = false;	// 直近のページ送りが「戻る」操作だったか
+
+	/**
+	 * 直近のページ送りが「戻る」操作かを通知する(setImageBitmap() の直前に呼ぶ)。
+	 * ページ番号が変わらないめくり(分割表示の前半/後半)の向きの判定に使う。
+	 */
+	public void setPageBack(boolean back) {
+		mPageBackHint = back;
+	}
+
 	public void setImageBitmap(ImageData[] bm) {
+		if (bm != null && bm[0] != null) {
+			// めくる向きを、直前に設定したページとの比較で決める
+			int page = bm[0].Page;
+			if (page != mSetPage) {
+				mMove = page > mSetPage;
+			}
+			else {
+				// 同じページ番号(分割表示の前半/後半など)は操作の向きに従う
+				mMove = !mPageBackHint;
+			}
+			mSetPage = page;
+		}
 		if (bm != null) {
 			mImage[0] = bm[0];
 			mImage[1] = bm[1];
