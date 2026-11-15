@@ -2989,6 +2989,16 @@ public class ImageManager extends InputStream implements Runnable {
 					}
 					catch (Exception e) {
 						writeError[0] = e;
+						// 書き込みに失敗した後も、読み込み側がキュー満杯のput()で待ち続けないよう、
+						// 終わりの印が来るまで残りを読み捨てる
+						try {
+							while (writeQueue.take() != EOF_MARKER) {
+								;
+							}
+						}
+						catch (InterruptedException ie) {
+							;
+						}
 					}
 				}
 			});
@@ -4060,7 +4070,7 @@ public class ImageManager extends InputStream implements Runnable {
 	// ビットマップ読み込み開始
 	public ImageData getImageData(int page) {
 		// パラメタチェック
-		if (mFileList != null && page < 0 && mFileList.length <= page) {
+		if (mFileList == null || page < 0 || mFileList.length <= page) {
 			return null;
 		}
 
@@ -4231,7 +4241,7 @@ public class ImageManager extends InputStream implements Runnable {
 	public ImageData loadBitmap(int page, boolean notice) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		// パラメタチェック
-		if (mFileList != null && page < 0 && mFileList.length <= page) {
+		if (mFileList == null || page < 0 || mFileList.length <= page) {
 			return null;
 		}
 

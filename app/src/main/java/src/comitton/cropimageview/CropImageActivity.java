@@ -142,7 +142,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
             @Override
             public void onClick(View v) {
                 mAspectRatio -= 0.01f;
-                mEditAspectRatio.setText(String.format("%.3f", mAspectRatio));
+                mEditAspectRatio.setText(String.format(java.util.Locale.ROOT, "%.3f", mAspectRatio));
             }
         });
         Button btnPlus = (Button) findViewById(R.id.btn_plus);
@@ -150,7 +150,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
             @Override
             public void onClick(View v) {
                 mAspectRatio += 0.01f;
-                mEditAspectRatio.setText(String.format("%.3f", mAspectRatio));
+                mEditAspectRatio.setText(String.format(java.util.Locale.ROOT, "%.3f", mAspectRatio));
             }
         });
 
@@ -219,7 +219,7 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
     }
 
     public void cropCallback(float aspectRatio){
-        mEditAspectRatio.setText(String.format("%.3f", aspectRatio));
+        mEditAspectRatio.setText(String.format(java.util.Locale.ROOT, "%.3f", aspectRatio));
     }
 
     private final Handler handler = new Handler() {
@@ -373,7 +373,18 @@ public class CropImageActivity extends AppCompatActivity implements Runnable, Te
 
     @Override
     public void afterTextChanged(Editable s) {
-        mAspectRatio = Float.parseFloat(s.toString());
+        float ratio;
+        try {
+            ratio = Float.parseFloat(s.toString());
+        }
+        catch (NumberFormatException e) {
+            // 入力途中(空や"."だけ)は数値にならないので、前の値のままにする
+            return;
+        }
+        if (Float.isNaN(ratio) || Float.isInfinite(ratio)) {
+            return;
+        }
+        mAspectRatio = ratio;
         if(mAspectRatio < 0.1f)
             mAspectRatio = 0.1f;
         mCropImageView.setAspectRatio(mAspectRatio);
