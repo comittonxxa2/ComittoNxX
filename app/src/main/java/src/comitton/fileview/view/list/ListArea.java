@@ -298,9 +298,10 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
 					mTouchDraw = false;
 					update(true);
 					mListNoticeListener.onItemClick(mListType, mTouchIndex, point);
-					mTouchIndex = -1;
+					// カーソル位置はタップした項目にする(-1にしてから計算するとX=-1になっていた)
 					mCursorPosX = mTouchIndex % mColumnNum;
 					mCursorPosY = mTouchIndex / mColumnNum;
+					mTouchIndex = -1;
 				}
 				mLongClickMsg = null;
 				break;
@@ -798,7 +799,7 @@ public class ListArea implements Handler.Callback, ScrollMoveListener {
 		doOperation(true);
 		updateBottomRowPos();
 
-		if (mCursorDisp && keycode == KeyEvent.KEYCODE_ENTER || keycode == KeyEvent.KEYCODE_DPAD_CENTER) {
+		if (mCursorDisp && (keycode == KeyEvent.KEYCODE_ENTER || keycode == KeyEvent.KEYCODE_DPAD_CENTER)) {
 			// 改行はカーソル移動とは分けて処理
 			int index = mCursorPosY * mColumnNum + mCursorPosX; 
 			if (isDown) {

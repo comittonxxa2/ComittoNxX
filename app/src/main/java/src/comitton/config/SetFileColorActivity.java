@@ -203,7 +203,7 @@ public class SetFileColorActivity extends PreferenceActivity implements OnShared
 			public boolean onPreferenceClick(Preference preference) {
 				// プリセットを反映
 				int index = getPreset(mSharedPreferences);
-				if (index > 0 || index < mPresetColor.length) {
+				if (index > 0 && index < mPresetColor.length) {
 					String[] newKeys = { DEF.KEY_TXTRGB, DEF.KEY_DIRRGB, DEF.KEY_BEFRGB, DEF.KEY_NOWRGB, DEF.KEY_AFTRGB, DEF.KEY_IMGRGB, DEF.KEY_INFRGB, DEF.KEY_MRKRGB, DEF.KEY_BAKRGB, DEF.KEY_CURRGB, DEF.KEY_TITRGB, DEF.KEY_TIBRGB, DEF.KEY_TLDRGB, DEF.KEY_TLBRGB, DEF.KEY_RRBRGB, DEF.KEY_BSFRGB, DEF.KEY_BSERGB, DEF.KEY_FIFRGB ,DEF.KEY_FIBRGB ,DEF.KEY_EVTRGB ,DEF.KEY_EVBRGB ,DEF.KEY_TABRGB };
 
 					Editor ed = mSharedPreferences.edit();

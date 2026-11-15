@@ -1273,7 +1273,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						if (effect == 2) {	// ページめくりフェードイン
 							scrollReset();
 							bmpPaint = mAlphaPaint;
-							bmpPaint.setAlpha((int) (255 * (1.0f - effectRate) * (effectRate > 0 ? 1 : -1)));
+							// 戻る方向は effectRate が負(-1→0)になるので絶対値で透明度を決める
+							bmpPaint.setAlpha((int) (255 * (1.0f - Math.abs(effectRate))));
 						}
 						canvas.drawBitmap(mCanvasBitmap, 0, 0, bmpPaint);
 //					}
@@ -3320,7 +3321,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			// 前の前のページを表示用Bitmapに書き込む
-			if (prev2Page > 0 && prev2Page < mImageManager.length()) {
+			if (prev2Page >= 0 && prev2Page < mImageManager.length()) {
 				prev2Image = mImageManager.getImageData(prev2Page);
 
 				if (prevImage != null && prev2Image != null) {
@@ -3447,7 +3448,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if (next2Page >= 0 && next2Page < mImageManager.length()) {
 				next2Image = mImageManager.getImageData(next2Page);
 
-				if (next2Image != null && next2Image != null) {
+				if (nextImage != null && next2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
 						origWidth = next2Image.SclWidth;

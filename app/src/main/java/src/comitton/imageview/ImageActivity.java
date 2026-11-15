@@ -5559,7 +5559,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 
 		// 操作カテゴリ
 		mMenuDialog.addSection(res.getString(R.string.operateSec));
@@ -5797,7 +5797,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
@@ -5855,7 +5855,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			return;
 		}
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 		// 目次の選択のタイトルを追加
 		mMenuDialog.addSection(res.getString(R.string.SelectContentsMenu));
 
@@ -8347,7 +8347,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_01, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_01, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_01, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_01, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_01, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_01, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8385,7 +8385,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_02, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_02, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_02, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_02, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_02, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_02, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8423,7 +8423,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_03, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_03, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_03, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_03, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_03, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_03, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8461,7 +8461,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_04, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_04, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_04, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_04, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_04, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_04, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8499,7 +8499,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_05, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_05, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_05, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_05, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_05, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_05, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8537,7 +8537,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_06, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_06, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_06, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_06, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_06, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_06, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8575,7 +8575,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_07, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_07, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_07, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_07, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_07, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_07, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8613,7 +8613,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_08, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_08, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_08, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_08, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_08, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_08, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8651,7 +8651,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_09, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_09, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_09, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_09, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_09, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_09, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8689,7 +8689,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_10, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_10, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_10, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_10, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_10, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_10, SetImageActivity.getSharpen(mSharedPreferences));

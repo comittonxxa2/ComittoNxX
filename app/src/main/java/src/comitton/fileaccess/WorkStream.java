@@ -30,7 +30,7 @@ public class WorkStream extends InputStream {
 
 	public WorkStream(@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @NonNull final Handler handler) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		mActivity = activity;
 		mURI = uri;
 		mUser = user;
@@ -41,7 +41,7 @@ public class WorkStream extends InputStream {
 
 	private void Open() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + mURI + ", user=" + mUser + ", pass=" + mPass);
+		Logcat.d(logLevel, "開始します. uri=" + mURI + ", user=" + mUser + ", pass=" + Logcat.mask(mPass));
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "OPEN");
 
 		try {
