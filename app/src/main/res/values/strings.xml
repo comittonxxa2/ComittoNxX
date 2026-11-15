@@ -653,6 +653,7 @@
     <string name="selectOrEnterFile">Select or enter a file.</string>
     <string name="SaveConfig">Save settings to file.</string>
     <string name="LoadConfig">Load setting from file.</string>
+    <string name="LoadConfigError">Could not read the setting file. The settings were not changed.</string>
     <string name="SaveServerCode">Saved to the local folder.</string>
     <string name="SaveErrorServerCode">Failed to save.</string>
     <string name="LoadErrorServerCode">Failed to load.</string>
