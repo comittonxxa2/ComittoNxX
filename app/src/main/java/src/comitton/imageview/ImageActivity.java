@@ -564,6 +564,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 画面を構成する View の保持
 	public static MyImageView mImageView = null;
+	// この画面が作った View. mImageView は static で、次の巻を開くと新しい画面の View に置き換わるため、
+	// 終了処理ではこちらを使う(古い画面の onDestroy が新しい画面の画像を消さないように)
+	private MyImageView mOwnImageView = null;
 	private GuideView mGuideView = null;
 	private boolean mKeepGuide = false;
 	// フリック判定用
@@ -949,6 +952,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mReadingMsg[2] = res.getString(R.string.htmlParsing);
 
 		mImageView = new MyImageView(this);
+		mOwnImageView = mImageView;
 		mGuideView = new GuideView(this);
 		layout = new FrameLayout(this);
 		layout.addView(mImageView);
@@ -1246,8 +1250,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (mSourceImage[1] != null) {
 			mSourceImage[1] = null;
 		}
-		if (mImageView != null) {
-			mImageView.setImageBitmap(mSourceImage);
+		if (mOwnImageView != null) {
+			mOwnImageView.setImageBitmap(mSourceImage);
 		}
 		System.gc();
 		Logcat.i(logLevel, "終了します.");
