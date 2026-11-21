@@ -18,6 +18,7 @@ import src.comitton.common.TextFormatter;
 import src.comitton.config.SetBookShelfActivity;
 import src.comitton.config.SetFileListActivity;
 import src.comitton.fileview.data.FileData;
+import src.comitton.fileview.filelist.FileSelectList;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.fileview.view.DrawNoticeListener;
 import src.comitton.imageview.ImageActivity;
@@ -102,6 +103,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 	private Bitmap[] mIcon;
 	private Bitmap[] mMark;
+	private Bitmap mEncryption;
 
 	private long mThumbnailId;
 	private ArrayList<FileData> mFileList;
@@ -424,6 +426,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						}
 
 						Bitmap bmMark = null;
+						Bitmap bmEncryption = null;
 						if (type == FileData.FILETYPE_DIR) {
 							bmMark = mMark[FILEMARK_DIR];
 						}
@@ -504,6 +507,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							if (bmMark != null) {
 								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
+							if (mEncryption != null && FileSelectList.getEncryptionList(fd.getName())) {
+								// ファイル名がパスワードのハッシュテーブルに登録されていれば錠前アイコンを表示
+								canvas.drawBitmap(mEncryption, x + mIconWidth - mMarkSizeW - mMarkSizeH, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
+							}
 							Logcat.d(logLevel,"fd.getState()=" + fd.getState() + ", fd.getMaxpage()=" + fd.getMaxpage() + ", fd.getName()=" + fd.getName());
 							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? mIconWidth : dstWidth, y + mIconHeight);
 						}
@@ -547,6 +554,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 							if (bmMark != null) {
 								canvas.drawBitmap(bmMark, x + mIconWidth - mMarkSizeW, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
+							}
+							if (mEncryption != null && FileSelectList.getEncryptionList(fd.getName())) {
+								// ファイル名がパスワードのハッシュテーブルに登録されていれば錠前アイコンを表示
+								canvas.drawBitmap(mEncryption, x + mIconWidth - mMarkSizeW - mMarkSizeH, y + mIconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 							}
 							// サムネイルありかつ画像なしでも読書率を表示できるようにした
 							drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, mIconWidth, y + mIconHeight);
@@ -996,6 +1007,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 						if (bmMark != null) {
                             canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 						}
+						if (mEncryption != null && FileSelectList.getEncryptionList(fd.getName())) {
+							// ファイル名がパスワードのハッシュテーブルに登録されていれば錠前アイコンを表示
+                            canvas.drawBitmap(mEncryption, x + iconWidth - mMarkSizeW - mMarkSizeH, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
+						}
 						drawPagerate(canvas, fd, iconWidth, iconHeight, x, y, color, (mGaugeWidth == GAUGE_WIDTH_THUMBNAIL_DISPLAYAREA) ? iconWidth : dstWidth, y + iconHeight);
 					}
 					else {
@@ -1038,6 +1053,10 @@ public class FileListArea extends ListArea implements Handler.Callback {
 
 						if (bmMark != null) {
                             canvas.drawBitmap(bmMark, x + iconWidth - mMarkSizeW, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
+						}
+						if (mEncryption != null && FileSelectList.getEncryptionList(fd.getName())) {
+							// ファイル名がパスワードのハッシュテーブルに登録されていれば錠前アイコンを表示
+                            canvas.drawBitmap(mEncryption, x + iconWidth - mMarkSizeW - mMarkSizeH, y + iconHeight - mMarkSizeH - mMarkOffset, mBitmapPaint);
 						}
 						// サムネイルありかつ画像なしでも読書率を表示できるようにした
 						drawPagerate(canvas, fd, mIconWidth, mIconHeight, x, y, color, mIconWidth, y + mIconHeight);
@@ -1419,12 +1438,14 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			for (int i = 0; i < mMark.length; i++) {
 				mMark[i] = ImageAccess.createIcon(res, FILEMARK_ID[i], mMarkSizeW, mMarkSizeH, null);
 			}
+			mEncryption = ImageAccess.createIcon(res, R.drawable.lock_badge, mMarkSizeH, mMarkSizeH, null);
 		}
 		else {
 			mIconHeight = 0;
 			mDrawBitmap = null;
 			mIcon = null;
 			mMark = null;
+			mEncryption = null;
 		}
 
 		mLoadingSize = Math.min(sizew, sizeh) / 6;

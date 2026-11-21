@@ -236,7 +236,9 @@ public class RecordListArea extends ListArea {
 		mInfoPaint.setColor(clr_inf);
 		mBakColor = clr_bak;
 		mCurColor = clr_cur;
-		mSepColor = clr_inf;
+		// 区切り線は文字色(白/黒に近い色)で描く。中間の灰色だと、端末によってはパネルの調光の点滅で
+		// ゆっくりスクロール中にちらついて見える
+		mSepColor = clr_txt;
 		mLinePaint.setColor(clr_frm);
 //		mBitmapPaint.setColor(clr_inf);
 		mBitmapColor = clr_txt;
@@ -416,7 +418,13 @@ public class RecordListArea extends ListArea {
 					// 書庫管理タブの巻: 親フォルダ名(漫画⇔Aria2c_DL等) / 日付 / サイズ / 既読状況の4行
 					mInfoSep[index] = new String[4][];
 					String folder = rd.getLibraryFolderLabel();
-					mInfoSep[index][0] = TextFormatter.getMultiLine(folder != null ? folder : "", tcx, mInfoPaint, 1);
+					// 巻番号(「3巻」「1〜3巻」「上巻」)をファイル名から読み、親フォルダ名の前に付ける
+					String volLabel = rd.getLibraryVolumeLabel() != null ? rd.getLibraryVolumeLabel() : "";
+					String firstLine = (folder != null ? folder : "");
+					if (volLabel.length() > 0) {
+						firstLine = volLabel + (firstLine.length() > 0 ? "  " + firstLine : "");
+					}
+					mInfoSep[index][0] = TextFormatter.getMultiLine(firstLine, tcx, mInfoPaint, 1);
 					mInfoSep[index][1] = TextFormatter.getMultiLine(rd.getImage(), tcx, mInfoPaint, 1);
 					mInfoSep[index][2] = TextFormatter.getMultiLine(rd.getServerName(), tcx, mInfoPaint, 1);
 					String status = rd.getReadStatus();
