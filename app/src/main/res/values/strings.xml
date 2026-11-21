@@ -339,6 +339,7 @@
     <string name="ope11">Show Text viewer</string>
     <string name="ope12">Delete file list cache</string>
     <string name="ope13">Regenerate and open the file list</string>
+    <string name="ope14">Removing the password from a compressed file</string>
     <string name="lmTitle">List Mode</string>
     <string name="listmode00">List View (Thumbnail ON)</string>
     <string name="listmode01">List View (Thumbnail OFF)</string>
@@ -358,6 +359,7 @@
     <string name="bm00">Open Folder</string>
     <string name="bm01">Edit Name</string>
     <string name="bm02">Delete Favorite</string>
+    <string name="bm02History">Delete from History</string>
     <string name="bmTitle">Favorite List</string>
     <string name="bmNotFound">There are no bookmarks.</string>
     <string name="contentsNotFound">There are no table of contents.</string>
@@ -582,12 +584,8 @@
     <string name="libraryVolumeCount">%1$d volume(s)</string>
     <string name="libraryReadSummary">Read: %1$d/%2$d (%3$d%%)</string>
     <string name="librarySyncDone">Library updated: %1$d new item(s)</string>
-    <string name="libraryMenuRescan">Scan server now</string>
-    <string name="libraryMenuPull">Update from server</string>
+    <string name="libraryMenuPull">Update library and read positions</string>
     <string name="libraryMenuReadPositionSync">Update read position</string>
-    <string name="libraryRescanTriggered">Server scan started. Use \"Update from server\" once it finishes.</string>
-    <string name="libraryRescanCooldown">A scan already ran recently. Use \"Update from server\" to fetch the current catalog.</string>
-    <string name="libraryRescanError">Could not start the server scan.</string>
     <string name="libraryMenuSearch">Search by title</string>
     <string name="libraryMenuClearFilter">Clear filter</string>
     <string name="libraryMenuImportError">Failed to import Library data</string>
@@ -653,6 +651,7 @@
     <string name="selectOrEnterFile">Select or enter a file.</string>
     <string name="SaveConfig">Save settings to file.</string>
     <string name="LoadConfig">Load setting from file.</string>
+    <string name="LoadConfigError">Could not read the setting file. The settings were not changed.</string>
     <string name="SaveServerCode">Saved to the local folder.</string>
     <string name="SaveErrorServerCode">Failed to save.</string>
     <string name="LoadErrorServerCode">Failed to load.</string>
@@ -1244,6 +1243,7 @@
     <string name="inputpasswordnext">The password is incorrect.\nType it again.</string>
     <string name="inputpasswordfirst">A password is required because it is encrypted.</string>
     <string name="inputpasswordabort">The process was terminated due to repeated incorrect password entries.</string>
+    <string name="passwordclear">The password for the compressed file has been removed.</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
@@ -1260,4 +1260,18 @@
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
 
+    <string name="ope14on">Add to no-history folders</string>
+    <string name="ope14off">Remove from no-history folders</string>
+    <string name="noHistoryAdded">Registered as a no-history folder</string>
+    <string name="noHistoryRemoved">Removed from no-history folders</string>
+    <string name="noHistoryDeleteConfirm">%1$d item(s) of this folder are in this device\'s history. Delete them from the history? (Server history and read positions are not changed.)</string>
+    <string name="noHistoryDelete">Delete</string>
+    <string name="noHistoryKeep">Keep</string>
+    <string name="noHistoryFolders">No-history folders</string>
+    <string name="noHistoryFoldersSummary">Books in these folders are not added to history</string>
+    <string name="noHistoryListEmpty">No folders registered</string>
+    <string name="noHistoryListTitle">No-history folders (tap to remove)</string>
+    <string name="noHistoryAddPath">Add path</string>
+    <string name="noHistoryAddHint">Folder path, e.g. /comics</string>
+    <string name="noHistoryRemoveConfirm">Remove this folder from the list?</string>
 </resources>
