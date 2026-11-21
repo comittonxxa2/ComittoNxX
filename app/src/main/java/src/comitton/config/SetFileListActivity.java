@@ -83,6 +83,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	private LimitDownloadImageSeekbar mMemLimit;
 	private CheckBoxPreference mMemLimitEnable;
 	private CheckBoxPreference mSearchSettingIcon;
+	private CheckBoxPreference mArchivePasswordIcon;
 
 	private boolean mNotice = false;
 	private boolean mImmEnable = false;
@@ -236,6 +237,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		mMemLimit  = (LimitDownloadImageSeekbar)getPreferenceScreen().findPreference(DEF.KEY_MEMLIMIT);
 		mMemLimitEnable = (CheckBoxPreference) findPreference(DEF.KEY_MEMLIMITENABLE);
 		mSearchSettingIcon = (CheckBoxPreference) findPreference(DEF.KEY_SEARCHSETTINGICON);
+		mArchivePasswordIcon = (CheckBoxPreference) findPreference(DEF.KEY_ARCHIVEPASSWORDICON);
 
 		if (!getThumbnailGrid(sharedPreferences)) {
 			mListThumbRatioSeek.setEnabled(false);
@@ -317,6 +319,16 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 		});
 
 		mSearchSettingIcon.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
+				// 親のActivityを再生成させる
+				FileSelectActivity.setChangeTheme();
+				// trueを返すと設定値が保存される
+				return true;
+			}
+		});
+
+		mArchivePasswordIcon.setOnPreferenceChangeListener(new android.preference.Preference.OnPreferenceChangeListener() {
 			@Override
 			public boolean onPreferenceChange(android.preference.Preference preference, Object newValue) {
 				// 親のActivityを再生成させる
@@ -410,6 +422,7 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 				ed.putBoolean(DEF.KEY_SEARCHSETTINGICON, false);
 				ed.putBoolean(DEF.KEY_SETARCHIVEPASSWORD, false);
 				ed.putBoolean(DEF.KEY_SAVEARCHIVEPASSWORD, false);
+				ed.putBoolean(DEF.KEY_ARCHIVEPASSWORDICON, false);
 				ed.apply();
 				// アクティビティを再起動
 				ListViewScrollUtils.restartActivityWithPosition(this, getListView());
@@ -1212,6 +1225,12 @@ public class SetFileListActivity extends PreferenceActivity implements OnSharedP
 	public static boolean getSaveArchivePassword(SharedPreferences sharedPreferences){
 		boolean flag;
 		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_SAVEARCHIVEPASSWORD, false);
+		return flag;
+	}
+
+	public static boolean getArchivePasswordIcon(SharedPreferences sharedPreferences){
+		boolean flag;
+		flag =  DEF.getBoolean(sharedPreferences, DEF.KEY_ARCHIVEPASSWORDICON, false);
 		return flag;
 	}
 

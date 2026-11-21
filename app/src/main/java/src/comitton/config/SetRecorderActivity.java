@@ -6,7 +6,11 @@ import src.comitton.common.DEF;
 import src.comitton.fileview.filelist.RecordList;
 import src.comitton.config.SetCommonActivity;
 import jp.dip.muracoro.comittonx.R;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.widget.EditText;
+import src.comitton.fileview.filelist.NoHistoryFolders;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
@@ -80,6 +84,18 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 			}
 		});
 
+		// 閲覧履歴を残さないフォルダの一覧
+		Preference noHistory = findPreference("NoHistoryFoldersEdit");
+		if (noHistory != null) {
+			noHistory.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					showNoHistoryFolders();
+					return true;
+				}
+			});
+		}
+
 		ButtonPreferenceCategory recorderCategory = (ButtonPreferenceCategory) findPreference("recorder_category");
 		if (recorderCategory != null) {
 			recorderCategory.setOnButtonClickListener(() -> {
@@ -107,6 +123,68 @@ public class SetRecorderActivity extends PreferenceActivity implements OnSharedP
 			});
 		}
 	}
+	// 登録済みの「履歴を残さないフォルダ」を一覧し、タップで外す・パス入力で追加する
+	private void showNoHistoryFolders() {
+		final SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		final java.util.ArrayList<String> list = NoHistoryFolders.load(sp);
+		AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(R.string.noHistoryListTitle);
+		if (list.isEmpty()) {
+			b.setMessage(R.string.noHistoryListEmpty);
+		} else {
+			b.setItems(list.toArray(new String[0]), new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, final int which) {
+					new AlertDialog.Builder(SetRecorderActivity.this)
+							.setTitle(list.get(which))
+							.setMessage(R.string.noHistoryRemoveConfirm)
+							.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface d, int w) {
+									NoHistoryFolders.removeEntry(sp, list.get(which));
+									showNoHistoryFolders();
+								}
+							})
+							.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface d, int w) {
+									showNoHistoryFolders();
+								}
+							})
+							.show();
+				}
+			});
+		}
+		b.setPositiveButton(R.string.noHistoryAddPath, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				final EditText edit = new EditText(SetRecorderActivity.this);
+				edit.setHint(R.string.noHistoryAddHint);
+				new AlertDialog.Builder(SetRecorderActivity.this)
+						.setTitle(R.string.noHistoryAddPath)
+						.setView(edit)
+						.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int w) {
+								String path = edit.getText().toString().trim();
+								if (!path.isEmpty()) {
+									NoHistoryFolders.add(sp, null, path);
+								}
+								showNoHistoryFolders();
+							}
+						})
+						.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int w) {
+								showNoHistoryFolders();
+							}
+						})
+						.show();
+			}
+		});
+		b.setNegativeButton(android.R.string.cancel, null);
+		b.show();
+	}
+
 	// PreferenceActivityのListViewからKeyを探してスクロールする
 	private void scrollToPreferenceInActivity(String targetKey) {
 		ListAdapter adapter = getListView().getAdapter();

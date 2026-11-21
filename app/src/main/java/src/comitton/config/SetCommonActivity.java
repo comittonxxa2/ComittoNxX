@@ -429,31 +429,31 @@ public class SetCommonActivity extends PreferenceActivity implements OnSharedPre
 			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_01, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_02)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_02, ""));
+			mPriorityWord02.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_02, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_03)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_03, ""));
+			mPriorityWord03.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_03, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_04)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_04, ""));
+			mPriorityWord04.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_04, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_05)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_05, ""));
+			mPriorityWord05.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_05, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_06)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_06, ""));
+			mPriorityWord06.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_06, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_07)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_07, ""));
+			mPriorityWord07.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_07, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_08)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_08, ""));
+			mPriorityWord08.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_08, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_09)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_09, ""));
+			mPriorityWord09.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_09, ""));
 		}
 		else if(key.equals(DEF.KEY_SORT_PRIORITY_WORD_10)){
-			mPriorityWord01.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_10, ""));
+			mPriorityWord10.setSummary(sharedPreferences.getString(DEF.KEY_SORT_PRIORITY_WORD_10, ""));
 		}
 	}
 

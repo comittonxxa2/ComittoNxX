@@ -230,7 +230,7 @@ public class SetImageTextColorActivity extends PreferenceActivity implements OnS
 		}
 		else if(key.equals(DEF.KEY_TX_MGNRGB)){
 			//
-			mTxtMgnColor.setSummary(getColorSummary(getMgnColor(sharedPreferences)));
+			mTxtMgnColor.setSummary(getColorSummary(getTxtMgnColor(sharedPreferences)));
 		}
 		else if(key.equals(DEF.KEY_TX_CNTRGB)){
 			//
