@@ -1009,8 +1009,6 @@ public class DEF {
 	public static final String DEFAULT_EVERYTHING_REPLACE_TO = "";
 
 	public static final int HMSG_EVERYTHING_RESULT = 33;
-	public static final int TOOLBAR_EVERYTHING = 1041;
-	public static final int TOOLBAR_EVENT_EVERYTHING = 38;
 
 	public static final String KEY_BOOKMARKSYNC_HOST = "BookmarkSyncHost";
 	public static final String KEY_BOOKMARKSYNC_PORT = "BookmarkSyncPort";
@@ -1057,8 +1055,6 @@ public class DEF {
 	public static final int HMSG_LIBRARY_RESULT = 37;
 	// 書庫管理タブ(bookmark-sync-server /library、全件取得)の非同期取得結果
 	public static final int HMSG_LIBRARYSYNC_RESULT = 38;
-	// 書庫管理タブ(bookmark-sync-server /library/rescan)のスキャン起動結果
-	public static final int HMSG_LIBRARYSYNC_RESCAN_RESULT = 39;
 	// 書庫管理タブ向けの既読位置更新(ReadPositionSyncClient.pullAllForHost)の結果
 	public static final int HMSG_LIBRARY_READPOSITION_PULL_RESULT = 40;
 
@@ -1079,6 +1075,7 @@ public class DEF {
 
 	public static final String KEY_SETARCHIVEPASSWORD = "SetArchivePassword";
 	public static final String KEY_SAVEARCHIVEPASSWORD = "SaveArchivePassword";
+	public static final String KEY_ARCHIVEPASSWORDICON = "ArchivePasswordIcon";
 
 	// プロファイル設定
 	public static final String KEY_PROFILE_WORD_01 = "Profile1";
@@ -3413,7 +3410,7 @@ public class DEF {
 	public static final int[] RotateBtnList = {0, KeyEvent.KEYCODE_FOCUS // フォーカスキー
 			, KeyEvent.KEYCODE_CAMERA // シャッターキー
 	};
-	public static final String[] CharsetList = {"UTF-8", "Shift_JIS", "EUC-JP", "EUC-KR", "Big5", "CB2312", "GB18030", "Big5-HKSCS"};
+	public static final String[] CharsetList = {"UTF-8", "Shift_JIS", "EUC-JP", "EUC-KR", "Big5", "GB2312", "GB18030", "Big5-HKSCS"};
 
 	public static final int ROTATE_AUTO = 0;
 	public static final int ROTATE_PORTRAIT = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
@@ -3835,10 +3832,11 @@ public class DEF {
 	static public int calcSaveNum(int val) {
 		int calc_val = 0;
 		if (val == 0) calc_val = 0;
-		if (val == 1) calc_val = 50;
-		if (val == 2) calc_val = 100;
-		if (val == 3) calc_val = 200;
-		if (val == 4) calc_val = 500;
+		// 設定画面の選択肢(histnum01〜05: 200/400/600/800/1000)に合わせる
+		if (val == 1) calc_val = 200;
+		if (val == 2) calc_val = 400;
+		if (val == 3) calc_val = 600;
+		if (val == 4) calc_val = 800;
 		if (val == 5) calc_val = 1000;
 		return calc_val;
 	}
@@ -4251,6 +4249,13 @@ public class DEF {
 			if (SORT_BY_NATURAL_NUMBERS && ct1 == CHTYPE_NUM) {
 				String num1 = getNumbers(n1, i1);
 				String num2 = getNumbers(n2, i2);
+				if (num1.isEmpty() || num2.isEmpty()) {
+					// "." と "," は数字の仲間として扱うが、数字列としては切り出されない(0文字).
+					// そのままだと位置が進まずに無限ループになるので、1文字ずつ比べて進める
+					if (ch1 != ch2) return ch1 - ch2;
+					i1++; i2++;
+					continue;
+				}
 				int res = compareAsNumeric(num1, num2);
 				if (res != 0) return res;
 				i1 += num1.length(); i2 += num2.length();
