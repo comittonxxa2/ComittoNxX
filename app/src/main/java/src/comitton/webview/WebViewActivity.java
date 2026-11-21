@@ -7,6 +7,8 @@ import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.renderscript.Allocation;
@@ -21,6 +23,7 @@ import android.webkit.HttpAuthHandler;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -40,9 +43,20 @@ import androidx.preference.PreferenceManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Base64;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import jp.dip.muracoro.comittonx.R;
 import src.comitton.common.ExternalFilterData;
@@ -304,26 +318,37 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		}
 		// 外部ブラウザを利用しない
 		if (!mWebviewFilter) {
-			mywebView.setWebViewClient(new WebViewClient());
+			mywebView.setWebViewClient(new WebViewClient() {
+				@Override
+				public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+					handleLocalSslError(handler, error);
+				}
+			});
 		}
 		else {
 			// キャッシュを無効化して常にshouldInterceptRequestを通るようにする
 			webViewSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 			mywebView.setWebViewClient(new WebViewClient() {
 				@Override
+				public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+					handleLocalSslError(handler, error);
+				}
+
+				@Override
 				public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 					String url = request.getUrl().toString();
-					String urlLower = url.toLowerCase();
+					String urlLower = url.toLowerCase(Locale.ROOT);
+					String pathLower = request.getUrl().getPath() != null ? request.getUrl().getPath().toLowerCase(Locale.ROOT) : "";
 					// 画像ファイルへのリクエストを判定
-					if (urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg") || urlLower.endsWith(".png") || urlLower.endsWith(".webp") || urlLower.endsWith(".gif")) {
+					if (pathLower.endsWith(".jpg") || pathLower.endsWith(".jpeg") || pathLower.endsWith(".png") || pathLower.endsWith(".webp") || pathLower.endsWith(".gif")) {
 						InputStream inputStream = null;
 						try {
 							if (urlLower.startsWith("file://")) {
 								// パス解析
 								String path = URLDecoder.decode(url.replaceFirst("(?i)^file://", ""), "UTF-8");
 								inputStream = FileAccess.getInputStream(mActivity, path, mUser, mPass);
-							} else if (urlLower.startsWith("http")) {
-								inputStream = new URL(url).openStream();
+							} else if (urlLower.startsWith("https://") || urlLower.startsWith("http://")) {
+								inputStream = openImageStream(url);
 							}
 							if (inputStream != null) {
 								Bitmap original = BitmapFactory.decodeStream(inputStream);
@@ -335,10 +360,10 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 									// MimeTypeと圧縮形式の決定
 									Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
 									String mimeType = "image/jpeg";
-									if (urlLower.endsWith(".png") || urlLower.endsWith(".gif")) {
+									if (pathLower.endsWith(".png") || pathLower.endsWith(".gif")) {
 										format = Bitmap.CompressFormat.PNG;
 										mimeType = "image/png";
-									} else if (urlLower.endsWith(".webp")) {
+									} else if (pathLower.endsWith(".webp")) {
 										format = Bitmap.CompressFormat.WEBP;
 										mimeType = "image/webp";
 									}
@@ -371,7 +396,145 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 			});
 		}
 		// URLを読み込む
-		mywebView.loadUrl(mFilePath); 
+		mywebView.loadUrl(mFilePath);
+	}
+	// URL文字列またはホスト名文字列からホスト部分のみを取り出し、小文字化して返す
+	private String extractNormalizedHost(String raw) {
+		if (raw == null) {
+			return null;
+		}
+		String trimmed = raw.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+		try {
+			if (trimmed.contains("://")) {
+				String host = Uri.parse(trimmed).getHost();
+				return host != null ? host.toLowerCase(Locale.ROOT) : null;
+			}
+			Uri parsed = Uri.parse("https://" + trimmed);
+			String host = parsed.getHost();
+			if (host != null && !host.isEmpty()) {
+				return host.toLowerCase(Locale.ROOT);
+			}
+		}
+		catch (Exception ignored) {
+		}
+		int colonIndex = trimmed.indexOf(':');
+		String hostOnly = (colonIndex >= 0) ? trimmed.substring(0, colonIndex) : trimmed;
+		return hostOnly.isEmpty() ? null : hostOnly.toLowerCase(Locale.ROOT);
+	}
+
+	private Set<String> getIntentSslAllowedHosts() {
+		Set<String> allowedHosts = new HashSet<>();
+
+		String uriHost = extractNormalizedHost(mURI);
+		if (uriHost != null) {
+			allowedHosts.add(uriHost);
+		}
+		String filePathHost = extractNormalizedHost(mFilePath);
+		if (filePathHost != null) {
+			allowedHosts.add(filePathHost);
+		}
+
+		return allowedHosts;
+	}
+	// プライベートIP/local判定メソッドの追加
+	private boolean isPrivateNetworkHost(String hostOrUrl) {
+		String host = extractNormalizedHost(hostOrUrl);
+		if (host == null || host.isEmpty()) {
+			return false;
+		}
+		if (host.startsWith("[") && host.endsWith("]") && host.length() > 2) {
+			host = host.substring(1, host.length() - 1);
+		}
+		if ("localhost".equals(host) || host.endsWith(".local")) {
+			return true;
+		}
+		String[] parts = host.split("\\.");
+		if (parts.length == 4) {
+			try {
+				int a = Integer.parseInt(parts[0]);
+				int b = Integer.parseInt(parts[1]);
+				int c = Integer.parseInt(parts[2]);
+				int d = Integer.parseInt(parts[3]);
+
+				if (a < 0 || a > 255 || b < 0 || b > 255 || c < 0 || c > 255 || d < 0 || d > 255) {
+					return false;
+				}
+
+				if (a == 10) {
+					return true;
+				}
+				if (a == 172 && b >= 16 && b <= 31) {
+					return true;
+				}
+				if (a == 192 && b == 168) {
+					return true;
+				}
+				if (a == 127) {
+					return true;
+				}
+			}
+			catch (NumberFormatException ignored) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+	private boolean isLocalSslAllowedHost(String hostOrUrl) {
+		String targetHost = extractNormalizedHost(hostOrUrl);
+		if (targetHost == null) {
+			return false;
+		}
+		return getIntentSslAllowedHosts().contains(targetHost) || isPrivateNetworkHost(targetHost);
+	}
+	// 証明書エラーを許可
+	private void handleLocalSslError(SslErrorHandler handler, SslError error) {
+		String errorUrl = (error != null) ? error.getUrl() : null;
+		if (isLocalSslAllowedHost(errorUrl)) {
+			Logcat.d(Logcat.LOG_LEVEL_WARN, "ローカル/許可ホストのSSLエラーを許可: url=" + errorUrl + ", error=" + error);
+			handler.proceed();
+		}
+		else {
+			handler.cancel();
+		}
+	}
+	//　shouldInterceptRequest内の画像取（HttpsURLConnection)を許可する
+	private InputStream openImageStream(String urlString) throws Exception {
+		URL targetUrl = new URL(urlString);
+		HttpURLConnection connection = (HttpURLConnection) targetUrl.openConnection();
+		connection.setConnectTimeout(10000);
+		connection.setReadTimeout(10000);
+		connection.setInstanceFollowRedirects(true);
+
+		if (connection instanceof HttpsURLConnection && isLocalSslAllowedHost(targetUrl.getHost())) {
+			HttpsURLConnection httpsConn = (HttpsURLConnection) connection;
+
+			TrustManager[] trustAllCerts = new TrustManager[]{
+				new X509TrustManager() {
+					@Override
+					public void checkClientTrusted(X509Certificate[] chain, String authType) {
+					}
+					@Override
+					public void checkServerTrusted(X509Certificate[] chain, String authType) {
+					}
+					@Override
+					public X509Certificate[] getAcceptedIssuers() {
+						return new X509Certificate[0];
+					}
+				}
+			};
+
+			SSLContext sslContext = SSLContext.getInstance("TLS");
+			sslContext.init(null, trustAllCerts, new SecureRandom());
+
+			httpsConn.setSSLSocketFactory(sslContext.getSocketFactory());
+			httpsConn.setHostnameVerifier((hostname, session) -> isLocalSslAllowedHost(hostname));
+		}
+		connection.connect();
+		return connection.getInputStream();
 	}
 
 	@Override
@@ -405,7 +568,9 @@ public class WebViewActivity extends AppCompatActivity implements MenuSelectList
 		if (mywebView != null) {
 			// WebViewが空でなければ現在のウェブページを再表示する
 			String url = mywebView.getUrl();
-			mywebView.loadUrl(url);
+			if (url != null && !url.isEmpty()) {
+				mywebView.loadUrl(url);
+			}
 		}
 	}
 	@Override
