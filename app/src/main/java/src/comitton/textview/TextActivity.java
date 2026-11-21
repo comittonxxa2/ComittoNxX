@@ -16,6 +16,7 @@ import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileaccess.BookmarkSyncClient;
 import src.comitton.fileaccess.HistorySyncClient;
 import src.comitton.fileaccess.ReadPositionSyncClient;
+import src.comitton.fileview.filelist.NoHistoryFolders;
 import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.helpview.HelpActivity;
 import src.comitton.common.DEF;
@@ -1071,6 +1072,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 							// 前ページへ
 							prevPage();
 						}
+						break;
 					}
 					case KeyEvent.KEYCODE_MENU:
 						// 独自メニュー表示
@@ -2794,7 +2796,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 
 		Resources res = getResources();
 //		setOptionMenu(menu);
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 
 		mMenuDialog.addSection(res.getString(R.string.operateSec));
 		if (mTextMgr.getMidashiSize() > 0) {
@@ -2856,12 +2858,12 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		}
 
 		ArrayList<RecordItem>list = RecordList.load(null, RecordList.TYPE_BOOKMARK, mServer, mLocalFileName, mTextName);
-		if (list == null && list.size() == 0) {
+		if (list == null || list.size() == 0) {
 			Toast.makeText(this, R.string.bmNotFound, Toast.LENGTH_SHORT).show();
 			return;
 		}
 			Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, false, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, false, this);
 
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
@@ -2899,7 +2901,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		}
 
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, false, false, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, false, false, true, this);
 
 		int size = mTextMgr.getMidashiSize();
 		Logcat.d(logLevel, "size=" + size);
@@ -2982,7 +2984,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 		}
 
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, false, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, false, true, this);
 
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.searchJumpTitle));
@@ -3282,7 +3284,7 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 					ed.putInt(DEF.KEY_TX_FONTRUBI, mRubiSizeOrg);
 					ed.putInt(DEF.KEY_TX_FONTINFO, mInfoSizeOrg);
 					ed.putInt(DEF.KEY_TX_SPACEW, mSpaceW);
-					ed.putInt(DEF.KEY_TX_SPACEW, mSpaceH);
+					ed.putInt(DEF.KEY_TX_SPACEH, mSpaceH);
 					ed.putInt(DEF.KEY_TX_MARGINW, mMarginWOrg);
 					ed.putInt(DEF.KEY_TX_MARGINH, mMarginHOrg);
 					ed.putInt(DEF.KEY_TX_ASCMODE, mAscMode);
@@ -3960,12 +3962,16 @@ public class TextActivity extends AppCompatActivity implements GestureDetector.O
 			mCurrentPageRate = (float)mCurrentPage / mTextMgr.length();
 			long historyDate = new Date().getTime();
 			boolean mHistorySyncSet = FileSelectActivity.getHistorySyncSet();
+			// 閲覧履歴を残さないフォルダの本は、端末にもサーバーにも履歴を残さない(既読位置・栞は別処理)
+			boolean noHistory = NoHistoryFolders.isExcluded(mSharedPreferences, new ServerSelect(mSharedPreferences, this).getHost(mServer), mLocalFileName, mTextName);
+			if (!noHistory) {
 			RecordList.add(RecordList.TYPE_HISTORY, type, mServer, mLocalFileName
 					, mTextName, historyDate, null, 0, mCurrentPageRate, mCurrentPage, null);
+			}
 
 			// SMBサーバー上のファイルであれば、複数端末で共有できるよう履歴もサーバーへ同期する
 			// (onAddBookmarkと同じ判定・同じpath/fileを使う)
-			if (mServer != DEF.INDEX_LOCAL && mHistorySyncSet) {
+			if (!noHistory && mServer != DEF.INDEX_LOCAL && mHistorySyncSet) {
 				String host = new ServerSelect(mSharedPreferences, this).getHost(mServer);
 				RecordItem syncItem = new RecordItem();
 				syncItem.setType(type);

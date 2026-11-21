@@ -165,6 +165,7 @@ import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileaccess.BookmarkSyncClient;
 import src.comitton.fileaccess.FtpRandomAccessFile;
 import src.comitton.fileaccess.HistorySyncClient;
+import src.comitton.fileview.filelist.NoHistoryFolders;
 import src.comitton.fileaccess.SftpRandomAccessFile;
 import src.comitton.fileaccess.WebDavRandomAccessFile;
 import src.comitton.fileview.filelist.ServerSelect;
@@ -650,7 +651,8 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// 読書の情報を読みこむ
 		String id = (isAozora) ? "#aozora" : "#newepub";
 		Logcat.v(logLevel, "mFilePath=" + mFilePath + ", mURI=" + mURI + mPath + ", mFileName=" + mFileName + ", id=" + id);
-		String mRestoreValue = intent.getStringExtra("Value");
+		// フィールドに入れる(閉じるときに「しおりを保存しない」を選ぶと、この値を開いたときの位置として返す)
+		mRestoreValue = intent.getStringExtra("Value");
 		mFirstRead = false;
 		mAozoraDirText = 0;
 		if (mRestoreValue != null) {
@@ -1699,12 +1701,16 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		int nowPage = GetNowPage();
 		float rate = (float) nowPage / getTotalPagesNow();
 		boolean mHistorySyncSet = FileSelectActivity.getHistorySyncSet();
-		RecordList.add(RecordList.TYPE_HISTORY, type, mServer, mLocalFileName
-			, mTextName, historyDate, null, 0, rate, nowPage, null);
+		// 閲覧履歴を残さないフォルダの本は、端末にもサーバーにも履歴を残さない(既読位置・栞は別処理)
+		boolean noHistory = NoHistoryFolders.isExcluded(mSharedPreferences, new ServerSelect(mSharedPreferences, this).getHost(mServer), mLocalFileName, mTextName);
+		if (!noHistory) {
+			RecordList.add(RecordList.TYPE_HISTORY, type, mServer, mLocalFileName
+				, mTextName, historyDate, null, 0, rate, nowPage, null);
+		}
 
 		// SMBサーバー上のファイルであれば、複数端末で共有できるよう履歴もサーバーへ同期する
 		// (onAddBookmarkと同じ判定・同じpath/fileを使う)
-		if (mServer != DEF.INDEX_LOCAL && mHistorySyncSet) {
+		if (!noHistory && mServer != DEF.INDEX_LOCAL && mHistorySyncSet) {
 			String host = new ServerSelect(mSharedPreferences, this).getHost(mServer);
 			RecordItem syncItem = new RecordItem();
 			syncItem.setType(type);
@@ -1814,7 +1820,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	// メニューを開く
 	private void openChapterMenu() {
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, false, false, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, false, false, true, this);
 
 		if (!isAozora && mFileType == FileData.FILETYPE_EPUB) {
 			// 見出しの追加
@@ -1855,7 +1861,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	// メニューを開く
 	private void openMenu() {
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 
 		mMenuDialog.addSection(res.getString(R.string.operateSec));
 		// 見出し選択
@@ -2429,7 +2435,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		else if (mOperation == TOUCH_OPERATION) {
 			// 移動位置設定
 			mGuideView.eventTouchMove((int)x, (int)y);
-			if (Math.abs(oldx - x) > TAP_MOVE_LIMIT && Math.abs(oldx - x) > TAP_MOVE_LIMIT) {
+			if (Math.abs(oldx - x) > TAP_MOVE_LIMIT || Math.abs(oldy - y) > TAP_MOVE_LIMIT) {
 				if (!this.mTouchFirst) {
 					this.mTouchMove = true;
 				}
@@ -3507,12 +3513,12 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 	private void openBookmarkMenu() {
 
 		ArrayList<RecordItem>list = RecordList.load(null, RecordList.TYPE_BOOKMARK, mServer, mLocalFileName, mTextName);
-		if (list == null && list.size() == 0) {
+		if (list == null || list.size() == 0) {
 			Toast.makeText(this, R.string.bmNotFound, Toast.LENGTH_SHORT).show();
 			return;
 		}
 			Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, false, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, false, this);
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
 		// ブックマークのコピーを作る
@@ -3545,7 +3551,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		String js = "javascript:(function() {" +
 			"  var targets = document.querySelectorAll('h1, h2');" +
 			"  for (var i = 0; i < targets.length; i++) {" +
-			"    if (targets[i].innerText.trim() === '" + headingText + "') {" +
+			"    if (targets[i].innerText.trim() === '" + jsString(headingText) + "') {" +
 			"      targets[i].scrollIntoView(true);" +
 			"      break;" +
 			"    }" +
@@ -3559,7 +3565,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		String js = "(function() {" +
 			"  var targets = document.querySelectorAll('h1, h2');" +
 			"  for (var i = 0; i < targets.length; i++) {" +
-			"    if (targets[i].innerText.trim() === '" + headingText.replace("'", "\\'") + "') {" +
+			"    if (targets[i].innerText.trim() === '" + jsString(headingText) + "') {" +
 			"      var rect = targets[i].getBoundingClientRect();" +
 			"      var isVertical = window.getComputedStyle(targets[i]).writingMode.includes('vertical');" +
 			" var y = window.pageYOffset || "+
@@ -3592,6 +3598,14 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 				}
 			}
 		});
+	}
+
+	// JavaScript の ' で囲んだ文字列に埋め込めるよう、\ と ' と改行を逃がす
+	private static String jsString(String s) {
+		if (s == null) {
+			return "";
+		}
+		return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r");
 	}
 
 	// 見出しのジャンプ処理
@@ -5512,7 +5526,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			"  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);" +
 			"  var node;" +
 			"  while(node = walker.nextNode()) {" +
-			"    if(node.textContent.includes('" + Word + "')) {" +
+			"    if(node.textContent.includes('" + jsString(Word) + "')) {" +
 			"      var range = document.createRange();" +
 			"      range.selectNodeContents(node);" +
 			"      var rect = range.getBoundingClientRect();" +
@@ -5527,7 +5541,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 			"  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);" +
 			"  var node;" +
 			"  while(node = walker.nextNode()) {" +
-			"    if(node.textContent.includes('" + Word + "')) {" +
+			"    if(node.textContent.includes('" + jsString(Word) + "')) {" +
 			"      var range = document.createRange();" +
 			"      range.selectNodeContents(node);" +
 			"      var rect = range.getBoundingClientRect();" +
@@ -5544,17 +5558,22 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		);
 	}
 
+	// スクロール位置の誤差(WebView の丸めで1〜2px ずれることがある)を、次のページと数えないための余裕
+	private static final int PAGE_TOLERANCE = 2;
+
+	// 章のページ数. 整数どうしで割ると先に切り捨てられ、最後の端数のページが数えられなかったので切り上げる
 	private int calcCurrentPageMax(int height, int step, boolean mode) {
-		int total = 0;
 		int calcstep = (mDoubleMode && mode) ? step * 2 : step;
-		if (calcstep == 0) calcstep = height;
-		return (int)Math.ceil(height / calcstep);
+		if (calcstep <= 0) calcstep = Math.max(height, 1);
+		return Math.max(1, (int)Math.ceil((double)(height - PAGE_TOLERANCE) / calcstep));
 	}
 
+	// 章の中の今のページ(0始まり). 最後の端数のページはスクロール位置が1ページ分の倍数の途中で止まるので、
+	// 切り捨てると1つ前のページと同じ番号になっていた. ページ数と同じく切り上げる
 	private int calcCurrentPageNow(int height, int step, boolean topbottom, boolean leftright) {
 		int calcstep = (mDoubleMode && leftright) ? step * 2 : step;
-		if (calcstep == 0) calcstep = height;
-		return (int)Math.ceil(height / calcstep);
+		if (calcstep <= 0) calcstep = Math.max(height, 1);
+		return Math.max(0, (int)Math.ceil((double)(height - PAGE_TOLERANCE) / calcstep));
 	}
 
 	private void applyReflowStyle(WebView view) {
@@ -8421,7 +8440,7 @@ public class EpubWebViewActivity extends AppCompatActivity implements GestureDet
 		// 1文字の判定(「丸公」など)や、特定の単語(「丸付き印」など)に対応
 		if (content.contains("\u5370")) return "\u329E"; // 印 -> ㊞
 		if (content.contains("\u516c")) return "\u32AB"; // 公 -> ㊫
-		if (content.contains("\u6b63")) return "\u329B"; // 正 -> ㊛ (丸正)
+		if (content.contains("\u6b63")) return "\u32A3"; // 正 -> ㊣ (丸正)
 		if (content.contains("\u6ce8")) return "\u329F"; // 注 -> ㊟
 		if (content.contains("\u512a")) return "\u329D"; // 優 -> ㊝
 		if (content.contains("\u79d8")) return "\u3299"; // 秘 -> ㊙
