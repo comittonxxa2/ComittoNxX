@@ -45,6 +45,7 @@ public class RecordItem {
 	private String readStatus;
 	private int titleColorOverride;
 	private String libraryFolderLabel;
+	private String libraryVolumeLabel;
 
 	public RecordItem() {
 		this.server = DEF.INDEX_LOCAL;
@@ -248,6 +249,14 @@ public class RecordItem {
 
 	public void setTitleColorOverride(int titleColorOverride) {
 		this.titleColorOverride = titleColorOverride;
+	}
+
+	public String getLibraryVolumeLabel() {
+		return libraryVolumeLabel;
+	}
+
+	public void setLibraryVolumeLabel(String libraryVolumeLabel) {
+		this.libraryVolumeLabel = libraryVolumeLabel;
 	}
 
 	public String getLibraryFolderLabel() {
