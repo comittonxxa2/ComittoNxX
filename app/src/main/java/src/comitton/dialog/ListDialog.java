@@ -88,10 +88,12 @@ public class ListDialog extends ImmersiveDialog implements OnClickListener, OnIt
 		super.onWindowFocusChanged(hasFocus);
 		// スクロールビューの最大サイズを設定する
 		// 最大サイズ以下ならそのまま表示する
-		int maxheight = mHeight - mTitleText.getHeight() - mBtnCancel.getHeight();
-		mListView.getLayoutParams().width = mWidth;
-		mListView.getLayoutParams().height = Math.min(mListView.getHeight(), maxheight);
-		mListView.requestLayout();
+		if (mListView != null && mTitleText != null && mBtnCancel != null) {
+			// ListViewの幅だけを画面幅(または指定幅)に合わせる
+			ViewGroup.LayoutParams params = mListView.getLayoutParams();
+			params.width = mWidth;
+			mListView.setLayoutParams(params);
+		}
 	}
 
 	@Override
