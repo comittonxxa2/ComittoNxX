@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import jp.dip.muracoro.comittonx.R;
 
+import src.comitton.fileview.filelist.ArchiveChecker;
 import src.comitton.common.DEF;
 import src.comitton.common.Logcat;
 import src.comitton.config.SetEpubActivity;
@@ -146,6 +150,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 	private boolean mAozoraZipFile;
 	private boolean mAozoraTextFile;
 	private boolean mCancelFileListDialog;
+	private boolean mCheckArchiveResult;
+	private static Set<String> mEncryptionList;
 
 	public FileSelectList(Handler handler, AppCompatActivity activity, SharedPreferences sp) {
 		mActivityHandler = handler;
@@ -534,6 +540,10 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 		mMultiThread = null;
 	}
 
+	public static boolean getEncryptionList(String string) {
+		return mEncryptionList.contains(string);
+	}
+
 	@SuppressLint("SuspiciousIndentation")
     @Override
 	public void run() {
@@ -630,6 +640,8 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 
 			String uri = FileAccess.parent(mActivity, mPath);
 			int mMargin = ImageActivity.isDualMode();
+			mEncryptionList = new HashSet<>();
+			mCheckArchiveResult = SetFileListActivity.getArchivePasswordIcon(mSp);
 
 			for (int i = fileList.size() - 1; i >= 0; i--) {
 
@@ -775,6 +787,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 						maxpage = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKeyIndexed(mSp, uri, mUser, mPass, pageKeyIndex) + "#maxpage", DEF.PAGENUMBER_NONE) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#maxpage", DEF.PAGENUMBER_NONE);
 						state = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKeyIndexed(mSp, uri, mUser, mPass, pageKeyIndex), DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass), DEF.PAGENUMBER_UNREAD);
 						fileList.get(i).setMaxpage(maxpage);
+						boolean changedate = false;
 						if	(state >= 0)	{ // 先頭ページでも動作するようにした
 							nowdate = (FileSelectActivity.getResolvePageKey())? mSp.getInt(DEF.resolvePageKeyIndexed(mSp, uri, mUser, mPass, pageKeyIndex) + "#date", DEF.PAGENUMBER_UNREAD) : mSp.getInt(DEF.createUrl(uri, mUser, mPass) + "#date", DEF.PAGENUMBER_UNREAD);
 							date = fileList.get(i).getDate();
@@ -792,6 +805,7 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								ed.putInt(DEF.createUrl(uri, mUser, mPass) + "#date", (int)((date / 1000)));
 								ed.apply();
 								releaseManager();
+								changedate = true;
 								if (maxpage == DEF.PAGENUMBER_NONE) {
 									state = DEF.PAGENUMBER_UNREAD;
 									size = DEF.PAGENUMBER_NONE;
@@ -816,6 +830,28 @@ public class FileSelectList implements Runnable, Callback, DialogInterface.OnDis
 								}
 							}
 							fileList.get(i).setMaxpage(size);
+						}
+						if (fileList.get(i).getType() == FileData.FILETYPE_PDF || fileList.get(i).getType() == FileData.FILETYPE_ARC && fileList.get(i).getExtType() != FileData.EXTTYPE_ZIP && fileList.get(i).getExtType() != FileData.EXTTYPE_RAR && fileList.get(i).getExtType() != FileData.EXTTYPE_7Z) {
+							// PDFファイル又は/ZIP/RAR/7Z以外はチェックの対象外
+						}
+						else if (mCheckArchiveResult || changedate) {
+							int mEncryption = mSp.getInt(DEF.resolvePageKeyIndexed(mSp, uri, mUser, mPass, pageKeyIndex) + "#encryption", -1);
+							if (mEncryption == -1 || changedate) {
+								try {
+									ArchiveChecker.CheckResult result = ArchiveChecker.checkSingleArchive(mActivity, uri, mUser, mPass);
+									if (result != null) {
+										mEncryption = Boolean.TRUE.equals(result.encrypted) ? 1 : 0;
+										SharedPreferences.Editor ed = mSp.edit();
+										ed.putInt(DEF.resolvePageKeyIndexed(mSp, uri, mUser, mPass, pageKeyIndex) + "#encryption", mEncryption);
+										ed.apply();
+									}
+								}
+								catch (Exception e) {
+									Logcat.e(logLevel, "チェック中にエラーが発生しました: uri=" + uri, e);
+								}
+							}
+							// パスワードが設定されていればファイル名をハッシュテーブルに加える
+							if (mEncryption == 1) mEncryptionList.add(name);
 						}
 					}
 					fileList.get(i).setState(state);

@@ -73,7 +73,7 @@ public class ServerSelect {
 //			if (accessType < DEF.ACCESS_TYPE_SMB || accessType > DEF.ACCESS_TYPE_PICKER) {
 //				accessType = DEF.ACCESS_TYPE_SMB;
 //			}
-			Logcat.d(logLevel, "i=" + i + ", accessType=" + accessType + ", name=" + name + ", host=" + host + ", path=" + path + ", user=" + user + ", pass=" + pass + ", port=" + port + ", provider=" + provider + ", dispName=" + dispName + ", pasv=" + pasv);
+			Logcat.d(logLevel, "i=" + i + ", accessType=" + accessType + ", name=" + name + ", host=" + host + ", path=" + path + ", user=" + user + ", pass=" + Logcat.mask(pass) + ", port=" + port + ", provider=" + provider + ", dispName=" + dispName + ", pasv=" + pasv);
 			mServer[i].setAccessType(accessType);
 			mServer[i].setName(name);
 			mServer[i].setPath(path);
@@ -386,7 +386,7 @@ public class ServerSelect {
 	public void setData(int index, RecordItem record) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		if (0 <= index && index < DEF.MAX_SERVER) {
-			Logcat.d(logLevel, "index=" + index + ", accessType=" + record.getAccessType() + ", name=" + record.getServerName() + ", host=" + record.getHost() + ", path=" + record.getPath() + ", user=" + record.getUser() + ", pass=" + record.getPass() + ", port=" + record.getPort() + ", provider=" + record.getProvider() + ", dispName=" + record.getDispName());
+			Logcat.d(logLevel, "index=" + index + ", accessType=" + record.getAccessType() + ", name=" + record.getServerName() + ", host=" + record.getHost() + ", path=" + record.getPath() + ", user=" + record.getUser() + ", pass=" + Logcat.mask(record.getPass()) + ", port=" + record.getPort() + ", provider=" + record.getProvider() + ", dispName=" + record.getDispName());
 			setData(index, record.getAccessType(), record.getServerName(), record.getHost(), record.getUser(), record.getPass(), record.getPort(), record.getPasv(), record.getPath(), record.getProvider(), record.getDispName());
 			save(index);
 		}
@@ -415,7 +415,7 @@ public class ServerSelect {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Editor ed = mSharedPrefer.edit();
 		// サーバ情報
-		Logcat.d(logLevel, "index=" + index + ", accessType=" + mServer[index].getAccessType() + ", name=" + mServer[index].getName() + ", host=" + mServer[index].getHost() + ", path=" + mServer[index].getPath() + ", user=" + mServer[index].getUser() + ", pass=" + mServer[index].getPass() + ", port=" + mServer[index].getPort() + ", provider=" + mServer[index].getProvider());
+		Logcat.d(logLevel, "index=" + index + ", accessType=" + mServer[index].getAccessType() + ", name=" + mServer[index].getName() + ", host=" + mServer[index].getHost() + ", path=" + mServer[index].getPath() + ", user=" + mServer[index].getUser() + ", pass=" + Logcat.mask(mServer[index].getPass()) + ", port=" + mServer[index].getPort() + ", provider=" + mServer[index].getProvider());
 		if (mServer[index].getProvider().equals("user")) {DEF.StackTrace(TAG , "save:");}
 		ed.putInt("smb-access-type" + index, mServer[index].getAccessType());
 		ed.putString("smb-name" + index, mServer[index].getName());
