@@ -73,6 +73,7 @@ public class EverythingClient {
                     return;
                 }
 
+                HttpURLConnection conn = null;
                 try {
                     // 修正1: URLEncoder.encode の '+' 問題を防ぐため Uri.encode または置換を行う
                     // Uri.encode は URL クエリパラメータ用に安全に全角文字やスペースをパーセントエンコードする
@@ -83,7 +84,7 @@ public class EverythingClient {
                     Logcat.d(logLevel, "Everything API URL: " + urlStr);
 
                     URL url = new URL(urlStr);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(10000);
@@ -175,6 +176,11 @@ public class EverythingClient {
                 } catch (Exception e) {
                     Logcat.e(logLevel, "Everything search error", e);
                     sendError(handler, "Error: " + e.getMessage());
+                }
+                finally {
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
                 }
             }
         }).start();

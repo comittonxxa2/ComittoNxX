@@ -141,6 +141,14 @@ public class SmbFileAccess {
 		// JCIFSのログを出力しない
 		prop.setProperty("jcifs.util.loglevel", "0");
 
+		// 待ち時間(ミリ秒). 初期値(応答30秒・接続/ソケット35秒)だと、通信が途切れたときに
+		// 失敗と判断するまで長くかかり、ぐるぐるが出続ける.
+		// NAS(pve-samba)のディスクは省電力で止まらないため回り始めの待ちは不要だが、
+		// Tailscale の中継経由でも足りるよう応答待ちは15秒にしておく
+		prop.setProperty("jcifs.smb.client.connTimeout", "10000");
+		prop.setProperty("jcifs.smb.client.responseTimeout", "15000");
+		prop.setProperty("jcifs.smb.client.soTimeout", "20000");
+
 		//prop.setProperty("jcifs.smb.lmCompatibility", "3");
 		//prop.setProperty("jcifs.smb.client.useExtendedSecuruty", "true");
 		//prop.setProperty("jcifs.smb.useRawNTLM", "true");
@@ -241,6 +249,10 @@ public class SmbFileAccess {
 		return result;
 	}
 
+	private static final java.util.regex.Pattern SLASHES = java.util.regex.Pattern.compile("/+");
+	private static final java.util.regex.Pattern PARENT_MID = java.util.regex.Pattern.compile("[^/]+/\\.\\./");
+	private static final java.util.regex.Pattern PARENT_END = java.util.regex.Pattern.compile("[^/]+/\\.\\.$");
+
 	public static String relativePath(@NonNull final String base, @NonNull final String target) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. base=" + base + ", target=" + target);
@@ -259,18 +271,20 @@ public class SmbFileAccess {
 		}
 
 		// 連続するスラッシュは1つにまとめる
-		result = result.replaceAll("/+", "/");
+		result = SLASHES.matcher(result).replaceAll("/");
 		result = result.replace("smb:/", "smb://");
-		// ../があれば親ディレクトリを削除
-		while (true) {
+		// ../があれば親ディレクトリを削除(書庫管理の既読集計など大量に呼ばれるため、無い場合は正規表現を使わない)
+		while (result.contains("/../")) {
 			tmp = result;
-			result = result.replaceFirst("[^/]+/\\.\\./", "");
+			result = PARENT_MID.matcher(result).replaceFirst("");
 			if (result.equals(tmp)) {
 				break;
 			}
 		}
 		// 末尾が..なら親ディレクトリを削除
-		result = result.replaceFirst("[^/]+/\\.\\.$", "");
+		if (result.endsWith("/..")) {
+			result = PARENT_END.matcher(result).replaceFirst("");
+		}
 
 		if (!result.startsWith(base)) {
 			// resultがbaseの子孫じゃなければ空文字列を返す
@@ -282,7 +296,7 @@ public class SmbFileAccess {
 
 	public static ParcelFileDescriptor openParcelFileDescriptor(@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @Nullable final Handler handler) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 
 		ParcelFileDescriptor parcelFileDescriptor = null;
 
@@ -303,7 +317,7 @@ public class SmbFileAccess {
 	// ユーザ認証付きSambaストリーム
 	public static SmbRandomAccessFile openRandomAccessFile(@NonNull final String uri, @NonNull final String user, @NonNull final String pass, @NonNull final String mode) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		//if (debug) {DEF.StackTrace(TAG, "smbAccessFile: ");}
 		SmbRandomAccessFile stream;
 		try {
@@ -376,7 +390,7 @@ public class SmbFileAccess {
 	// ファイル存在チェック
 	public static boolean exists(@NonNull final String uri, @NonNull final String user, @NonNull final String pass) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		boolean result = false;
 
 		if (!DEF.isUiThread()) {
@@ -469,7 +483,7 @@ public class SmbFileAccess {
 	@SuppressLint("SuspiciousIndentation")
     public static ArrayList<FileData> listFiles(@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @Nullable Handler handler) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		boolean isLocal;
 
 		String[] urlData = parseUri(uri);
@@ -663,7 +677,7 @@ public class SmbFileAccess {
 
 	public static boolean renameTo(@NonNull final String uri, @NonNull final String fromfile, @NonNull final String tofile, @NonNull final String user, @NonNull final String pass) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "uri=" + uri + ", fromfile=" + fromfile + ", tofile=" + tofile + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "uri=" + uri + ", fromfile=" + fromfile + ", tofile=" + tofile + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		if (tofile.indexOf('/') > 0) {
 			throw new FileAccessException(TAG + ": renameTo: Invalid file name.");
 		}
@@ -774,7 +788,7 @@ public class SmbFileAccess {
 	// ファイル削除
 	public static boolean delete(@NonNull final String uri, @NonNull final String user, @NonNull final String pass) throws FileAccessException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + pass );
+		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass) );
 
 		if (!DEF.isUiThread()) {
 			// UIスレッドではない時はそのまま実行

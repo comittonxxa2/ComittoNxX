@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.text.MessageFormat;
 
 import src.comitton.common.DEF;
@@ -24,13 +25,13 @@ public class WorkStream extends InputStream {
 	private long mPos;
 	private Handler mHandler;
 
-	private int mRetry = 0;
-	private final static int MAX_RETRY = -1;
-	private final static int SLEEP_MILLIS = 10;
+	// 再接続の試行回数と、やり直す前の待ち時間
+	private final static int REOPEN_TRIES = 3;
+	private final static int REOPEN_WAIT_MILLIS = 500;
 
 	public WorkStream(@NonNull final Activity activity, @NonNull final String uri, @NonNull final String user, @NonNull final String pass, @NonNull final Handler handler) throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + pass);
+		Logcat.d(logLevel, "開始します. uri=" + uri + ", user=" + user + ", pass=" + Logcat.mask(pass));
 		mActivity = activity;
 		mURI = uri;
 		mUser = user;
@@ -41,7 +42,7 @@ public class WorkStream extends InputStream {
 
 	private void Open() throws IOException {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
-		Logcat.d(logLevel, "開始します. uri=" + mURI + ", user=" + mUser + ", pass=" + mPass);
+		Logcat.d(logLevel, "開始します. uri=" + mURI + ", user=" + mUser + ", pass=" + Logcat.mask(mPass));
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "OPEN");
 
 		try {
@@ -54,23 +55,46 @@ public class WorkStream extends InputStream {
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "");
 	}
 
-	private void reOpen() {
-		// 読み込み失敗による再接続は通常発生しないため、遅延の切り分け用に常時記録しておく
-		// (接続が頻発に切れる環境ではこれが蓄積して「読み込みが遅い」の原因になりうる)
+	/**
+	 * 読み込みに失敗したとき、ファイルを開き直して元の位置へ戻す.
+	 * 失敗したら少し待ってやり直し、それでもだめなら IOException を投げる
+	 * (以前は失敗を無視していたため、中身のない接続のまま次の読み込みで NullPointerException になっていた).
+	 * 経過時間には、アプリが裏で止められていた時間も含まれる.
+	 */
+	private void reOpen() throws IOException {
 		long perfReopenStart = System.currentTimeMillis();
 		Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続します. uri=" + mURI);
-		if (mRetry <= MAX_RETRY || MAX_RETRY == -1) {
-			++mRetry;
+
+		// 切れた接続は閉じておく(閉じる処理は別スレッドで行われる)
+		if (mFileAccess != null) {
 			try {
-				Thread.sleep(SLEEP_MILLIS);
-				Open();
-				seek(mPos);
-			} catch (IOException | InterruptedException ignored) {
+				mFileAccess.close();
+			} catch (Exception ignored) {
 				;
 			}
-        }
-		mRetry = 0;
-		Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続しました. uri=" + mURI + ", elapsed=" + (System.currentTimeMillis() - perfReopenStart) + "ms");
+			mFileAccess = null;
+		}
+
+		IOException lastError = null;
+		for (int i = 1; i <= REOPEN_TRIES; i++) {
+			try {
+				if (i > 1) {
+					Thread.sleep(REOPEN_WAIT_MILLIS);
+				}
+				Open();
+				mFileAccess.seek(mPos);
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続しました. uri=" + mURI + ", tries=" + i + ", elapsed=" + (System.currentTimeMillis() - perfReopenStart) + "ms");
+				return;
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new InterruptedIOException(TAG + ": reOpen: 中断されました");
+			} catch (Exception e) {
+				lastError = (e instanceof IOException) ? (IOException) e : new IOException(TAG + ": reOpen: " + e, e);
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続に失敗しました. tries=" + i + ", error=" + e);
+			}
+		}
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "再接続できませんでした. uri=" + mURI + ", elapsed=" + (System.currentTimeMillis() - perfReopenStart) + "ms");
+		throw lastError;
 	}
 
 	@Override
@@ -101,7 +125,8 @@ public class WorkStream extends InputStream {
 		}
 //		DEF.sendMessage(mHandler, DEF.HMSG_WORKSTREAM, 0, 0, "READ");
 
-		mPos += off;
+		// off は配列の書き込み位置で、ファイル上の位置ではないので mPos には足さない
+		// (mPos は再接続したときのシーク先に使う)
 		int ret = 0;
 		try {
 			ret = mFileAccess.read(b, off, size);
@@ -110,7 +135,8 @@ public class WorkStream extends InputStream {
 			}
 		}
 		catch (Exception e) {
-			Logcat.w(logLevel, "", e);
+			// 原因を同じ行に書く(2行目以降はログ取得で落ちるため)
+			Logcat.w(logLevel, "読み込みに失敗しました. pos=" + mPos + ", error=" + e);
 			reOpen();
 			ret = mFileAccess.read(b, off, size);
 			if (ret > 0) {
@@ -149,7 +175,7 @@ public class WorkStream extends InputStream {
 			result = mFileAccess.getFilePointer();
 		}
 		catch (Exception e) {
-			Logcat.e(logLevel, "", e);
+			Logcat.e(logLevel, "位置の取得に失敗しました. error=" + e);
 			reOpen();
 			result = mFileAccess.getFilePointer();
 		}
@@ -168,7 +194,7 @@ public class WorkStream extends InputStream {
 			Logcat.d(logLevel, MessageFormat.format("終了します. length={0}", new Object[]{length}));
 		}
 		catch (Exception e) {
-			Logcat.e(logLevel, "", e);
+			Logcat.e(logLevel, "サイズの取得に失敗しました. error=" + e);
 			reOpen();
 			length = mFileAccess.length();
 		}

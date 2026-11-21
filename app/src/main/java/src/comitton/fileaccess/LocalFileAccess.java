@@ -54,6 +54,10 @@ public class LocalFileAccess {
 		return result;
 	}
 
+	private static final java.util.regex.Pattern SLASHES = java.util.regex.Pattern.compile("/+");
+	private static final java.util.regex.Pattern PARENT_MID = java.util.regex.Pattern.compile("[^/]+/\\.\\./");
+	private static final java.util.regex.Pattern PARENT_END = java.util.regex.Pattern.compile("[^/]+/\\.\\.$");
+
 	public static String relativePath(@NonNull final String base, @NonNull final String target) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. base=" + base + ", target=" + target);
@@ -66,22 +70,25 @@ public class LocalFileAccess {
 			result = target;
 		} else {
 			// ファイルの場合は親を取得、ディレクトリの場合はそのまま
-			String filePath = base.replaceFirst("([^/]+?)?$", "");
+			// 最後の「/」より後ろ(ファイル名)を除いた親ディレクトリ部分(正規表現 ([^/]+?)?$ の除去と同じ結果)
+			String filePath = base.substring(0, base.lastIndexOf('/') + 1);
 			result = filePath + target;
 		}
 
 		// 連続するスラッシュは1つにまとめる
-		result = result.replaceAll("/+", "/");
-		// ../があれば親ディレクトリを削除
-		while (true) {
+		result = SLASHES.matcher(result).replaceAll("/");
+		// ../があれば親ディレクトリを削除(大量に呼ばれる経路があるため、無い場合は正規表現を使わない)
+		while (result.contains("/../")) {
 			tmp = result;
-			result = result.replaceFirst("[^/]+/\\.\\./", "");
+			result = PARENT_MID.matcher(result).replaceFirst("");
 			if (result.equals(tmp)) {
 				break;
 			}
 		}
 		// 末尾が..なら親ディレクトリを削除
-		result = result.replaceFirst("[^/]+/\\.\\.$", "");
+		if (result.endsWith("/..")) {
+			result = PARENT_END.matcher(result).replaceFirst("");
+		}
 
 		Logcat.d(logLevel, "終了します. result=" + result);
 		return result;
