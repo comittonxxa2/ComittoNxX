@@ -34,7 +34,9 @@ import src.comitton.config.SetHardwareImageViewerKeyActivity;
 import src.comitton.fileaccess.FileAccess;
 import src.comitton.fileaccess.BookmarkSyncClient;
 import src.comitton.fileaccess.HistorySyncClient;
+import src.comitton.fileaccess.LocalBookOrigin;
 import src.comitton.fileaccess.ReadPositionSyncClient;
+import src.comitton.fileview.filelist.NoHistoryFolders;
 import src.comitton.fileview.filelist.ServerSelect;
 import src.comitton.fileview.data.RecordItem;
 import src.comitton.dialog.BookmarkDialog;
@@ -111,6 +113,7 @@ import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
@@ -133,6 +136,8 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import src.comitton.common.ThumbnailLoader;
 
@@ -527,6 +532,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private String mPath = "";
 	/** ZIP指定時 */
 	private String mFileName = "";
+	// 既読位置の同期に使う本の場所(ローカルにコピーした本はサーバー上の本の場所)。同期しないときはmSyncHostがnull
+	private String mSyncHost = null;
+	private String mSyncPath = "";
+	private String mSyncFile = "";
 	/** 画像直接指定時はファイル/ExpandActivityから開いた時はZIP内部のファイル */
 	private String mImageName = "";
 	/** URIとパス */
@@ -564,6 +573,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 画面を構成する View の保持
 	public static MyImageView mImageView = null;
+	// この画面が作った View. mImageView は static で、次の巻を開くと新しい画面の View に置き換わるため、
+	// 終了処理ではこちらを使う(古い画面の onDestroy が新しい画面の画像を消さないように)
+	private MyImageView mOwnImageView = null;
 	private GuideView mGuideView = null;
 	private boolean mKeepGuide = false;
 	// フリック判定用
@@ -747,6 +759,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	private CustomNoneProgressDialog mNoneProgressDialog;
 	private boolean mCornerTouchLimitEnable;
 	private int mCornerTouchHLimit;
+	private static int animationGeneration = 0;
 
 	private static OrientationEventListener orientationEventListener = null;
 	private static int deviceOrientation = -1;
@@ -949,6 +962,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mReadingMsg[2] = res.getString(R.string.htmlParsing);
 
 		mImageView = new MyImageView(this);
+		mOwnImageView = mImageView;
 		mGuideView = new GuideView(this);
 		layout = new FrameLayout(this);
 		layout.addView(mImageView);
@@ -1008,7 +1022,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		// mImageNameはファイルから開いたかディレクトリを開いたかの判定に使用する
 
 		Logcat.d(logLevel, "mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
-				+ ", mUser=" + mUser + ", mPass=" + mPass
+				+ ", mUser=" + mUser
 				+ ", mFileName=" + mFileName + ", mImageName=" + mImageName);
 
 		if (mPath == null) {
@@ -1040,10 +1054,30 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 		// サーバー同期が有効なSMBサーバー上のファイルであれば、開く前にサーバー側の既読位置を問い合わせて
 		// ローカルより優先する(「サーバー側と同期してから開く」仕様)
-		if (!openFromTop && mServer != DEF.INDEX_LOCAL && mFileName != null && !mFileName.isEmpty() && mReadPositionSyncSet) {
-			String syncHost = new ServerSelect(mSharedPreferences, mActivity).getHost(mServer);
+		// 同期に使う本の場所(接続先・フォルダ・ファイル名)を決める。
+		// ローカルにコピーした本は、書庫管理のキャッシュからファイル名とサイズが一致するサーバー上の本を探し、
+		// その本として既読位置を共有する(見つからなければ共有しない)
+		mSyncHost = null;
+		if (mReadPositionSyncSet && mFileName != null && !mFileName.isEmpty()) {
+			if (mServer != DEF.INDEX_LOCAL) {
+				mSyncHost = new ServerSelect(mSharedPreferences, mActivity).getHost(mServer);
+				mSyncPath = mPath;
+				mSyncFile = mFileName;
+			}
+			else {
+				LocalBookOrigin.Origin origin = LocalBookOrigin.resolve(mActivity, mSharedPreferences, mFilePath);
+				if (origin != null) {
+					Logcat.d(logLevel, "ローカルの本をサーバー上の本に対応付けました. host=" + origin.host + ", path=" + origin.path + ", file=" + origin.file);
+					mSyncHost = origin.host;
+					mSyncPath = origin.path;
+					mSyncFile = origin.file;
+				}
+			}
+		}
+		// ローカルの本は圏外のことが多いので、通信できるネットワークが無いときは問い合わせを待たない
+		if (!openFromTop && mSyncHost != null && (mServer != DEF.INDEX_LOCAL || ReadPositionSyncClient.isNetworkAvailable(mActivity))) {
 			ReadPositionSyncClient.Position remotePosition =
-					ReadPositionSyncClient.getRemotePosition(mSharedPreferences, syncHost, mPath, mFileName);
+					ReadPositionSyncClient.getRemotePosition(mSharedPreferences, mSyncHost, mSyncPath, mSyncFile);
 			if (remotePosition != null && remotePosition.page >= 0) {
 				Logcat.d(logLevel, "サーバー側の既読位置を採用します. page=" + remotePosition.page);
 				mRestorePage = remotePosition.page;
@@ -1091,6 +1125,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 				@Override
 				public void handleOnBackPressed() {
+					// 戻るジェスチャーに横取りされたタッチの押下状態を解除する
+					cancelTouchState();
 					// 既存の operationBack() を呼び出す
 					operationBack();
 				}
@@ -1246,8 +1282,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (mSourceImage[1] != null) {
 			mSourceImage[1] = null;
 		}
-		if (mImageView != null) {
-			mImageView.setImageBitmap(mSourceImage);
+		if (mOwnImageView != null) {
+			mOwnImageView.setImageBitmap(mSourceImage);
 		}
 		System.gc();
 		Logcat.i(logLevel, "終了します.");
@@ -1306,6 +1342,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			int t = (int) (now - mEffectStart);
 			if (mEffect != 0 && t >= mEffectTime) {
 				// エフェクト中でない場合は mBitmapLoading を終了させる
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "読み込み中の固まりを解除します(応急処置). t=" + t + ", mEffectTime=" + mEffectTime + ", mEffectRate=" + mEffectRate);
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
 		}
@@ -1380,6 +1417,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		mImmCancel = false;
 		if (mClickGuard) {
 			mClickGuard = false;
+		}
+		if (!hasFocus && mTapOnOff) {
+			// フォーカスを失ったら指を離す通知が届かないことがあるので、押下状態を解除する
+			cancelTouchState();
 		}
 		/*
 		 * if (hasFocus) { if (mInitFlg == 0) { // 起動直後のみ呼び出し mInitFlg = 1;
@@ -1548,8 +1589,18 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	public boolean dispatchKeyEvent(KeyEvent event) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
+		if (event.getRepeatCount() == 0) {
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] key code=" + KeyEvent.keyCodeToString(event.getKeyCode()) + " action=" + event.getAction() + " page=" + mCurrentPage);
+		}
 
 		int code = event.getKeyCode();
+
+		if (code == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN && mTapOnOff) {
+			// 画面端からの戻るジェスチャーは、指を離した通知もタッチの取り消しも届かないまま
+			// 戻るキーだけが届く。押下状態が残ると長押しルーペが出たままになるので、ここで解除する
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] 戻るキーで押下状態を解除");
+			cancelTouchState();
+		}
 
 		int found_code = -1;
 		int data;
@@ -1814,7 +1865,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				if (mLongTouchCount == msg.arg1 && !mDoubleTapGuardOn && !mZoomOff) {
 					// 最新のタイマーの時だけ処理
 					// ダブルタップの処理があった場合は長押しと判断されてしまうので無視する
-					if (mTouchFirst) {
+					if (mTouchFirst && mTapOnOff && !mBitmapLoading) {
+						// 指が触れている間だけルーペを出す(離した後や読み込み中には出さない)
 						if (mVibFlag) {
 							// 振動
 							mVibrator.vibrate(TIME_VIB_RANGE);
@@ -1871,6 +1923,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			case DEF.HMSG_EVENT_EFFECT:
 			case DEF.HMSG_EVENT_EFFECT_NEXT:
+				if (msg.arg1 != mEffectGen) {
+					// 新しいめくりが始まっているので、古い効果のタイマーは捨てる
+					Logcat.w(Logcat.LOG_LEVEL_WARN, "古い効果のタイマーを破棄. what=" + msg.what + " gen=" + msg.arg1 + " 現在=" + mEffectGen);
+					break;
+				}
 				// 稼働中のみ次のイベント登録
 				if (logLevel <= Logcat.LOG_LEVEL_DEBUG) {
 					String now_ms = (new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())).format(now);
@@ -1887,7 +1944,11 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				if (mEffectRate == 0.0f) {
 					// エフェクトの終わりには以前のページ表示をしない
-					mImageView.createBackground(false);
+					Logcat.w(Logcat.LOG_LEVEL_WARN, "エフェクト終了. what=" + msg.what + ", t=" + t + ", mEffectTime=" + mEffectTime + ", mBitmapLoading=" + mBitmapLoading);
+					if (!mBitmapLoading) {
+						// 次のページを読み込み中(連続めくり)なら、旧ページの背景はそのまま残す
+						mImageView.createBackground(false);
+					}
 				}
 				// エフェクト位置
 				mImageView.setEffectRate(mEffectRate);
@@ -1955,6 +2016,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 			case DEF.HMSG_LOAD_END: // 画像読み込み終了
 				Logcat.v(logLevel, "HMSG_LOAD_END: mEffectRate=" + mEffectRate);
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] loadEnd page=" + mCurrentPage + " effRate=" + mEffectRate);
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "画像読み込み完了. mBitmapLoading=" + mBitmapLoading + ", mEffect=" + mEffect + ", mPageSelecting=" + mPageSelecting + ", mEffectRate=" + mEffectRate);
 				if (mBitmapLoading) {
 					// ここでフラグをクリア
 					mBitmapLoading = false;
@@ -1986,6 +2049,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 					// ビットマップを設定
 					synchronized (mImageView) {
+						mImageView.setPageBack(mPageBack);
 						mImageView.setImageBitmap(mSourceImage);
 						// 2011/11/18 ルーペ機能
 						this.updateOverSize(false);
@@ -2001,8 +2065,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						startViewTimer(DEF.HMSG_EVENT_EFFECT);
 					}
 					else {
-						// 以前のページ表示を終了
-						mImageView.createBackground(false);
+						if (mEffectRate == 0.0f) {
+							// 以前のページ表示を終了
+							mImageView.createBackground(false);
+						}
+						// 前のめくり効果がまだ続いている(連続めくりで、効果の途中に次のページの読み込みが終わった)ときは、
+						// ここで背景を消すと効果の残りのコマが旧ページなしで描かれる.
+						// 背景はその効果の終了時(HMSG_EVENT_EFFECT_NEXTで割合が0になったとき)に消える
 
 						// エフェクト無しのときはそのまま終了
 						mLoadingNext = true;
@@ -2291,6 +2360,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				// 値を保存
 				mPinchScaleSel = mPinchScale;
 				Editor ed = mSharedPreferences.edit();
+				// ※既存の値が読み込めないので戻した
+//				savePinchScale(ed, mPinchScale);
 				ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
 				ed.apply();
 				break;
@@ -2370,6 +2441,15 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			return;
 		}
 		mBitmapLoading = true;
+
+		if (mEffectRate != 0.0f) {
+			// めくり効果の途中で次のめくりが来たら、今の効果を最後まで飛ばす.
+			// 途中のコマのまま背景を撮ると、その途中の画面で止まって見えるため.
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "効果中のめくり: 効果を終わらせて次へ. mEffectRate=" + mEffectRate + " page=" + mCurrentPage);
+			mEffectGen++;	// 残っている効果のタイマーを無効にする
+			mEffectRate = 0.0f;
+			mImageView.setEffectRate(0.0f);
+		}
 
 		// ピンチズームの更新
 		SetPinchScaleSetting();
@@ -2475,10 +2555,13 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 			}
 
+			// bm[0]に入っているのが2ページ目(mCurrentPage+1)か
+			boolean secondPageOnly = false;
 			if (bm[1] != null && bm[0] == null) {
 				// 片側しか読み込んでいない場合はbm[0]に移す
 				bm[0] = bm[1];
 				bm[1] = null;
+				secondPageOnly = true;
 			}
 
 			boolean isSingle = false; // 現在ページが単ページか
@@ -2550,8 +2633,9 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					mHalfPos = HALFPOS_1ST;
 					mSourceImage[0] = bm[0];
 					mSourceImage[1] = null;
-					if (mPageBack) {
-						// 戻りの場合は2ページ目にする
+					if (mPageBack && secondPageOnly) {
+						// 戻りで2ページ目だけを表示する場合は2ページ目にする
+						// (2ページ目が範囲外で1ページ目だけを読んだときに加算すると、ページ数と同じ番号になって範囲外になる)
 						mCurrentPage++;
 					}
 					isSingle = true;
@@ -2886,6 +2970,29 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		setBitmapImage();
 	}
 
+	// ズーム倍率(ピンチ操作の結果)は書庫ごとに保存する。保存がなければ100%。
+	private String pinchScaleKey() {
+		return DEF.createUrl(mFilePath, mUser, mPass) + "#pinchscale";
+	}
+
+	private int loadPinchScale(SharedPreferences sp) {
+		int val = sp.getInt(pinchScaleKey(), 100);
+		if (val < 0 || val > 250) {
+			val = 100;
+		}
+		return val;
+	}
+
+	private void savePinchScale(Editor ed, int val) {
+		if (val == 100) {
+			// 既定値は保存しない(設定の肥大化を避ける)
+			ed.remove(pinchScaleKey());
+		}
+		else {
+			ed.putInt(pinchScaleKey(), val);
+		}
+	}
+
 	private void setMgrConfig(boolean scaleinit) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します. scaleinit=" + scaleinit);
@@ -2898,6 +3005,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		if (scaleinit) {
 			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 			synchronized (mImageView) {
+				// ※既存の値が読み込めないので戻した
+//				mPinchScale = loadPinchScale(sharedPreferences);
 				mPinchScale = SetImageActivity.getPinScale(sharedPreferences);
 				mImageMgr.setImageScale(mPinchScale);
 				ImageScaling();
@@ -2950,8 +3059,40 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 	 *
 	 * @return タッチ操作を他の View へ伝搬しないなら true。する場合は false。
 	 */
+	// 診断用: 操作の記録(PC側で [DBG] 行を3時間分だけ残す)
+	private long mDbgLastMoveLog;
+	private void dbgTouch(MotionEvent event) {
+		int act = event.getActionMasked();
+		long now = SystemClock.uptimeMillis();
+		if (act == MotionEvent.ACTION_MOVE && now - mDbgLastMoveLog < 100) {
+			return;
+		}
+		mDbgLastMoveLog = now;
+		StringBuilder sb = new StringBuilder("[DBG] touch act=").append(MotionEvent.actionToString(act))
+				.append(" n=").append(event.getPointerCount());
+		for (int i = 0; i < event.getPointerCount() && i < 3; i++) {
+			sb.append(" (").append((int) event.getX(i)).append(",").append((int) event.getY(i)).append(")");
+		}
+		sb.append(" page=").append(mCurrentPage).append(" effRate=").append(mEffectRate)
+				.append(" longTouch=").append(mLongTouchMode).append(" loading=").append(mBitmapLoading);
+		Logcat.w(Logcat.LOG_LEVEL_WARN, sb.toString());
+	}
+
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		int act = ev.getActionMasked();
+		if (act == MotionEvent.ACTION_CANCEL) {
+			// システムにタッチを横取りされた(画面端の戻るジェスチャーなど)。
+			// この通知は途中の View に消費されて onTouchEvent まで届かないことがあるので、入口で押下状態を解除する
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] dispatch CANCEL flags=0x" + Integer.toHexString(ev.getFlags()));
+			cancelTouchState();
+		}
+		return super.dispatchTouchEvent(ev);
+	}
+
+	@Override
 	public boolean onTouchEvent(MotionEvent event){
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		dbgTouch(event);
 		Logcat.d(logLevel, "開始します.");
 
 		if (mAutoPlay) {
@@ -2987,9 +3128,16 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			if (mEffect != 0 && t >= mEffectTime) {
 				// なぜか固まることがあるので暫定で実施
 				// エフェクト中でない場合は mBitmapLoading を終了させる
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "読み込み中の固まりを解除します(応急処置). t=" + t + ", mEffectTime=" + mEffectTime + ", mEffectRate=" + mEffectRate);
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
 			// エフェクト中であればタッチを無視する
+			int droppedAction = event.getActionMasked();
+			if (droppedAction == MotionEvent.ACTION_UP || droppedAction == MotionEvent.ACTION_CANCEL) {
+				// 指が離れたことまで捨てると「押したまま」の状態が残り、
+				// 長押しルーペが指を離した後に出て消えなくなるので、ここで押下状態を解除する
+				cancelTouchState();
+			}
 			return true;
 		}
 
@@ -3161,6 +3309,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
     					mImageView.update(true);
 
 						Editor ed = mSharedPreferences.edit();
+						// ※既存の値が読み込めないので戻した
+//						savePinchScale(ed, mPinchScale);
 						ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
 						ed.apply();
     				}
@@ -3587,9 +3737,53 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				mClickGuard = false;
 			}
 			Action_Up_Sub(event);
+			// 押してる間のフラグクリア(ここを通ると長押しタイマーが指を離した後に発動していた)
+			mLongTouchCount ++;
+			mTouchFirst = false;
+			mOperation = TOUCH_NONE;
+			this.mTouchMove = false;
 			mTapOnOff = false;
 		}
+		if (action == MotionEvent.ACTION_CANCEL) {
+			// GestureDetector は ACTION_CANCEL で false を返すので、上の switch の ACTION_CANCEL には来ない。
+			// システムにタッチを横取りされた場合(画面端からの戻るジェスチャーなど)はここで押下状態を解除する
+			cancelTouchState();
+		}
 		return super.onTouchEvent(event);
+	}
+
+	/**
+	 * 押下中の状態をすべて解除する(指を離す操作を受け取れなかったとき用)。
+	 * 待機中の長押しタイマーを無効にし、ルーペが出ていれば消す。
+	 */
+	private void cancelTouchState() {
+		mLongTouchCount ++;
+		if (mLongTouchMode) {
+			// ズーム表示解除
+			if (mImageView != null) {
+				mImageView.setZoomMode(false);
+			}
+			mLongTouchMode = false;
+			// バックグラウンドでのキャッシュ読み込み再開
+			if (mBackgroundPause) {
+				startViewTimer(DEF.HMSG_EVENT_BACKGROUND_CACHE);
+			}
+		}
+		mTouchFirst = false;
+		mOperation = TOUCH_NONE;
+		this.mTouchMove = false;
+		mPinchOn = false;
+		mPinchDown = false;
+		mDoubleTapGuardOn = false;
+		mTapOnOff = false;
+		mClickGuard = false;
+		mImmCancel = false;
+		if (mGuideView != null) {
+			// 上部/下部選択中の状態解除
+			mGuideView.eventTouchCancel();
+			// ページ選択中解除
+			mGuideView.setGuideIndex(GuideView.GUIDE_NONE);
+		}
 	}
 
 	// タップの解除の部分をイベント処理から分離
@@ -4044,6 +4238,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			if (mMakeZoomSameAsPinch) {
 				// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 				Editor ed = mSharedPreferences.edit();
+				// ※既存の値が読み込めないので戻した
+//				savePinchScale(ed, mPinchScale);
 				ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
 				ed.apply();
 			}
@@ -4299,6 +4495,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (mMakeZoomSameAsPinch) {
 						// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 						Editor ed = mSharedPreferences.edit();
+						// ※既存の値が読み込めないので戻した
+//						savePinchScale(ed, mPinchScaleSel);
 						ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScaleSel));
 						ed.apply();
 					}
@@ -4331,6 +4529,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 					if (mMakeZoomSameAsPinch) {
 						// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 						Editor ed = mSharedPreferences.edit();
+						// ※既存の値が読み込めないので戻した
+//						savePinchScale(ed, mPinchScaleSel);
 						ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScaleSel));
 						ed.apply();
 					}
@@ -4671,6 +4871,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 						if (mMakeZoomSameAsPinch) {
 							// ズームとピンチインアウトを共通にする場合はスケーリングを保存
 							Editor ed = mSharedPreferences.edit();
+							// ※既存の値が読み込めないので戻した
+//							savePinchScale(ed, mPinchScale);
 							ed.putString(DEF.KEY_PinchScale, Integer.toString(mPinchScale));
 							ed.apply();
 						}
@@ -5430,6 +5632,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		int logLevel = Logcat.LOG_LEVEL_WARN;
 		Logcat.d(logLevel, "開始します.");
 
+		Logcat.w(logLevel, "表示領域のサイズ変更. " + mViewWidth + "x" + mViewHeight + " -> " + width + "x" + height);
 		mViewWidth = width;
 		mViewHeight = height;
 		if (mImageMgr != null) {
@@ -5529,6 +5732,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			if (mEffect != 0 && t >= mEffectTime) {
 				// なぜか固まることがあるので暫定で実施
 				// エフェクト中でない場合は mBitmapLoading を終了させる
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "読み込み中の固まりを解除します(応急処置). t=" + t + ", mEffectTime=" + mEffectTime + ", mEffectRate=" + mEffectRate);
 				startViewTimer(DEF.HMSG_EVENT_EFFECT_NEXT);
 			}
 
@@ -5559,7 +5763,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 
 		// 操作カテゴリ
 		mMenuDialog.addSection(res.getString(R.string.operateSec));
@@ -5797,7 +6001,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		}
 
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 
 		// ブックマーク選択
 		mMenuDialog.addSection(res.getString(R.string.selBookmarkMenu));
@@ -5855,7 +6059,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			return;
 		}
 		Resources res = getResources();
-		TabDialogFragment mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
+		mMenuDialog = new TabDialogFragment(this, R.style.MyDialog, true, this);
 		// 目次の選択のタイトルを追加
 		mMenuDialog.addSection(res.getString(R.string.SelectContentsMenu));
 
@@ -6883,6 +7087,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			mColoring = SetImageActivity.getColoring(sharedPreferences);
 			mMoire = SetImageActivity.getMoire(sharedPreferences);
 			mTopSingle = SetImageActivity.getTopSingle(sharedPreferences);
+			// ※既存の値が読み込めないので戻した
+//			mPinchScale = loadPinchScale(sharedPreferences);
 			mPinchScale = SetImageActivity.getPinScale(sharedPreferences);
 			mPinchScaleSel = mPinchScale;
 
@@ -7144,6 +7350,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	public void nextPage() {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] op nextPage page=" + mCurrentPage + " effRate=" + mEffectRate + " loading=" + mBitmapLoading);
 		Logcat.d(logLevel, "開始します.");
 
 		// 次ページへ
@@ -7197,6 +7404,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	public void prevPage() {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] op prevPage page=" + mCurrentPage + " effRate=" + mEffectRate + " loading=" + mBitmapLoading);
 		Logcat.d(logLevel, "開始します.");
 
 		// 前ページへ
@@ -7404,6 +7612,10 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		return (true);
 	}
 
+	// ページめくり効果のタイマーの世代。めくりのたびに増やし、古いタイマーのメッセージは無視する
+	// (連続めくりで効果のタイマーが重なって動き、古い方の終了で背景が消えるのを防ぐ)
+	private int mEffectGen = 0;
+
 	// タイマー開始
 	public void startViewTimer(int event) {
 		int logLevel = Logcat.LOG_LEVEL_WARN;
@@ -7413,8 +7625,16 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		long NextTime = SystemClock.uptimeMillis();
 
 		if (event == DEF.HMSG_EVENT_EFFECT) {
+			msg.arg1 = ++mEffectGen;
+		}
+		else if (event == DEF.HMSG_EVENT_EFFECT_NEXT) {
+			msg.arg1 = mEffectGen;
+		}
+
+		if (event == DEF.HMSG_EVENT_EFFECT) {
 			// エフェクト開始
 			if (mEffectTime > 0) {
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "エフェクト開始. mEffectTime=" + mEffectTime + ", mBitmapLoading=" + mBitmapLoading);
 				mEffectRate = 0.99f * (mPageBack ? -1 : 1) * (mPageWay != DEF.PAGEWAY_LEFT ? 1 : -1);
 				mEffectStart = NextTime;
 				// mImageView.setEffectRate(mEffectRate);
@@ -7776,7 +7996,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 			Editor ed = sp.edit();
 			int savePage = mCurrentPage;
 			int	maxpage = mImageMgr.length();
-			Logcat.d(logLevel, "Url=" + DEF.createUrl(mFilePath, mUser, mPass));
+			Logcat.d(logLevel, "Url=" + mFilePath);
 
 			if (maxpage > 0) {
 				// ページ数が0でないときは保存する
@@ -7801,16 +8021,15 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// 既読位置をサーバーへ反映する(SMBサーバー上のアーカイブのみ対象、ベストエフォート)
 	private void pushReadPositionToServer() {
-		boolean mReadPositionSyncSet = FileSelectActivity.getReadPositionSyncSet();
-		if (mImageMgr == null || mServer == DEF.INDEX_LOCAL || mFileName == null || mFileName.isEmpty() || !mReadPositionSyncSet) {
+		if (mImageMgr == null || mSyncHost == null) {
 			return;
 		}
 		int maxpage = mImageMgr.length();
 		if (maxpage <= 0) {
 			return;
 		}
-		String syncHost = new ServerSelect(mSharedPreferences, mActivity).getHost(mServer);
-		ReadPositionSyncClient.pushPosition(mSharedPreferences, syncHost, mPath, mFileName, mCurrentPage, maxpage, -1, -1f);
+		// 圏外で送れなかった分は、ReadPositionSyncClient側で保留され、次に通信できたときに送られる
+		ReadPositionSyncClient.pushPosition(mSharedPreferences, mSyncHost, mSyncPath, mSyncFile, mCurrentPage, maxpage, -1, -1f);
 	}
 
 	// アクティビティ一時停止時に保存される
@@ -7942,7 +8161,8 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 		Logcat.d(logLevel, "mServer=" + mServer + ", mURI=" + mURI + ", mPath=" + mPath
 				+ ", mFileName=" + mFileName + ", mImageName=" + mImageName + ", mCurrentPage=" + mCurrentPage);
 		// 履歴追加
-		if (!mReadBreak && mImageMgr != null && mImageMgr.length() > 0 && !mPrevNextMask) {
+		if (!mReadBreak && mImageMgr != null && mImageMgr.length() > 0 && !mPrevNextMask
+				&& !NoHistoryFolders.isExcluded(mSharedPreferences, new ServerSelect(mSharedPreferences, mActivity).getHost(mServer), mPath, mFileName)) {
 			if ((mFileName == null || mFileName.isEmpty()) && (mImageName != null && !mImageName.isEmpty())) {
 				Logcat.d(logLevel, "画像ファイル指定.");
 				// 画像ファイル直接指定
@@ -8347,7 +8567,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_01, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_01, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_01, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_01, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_01, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_01, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8385,7 +8605,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_02, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_02, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_02, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_02, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_02, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_02, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8423,7 +8643,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_03, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_03, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_03, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_03, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_03, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_03, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8461,7 +8681,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_04, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_04, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_04, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_04, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_04, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_04, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8499,7 +8719,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_05, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_05, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_05, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_05, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_05, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_05, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8537,7 +8757,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_06, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_06, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_06, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_06, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_06, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_06, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8575,7 +8795,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_07, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_07, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_07, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_07, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_07, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_07, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8613,7 +8833,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_08, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_08, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_08, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_08, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_08, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_08, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8651,7 +8871,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_09, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_09, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_09, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_09, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_09, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_09, SetImageActivity.getSharpen(mSharedPreferences));
@@ -8689,7 +8909,7 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 				}
 				// ロードに失敗した場合は元の値を入れる
 				mGray = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_GRAY_10, SetImageActivity.getGray(mSharedPreferences));
-				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_10, SetImageActivity.getGray(mSharedPreferences));
+				mColoring = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_COLORING_10, SetImageActivity.getColoring(mSharedPreferences));
 				mInvert = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_INVERT_10, SetImageActivity.getInvert(mSharedPreferences));
 				mMoire = DEF.getBoolean(mSharedPreferences, DEF.KEY_PROFILE_MOIRE_10, SetImageActivity.getMoire(mSharedPreferences));
 				mSharpen = DEF.getInt(mSharedPreferences, DEF.KEY_PROFILE_SHARPEN_10, SetImageActivity.getSharpen(mSharedPreferences));
@@ -9931,67 +10151,145 @@ public class ImageActivity extends AppCompatActivity implements  GestureDetector
 
 	// アニメーションを表示
 	public static void PutAnimation(File file) {
-
-		new Handler(Looper.getMainLooper()).post(new Runnable() {
-			@Override
-			public void run() {
-				// メインスレッドで実行
-				// アニメーションのビューを得る
-				myImageView = new ImageView(mActivity);
-
-				FrameLayout.LayoutParams gifParams = new FrameLayout.LayoutParams(
-					ViewGroup.LayoutParams.MATCH_PARENT,
-					ViewGroup.LayoutParams.MATCH_PARENT
-				);
-				myImageView.setLayoutParams(gifParams);
-				// アニメーションのビューを親レイアウトに加える
-				layout.addView(myImageView);
-
-				try {
-					// デコーダーへファイルを送る
-					ImageDecoder.Source source = ImageDecoder.createSource(file);
-					// デコード結果を得る
-					Drawable drawable = ImageDecoder.decodeDrawable(source);
-
-					if (drawable instanceof AnimatedImageDrawable) {
-						// アニメーションが有効だった場合
-						animatedGifDrawable = (AnimatedImageDrawable) drawable;
-						myImageView.setImageDrawable(drawable);
-						// アニメーションを実行
-						animatedGifDrawable.start(); 
+		isCanceled = false;
+		final int currentGeneration = ++animationGeneration;
+		// 古いImageViewの削除処理
+		Runnable clearCurrentView = () -> {
+			try {
+				if (animatedGifDrawable != null) {
+					if (animatedGifDrawable.isRunning()) {
+						animatedGifDrawable.stop();
 					}
-					else {
-						myImageView.setImageDrawable(drawable);
-					}
+					animatedGifDrawable = null;
 				}
-				catch (Exception e) {
+				if (myImageView != null) {
+					if (myImageView.getDrawable() instanceof AnimatedImageDrawable) {
+						((AnimatedImageDrawable) myImageView.getDrawable()).stop();
+					}
+					if (myImageView.getParent() instanceof ViewGroup) {
+						((ViewGroup) myImageView.getParent()).removeView(myImageView);
+					}
+					myImageView = null;
 				}
 			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		};
+		if (Looper.myLooper() == Looper.getMainLooper()) {
+			clearCurrentView.run();
+		}
+		else {
+			new Handler(Looper.getMainLooper()).post(clearCurrentView);
+		}
+		// 重いデコード処理をバックグラウンドスレッドで実行
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		executor.execute(() -> {
+			try {
+				if (isCanceled || currentGeneration != animationGeneration) return;
+				// デコーダーへファイルを送る
+				ImageDecoder.Source source = ImageDecoder.createSource(file);
+				// デコード結果を得る
+				Drawable drawable = ImageDecoder.decodeDrawable(source);
+				if (isCanceled || currentGeneration != animationGeneration) return;
+				// 処理が終わったら、メインスレッドでViewの生成・追加を行い、その直後にフローティングアイコンを再表示させる
+				new Handler(Looper.getMainLooper()).post(() -> {
+					try {
+						if (isCanceled || currentGeneration != animationGeneration) return;
+						if (mActivity == null || layout == null) return;
+
+						ImageView targetView = new ImageView(mActivity);
+						myImageView = targetView;
+
+						FrameLayout.LayoutParams gifParams = new FrameLayout.LayoutParams(
+							ViewGroup.LayoutParams.MATCH_PARENT,
+							ViewGroup.LayoutParams.MATCH_PARENT
+						);
+						targetView.setLayoutParams(gifParams);
+						// アニメーションのビューを親レイアウトに加える
+						layout.addView(targetView);
+
+						if (drawable instanceof AnimatedImageDrawable) {
+							// アニメーションが有効だった場合
+							AnimatedImageDrawable animDrawable = (AnimatedImageDrawable) drawable;
+							// クラスフィールドに代入
+							animatedGifDrawable = animDrawable;
+							targetView.setImageDrawable(animDrawable);
+							// レイアウト・描画キューが落ち着いたあとにアニメーションを開始する
+							targetView.post(() -> {
+								try {
+									if (isCanceled || currentGeneration != animationGeneration) {
+										animDrawable.stop();
+										if (targetView.getParent() instanceof ViewGroup) {
+											((ViewGroup) targetView.getParent()).removeView(targetView);
+										}
+										return;
+									}
+									if (mActivity == null || layout == null) return;
+									if (myImageView != targetView) return;
+									if (targetView.getDrawable() != animDrawable) return;
+									if (!animDrawable.isRunning()) {
+										animDrawable.start();
+									}
+								}
+								catch (Exception e) {
+									e.printStackTrace();
+								}
+							});
+						}
+						else {
+							animatedGifDrawable = null;
+							targetView.setImageDrawable(drawable);
+						}
+						// フローティングアイコンを再表示させる
+						if (mHandler != null) {
+							Message message = new Message();
+							message.what = DEF.HMSG_EVENT_FLOATINGICON_RESET;
+							mHandler.sendMessage(message);
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			finally {
+				executor.shutdown();
+			}
 		});
-		// フローティングアイコンを再表示させる
-		Message message = new Message();
-		message.what = DEF.HMSG_EVENT_FLOATINGICON_RESET;
-		mHandler.sendMessage(message);
 	}
 
-	public void stopGifAnimation() {
+	public static void stopGifAnimation() {
 		isCanceled = true;
-		new Handler(Looper.getMainLooper()).post(new Runnable() {
-			@Override
-			public void run() {
-				// メインスレッドで実行
+		animationGeneration++;
+
+		new Handler(Looper.getMainLooper()).post(() -> {
+			try {
 				if (animatedGifDrawable != null) {
 					if (animatedGifDrawable.isRunning()) {
 						// アニメーションの実行を中断
 						animatedGifDrawable.stop();
 					}
-					if (layout != null && myImageView != null) {
-						 // 親レイアウトからビューを削除
-						layout.removeView(myImageView);
-						// 参照もクリアする
-						myImageView = null;
-					}
+					animatedGifDrawable = null;
 				}
+				if (myImageView != null) {
+					if (myImageView.getDrawable() instanceof AnimatedImageDrawable) {
+						((AnimatedImageDrawable) myImageView.getDrawable()).stop();
+					}
+					ViewParent parent = myImageView.getParent();
+					if (parent instanceof ViewGroup) {
+						 // 親レイアウトからビューを削除
+						((ViewGroup) parent).removeView(myImageView);
+					}
+					// 参照もクリアする
+					myImageView = null;
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
 			}
 		});
 	}

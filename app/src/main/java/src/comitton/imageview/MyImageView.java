@@ -228,6 +228,17 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		mIsRunning = true;
 		mLastNotifyTime = System.currentTimeMillis();
 
+		// 可変リフレッシュレートのパネルで、静止画表示中に120Hz<->低Hzの切り替えが起きて
+		// 点滅するのを避けるため、描画面に60Hz固定の希望を伝える(Android 11以降)。
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+			try {
+				holder.getSurface().setFrameRate(60.0f, android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
+			}
+			catch (Exception e) {
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "フレームレートの指定に失敗しました.", e);
+			}
+		}
+
 		Choreographer.getInstance().postFrameCallback(mFrameCallback);
 		// 描画スレッド起動
 		mUpdateThread = new Thread(this);
@@ -439,14 +450,15 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		try {
 			canvas = surfaceHolder.lockCanvas(); // ロックして、書き込み用のcanvasを受け取る
 			if (canvas == null) {
-				Logcat.d(logLevel, "canvasが受け取れませんでした.");
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "canvasが受け取れませんでした. thread=" + Thread.currentThread().getName());
 				return false; // canvasが受け取れてなかったら抜ける
 			}
 
 			draw(canvas, false);
+			logDrawState();
 		}
 		catch (Exception e) {
-				Logcat.e(logLevel, "エラーが発生しました.", e);
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "描画でエラー. thread=" + Thread.currentThread().getName(), e);
 		}
         finally {
 			if (canvas != null) {
@@ -462,6 +474,55 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 		}
 		return true;
+	}
+
+	// 診断用: 点滅などの不具合調査のため、描画の状態を1秒ごとに(異常があるときだけ)記録する
+	private int mDbgFrames;
+	private int mDbgBlank;
+	private long mDbgLastLog;
+
+	// 診断用(PC側で DBG タグの行だけ別ファイルに分け、3時間で上書きする)。
+	// 効果中・ルーペ・ピンチ・旧ページ表示中は毎回、それ以外は1秒に1回だけ出す。
+	private long mDbgLastDrawLog;
+	private void dbgDraw(float effectRate, boolean isBackDraw, int zoomMode, int pinchsel, int drawLeft, int drawTop) {
+		long now = SystemClock.uptimeMillis();
+		boolean busy = effectRate != 0.0f || isBackDraw || zoomMode != ZOOM_NONE || pinchsel != 0 || mViewSw;
+		if (!busy && now - mDbgLastDrawLog < 1000) {
+			return;
+		}
+		mDbgLastDrawLog = now;
+		ImageData i0 = mImage[0];
+		ImageData i1 = mImage[1];
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] draw p0=" + (i0 != null ? i0.Page + ":" + i0.SclWidth + "x" + i0.SclHeight : "-")
+				+ " p1=" + (i1 != null ? i1.Page + ":" + i1.SclWidth + "x" + i1.SclHeight : "-")
+				+ " eff=" + effectRate + " back=" + isBackDraw + "/" + (mBackBitmap != null)
+				+ " zoom=" + zoomMode + " pinch=" + pinchsel + " viewSw=" + mViewSw
+				+ " pos=" + drawLeft + "," + drawTop + " touch=" + mTouchX + "," + mTouchY
+				+ " old=" + mOldPage + " view=" + getWidth() + "x" + getHeight());
+	}
+
+	private void logDrawState() {
+		mDbgFrames++;
+		boolean blank = (mImage[0] == null && mImage[1] == null) || mCanvasBitmap == null;
+		if (blank) {
+			mDbgBlank++;
+		}
+		long now = SystemClock.uptimeMillis();
+		if (now - mDbgLastLog < 1000) {
+			return;
+		}
+		boolean abnormal = mDbgBlank > 0 || mEffectRate != 0.0f || mIsBackDraw;
+		if (abnormal) {
+			Logcat.w(Logcat.LOG_LEVEL_WARN, "描画状態. frames=" + mDbgFrames + " blank=" + mDbgBlank
+					+ " effectRate=" + mEffectRate + " isBackDraw=" + mIsBackDraw
+					+ " img0=" + (mImage[0] != null) + " img1=" + (mImage[1] != null)
+					+ " canvasBmp=" + (mCanvasBitmap != null) + " backBmp=" + (mBackBitmap != null)
+					+ " drawLeft=" + mDrawLeft + " drawTop=" + mDrawTop + " drawLock=" + mDrawLock
+					+ " size=" + getWidth() + "x" + getHeight());
+		}
+		mDbgFrames = 0;
+		mDbgBlank = 0;
+		mDbgLastLog = now;
 	}
 
 	public void attenuate() {
@@ -515,10 +576,21 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			touchY = mTouchY;
 			isBackDraw = mIsBackDraw;
 			effectRate = mEffectRate;
+			if (!isCreateBack && effectRate != 0.0f && (!isBackDraw || mBackBitmap == null)) {
+				// 診断用: 効果の最中なのに、旧ページの背景を出さずに描こうとしている
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "効果中に背景なしで描画. drawRate=" + effectRate + " isBackDraw=" + isBackDraw + " backBmp=" + (mBackBitmap != null) + " thread=" + Thread.currentThread().getName());
+			}
+			if (!isCreateBack && effectRate != 0.0f && mDbgEffectZeroAt != 0) {
+				// 診断用: 効果の割合が0になったあとに、途中の割合で描こうとしている
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "効果終了後に途中の描画. drawRate=" + effectRate + " 終了から" + (SystemClock.uptimeMillis() - mDbgEffectZeroAt) + "ms thread=" + Thread.currentThread().getName());
+			}
 			zoomMode = mZoomMode;
 			pseLand = mPseLand;
 			pinchsel = mPinchSel;
 			effect = mEffect;
+			if (!isCreateBack) {
+				dbgDraw(effectRate, isBackDraw, zoomMode, pinchsel, drawLeft, drawTop);
+			}
 
     		int cx;
     		int cy;
@@ -610,15 +682,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						ty = Math.max(cy * effectRate * -1 + mLastOverScrollX, 0);
 					}
 				}
-				// ページ番号の変化をチェック
-				if (mImage[0] != null && mImage[0].Page != mOldPage) {
-					if (mImage[0].Page > mOldPage) {
-						mMove = true;
-					}
-					else {
-						mMove = false;
-					}
-				}
+				// めくる向き(mMove)は setImageBitmap() で画像を差し替えた時点で決めている.
+				// ここで「最後に効果なしで描いたページ(mOldPage)」と比べると、連続めくりや
+				// 同じページ番号の分割表示で古い向きが残り、スライドが逆向きになっていた
 //					if (mScrlNext == false || mOverScrollX == 0) {
 				if (effect == 1) {	// ページめくりフリップ
 					canvas.save();
@@ -1273,7 +1339,8 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 						if (effect == 2) {	// ページめくりフェードイン
 							scrollReset();
 							bmpPaint = mAlphaPaint;
-							bmpPaint.setAlpha((int) (255 * (1.0f - effectRate) * (effectRate > 0 ? 1 : -1)));
+							// 戻る方向は effectRate が負(-1→0)になるので絶対値で透明度を決める
+							bmpPaint.setAlpha((int) (255 * (1.0f - Math.abs(effectRate))));
 						}
 						canvas.drawBitmap(mCanvasBitmap, 0, 0, bmpPaint);
 //					}
@@ -1525,12 +1592,43 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 	}
 
 	// エフェクト処理
+	private volatile long mDbgEffectZeroAt = 0;	// 診断用: 効果の割合を0にした時刻(効果中は0)
+
 	public void setEffectRate(float rate) {
+		mDbgEffectZeroAt = (rate == 0.0f) ? SystemClock.uptimeMillis() : 0;
 		mEffectRate = rate;
 		updateNotify();
 	}
 
+	private int mSetPage = -1;			// 最後に setImageBitmap() で設定したページ番号
+	private boolean mPageBackHint = false;	// 直近のページ送りが「戻る」操作だったか
+
+	/**
+	 * 直近のページ送りが「戻る」操作かを通知する(setImageBitmap() の直前に呼ぶ)。
+	 * ページ番号が変わらないめくり(分割表示の前半/後半)の向きの判定に使う。
+	 */
+	public void setPageBack(boolean back) {
+		mPageBackHint = back;
+	}
+
 	public void setImageBitmap(ImageData[] bm) {
+		if (bm != null && bm[0] != null) {
+			// めくる向きを、直前に設定したページとの比較で決める
+			int page = bm[0].Page;
+			boolean move;
+			if (page != mSetPage) {
+				move = page > mSetPage;
+			}
+			else {
+				// 同じページ番号(分割表示の前半/後半など)は操作の向きに従う
+				move = !mPageBackHint;
+			}
+			if (move != mMove) {
+				Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] めくり方向の切替. 進む=" + move + " page=" + page + " 前回=" + mSetPage + " 戻る操作=" + mPageBackHint);
+			}
+			mMove = move;
+			mSetPage = page;
+		}
 		if (bm != null) {
 			mImage[0] = bm[0];
 			mImage[1] = bm[1];
@@ -1810,6 +1908,9 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		BackupPosition(true, drawLeft, drawTop);
 		mDrawLeft = drawLeft;
 		mDrawTop = drawTop;
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "表示位置の決定. resize=" + isResize + " disp=" + disp_x + "x" + disp_y
+				+ " view=" + view_x + "x" + view_y + " drawLeft=" + drawLeft + " drawTop=" + drawTop
+				+ " mgnTop=" + mMgnTop + " mgnBottom=" + mMgnBottom + " viewPoint=" + mViewPoint + " pos=" + mDisplayPosition + " pageBack=" + mIsPageBack);
 
  		// ページ送り位置の設定
  		setScrollPos();
@@ -3320,7 +3421,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			}
 
 			// 前の前のページを表示用Bitmapに書き込む
-			if (prev2Page > 0 && prev2Page < mImageManager.length()) {
+			if (prev2Page >= 0 && prev2Page < mImageManager.length()) {
 				prev2Image = mImageManager.getImageData(prev2Page);
 
 				if (prevImage != null && prev2Image != null) {
@@ -3447,7 +3548,7 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 			if (next2Page >= 0 && next2Page < mImageManager.length()) {
 				next2Image = mImageManager.getImageData(next2Page);
 
-				if (next2Image != null && next2Image != null) {
+				if (nextImage != null && next2Image != null) {
 					// 回転対応
 					if (mRotate == 0 || mRotate == 2) {
 						origWidth = next2Image.SclWidth;
@@ -3576,6 +3677,11 @@ public class MyImageView extends SurfaceView implements SurfaceHolder.Callback, 
 		}
 
 //		mZoomFlag = mode;
+		// 診断用: ルーペ(拡大表示)の表示/解除の記録
+		if (mode != (mZoomMode != ZOOM_NONE))
+		Logcat.w(Logcat.LOG_LEVEL_WARN, "[DBG] ルーペ切替. mode=" + mode + " 旧zoomMode=" + mZoomMode + " touch=" + mTouchX + "," + mTouchY
+				+ " page0=" + (mImage[0] != null ? mImage[0].Page : -1) + " page1=" + (mImage[1] != null ? mImage[1].Page : -1)
+				+ " effectRate=" + mEffectRate + " viewSw=" + mViewSw);
 		if (mode) {
 			mZoomMode = ZOOM_NONE;
 			// 拡大表示の位置を決める
