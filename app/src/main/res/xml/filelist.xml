@@ -492,6 +492,11 @@
             android:key="SaveArchivePassword"
             android:summary="Check this box to enable password saving."
             android:title="Save the password for a compressed file that you've entered once, so you don't have to enter it again next time." />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ArchivePasswordIcon"
+            android:summary="Check this box to enable the display of a padlock icon and the option to clear the password by long-pressing."
+            android:title="Enable the display of a padlock icon for password-protected compressed files, and allow the password to be cleared by long-pressing." />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen

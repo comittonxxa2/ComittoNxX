@@ -11,23 +11,35 @@
             android:title="Enable Everything search" />
         <EditTextPreference
             android:key="EverythingHost"
-            android:title="Host IP Address"/>
+            android:title="Host IP Address"
+            android:summary="Everything Server IP Address"
+            android:dialogTitle="Host IP Address" />
         <EditTextPreference
             android:key="EverythingPort"
             android:defaultValue="8080"
-            android:title="Port Number"/>
+            android:title="Port Number"
+            android:summary="Everything HTTP API Port Number"
+            android:dialogTitle="Port Number" />
         <EditTextPreference
             android:key="EverythingUser"
-            android:title="Username"/>
+            android:title="Username"
+            android:summary="Username for HTTP Auth"
+            android:dialogTitle="Username" />
         <EditTextPreference
             android:key="EverythingPass"
             android:title="Password"
-            android:password="true"/>
+            android:password="true"
+            android:summary="Password for HTTP Auth"
+            android:dialogTitle="Password" />
         <EditTextPreference
             android:key="EverythingReplaceFrom"
-            android:title="Path Replace (From)"/>
+            android:title="Path Replace (From)"
+            android:summary="Local path prefix on the Everything server to be replaced (e.g., /srv/share/)"
+            android:dialogTitle="Replace From" />
         <EditTextPreference
             android:key="EverythingReplaceTo"
-            android:title="Path Replace (To)"/>
+            android:title="Path Replace (To)"
+            android:summary="SMB path prefix (e.g., //192.168.1.10/share/)"
+            android:dialogTitle="Replace To" />
     </src.comitton.config.ButtonPreferenceCategory>
 </PreferenceScreen>

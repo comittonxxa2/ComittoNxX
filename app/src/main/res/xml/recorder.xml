@@ -37,6 +37,10 @@
             android:key="RLSave3"
             android:summary="dummy"
             android:title="Number of saved history" />
+        <Preference
+            android:key="NoHistoryFoldersEdit"
+            android:summary="@string/noHistoryFoldersSummary"
+            android:title="@string/noHistoryFolders" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="Help" >
         <PreferenceScreen
