@@ -339,6 +339,7 @@
     <string name="ope11">テキストビュワーで表示</string>
     <string name="ope12">ファイルリストのキャッシュ削除</string>
     <string name="ope13">ファイルリストを再生成して開く</string>
+    <string name="ope14">圧縮ファイルのパスワードの消去</string>
     <string name="lmTitle">表示モード</string>
     <string name="listmode00">リスト表示 (サムネイルON)</string>
     <string name="listmode01">リスト表示 (サムネイルOFF)</string>
@@ -358,6 +359,7 @@
     <string name="bm00">ディレクトリを開く</string>
     <string name="bm01">名前の変更</string>
     <string name="bm02">ブックマークを削除</string>
+    <string name="bm02History">履歴から削除</string>
     <string name="bmTitle">ブックマーク一覧</string>
     <string name="bmNotFound">ブックマークはありません。</string>
     <string name="contentsNotFound">目次はありません。</string>
@@ -582,12 +584,8 @@
     <string name="libraryVolumeCount">%1$d巻</string>
     <string name="libraryReadSummary">既読: %1$d/%2$d (%3$d%%)</string>
     <string name="librarySyncDone">書庫一覧を更新しました: 新規%1$d件</string>
-    <string name="libraryMenuRescan">サーバー側を更新</string>
-    <string name="libraryMenuPull">端末側を更新</string>
+    <string name="libraryMenuPull">書庫と既読位置を更新</string>
     <string name="libraryMenuReadPositionSync">既読位置を更新</string>
-    <string name="libraryRescanTriggered">サーバー側のスキャンを開始しました。完了後に「端末側を更新」を実行してください。</string>
-    <string name="libraryRescanCooldown">直近でスキャン済みです。「端末側を更新」で現在のカタログを取得できます。</string>
-    <string name="libraryRescanError">サーバー側のスキャンを開始できませんでした。</string>
     <string name="libraryMenuSearch">タイトルで検索</string>
     <string name="libraryMenuClearFilter">絞り込みを解除</string>
     <string name="libraryMenuImportError">書庫管理データの読み込みに失敗しました</string>
@@ -653,6 +651,7 @@
     <string name="selectOrEnterFile">ファイルを選択または入力してください.</string>
     <string name="SaveConfig">設定を保存しました.</string>
     <string name="LoadConfig">設定ファイルを適用しました.</string>
+    <string name="LoadConfigError">設定ファイルを読み込めませんでした. 設定は変更していません.</string>
     <string name="SaveServerCode">ローカルフォルダに保存しました.</string>
     <string name="SaveErrorServerCode">保存に失敗しました.</string>
     <string name="LoadErrorServerCode">読み込みに失敗しました.</string>
@@ -1231,6 +1230,20 @@
     <string name="webserver">Web共有の設定</string>
     <string name="config">設定</string>
 
+    <string name="ope14on">閲覧履歴を残さないフォルダに追加</string>
+    <string name="ope14off">閲覧履歴を残さないフォルダから外す</string>
+    <string name="noHistoryAdded">閲覧履歴を残さないフォルダに登録しました</string>
+    <string name="noHistoryRemoved">閲覧履歴を残さないフォルダから外しました</string>
+    <string name="noHistoryDeleteConfirm">このフォルダの本が、この端末の履歴に%1$d件あります。履歴から消しますか?(サーバーの履歴・既読位置は変わりません)</string>
+    <string name="noHistoryDelete">消す</string>
+    <string name="noHistoryKeep">残す</string>
+    <string name="noHistoryFolders">閲覧履歴を残さないフォルダ</string>
+    <string name="noHistoryFoldersSummary">登録したフォルダの本は履歴に記録しません</string>
+    <string name="noHistoryListEmpty">登録されているフォルダはありません</string>
+    <string name="noHistoryListTitle">履歴を残さないフォルダ(タップで外す)</string>
+    <string name="noHistoryAddPath">パスを追加</string>
+    <string name="noHistoryAddHint">フォルダのパス 例: /漫画</string>
+    <string name="noHistoryRemoveConfirm">このフォルダを一覧から外しますか?</string>
     <string name="loadfile">ファイルの読み込み</string>
     <string name="loadingfile">読み込み中...</string>
     <string name="loadfileerror">ファイルの読み込みに失敗しました</string>
@@ -1243,5 +1256,6 @@
     <string name="inputpasswordnext">パスワードが正しくありません。\nもう一度入力してください。</string>
     <string name="inputpasswordfirst">暗号化されているためパスワードが必要です。</string>
     <string name="inputpasswordabort">パスワードの入力ミスが続いたため、処理を中止しました。</string>
+    <string name="passwordclear">圧縮ファイルのパスワードを消去しました</string>
 
 </resources>
