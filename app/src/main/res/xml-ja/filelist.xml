@@ -497,7 +497,7 @@
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="ArchivePasswordIcon"
-            android:summary="錠前のアイコン表示と長押しによるパスワードの消去をを有効にする場合はチェックを入れる"
+            android:summary="錠前のアイコン表示と長押しによるパスワードの消去を有効にする場合はチェックを入れる"
             android:title="パスワード付きの圧縮ファイルの錠前のアイコン表示と長押しによるパスワードの消去を有効にする" />
     </src.comitton.config.ButtonPreferenceCategory>
     <PreferenceCategory android:title="ヘルプ" >
