@@ -4501,14 +4501,20 @@ public class FileSelectActivity extends AppCompatActivity implements OnTouchList
 				Logcat.d(logLevel, "DEF.MESSAGE_RESUME: uri=" + uri + ", lastView=" + lastView + ", path=" + path + ", lastFile=" + lastFile + ", lastText=" + lastText + ", lastImage=" + lastImage);
 
 				Resources res = getResources();
-				String msg = res.getString(R.string.rsMsg) + "\n\n" + uri + path + lastFile;
+				String msg = res.getString(R.string.rsMsg) + "\n\n" + uri + path;
 				if (lastView == DEF.LASTOPEN_TEXT && !lastText.isEmpty()) {
 					if (!lastText.equals("META-INF/container.xml")) {
 						msg += "\n" + lastText;
 					}
+					else {
+						msg += "\n" + lastFile;
+					}
 				}
-				if (lastView == DEF.LASTOPEN_IMAGE && !lastImage.isEmpty()) {
+				else if (lastView == DEF.LASTOPEN_IMAGE && !lastImage.isEmpty()) {
 					msg += "\n" + lastImage;
+				}
+				else {
+					msg += "\n" + lastFile;
 				}
 				if (mTabMode && (!mURI.equals(uri) || !mPath.equals(path) || svrindex != mServer.getSelect())) {
 					msg += "\n\n" + res.getString(R.string.tabMsg);
