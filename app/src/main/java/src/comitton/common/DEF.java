@@ -417,6 +417,8 @@ public class DEF {
 	public static final int FLOATING_PLAYPAUSE = 1047;
 	public static final int FLOATING_NAVIBACK = 1048;
 	public static final int FLOATING_RELOAD = 1049;
+	public static final int FLOATING_SHIFT_LEFT = 1050;
+	public static final int FLOATING_SHIFT_RIGHT = 1051;
 
 	public static final int READ_REQUEST_CODE = 42;
 	public static final int WRITE_REQUEST_CODE = 43;
