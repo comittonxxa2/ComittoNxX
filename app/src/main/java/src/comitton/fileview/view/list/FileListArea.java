@@ -668,21 +668,39 @@ public class FileListArea extends ListArea implements Handler.Callback {
 					}
 				}
 
+				// 南京錠の判定
+				boolean isLocked = (FileSelectList.getEncryptionList(fd.getName()) && !sharedPreferences.getBoolean(DEF.KEY_THUMBNAIL, false));
+				float lockTextSize = mTileSize;
+				Paint lockPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+				lockPaint.setTextSize(lockTextSize);
+				String lockChar = new String(Character.toChars(0x1F512));
+				float lockWidth = lockPaint.measureText(lockChar);
 				if (mBookShelfPatternSelect) {
 					// 本棚の表示時は文字の表示開始位置をずらす(縁取りと外枠の分も加算)
 					y += mThumbnailBottomSpace + (int)((float)mBookShelfEdgeLevel / 2 + 0.5f) + 1;
 				}
 				if (mText[0][index] != null) {
+					float lockLeftX = x;
+					float shiftRight = 0f;
+					if (isLocked) {
+						// テキストブロックの左上トップに南京錠を描画
+						Paint.FontMetrics lockFm = lockPaint.getFontMetrics();
+						float lockBaselineY = y - lockFm.ascent;
+						canvas.drawText(lockChar, lockLeftX, lockBaselineY, lockPaint);
+						// 南京錠の幅だけ文字列を右へずらす
+						shiftRight = lockWidth;
+					}
 					x += mIconWidth / 2;
 					y += mIconHeight + mItemMargin;
 					for (int i = 0; i < mText[0][index].length; i++) {
+						float drawX = x + (i == 0 ? shiftRight : 0f);
 						if (mBookShelfPatternSelect) {
 							// 縁取りの文字を先に表示
 							if (mBookShelfEdgeLevel > 0) {
 								mNamePaint.setColor(mBseColor);
 								mNamePaint.setStrokeWidth(mBookShelfEdgeLevel);
 								mNamePaint.setStyle(Paint.Style.FILL_AND_STROKE);
-								canvas.drawText(mText[0][index][i], x, y + mTileAscent, mNamePaint);
+								canvas.drawText(mText[0][index][i], drawX, y + mTileAscent, mNamePaint);
 							}
 						}
 						// 後から文字を表示
@@ -693,7 +711,7 @@ public class FileListArea extends ListArea implements Handler.Callback {
 							mNamePaint.setColor(color);
 						}
 						mNamePaint.setStyle(Paint.Style.FILL);
-						canvas.drawText(mText[0][index][i], x, y + mTileAscent, mNamePaint);
+						canvas.drawText(mText[0][index][i], drawX, y + mTileAscent, mNamePaint);
 						y += mTileSize + mTileDescent;
 					}
 				}
@@ -1116,8 +1134,23 @@ public class FileListArea extends ListArea implements Handler.Callback {
 			int ty = 0;
 			if (mTitleSep != null && mInfoSep != null && mTitleSep[index] != null && mInfoSep[index] != null) {
 
+				// 南京錠の判定
+				boolean isLocked = (FileSelectList.getEncryptionList(fd.getName()) && !sharedPreferences.getBoolean(DEF.KEY_THUMBNAIL, false));
+				float lockOffsetX = 0f;
+				if (isLocked) {
+					float lockTextSize = mTileSize;
+					Paint lockPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+					lockPaint.setTextSize(lockTextSize);
+					Paint.FontMetrics lockFm = lockPaint.getFontMetrics();
+					String lockChar = new String(Character.toChars(0x1F512));
+					// テキストブロックの左上トップに南京錠を描画
+					float lockBaselineY = y - lockFm.ascent;
+					canvas.drawText(lockChar, x, lockBaselineY, lockPaint);
+					lockOffsetX = lockPaint.measureText(lockChar);
+				}
 				for (int i = 0; i < mTitleSep[index].length; i++) {
-					canvas.drawText(mTitleSep[index][i], x, y + ty + mTitleAscent, mNamePaint);
+					float titleX = x + (i == 0 ? lockOffsetX : 0f);
+					canvas.drawText(mTitleSep[index][i], titleX, y + ty + mTitleAscent, mNamePaint);
 					ty += (mTitleSize + mTitleDescent);
 				}
 
